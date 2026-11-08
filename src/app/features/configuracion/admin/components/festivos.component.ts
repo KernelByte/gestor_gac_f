@@ -1,9 +1,11 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgendaService } from '../../../secretario-tools/services/agenda.service';
 import { Festivo } from '../../../secretario-tools/models/agenda.model';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
+import { ConfirmService } from '../../../../shared/components/confirm-dialog/confirm.service';
 
 const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -34,12 +36,12 @@ function fechaLarga(iso: string): string {
             Año
             <div class="flex items-center gap-2">
               <button type="button" class="h-11 w-11 rounded-xl border border-slate-300 dark:border-slate-600 text-lg font-bold" aria-label="Año anterior" (click)="cambiarAnio(-1)">‹</button>
-              <input type="number" min="2000" max="2100" class="h-11 w-24 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-center text-base font-bold"
+              <input type="number" min="2000" max="2100" class="form-control w-24 text-center"
                      [ngModel]="anio()" (ngModelChange)="anio.set($event); cargar()"/>
               <button type="button" class="h-11 w-11 rounded-xl border border-slate-300 dark:border-slate-600 text-lg font-bold" aria-label="Año siguiente" (click)="cambiarAnio(1)">›</button>
             </div>
           </label>
-          <button type="button" class="h-11 px-4 rounded-xl bg-violet-700 text-white text-sm font-bold disabled:opacity-60" [disabled]="trabajando()" (click)="generar()">
+          <button type="button" class="h-11 px-4 rounded-xl bg-brand-purple text-white text-sm font-bold disabled:opacity-60" [disabled]="trabajando()" (click)="generar()">
             Cargar festivos de ley de {{ anio() }}
           </button>
         </div>
@@ -48,7 +50,7 @@ function fechaLarga(iso: string): string {
           <p class="text-sm font-semibold text-red-700 dark:text-red-300">No se pudieron leer los festivos. Intente de nuevo.</p>
         }
 
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 overflow-hidden">
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
           @if (cargando()) {
             <p class="p-4 text-sm text-slate-600 dark:text-slate-300">Cargando…</p>
           } @else if (!festivos().length) {
@@ -62,7 +64,7 @@ function fechaLarga(iso: string): string {
                     <p class="text-sm font-bold text-slate-900 dark:text-slate-100 first-letter:uppercase">{{ larga(f.fecha) }}</p>
                     <p class="text-sm text-slate-600 dark:text-slate-300">{{ f.nombre }}</p>
                   </div>
-                  <button type="button" class="h-10 px-3 rounded-lg text-sm font-semibold text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-60"
+                  <button type="button" class="btn-ghost-danger"
                           [disabled]="trabajando()" (click)="quitar(f)" [attr.aria-label]="'Quitar festivo ' + f.nombre">Quitar</button>
                 </li>
               }
@@ -70,21 +72,21 @@ function fechaLarga(iso: string): string {
           }
         </div>
 
-        <form class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 p-4 flex flex-col gap-3" (ngSubmit)="agregar()">
+        <form class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col gap-3" (ngSubmit)="agregar()">
           <h3 class="text-base font-bold text-slate-900 dark:text-white">Agregar un festivo a mano</h3>
           <p class="text-sm text-slate-600 dark:text-slate-300">Úselo si el gobierno decreta un día festivo extra o si un día cambia.</p>
           <div class="flex flex-wrap gap-3">
             <label class="flex flex-col gap-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
               Fecha
-              <input type="date" name="fecha" required class="h-11 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-base" [(ngModel)]="nuevaFecha"/>
+              <input type="date" name="fecha" required class="form-control" [(ngModel)]="nuevaFecha"/>
             </label>
             <label class="flex flex-col gap-1 text-sm font-semibold text-slate-700 dark:text-slate-200 flex-1 min-w-[12rem]">
               Nombre
-              <input type="text" name="nombre" required maxlength="120" class="h-11 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-base" [(ngModel)]="nuevoNombre"/>
+              <input type="text" name="nombre" required maxlength="120" class="form-control" [(ngModel)]="nuevoNombre"/>
             </label>
           </div>
           <div>
-            <button type="submit" class="h-11 px-4 rounded-xl border border-violet-700 text-violet-800 dark:text-violet-200 text-sm font-bold disabled:opacity-60"
+            <button type="submit" class="h-11 px-4 rounded-xl border border-brand-purple text-violet-800 dark:text-violet-200 text-sm font-bold disabled:opacity-60"
                     [disabled]="trabajando() || !nuevaFecha || !nuevoNombre.trim()">Agregar festivo</button>
           </div>
         </form>
@@ -93,9 +95,10 @@ function fechaLarga(iso: string): string {
     </div>
   `,
 })
-export class FestivosComponent implements OnInit {
+export class FestivosComponent implements OnInit, OnDestroy {
   private svc = inject(AgendaService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
 
   anio = signal(new Date().getFullYear());
   festivos = signal<Festivo[]>([]);
@@ -116,11 +119,17 @@ export class FestivosComponent implements OnInit {
     this.cargar();
   }
 
+  /** La carga en curso: al cambiar de año se cancela, para que una respuesta vieja no pise la del año que se ve. */
+  private carga?: Subscription;
+
+  ngOnDestroy() { this.carga?.unsubscribe(); }
+
   cargar() {
-    if (!this.anioValido()) { this.festivos.set([]); return; }
+    this.carga?.unsubscribe();
+    if (!this.anioValido()) { this.festivos.set([]); this.cargando.set(false); return; }
     const a = Number(this.anio());
     this.cargando.set(true);
-    this.svc.festivos(`${a}-01-01`, `${a}-12-31`).subscribe({
+    this.carga = this.svc.festivos(`${a}-01-01`, `${a}-12-31`).subscribe({
       next: f => { this.festivos.set(f); this.error.set(false); this.cargando.set(false); },
       error: () => { this.error.set(true); this.cargando.set(false); },
     });
@@ -155,8 +164,14 @@ export class FestivosComponent implements OnInit {
     });
   }
 
-  quitar(f: Festivo) {
-    if (!confirm(`¿Quitar «${f.nombre}» (${fechaLarga(f.fecha)}) de los festivos?`)) return;
+  async quitar(f: Festivo) {
+    const ok = await this.confirm.ask({
+      title: `¿Quitar «${f.nombre}» de los festivos?`,
+      message: fechaLarga(f.fecha),
+      confirmLabel: 'Quitar',
+      severity: 'danger',
+    });
+    if (!ok) return;
     this.trabajando.set(true);
     this.svc.eliminarFestivo(f.fecha).subscribe({
       next: () => { this.trabajando.set(false); this.festivos.update(l => l.filter(x => x.fecha !== f.fecha)); },

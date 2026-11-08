@@ -52,7 +52,7 @@ const BTN = 'inline-flex items-center justify-center min-h-11 px-4 rounded-xl te
             </div>
             @if (puedeEditar) {
               <div class="flex flex-wrap gap-2">
-                <button type="button" [class]="btn + ' bg-violet-700 text-white hover:bg-violet-800'" (click)="editar.emit(c.id_congregacion_contacto)">Cambió: actualizar</button>
+                <button type="button" [class]="btn + ' bg-brand-purple text-white hover:bg-violet-800'" (click)="editar.emit(c.id_congregacion_contacto)">Cambió: actualizar</button>
                 <button type="button" [class]="btnSecundario" [disabled]="trabajando()" (click)="sigueIgual([c.id_congregacion_contacto])">Sigue igual</button>
               </div>
             }
@@ -67,7 +67,7 @@ const BTN = 'inline-flex items-center justify-center min-h-11 px-4 rounded-xl te
         @if (puedeEditar && r.pendientes.length > 1) {
           @if (confirmandoTodas()) {
             <span class="text-sm text-amber-950 dark:text-amber-100">¿Ninguna cambió de horario?</span>
-            <button type="button" [class]="btn + ' bg-violet-700 text-white hover:bg-violet-800'" [disabled]="trabajando()" (click)="sigueIgual()">Sí, todas siguen igual</button>
+            <button type="button" [class]="btn + ' bg-brand-purple text-white hover:bg-violet-800'" [disabled]="trabajando()" (click)="sigueIgual()">Sí, todas siguen igual</button>
             <button type="button" [class]="btnSecundario" (click)="confirmandoTodas.set(false)">No</button>
           } @else {
             <button type="button" [class]="btn + ' text-amber-900 dark:text-amber-200 underline-offset-4 hover:underline'" (click)="confirmandoTodas.set(true)">Ninguna cambió</button>

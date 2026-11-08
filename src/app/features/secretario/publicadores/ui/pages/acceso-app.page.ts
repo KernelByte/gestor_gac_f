@@ -6,6 +6,8 @@ import { lastValueFrom } from 'rxjs';
 import {
   AccesoAppItem, AccesoAppService, EstadoAcceso, InvitacionGenerada,
 } from '../../services/acceso-app.service';
+import { ModalComponent } from '../../../../../shared/components/modal/modal.component';
+import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ToastService } from '../../../../../shared/components/toast/toast.service';
 import { whatsappUrl } from '../../../../../shared/whatsapp';
 
@@ -41,7 +43,7 @@ interface PendienteWhatsapp {
 @Component({
   standalone: true,
   selector: 'app-acceso-app',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent, ConfirmDialogComponent],
   templateUrl: './acceso-app.page.html',
   styles: [`
     /* Esta pantalla ya no lleva su propio sistema de superficies/color: usa
@@ -76,16 +78,13 @@ interface PendienteWhatsapp {
     .barra { animation: subir 220ms cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes subir { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
-    .hoja { animation: hojaEntra 240ms cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes hojaEntra { from { opacity: 0; transform: translateY(16px) scale(0.99); } to { opacity: 1; transform: none; } }
-
     /* El menú nace del botón que lo abre, no del centro de la nada. */
     .menu { animation: menuEntra 160ms cubic-bezier(0.16, 1, 0.3, 1); transform-origin: bottom right; }
     @keyframes menuEntra { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } }
 
     /* Retroalimentación física al pulsar, sin mover el layout. */
-    .btn-pri, .btn-sec, .btn-peligro, .chip { transition: transform 120ms ease, background-color 150ms ease, border-color 150ms ease, opacity 150ms ease, box-shadow 150ms ease; }
-    .btn-pri:active:not(:disabled), .btn-sec:active:not(:disabled), .btn-peligro:active:not(:disabled), .chip:active { transform: scale(0.97); }
+    .chip { transition: transform 120ms ease, background-color 150ms ease, border-color 150ms ease, opacity 150ms ease, box-shadow 150ms ease; }
+    .chip:active { transform: scale(0.97); }
     .btn-txt, .op { transition: background-color 150ms ease; }
 
     /* Los hover solo existen donde hay puntero fino. En táctil se quedaban
@@ -107,8 +106,8 @@ interface PendienteWhatsapp {
     .sin-barra::-webkit-scrollbar { display: none; }
 
     @media (prefers-reduced-motion: reduce) {
-      .fila, .barra, .hoja, .menu { animation: none; opacity: 1; transform: none; }
-      .btn-pri:active, .btn-sec:active, .btn-peligro:active, .chip:active { transform: none; }
+      .fila, .barra, .menu { animation: none; opacity: 1; transform: none; }
+      .chip:active { transform: none; }
     }
   `],
 })
@@ -233,10 +232,7 @@ export class AccesoAppComponent implements OnInit {
    */
   @HostListener('document:keydown.escape')
   cerrarCapaSuperior(): void {
-    if (this.confirmarQuitar()) { this.confirmarQuitar.set(false); return; }
-    if (this.menuMas())         { this.menuMas.set(false); return; }
-    if (this.colaWhatsapp().length) { this.cerrarCola(); return; }
-    if (this.invitacionAbierta())   { this.cerrarInvitacion(); return; }
+    if (this.menuMas()) this.menuMas.set(false);
   }
 
   alternarMenuMas(): void { this.menuMas.update((v) => !v); }
@@ -471,12 +467,12 @@ export class AccesoAppComponent implements OnInit {
    * sigue siendo barrible de un vistazo.
    */
   private static readonly BADGE: Record<string, string> = {
-    slate: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700',
+    slate: 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700',
     amber: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-800/50',
     sky: 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 border border-sky-100 dark:border-sky-800/50',
     rose: 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-100 dark:border-rose-800/50',
     emerald: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/50',
-    violet: 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-100 dark:border-violet-800/50',
+    violet: 'bg-violet-50 dark:bg-violet-900/30 text-brand-purple dark:text-violet-300 border border-violet-100 dark:border-violet-800/50',
   };
 
   claseFondo(tono: string): string { return AccesoAppComponent.FONDO[tono] ?? AccesoAppComponent.FONDO['slate']; }

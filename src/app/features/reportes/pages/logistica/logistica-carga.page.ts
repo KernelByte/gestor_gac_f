@@ -36,7 +36,7 @@ const PRESETS: Preset[] = [
     /* Cabecera: el rotulo situa, el titulo nombra, la entradilla explica. */
     .rotulo-seccion {
       font-family: var(--font-mono);
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--txt-4);
@@ -101,7 +101,7 @@ const PRESETS: Preset[] = [
 
     .rotulo-filtro {
       display: block;
-      font-size: 0.625rem;
+      font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.07em;
       text-transform: uppercase;
@@ -131,7 +131,7 @@ const PRESETS: Preset[] = [
     /* Tabla: filetes horizontales, sin rejilla vertical ni cebra. */
     .tabla { width: 100%; border-collapse: collapse; }
     .tabla th {
-      font-size: 0.625rem;
+      font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.07em;
       text-transform: uppercase;
@@ -193,7 +193,7 @@ const PRESETS: Preset[] = [
       border-radius: 999px;
       background: var(--superficie-alt);
       border: 1px solid var(--linea);
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 500;
       color: var(--txt-3);
     }
@@ -233,7 +233,7 @@ const PRESETS: Preset[] = [
       padding: 0.125rem 0.5rem;
       border: 1px solid;
       border-radius: 999px;
-      font-size: 0.625rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.02em;
     }
@@ -256,7 +256,7 @@ const PRESETS: Preset[] = [
     .relleno-normal { background: var(--pos); }
     .relleno-baja   { background: var(--exento); }
 
-    .leyenda { font-size: 0.6875rem; line-height: 1.7; color: var(--txt-4); }
+    .leyenda { font-size: 0.75rem; line-height: 1.7; color: var(--txt-4); }
 
     /* Estados vacio / error / carga. */
     .vacio-titulo {
@@ -272,16 +272,9 @@ const PRESETS: Preset[] = [
       max-width: 42ch;
       color: var(--txt-3);
     }
-    .esqueleto {
-      border-radius: 0.75rem;
-      background: color-mix(in oklch, var(--linea) 55%, transparent);
-      animation: latido 1.6s ease-in-out infinite;
-    }
-    @keyframes latido { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
     @media (prefers-reduced-motion: reduce) {
       .control, .barra > i { transition: none; }
-      .esqueleto { animation: none; }
     }
 
     /* Filas mas altas y chips mas grandes solo en tactil: en escritorio la
@@ -397,9 +390,9 @@ const PRESETS: Preset[] = [
       <!-- ===== CARGANDO ===== -->
       @else if (cargando()) {
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" aria-hidden="true">
-          @for (n of [1,2,3,4]; track n) { <div class="esqueleto h-24"></div> }
+          @for (n of [1,2,3,4]; track n) { <div class="skeleton h-24 rounded-xl"></div> }
         </div>
-        <div class="esqueleto h-80" aria-hidden="true"></div>
+        <div class="skeleton h-80 rounded-xl" aria-hidden="true"></div>
         <p class="sr-only" role="status">Cargando el reporte de carga de logística.</p>
       }
 

@@ -16,8 +16,8 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
   template: `
     <section class="tarjeta" aria-labelledby="titulo-dos-pasos">
       <div *ngIf="!estado() && !errorCarga()" class="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" aria-busy="true">
-        <div class="h-40 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
-        <div class="h-40 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
+        <div class="skeleton h-40 rounded-2xl"></div>
+        <div class="skeleton h-40 rounded-2xl"></div>
       </div>
 
       <p *ngIf="errorCarga()" role="alert" class="text-sm font-semibold text-red-600 dark:text-red-400">{{ errorCarga() }}</p>
@@ -77,14 +77,14 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
                     {{ textoCodigos(e.codigos_restantes) }}
                   </p>
                 </div>
-                <button type="button" class="btn-sec" (click)="abrir('codigos')">Generar nuevos</button>
+                <button type="button" class="btn-secondary" (click)="abrir('codigos')">Generar nuevos</button>
               </li>
               <li class="fila" *ngIf="!e.obligatorio">
                 <div class="min-w-0">
                   <p class="fila-titulo">Desactivar</p>
                   <p class="fila-desc">Volverás a entrar solo con tu contraseña.</p>
                 </div>
-                <button type="button" class="btn-sec btn-peligro" (click)="abrir('desactivar')">Desactivar</button>
+                <button type="button" class="btn-ghost-danger" (click)="abrir('desactivar')">Desactivar</button>
               </li>
             </ul>
 
@@ -97,8 +97,8 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
                 <input #c1 id="pd-codigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"
                   class="campo" (keydown.enter)="regenerar(c1.value)">
                 <div class="botones">
-                  <button type="button" class="btn-sec" (click)="cancelar()">Cancelar</button>
-                  <button type="button" class="btn-pri" [disabled]="trabajando()" (click)="regenerar(c1.value)">
+                  <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
+                  <button type="button" class="btn-primary" [disabled]="trabajando()" (click)="regenerar(c1.value)">
                     {{ trabajando() ? 'Generando…' : 'Generar códigos' }}
                   </button>
                 </div>
@@ -110,8 +110,8 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
                   <li *ngFor="let c of codigosNuevos()">{{ c }}</li>
                 </ul>
                 <div class="botones">
-                  <button type="button" class="btn-sec" (click)="descargar()">Descargar</button>
-                  <button type="button" class="btn-pri" (click)="cerrarCodigos()">Ya los guardé</button>
+                  <button type="button" class="btn-secondary" (click)="descargar()">Descargar</button>
+                  <button type="button" class="btn-primary" (click)="cerrarCodigos()">Ya los guardé</button>
                 </div>
               </ng-container>
             </div>
@@ -126,8 +126,8 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
               <input #c2 id="pd-cod2" inputmode="numeric" maxlength="11" placeholder="000000" class="campo"
                 (keydown.enter)="desactivar(pw.value, c2.value)">
               <div class="botones">
-                <button type="button" class="btn-sec" (click)="cancelar()">Cancelar</button>
-                <button type="button" class="btn-pri btn-rojo" [disabled]="trabajando()" (click)="desactivar(pw.value, c2.value)">
+                <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
+                <button type="button" class="btn-danger" [disabled]="trabajando()" (click)="desactivar(pw.value, c2.value)">
                   {{ trabajando() ? 'Desactivando…' : 'Desactivar' }}
                 </button>
               </div>
@@ -141,10 +141,10 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
   `,
   styles: [`
     :host { display: block; }
-    .tarjeta { background: rgb(255 255 255 / .7); border: 1px solid rgb(255 255 255 / .6); border-radius: 2rem; padding: 1.5rem;
-      box-shadow: 0 20px 40px -12px rgb(148 163 184 / .25); }
+    .tarjeta { background: #fff; border: 1px solid rgb(226 232 240); border-radius: 1rem; padding: 1.5rem;
+      box-shadow: var(--shadow-soft); }
     @media (min-width: 1024px) { .tarjeta { padding: 2rem 2.5rem; } }
-    :host-context(.dark) .tarjeta { background: rgb(15 23 42 / .7); border-color: rgb(255 255 255 / .05); box-shadow: none; }
+    :host-context(.dark) .tarjeta { background: rgb(15 23 42); border-color: rgb(30 41 59); box-shadow: none; }
 
     .escudo { flex-shrink: 0; width: 3rem; height: 3rem; border-radius: 9999px; display: grid; place-items: center;
       background: rgb(245 158 11 / .14); color: #b45309; }
@@ -196,29 +196,12 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
     :host-context(.dark) .codigos li { background: rgb(30 41 59); }
 
     .botones { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .75rem; margin-top: 1.25rem; }
-    .btn-sec, .btn-pri { min-height: 2.75rem; padding: 0 1.125rem; border-radius: .75rem; font-size: .9375rem; font-weight: 700;
-      transition: background-color .15s, transform .12s cubic-bezier(.22,1,.36,1); }
-    .btn-sec:active, .btn-pri:active { transform: scale(.97); }
-    .btn-sec { border: 1px solid rgb(203 213 225); color: rgb(51 65 85); background: transparent; }
-    .btn-sec:hover { background: rgb(241 245 249); }
-    .btn-peligro { color: #b91c1c; border-color: rgb(252 165 165); }
-    .btn-peligro:hover { background: rgb(254 242 242); }
-    :host-context(.dark) .btn-sec { border-color: rgb(71 85 105); color: #e2e8f0; }
-    :host-context(.dark) .btn-sec:hover { background: rgb(30 41 59); }
-    :host-context(.dark) .btn-peligro { color: #fca5a5; border-color: rgb(127 29 29); }
-    :host-context(.dark) .btn-peligro:hover { background: rgb(127 29 29 / .25); }
-    .btn-pri { background: #6d28d9; color: #fff; border: 0; }
-    .btn-pri:hover:not(:disabled) { background: #5b21b6; }
-    .btn-rojo { background: #dc2626; }
-    .btn-rojo:hover:not(:disabled) { background: #b91c1c; }
-    .btn-pri:disabled { opacity: .5; cursor: not-allowed; }
-    .btn-sec:focus-visible, .btn-pri:focus-visible { outline: 2px solid #6d28d9; outline-offset: 2px; }
     .fila-alerta { color: #b45309; font-weight: 600; }
     :host-context(.dark) .fila-alerta { color: #fcd34d; }
     .etiqueta.mt-3 { margin-top: .75rem; }
 
     @keyframes entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-    @media (prefers-reduced-motion: reduce) { .panel { animation: none; } .btn-sec, .btn-pri { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .panel { animation: none; } }
   `],
 })
 export class PerfilDosPasosComponent implements OnInit {

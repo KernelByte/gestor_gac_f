@@ -1,434 +1,281 @@
 <div class="flex flex-col md:flex-row h-full overflow-hidden relative" [class.gap-5]="panelOpen()">
 
    <!-- 1. Main Content Area -->
-   <div class="list-panel flex-1 flex flex-col min-w-0 h-full transition-[flex,min-width,max-width] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]">
+   <div class="list-panel flex-1 flex flex-col min-w-0 h-full">
 
       <div class="flex flex-col gap-4 h-full w-full overflow-hidden">
-         <!-- Page Header + resumen de conteos.
-              El título y los conteos se mantienen en móvil: son la respuesta a
-              "¿cuántos usuarios hay y cuántos están activos?", la primera
-              pregunta de la pantalla. -->
-         <div class="shrink-0 flex flex-col gap-3">
+
+         <!-- Cabecera: icono + título + la acción principal. «Nuevo Usuario»
+              vive aquí (arriba a la derecha, como «Ver todo» en los paneles
+              del dashboard) y no escondida entre los filtros. -->
+         <header class="page-head shrink-0 flex items-center gap-3">
             <!-- El título se oculta en móvil: la barra superior de la app ya
-                 muestra "Gestión de Usuarios" y repetirlo desperdicia altura. -->
-            <div class="hidden sm:block">
-               <h1 class="text-2xl sm:text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight">
+                 muestra «Gestión de Usuarios» y repetirlo desperdicia altura. -->
+            <div class="hidden sm:block min-w-0 flex-1">
+               <h1 class="page-title sm:!text-3xl !font-black">
                   Gestión de Usuarios
                </h1>
                <p class="text-slate-500 dark:text-slate-400 mt-1 text-sm">
                   Administra cuentas, roles y permisos de acceso.
                </p>
             </div>
+            <div class="flex-1 sm:hidden"></div>
+            <button data-testid="btn-nuevo-usuario" *ngIf="isPrivilegedRole()" (click)="openCreatePanel()"
+               class="btn-primary max-sm:w-11 max-sm:px-0" aria-label="Nuevo Usuario">
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+               </svg>
+               <span class="hidden sm:inline">Nuevo Usuario</span>
+            </button>
+         </header>
 
-            <!-- Conteos como tira tipográfica, no como tarjetas: pesa menos,
-                 cabe en móvil y libera altura para ver más filas. -->
-            <div class="summary-strip flex items-baseline gap-4 sm:gap-5">
-               <div class="flex items-baseline gap-1.5">
-                  <span data-testid="stat-total" class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-none tabular-nums">{{ usuarios().length }}</span>
-                  <span class="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400">usuarios</span>
-               </div>
-               <span class="summary-sep w-px h-3.5 bg-slate-200 dark:bg-slate-700 shrink-0"></span>
-               <div class="flex items-baseline gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 self-center"></span>
-                  <span data-testid="stat-activos" class="text-lg sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 leading-none tabular-nums">{{ usuariosActivos() }}</span>
-                  <span class="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400">activos</span>
-               </div>
-               <div *ngIf="usuariosInactivos() > 0" class="flex items-baseline gap-1.5">
-                  <span class="summary-sep w-px h-3.5 bg-slate-200 dark:bg-slate-700 shrink-0 self-center"></span>
-                  <span data-testid="stat-inactivos" class="text-lg sm:text-xl font-bold text-slate-500 dark:text-slate-400 leading-none tabular-nums ml-1">{{ usuariosInactivos() }}</span>
-                  <span class="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400">inactivos</span>
-               </div>
-            </div>
-         </div>
+         <!-- Panel único: filtros + lista, como un panel del dashboard. -->
+         <section class="panel-lista flex-1 min-h-0 flex flex-col overflow-hidden" aria-label="Lista de usuarios">
 
-         <!-- Filters & Search Block -->
-         <div
-            class="filters-row shrink-0 bg-white dark:bg-slate-900 p-1.5 sm:p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center gap-2">
+            <!-- Barra de filtros -->
+            <div class="toolbar shrink-0">
+               <div class="filters-row flex flex-col sm:flex-row sm:items-center gap-2">
 
-            <!-- Buscador: siempre desplegado. Colapsarlo a un icono dejaba una
-                 franja blanca vacía de ~500px en la barra y escondía la acción
-                 principal de una pantalla de listado. -->
-            <div class="flex items-center w-full sm:flex-1 sm:min-w-0">
-               <div class="relative group w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus-within:border-[#6D28D9] focus-within:bg-white dark:focus-within:bg-slate-900 transition-colors"
-                    style="border-radius: 12px; height: 44px; overflow: hidden;">
+                  <!-- Buscador: siempre visible, es la acción principal de un listado. -->
+                  <div class="buscador relative flex-1 min-w-0">
+                     <label for="searchInput" class="buscador-ic">
+                        <span class="sr-only">Buscar usuario</span>
+                        <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                           <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                     </label>
+                     <input id="searchInput" [formControl]="searchControl" type="text"
+                        placeholder="Buscar por nombre o correo..."
+                        (keydown.escape)="clearSearch()" autocomplete="off">
+                     <button *ngIf="searchControl.value" type="button" (click)="clearSearch(); $event.stopPropagation()"
+                        class="buscador-x" title="Limpiar búsqueda" aria-label="Limpiar búsqueda">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                           <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                     </button>
+                  </div>
 
-                   <label for="searchInput" class="absolute left-0 top-0 w-11 h-full flex items-center justify-center pointer-events-none z-10">
-                      <svg class="w-5 h-5 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <circle cx="11" cy="11" r="8"></circle>
-                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                      </svg>
-                   </label>
+                  <!-- Filtro rápido por estado: iconos con el conteo. Los números
+                       responden «¿cuántos hay?» y a la vez filtran. -->
+                  <div class="segmented filtro-estado" role="group" aria-label="Filtrar por estado">
+                     <button type="button" class="segmented-item" [class.is-active]="estadoFilter() === 'todos'"
+                        [attr.aria-pressed]="estadoFilter() === 'todos'" (click)="estadoFilter.set('todos')"
+                        title="Todos los usuarios" [attr.aria-label]="'Todos, ' + totalUsuarios()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>
+                        <b data-testid="stat-total">{{ totalUsuarios() }}</b>
+                     </button>
+                     <button type="button" class="segmented-item" [class.is-active]="estadoFilter() === 'activos'"
+                        [attr.aria-pressed]="estadoFilter() === 'activos'" (click)="estadoFilter.set('activos')"
+                        title="Usuarios activos" [attr.aria-label]="'Activos, ' + usuariosActivos()">
+                        <svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                        <b data-testid="stat-activos" class="ok">{{ usuariosActivos() }}</b>
+                     </button>
+                     <button type="button" class="segmented-item" *ngIf="usuariosInactivos() > 0 || estadoFilter() === 'inactivos'"
+                        [class.is-active]="estadoFilter() === 'inactivos'"
+                        [attr.aria-pressed]="estadoFilter() === 'inactivos'" (click)="estadoFilter.set('inactivos')"
+                        title="Usuarios inactivos" [attr.aria-label]="'Inactivos, ' + usuariosInactivos()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                        <b data-testid="stat-inactivos">{{ usuariosInactivos() }}</b>
+                     </button>
+                  </div>
 
-                   <input id="searchInput" [formControl]="searchControl" type="text"
-                      placeholder="Buscar por nombre o correo..."
-                      (keydown.escape)="clearSearch()"
-                      class="absolute left-0 top-0 w-full h-full pl-11 pr-11 bg-transparent border-none text-slate-700 dark:text-slate-200 text-base font-medium placeholder:text-slate-400 outline-none">
-
-                   <button *ngIf="searchControl.value" (click)="clearSearch(); $event.stopPropagation()"
-                      class="absolute right-0 top-0 w-11 h-full flex items-center justify-center text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors active:scale-90 z-20"
-                      title="Limpiar búsqueda">
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                         <line x1="18" y1="6" x2="6" y2="18"></line>
-                         <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
-                   </button>
-               </div>
-            </div>
-
-            <!-- Badge de filtro activo por rol -->
-            <div *ngIf="selectedRolFilter()"
-               class="flex items-center gap-2 px-3 h-11 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-xl shrink-0">
-               <span class="text-xs font-bold text-purple-700 dark:text-purple-300 whitespace-nowrap">Rol: {{ getSelectedRolFilterName() }}</span>
-               <button (click)="clearRolFilter()"
-                  class="p-1 rounded-full hover:bg-purple-100 dark:hover:bg-purple-800 text-purple-500 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-200 transition-colors"
-                  title="Quitar filtro de rol">
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                     <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
-               </button>
-            </div>
-
-            <!-- Fila 2 (móvil) / lado derecho (desktop): Filtros y acciones -->
-            <div class="filters-actions flex items-center gap-1.5 sm:gap-2 sm:shrink-0">
-               <div class="filters-divider h-8 w-px bg-slate-100 dark:bg-slate-700 hidden sm:block"></div>
-
-               <!-- Congregación: crece para llenar la fila en móvil -->
-               <div class="flex-1 sm:flex-none sm:w-56 relative" *ngIf="showCongregacionCol()">
-                  <button #congFilterBtn type="button" (click)="toggleCongFilterDropdown(congFilterBtn)"
-                     class="w-full pl-3 pr-8 h-11 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-slate-700 dark:text-slate-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#6D28D9]/20 transition-all text-left flex items-center justify-between cursor-pointer">
-                     <span class="truncate" [class.text-slate-400]="!selectedCongregacionFilter()">
-                        {{ selectedCongregacionFilter() ? getCongFilterName() : 'Congregaciones' }}
-                     </span>
-                     <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ml-1" [class.rotate-180]="congFilterDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                  </button>
-                  <div *ngIf="congFilterDropdownOpen()" (click)="congFilterDropdownOpen.set(false)"
-                     class="fixed inset-0 z-[9998] cursor-default"></div>
-                  <div *ngIf="congFilterDropdownOpen()" @fadeIn
-                     class="fixed bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-[9999] overflow-hidden max-h-72 overflow-y-auto simple-scrollbar origin-top"
-                     [style.top.px]="congFilterDropdownPos().top"
-                     [style.left.px]="congFilterDropdownPos().left"
-                     [style.width.px]="congFilterDropdownPos().width">
-                     <div class="p-1 space-y-0.5">
-                        <button type="button" (click)="selectCongFilter(null)"
-                           class="w-full min-h-11 px-3 py-2 text-left text-sm transition-all flex items-center rounded-lg"
-                           [ngClass]="!selectedCongregacionFilter() ? 'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20' : 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700'">
-                           Todas las congregaciones
-                        </button>
-                        <button type="button" *ngFor="let c of congregaciones()" (click)="selectCongFilter(c.id_congregacion)"
-                           class="w-full min-h-11 px-3 py-2 text-left text-sm transition-all flex items-center rounded-lg"
-                           [ngClass]="selectedCongregacionFilter() === c.id_congregacion ? 'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20' : 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700'">
-                           {{ c.nombre_congregacion }}
-                        </button>
-                     </div>
+                  <!-- Congregación (solo si el usuario ve varias). Es un <select>
+                       nativo: teclado, lector de pantalla y selector del móvil
+                       funcionan sin código propio. -->
+                  <div class="sm:w-60 sm:shrink-0 relative" *ngIf="showCongregacionCol()">
+                     <label for="filtroCongregacion" class="sr-only">Filtrar por congregación</label>
+                     <select id="filtroCongregacion" class="campo-select" [class.activo]="!!selectedCongregacionFilter()"
+                        [value]="selectedCongregacionFilter() ?? ''"
+                        (change)="selectCongFilter($any($event.target).value ? +$any($event.target).value : null)">
+                        <option value="">Todas las congregaciones</option>
+                        <option *ngFor="let c of congregaciones()" [value]="c.id_congregacion">{{ c.nombre_congregacion }}</option>
+                     </select>
+                     <svg class="campo-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
                   </div>
                </div>
 
-               <!-- Grupo de acciones: cuando la fila se apila (ver container
-                    query más arriba), este grupo se ancla al extremo derecho
-                    para que la fila quede tan simétrica como el buscador. -->
-               <div class="filters-actions-buttons flex items-center gap-1.5 sm:gap-2">
-                  <button data-testid="btn-limpiar-filtros" (click)="clearAllFilters()" [disabled]="!searchControl.value && !selectedRolFilter() && !selectedCongregacionFilter()"
-                     class="flex items-center justify-center w-11 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:border-red-200 dark:hover:border-red-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-slate-800 disabled:active:scale-100"
-                     title="Limpiar Filtros">
-                     <svg class="w-5 h-5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M13.013 3H2l8 9.46V19l4 2v-8.54l.9-1.07"/>
-                        <path d="m17 7 5 5"/>
-                        <path d="m22 7-5 5"/>
-                     </svg>
-                  </button>
+               <!-- Segunda línea: filtro rápido por estado (con los conteos de
+                    siempre) + rol activo + quitar filtros. Los conteos son el
+                    filtro: un solo elemento responde «¿cuántos hay?» y «muéstrame
+                    solo esos». -->
+               <p class="sr-only" role="status" aria-live="polite">{{ filteredUsuarios().length }} {{ filteredUsuarios().length === 1 ? 'usuario' : 'usuarios' }} en la lista</p>
+               <div *ngIf="selectedRolFilter() || hasActiveFilters()" class="estado-row flex flex-wrap items-center gap-x-3 gap-y-2 mt-3">
+                  <span *ngIf="selectedRolFilter()" class="chip chip-info">
+                     Rol: {{ getSelectedRolFilterName() }}
+                     <button type="button" (click)="clearRolFilter()" class="chip-x" title="Quitar filtro de rol" aria-label="Quitar filtro de rol">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                     </button>
+                  </span>
 
-                  <div class="filters-divider h-8 w-px bg-slate-100 dark:bg-slate-700 hidden sm:block"></div>
-
-                  <button data-testid="btn-nuevo-usuario" *ngIf="isPrivilegedRole()" (click)="openCreatePanel()"
-                     class="group inline-flex items-center justify-center gap-2 px-0 sm:px-5 w-11 sm:w-auto h-11 bg-[#6D28D9] hover:bg-[#5b21b6] text-white rounded-xl font-display font-bold shadow-lg shadow-purple-900/20 transition-all active:scale-95 hover:shadow-purple-900/30">
-                     <svg class="w-5 h-5 sm:w-4 sm:h-4 transition-transform group-hover:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                     </svg>
-                     <span class="hidden sm:inline text-sm whitespace-nowrap">Nuevo Usuario</span>
+                  <button data-testid="btn-limpiar-filtros" type="button" (click)="clearAllFilters()"
+                     *ngIf="hasActiveFilters()" class="link-quitar">
+                     Quitar filtros
                   </button>
                </div>
             </div>
-         </div>
 
-         <!-- User List Table (Flexible) -->
-         <div
-            class="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col transition-all duration-300">
             <div class="flex-1 overflow-y-auto simple-scrollbar">
-               <!-- Vista compacta: se usa en móvil Y siempre que la columna sea
-                    estrecha (p. ej. con el panel lateral abierto). -->
-               <div class="list-cards divide-y divide-slate-100 dark:divide-slate-800/60 pb-[max(1rem,env(safe-area-inset-bottom))]">
-                  <!-- Dos filas: identidad + acciones arriba, metadatos abajo a
-                       todo el ancho. Con todo en una sola fila, los 4 botones de
-                       44px dejaban ~150px al nombre y truncaba en cada tarjeta. -->
-                  <div data-testid="tarjeta-usuario" [attr.data-id]="u.id_usuario" *ngFor="let u of filteredUsuarios(); trackBy: trackByUsuario" (click)="editUsuario(u)"
-                     class="px-3 py-3 active:bg-slate-50 dark:active:bg-slate-800/50 cursor-pointer"
-                     style="transition: background-color 120ms ease">
+               <!-- Vista compacta: móvil y cualquier columna estrecha (p. ej.
+                    con el panel lateral abierto). -->
+               <div class="list-cards pb-[max(1rem,env(safe-area-inset-bottom))]">
+                  <div data-testid="tarjeta-usuario" [attr.data-id]="u.id_usuario" *ngFor="let u of filteredUsuarios(); trackBy: trackByUsuario; let i = index" (click)="editUsuario(u)"
+                     class="tarjeta relative" [style.--i]="i < 12 ? i : 12">
 
                      <div class="card-main flex items-center gap-3">
-                        <!-- Avatar + Status dot -->
-                        <div class="relative shrink-0">
-                           <div [ngClass]="getUserStyle(u.nombre)"
-                              class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ring-1 ring-slate-200/80 dark:ring-slate-700">
-                              {{ u.nombre.charAt(0).toUpperCase() }}
-                           </div>
-                           <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900"
-                              [ngClass]="u.id_usuario_estado === 1 ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'"
-                              [attr.title]="getEstadoName(u)"></div>
-                        </div>
+                        <span [ngClass]="getUserStyle(u.nombre)" aria-hidden="true"
+                                 class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-semibold text-xs shadow-sm">{{ getInitials(u.nombre) }}</span>
 
                         <div class="card-identity flex-1 min-w-0">
-                           <p class="font-bold text-slate-900 dark:text-slate-100 text-sm leading-tight truncate">{{ u.nombre }}</p>
-                           <p class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5" [title]="u.correo">{{ u.correo }}</p>
+                           <!-- Botón real que se extiende sobre toda la tarjeta
+                                (::after): el clic y el teclado abren la edición. -->
+                           <button type="button" class="t1 nombre-btn" (click)="$event.stopPropagation(); editUsuario(u)"
+                              [attr.aria-label]="'Editar a ' + u.nombre">{{ u.nombre }}</button>
+                           <p class="t2">{{ u.correo }}</p>
                         </div>
 
-                     <!-- Actions -->
-                     <div class="card-actions flex items-center gap-0.5 shrink-0">
-                        <button *ngIf="puedeGestionarFila(u)" (click)="$event.stopPropagation(); pedirConfirmacionCorreo(u)" [disabled]="sendingWA()"
-                           class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-[#6D28D9] hover:bg-purple-50 dark:hover:bg-purple-900/20 active:scale-90 transition-all disabled:opacity-50"
-                           title="Enviar acceso por correo (contraseña temporal)"
-                           style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, color 200ms ease">
-                           <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
-                        </button>
-                        <button *ngIf="u.telefono && puedeGestionarFila(u)" (click)="$event.stopPropagation(); sendWhatsApp(u)" [disabled]="sendingWA()"
-                           class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 active:scale-90 transition-all disabled:opacity-50"
-                           title="Enviar acceso por WhatsApp (contraseña temporal)"
-                           style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, color 200ms ease">
-                           <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                           </svg>
-                        </button>
-                        <button data-testid="btn-permisos" *ngIf="puedeVerPermisosDe(u)" (click)="$event.stopPropagation(); openPermisos(u)"
-                           class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 active:scale-90 transition-all"
-                           title="Permisos"
-                           style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, color 200ms ease">
-                           <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                              <path d="M7 11V7a5 5 0 0110 0v4"/>
-                           </svg>
-                        </button>
-                        <!-- Eliminar también aquí: antes sólo existía en la tabla,
-                             así que en móvil la acción era inalcanzable. -->
-                        <button data-testid="btn-eliminar" *ngIf="puedeEliminarFila(u)" (click)="$event.stopPropagation(); deleteUsuario(u)"
-                           class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-90 transition-all"
-                           title="Eliminar"
-                           style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, color 200ms ease">
-                           <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M3 6h18"/>
-                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                           </svg>
-                        </button>
-                        <svg class="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                        </svg>
+                        <div class="card-actions flex items-center gap-0.5 shrink-0">
+                           <button *ngIf="puedeGestionarFila(u)" type="button" (click)="$event.stopPropagation(); pedirConfirmacionCorreo(u)" [disabled]="sendingWA()"
+                              class="btn-icon-sm tone-info" title="Enviar acceso por correo (contraseña temporal)" aria-label="Enviar acceso por correo">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
+                           </button>
+                           <button *ngIf="u.telefono && puedeGestionarFila(u)" type="button" (click)="$event.stopPropagation(); sendWhatsApp(u)" [disabled]="sendingWA()"
+                              class="btn-icon-sm tone-success" title="Enviar acceso por WhatsApp (contraseña temporal)" aria-label="Enviar acceso por WhatsApp">
+                              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                              </svg>
+                           </button>
+                           <button data-testid="btn-permisos" *ngIf="puedeVerPermisosDe(u)" type="button" (click)="$event.stopPropagation(); openPermisos(u)"
+                              class="btn-icon-sm tone-warning" title="Permisos" aria-label="Permisos">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                              </svg>
+                           </button>
+                           <button data-testid="btn-eliminar" *ngIf="puedeEliminarFila(u)" type="button" (click)="$event.stopPropagation(); deleteUsuario(u)"
+                              class="btn-icon-sm tone-danger" title="Eliminar" aria-label="Eliminar">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                 <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                              </svg>
+                           </button>
                         </div>
                      </div>
 
-                     <!-- Metadatos a todo el ancho: rol, congregación y teléfono
-                          (lo que mostraba la tabla) sin comprimir el nombre. -->
-                     <div class="flex items-center flex-wrap gap-x-2 gap-y-1.5 mt-2 pl-[52px]">
-                        <span [ngClass]="getRolBadgeStyle(u)"
-                           class="inline-block max-w-full align-middle rounded-full px-2 py-0.5 text-[10px] font-bold truncate">
-                           {{ getRolName(u) }}
-                        </span>
-                        <span *ngIf="showCongregacionCol()"
-                           class="inline-block max-w-full align-middle rounded-full px-2 py-0.5 text-[10px] font-bold truncate bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                           {{ getCongregacionNameForUser(u) }}
-                        </span>
-                        <span *ngIf="u.telefono" class="text-[11px] text-slate-400 dark:text-slate-500 font-mono">{{ u.telefono }}</span>
-                        <span *ngIf="u.id_usuario_estado !== 1"
-                           class="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">
-                           Inactivo
-                        </span>
+                     <!-- Rol, congregación y teléfono a todo el ancho, sin comprimir el nombre. -->
+                     <div class="flex items-center flex-wrap gap-x-2 gap-y-1.5 mt-2 pl-[3.25rem]">
+                        <span [ngClass]="getRolBadgeStyle(u)" class="badge">{{ getRolName(u) }}</span>
+                        <span *ngIf="u.id_usuario_estado !== 1" class="badge" [ngClass]="getEstadoBadgeStyle(u)">{{ getEstadoName(u) }}</span>
+                        <span *ngIf="showCongregacionCol()" class="badge bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400">{{ getCongregacionNameForUser(u) }}</span>
                      </div>
                   </div>
 
-                  <!-- Empty State. Distingue "no hay nada" de "los filtros no
-                       devuelven nada" y ofrece la salida en el segundo caso. -->
-                  <div *ngIf="filteredUsuarios().length === 0"
-                     class="flex flex-col items-center justify-center px-6 py-12 text-center">
-                     <div class="w-14 h-14 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3">
-                        <svg class="w-6 h-6 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                           <circle cx="11" cy="11" r="7"></circle>
-                           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                     </div>
-                     <p class="font-bold text-sm text-slate-700 dark:text-slate-300">
-                        {{ hasActiveFilters() ? 'Ningún usuario coincide' : 'Aún no hay usuarios' }}
-                     </p>
-                     <p class="text-xs mt-1 text-slate-500 dark:text-slate-400 max-w-[36ch]">
+                  <!-- Estado vacío: distingue «no hay nada» de «los filtros no devuelven nada». -->
+                  <div *ngIf="filteredUsuarios().length === 0" class="vacio-box">
+                     <span class="vacio-ic" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                     </span>
+                     <p class="vacio-t">{{ hasActiveFilters() ? 'Ningún usuario coincide' : 'Aún no hay usuarios' }}</p>
+                     <p class="vacio-d">
                         {{ hasActiveFilters()
                            ? 'Prueba con otro nombre o correo, o quita los filtros activos.'
                            : 'Crea el primer usuario para darle acceso a la aplicación.' }}
                      </p>
-                     <button data-testid="btn-limpiar-vacio" *ngIf="hasActiveFilters()" (click)="clearAllFilters()"
-                        class="mt-4 px-4 h-11 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98] transition-[background-color,transform] duration-150">
-                        Limpiar filtros
-                     </button>
-                     <button data-testid="btn-nuevo-usuario-vacio" *ngIf="!hasActiveFilters() && isPrivilegedRole()" (click)="openCreatePanel()"
-                        class="mt-4 px-4 h-11 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-white font-bold text-sm active:scale-[0.98] transition-[background-color,transform] duration-150">
-                        Nuevo Usuario
-                     </button>
+                     <button data-testid="btn-limpiar-vacio" *ngIf="hasActiveFilters()" (click)="clearAllFilters()" class="btn-secondary mt-4">Limpiar filtros</button>
+                     <button data-testid="btn-nuevo-usuario-vacio" *ngIf="!hasActiveFilters() && isPrivilegedRole()" (click)="openCreatePanel()" class="btn-primary mt-4">Nuevo Usuario</button>
                   </div>
                </div>
 
-               <!-- table-fixed + anchos declarados: con layout automático el
-                    ancho mínimo del contenido (correos largos) empujaba la tabla
-                    a 1145px dentro de una columna de 1078px y forzaba scroll
-                    horizontal. Ahora las celdas truncan y la tabla respeta su caja. -->
+               <!-- table-fixed + anchos declarados: las celdas truncan y la tabla
+                    respeta su caja (con layout automático los correos largos
+                    forzaban scroll horizontal). -->
                <table class="list-table w-full text-left border-collapse table-fixed">
-                  <thead class="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md z-10 border-b border-slate-200 dark:border-slate-700">
+                  <thead>
                      <tr>
-                        <th class="px-4 py-3.5 text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-center">
-                           Usuario</th>
-                        <th class="px-4 py-3.5 w-[240px] text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-center">Rol
-                        </th>
-                        <th *ngIf="showCongregacionCol()" class="px-4 py-3.5 w-[220px] text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-center">
-                           Congregación</th>
-                        <th class="px-4 py-3.5 w-[132px] text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-center">
-                           Teléfono</th>
-                        <th class="px-4 py-3.5 w-[116px] text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-center">
-                           Estado</th>
-                        <th class="px-4 py-3.5 w-[188px] text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-center">
-                           Acciones</th>
+                        <th scope="col">Usuario</th>
+                        <th scope="col" class="w-[17rem]">Rol</th>
+                        <th scope="col" *ngIf="showCongregacionCol()" class="w-[12rem]">Congregación</th>
+                        <th scope="col" class="w-[8.5rem]">Estado</th>
+                        <th scope="col" class="w-[14rem] text-right"><span class="sr-only">Acciones</span></th>
                      </tr>
                   </thead>
-                  <tbody [@tableAnimation]="filteredUsuarios().length" class="divide-y divide-slate-200 dark:divide-slate-800">
+                  <tbody [@tableAnimation]="filteredUsuarios().length">
                      <tr data-testid="fila-usuario" [attr.data-id]="u.id_usuario" *ngFor="let u of filteredUsuarios(); trackBy: trackByUsuario"
-                        class="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <!-- User Info -->
-                        <td class="px-4 py-3">
+                        class="fila-t" [class.clicable]="puedeEditarFila(u)" (click)="puedeEditarFila(u) && editUsuario(u)">
+                        <td>
                            <div class="flex items-center gap-3 min-w-0">
-                              <div [ngClass]="getUserStyle(u.nombre)"
-                                 class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm ring-1 ring-slate-200/80 dark:ring-slate-700">
-                                 {{ u.nombre.charAt(0).toUpperCase() }}
-                              </div>
+                              <span [ngClass]="getUserStyle(u.nombre)" aria-hidden="true"
+                                 class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-semibold text-xs shadow-sm">{{ getInitials(u.nombre) }}</span>
                               <div class="min-w-0">
-                                 <p class="font-bold text-slate-900 dark:text-slate-200 text-sm tracking-tight truncate">{{ u.nombre }}</p>
-                                 <p class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate" [title]="u.correo">{{ u.correo }}</p>
+                                 <p class="t1">{{ u.nombre }}</p>
+                                 <p class="t2">{{ u.correo }}</p>
                               </div>
                            </div>
                         </td>
 
-                        <!-- Role Badge -->
-                        <td class="px-4 py-3 text-center">
-                           <span [ngClass]="getRolBadgeStyle(u)"
-                              class="inline-block max-w-full align-middle rounded-full px-2.5 py-1 text-[0.6875rem] font-bold truncate"
-                              [title]="getRolName(u)">
-                              {{ getRolName(u) }}
+                        <td><span [ngClass]="getRolBadgeStyle(u)" class="badge">{{ getRolName(u) }}</span></td>
+
+                        <td *ngIf="showCongregacionCol()"><span class="badge"
+                           [ngClass]="getCongregacionNameForUser(u) === 'Sistema Central' ? 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'">{{ getCongregacionNameForUser(u) }}</span></td>
+
+                        <td>
+                           <span class="chip" [ngClass]="getEstadoBadgeStyle(u)">
+                              <span class="punto"></span>{{ getEstadoName(u) }}
                            </span>
                         </td>
 
-                        <!-- Congregacion (Condicional) -->
-                        <td *ngIf="showCongregacionCol()" class="px-4 py-3 text-center">
-                           <span class="inline-block max-w-full align-middle text-[0.6875rem] font-bold px-2.5 py-1 rounded-full truncate"
-                              [title]="getCongregacionNameForUser(u)"
-                              [ngClass]="getCongregacionNameForUser(u) === 'Sistema Central' ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'">
-                              {{ getCongregacionNameForUser(u) }}
-                           </span>
-                        </td>
-
-                        <!-- Phone -->
-                        <td class="px-4 py-3 text-center">
-                           <span class="text-sm text-slate-600 dark:text-slate-400 font-mono truncate block">{{ u.telefono || '—' }}</span>
-                        </td>
-
-                        <!-- Status Badge -->
-                        <td class="px-4 py-3 text-center">
-                           <span [ngClass]="getEstadoBadgeStyle(u)"
-                              class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold">
-                              <span class="w-1.5 h-1.5 rounded-full bg-current shrink-0"></span>
-                              {{ getEstadoName(u) }}
-                           </span>
-                        </td>
-
-                        <!-- Actions. Antes iban a opacity-60 hasta el hover: la fila
-                             no comunicaba qué se podía hacer y en pantallas táctiles
-                             (no hay hover) quedaban permanentemente atenuadas. -->
-                        <td class="px-4 py-3 text-right">
-                           <div
-                              class="flex items-center justify-end gap-0.5">
-                              <button *ngIf="puedeGestionarFila(u)" (click)="pedirConfirmacionCorreo(u)" [disabled]="sendingWA()"
-                                 class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-white hover:bg-[#6D28D9] active:scale-95 transition-[color,background-color,transform] duration-150 disabled:opacity-50"
-                                 title="Enviar acceso por correo (contraseña temporal)">
-                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
+                        <!-- Acciones siempre visibles (en táctil no hay hover). «Editar»
+                             lleva texto: es la acción más común y no debe adivinarse. -->
+                        <td class="text-right">
+                           <div class="row-actions">
+                              <button *ngIf="puedeGestionarFila(u)" type="button" (click)="$event.stopPropagation(); pedirConfirmacionCorreo(u)" [disabled]="sendingWA()"
+                                 class="btn-icon-sm tone-info" title="Enviar acceso por correo (contraseña temporal)" aria-label="Enviar acceso por correo">
+                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
                               </button>
-                              <button *ngIf="u.telefono && puedeGestionarFila(u)" (click)="sendWhatsApp(u)" [disabled]="sendingWA()"
-                                 class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-white hover:bg-green-600 active:scale-95 transition-[color,background-color,transform] duration-150 disabled:opacity-50"
-                                 title="Enviar acceso por WhatsApp (contraseña temporal)">
-                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                              <button *ngIf="u.telefono && puedeGestionarFila(u)" type="button" (click)="$event.stopPropagation(); sendWhatsApp(u)" [disabled]="sendingWA()"
+                                 class="btn-icon-sm tone-success" title="Enviar acceso por WhatsApp (contraseña temporal)" aria-label="Enviar acceso por WhatsApp">
+                                 <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                                  </svg>
                               </button>
-                              <button data-testid="btn-permisos" *ngIf="puedeVerPermisosDe(u)" (click)="openPermisos(u)"
-                                 class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-white hover:bg-amber-500 active:scale-95 transition-[color,background-color,transform] duration-150"
-                                 title="Permisos">
-                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                                    <path d="M7 11V7a5 5 0 0110 0v4" />
+                              <button data-testid="btn-permisos" *ngIf="puedeVerPermisosDe(u)" type="button" (click)="$event.stopPropagation(); openPermisos(u)"
+                                 class="btn-icon-sm tone-warning" title="Permisos" aria-label="Permisos">
+                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
                                  </svg>
                               </button>
-                              <button data-testid="btn-editar" *ngIf="puedeEditarFila(u)" (click)="editUsuario(u)"
-                                 class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-white hover:bg-[#6D28D9] active:scale-95 transition-[color,background-color,transform] duration-150"
-                                 title="Editar">
-                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                              <button data-testid="btn-eliminar" *ngIf="puedeEliminarFila(u)" type="button" (click)="$event.stopPropagation(); deleteUsuario(u)"
+                                 class="btn-icon-sm tone-danger" title="Eliminar" aria-label="Eliminar">
+                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
                                  </svg>
                               </button>
-                              <button data-testid="btn-eliminar" *ngIf="puedeEliminarFila(u)" (click)="deleteUsuario(u)"
-                                 class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-white hover:bg-red-500 active:scale-95 transition-[color,background-color,transform] duration-150"
-                                 title="Eliminar">
-                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 6h18"></path>
-                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                                 </svg>
+                              <button data-testid="btn-editar" *ngIf="puedeEditarFila(u)" type="button" (click)="$event.stopPropagation(); editUsuario(u)"
+                                 class="btn-icon-sm tone-edit" title="Editar" aria-label="Editar">
+                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>
                               </button>
                            </div>
                         </td>
                      </tr>
 
-                     <!-- Empty State -->
-                     <tr data-testid="fila-vacia" *ngIf="filteredUsuarios().length === 0" class="text-center">
-                        <td [attr.colspan]="showCongregacionCol() ? 6 : 5" class="py-20">
-                           <div class="flex flex-col items-center justify-center text-center">
-                              <div class="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                                 <svg class="w-7 h-7 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="11" cy="11" r="7"></circle>
-                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                 </svg>
-                              </div>
-                              <p class="font-bold text-slate-700 dark:text-slate-300">
-                                 {{ hasActiveFilters() ? 'Ningún usuario coincide' : 'Aún no hay usuarios' }}
-                              </p>
-                              <p class="text-sm mt-1 text-slate-500 dark:text-slate-400 max-w-[42ch]">
+                     <tr data-testid="fila-vacia" *ngIf="filteredUsuarios().length === 0">
+                        <td [attr.colspan]="showCongregacionCol() ? 5 : 4" class="!p-0">
+                           <div class="vacio-box !py-16">
+                              <span class="vacio-ic" aria-hidden="true">
+                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                              </span>
+                              <p class="vacio-t">{{ hasActiveFilters() ? 'Ningún usuario coincide' : 'Aún no hay usuarios' }}</p>
+                              <p class="vacio-d">
                                  {{ hasActiveFilters()
                                     ? 'Prueba con otro nombre o correo, o quita los filtros activos.'
                                     : 'Crea el primer usuario para darle acceso a la aplicación.' }}
                               </p>
-                              <button data-testid="btn-limpiar-vacio" *ngIf="hasActiveFilters()" (click)="clearAllFilters()"
-                                 class="mt-5 px-4 h-11 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98] transition-[background-color,transform] duration-150">
-                                 Limpiar filtros
-                              </button>
-                              <button data-testid="btn-nuevo-usuario-vacio" *ngIf="!hasActiveFilters() && isPrivilegedRole()" (click)="openCreatePanel()"
-                                 class="mt-5 px-4 h-11 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-white font-bold text-sm active:scale-[0.98] transition-[background-color,transform] duration-150">
-                                 Nuevo Usuario
-                              </button>
+                              <button data-testid="btn-limpiar-vacio" *ngIf="hasActiveFilters()" (click)="clearAllFilters()" class="btn-secondary mt-4">Limpiar filtros</button>
+                              <button data-testid="btn-nuevo-usuario-vacio" *ngIf="!hasActiveFilters() && isPrivilegedRole()" (click)="openCreatePanel()" class="btn-primary mt-4">Nuevo Usuario</button>
                            </div>
                         </td>
                      </tr>
                   </tbody>
                </table>
             </div>
-         </div>
+         </section>
       </div>
    </div>
 
@@ -436,7 +283,7 @@
    <!-- El fondo oscuro acompaña al panel mientras se superpone (móvil y tablet).
         Sólo desaparece en xl:, donde el panel empuja en vez de tapar. -->
    <div data-testid="panel-backdrop" *ngIf="panelOpen()" @fadeIn
-      class="xl:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+      class="xl:hidden fixed inset-0 bg-black/50 z-40"
       (click)="closePanel()"></div>
 
    <!-- 2. Slide Over Panel (Fluid, sibling) -->
@@ -476,7 +323,7 @@
             <div class="flex items-start justify-between gap-3">
                <div class="flex gap-3 sm:gap-4 min-w-0">
                   <div
-                     class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#6D28D9] text-white flex items-center justify-center shrink-0">
+                     class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-brand-purple text-white flex items-center justify-center shrink-0">
                      <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -484,14 +331,15 @@
                      </svg>
                   </div>
                   <div class="min-w-0">
-                     <span class="inline-block px-2 py-0.5 rounded-md text-[0.625rem] font-black uppercase tracking-widest mb-1"
+                     <span class="inline-block px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-widest mb-1"
                         [ngClass]="editingUser() ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'">
                         {{ editingUser() ? 'Modo Edición' : 'Nuevo Registro' }}
                      </span>
-                     <h2 class="text-lg sm:text-xl font-display font-black text-slate-900 dark:text-white tracking-tight truncate">
+                     <h2 class="text-lg sm:text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight truncate">
                         {{ editingUser() ? 'Editar Usuario' : 'Nuevo Usuario' }}
                      </h2>
-                     <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Información de cuenta y permisos</p>
+                     <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate"
+                        [attr.title]="editingUser()?.nombre">{{ editingUser()?.nombre ?? 'Información de cuenta y permisos' }}</p>
                   </div>
                </div>
                <button (click)="closePanel()" title="Cerrar" aria-label="Cerrar panel"
@@ -513,18 +361,18 @@
                      [attr.aria-current]="activeTab() === t.id ? 'step' : null"
                      [disabled]="!stepIsReachable(i)"
                      (click)="goToStep(i)"
-                     class="group flex flex-col items-center gap-1 w-16 shrink-0 pt-1 pb-1 rounded-lg transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6D28D9]/40 disabled:cursor-default"
+                     class="group flex flex-col items-center gap-1 w-16 shrink-0 pt-1 pb-1 rounded-lg transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40 disabled:cursor-default"
                      [class.cursor-pointer]="stepIsReachable(i)">
                      <!-- Círculo: número, check si el paso está completo, o
                           aviso si quedó algo por corregir. -->
-                     <span class="relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-[background-color,color,box-shadow] duration-200"
+                     <span class="relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-[background-color,color,box-shadow] duration-200"
                         [ngClass]="activeTab() === t.id
-                           ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-900/25'
+                           ? 'bg-brand-purple text-white shadow-md shadow-purple-900/25'
                            : (tabHasErrors(t.id)
                               ? 'bg-red-50 dark:bg-red-900/25 text-red-500 ring-1 ring-red-300 dark:ring-red-700'
                               : (stepIsValid(t.id) && stepIsReachable(i)
                                  ? 'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-300 dark:ring-emerald-700'
-                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'))">
+                                 : 'bg-slate-100 dark:bg-slate-950 text-slate-400 dark:text-slate-500'))">
                         <svg *ngIf="stepIsValid(t.id) && stepIsReachable(i) && activeTab() !== t.id && !tabHasErrors(t.id)"
                            class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                            stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -534,9 +382,9 @@
                            {{ i + 1 }}
                         </ng-container>
                      </span>
-                     <span class="text-[0.6875rem] font-bold leading-tight transition-colors"
+                     <span class="text-xs font-bold leading-tight transition-colors"
                         [ngClass]="activeTab() === t.id
-                           ? 'text-[#6D28D9] dark:text-purple-400'
+                           ? 'text-brand-purple dark:text-purple-400'
                            : 'text-slate-400 dark:text-slate-500'">
                         {{ t.label }}
                      </span>
@@ -545,7 +393,7 @@
                   <!-- Conector: se tiñe cuando el paso anterior ya se superó. -->
                   <span *ngIf="!last" aria-hidden="true"
                      class="flex-1 h-0.5 mt-5 rounded-full transition-colors duration-300"
-                     [ngClass]="maxStepReached() > i ? 'bg-[#6D28D9]/40' : 'bg-slate-200 dark:bg-slate-700'"></span>
+                     [ngClass]="maxStepReached() > i ? 'bg-brand-purple/40' : 'bg-slate-200 dark:bg-slate-700'"></span>
                </li>
             </ol>
          </div>
@@ -566,7 +414,7 @@
                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Nombre Completo <span class="text-red-500">*</span></label>
                            <div class="relative group">
                               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                 <svg class="h-4 w-4 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors"
+                                 <svg class="h-4 w-4 text-slate-400 group-focus-within:text-brand-purple transition-colors"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                     <circle cx="12" cy="7" r="4"></circle>
@@ -574,7 +422,7 @@
                               </div>
                               <input data-testid="input-nombre" formControlName="nombre" type="text"
                                  (input)="capitalizeNombre($event)"
-                                 class="block w-full h-11 pl-9 pr-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
+                                 class="form-control pl-9 pr-3"
                                  [class.border-red-300]="userForm.get('nombre')?.invalid && userForm.get('nombre')?.touched"
                                  placeholder="Ej. Ana García">
                            </div>
@@ -584,14 +432,14 @@
                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Correo Electrónico <span class="text-red-500">*</span></label>
                            <div class="relative group">
                               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                 <svg class="h-4 w-4 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors"
+                                 <svg class="h-4 w-4 text-slate-400 group-focus-within:text-brand-purple transition-colors"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="2" y="4" width="20" height="16" rx="2"></rect>
                                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
                                  </svg>
                               </div>
                               <input data-testid="input-correo" formControlName="correo" type="email"
-                                 class="block w-full h-11 pl-9 pr-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
+                                 class="form-control pl-9 pr-3"
                                  [class.border-red-300]="userForm.get('correo')?.invalid && userForm.get('correo')?.touched"
                                  placeholder="ana@ejemplo.com">
                            </div>
@@ -605,7 +453,7 @@
                               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Teléfono</label>
                               <div class="relative group">
                                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors"
+                                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-brand-purple transition-colors"
                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                        <path
                                           d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
@@ -613,7 +461,7 @@
                                     </svg>
                                  </div>
                                  <input data-testid="input-telefono" formControlName="telefono" type="text"
-                                    class="block w-full h-11 pl-9 pr-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
+                                    class="form-control pl-9 pr-3"
                                     placeholder="Ej. 300 123 4567">
                               </div>
                            </div>
@@ -633,7 +481,7 @@
                               <div class="space-y-1">
                                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1 truncate" title="Número Doc">Número Doc</label>
                                  <input formControlName="id_identificacion" type="text"
-                                    class="block w-full h-11 px-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
+                                    class="form-control px-3"
                                     placeholder="Ej. 123456">
                               </div>
                         </div>
@@ -648,7 +496,7 @@
                             <!-- Rol. Un único selector: rolOptions ya filtra la lista
                                  permitida según quién esté creando el usuario. -->
                             <div class="space-y-1">
-                               <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">
+                               <label class="block text-xs font-bold text-brand-purple dark:text-purple-400 ml-1">
                                   Rol de Usuario <span class="text-red-500">*</span>
                                </label>
                                <app-select-picker data-testid="selector-rol"
@@ -667,7 +515,7 @@
                            <div class="field-row-2" style="--cols: minmax(0,1.3fr) minmax(0,1fr)">
                               <!-- Congregación (sólo Administrador; el resto hereda la suya) -->
                               <div *ngIf="isAdmin()" class="space-y-1">
-                                 <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">
+                                 <label class="block text-xs font-bold text-brand-purple dark:text-purple-400 ml-1">
                                     Congregación <span *ngIf="isCongregationRequired()" class="text-red-500">*</span>
                                  </label>
                                  <app-select-picker data-testid="selector-congregacion"
@@ -684,7 +532,7 @@
                               <!-- Publicador asociado. El div envuelve también el alta
                                    rápida que va justo debajo. -->
                               <div class="space-y-1">
-                                 <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">
+                                 <label class="block text-xs font-bold text-brand-purple dark:text-purple-400 ml-1">
                                     Publicador Asociado <span class="text-red-500">*</span>
                                  </label>
                                  <app-select-picker data-testid="selector-publicador"
@@ -707,7 +555,7 @@
                                        data-testid="btn-nuevo-publicador"
                                        (click)="toggleQuickPubForm()"
                                        [disabled]="!quickPubCongregacionId()"
-                                       class="mt-1 inline-flex items-center gap-1 text-xs font-bold text-[#6D28D9] dark:text-purple-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline">
+                                       class="mt-1 inline-flex items-center gap-1 text-xs font-bold text-brand-purple dark:text-purple-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline">
                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                           <path d="M12 5v14M5 12h14" />
@@ -723,23 +571,23 @@
                                     <div *ngIf="showQuickPubForm()" @fadeIn [formGroup]="quickPubForm"
                                        data-testid="form-nuevo-publicador"
                                        class="mt-2 p-3 rounded-xl border border-purple-100 dark:border-purple-900/40 bg-purple-50/40 dark:bg-purple-900/10 space-y-2">
-                                       <p class="text-xs font-bold text-[#6D28D9] dark:text-purple-400">
+                                       <p class="text-xs font-bold text-brand-purple dark:text-purple-400">
                                           Nuevo publicador
                                        </p>
 
                                        <input type="text" formControlName="primer_nombre" placeholder="Primer nombre *"
                                           data-testid="quick-pub-nombre"
-                                          class="w-full h-10 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all text-slate-700 dark:text-slate-200"
+                                          class="w-full h-10 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/10 transition-all text-slate-700 dark:text-slate-200"
                                           [class.border-red-300]="quickPubForm.get('primer_nombre')?.invalid && quickPubForm.get('primer_nombre')?.touched">
 
                                        <input type="text" formControlName="primer_apellido" placeholder="Primer apellido *"
                                           data-testid="quick-pub-apellido"
-                                          class="w-full h-10 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all text-slate-700 dark:text-slate-200"
+                                          class="w-full h-10 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/10 transition-all text-slate-700 dark:text-slate-200"
                                           [class.border-red-300]="quickPubForm.get('primer_apellido')?.invalid && quickPubForm.get('primer_apellido')?.touched">
 
                                        <input type="text" formControlName="telefono" placeholder="Teléfono (opcional)"
                                           data-testid="quick-pub-telefono"
-                                          class="w-full h-10 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all text-slate-700 dark:text-slate-200">
+                                          class="w-full h-10 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/10 transition-all text-slate-700 dark:text-slate-200">
 
                                        <p class="text-xs text-slate-500 dark:text-slate-400">
                                           Se crea como publicador activo. Completa el resto de su ficha
@@ -754,7 +602,7 @@
                                        <div class="flex items-center gap-2 pt-1">
                                           <button type="button" (click)="submitQuickPublicador()"
                                              data-testid="quick-pub-guardar" [disabled]="savingQuickPub()"
-                                             class="h-9 px-4 rounded-lg bg-[#6D28D9] text-white text-xs font-bold hover:bg-[#5B21B6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                             class="h-9 px-4 rounded-lg bg-brand-purple text-white text-xs font-bold hover:bg-[#5B21B6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                              {{ savingQuickPub() ? 'Guardando...' : 'Guardar publicador' }}
                                           </button>
                                           <button type="button" (click)="toggleQuickPubForm()"
@@ -769,7 +617,7 @@
 
                               <!-- Estado de la cuenta -->
                               <div class="space-y-1">
-                                 <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">
+                                 <label class="block text-xs font-bold text-brand-purple dark:text-purple-400 ml-1">
                                     Estado <span class="text-red-500">*</span>
                                  </label>
                                  <app-select-picker data-testid="selector-estado"
@@ -797,20 +645,20 @@
                               <div class="flex items-center justify-between ml-1">
                                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Contraseña <span class="text-red-500">*</span></label>
                                  <button type="button" (click)="generarPassword()"
-                                    class="inline-flex items-center gap-1 text-[0.6875rem] font-bold text-[#6D28D9] dark:text-purple-400 hover:underline">
+                                    class="inline-flex items-center gap-1 text-xs font-bold text-brand-purple dark:text-purple-400 hover:underline">
                                     <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
                                     Generar
                                  </button>
                               </div>
                               <div class="relative group">
                                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-brand-purple transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                                        <path d="M7 11V7a5 5 0 0110 0v4" />
                                     </svg>
                                  </div>
                                  <input data-testid="input-contrasena" [type]="showPassword() ? 'text' : 'password'" formControlName="contrasena"
-                                    class="block w-full h-11 pl-9 pr-11 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
+                                    class="form-control pl-9 pr-11"
                                     placeholder="Min. 6 caracteres">
                                  <button type="button" (click)="showPassword.set(!showPassword())"
                                     class="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
@@ -833,13 +681,13 @@
                               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Confirmar Contraseña <span class="text-red-500">*</span></label>
                               <div class="relative group">
                                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-brand-purple transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                                        <path d="M7 11V7a5 5 0 0110 0v4" />
                                     </svg>
                                  </div>
                                  <input data-testid="input-confirmar" [type]="showPassword() ? 'text' : 'password'" formControlName="confirmPassword"
-                                    class="block w-full h-11 pl-9 pr-11 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
+                                    class="form-control pl-9 pr-11"
                                     [class.border-red-300]="userForm.hasError('mismatch') && userForm.get('confirmPassword')?.touched"
                                     placeholder="Repite tu contraseña">
                                  <button type="button" (click)="showPassword.set(!showPassword())"
@@ -857,7 +705,7 @@
                                  </button>
                               </div>
                               <p *ngIf="userForm.hasError('mismatch') && userForm.get('confirmPassword')?.touched"
-                                 class="text-[0.625rem] text-red-500 mt-1 font-bold ml-1">No coinciden</p>
+                                 class="text-xs text-red-500 mt-1 font-bold ml-1">No coinciden</p>
                            </div>
                         </div>
                      </div>
@@ -876,7 +724,7 @@
                         </div>
                         <div>
                            <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Forzar cambio de contraseña</p>
-                           <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5">{{ editingUser() ? 'El usuario deberá cambiar su contraseña en su próximo inicio de sesión' : 'El usuario deberá establecer su propia contraseña al primer inicio de sesión' }}</p>
+                           <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ editingUser() ? 'El usuario deberá cambiar su contraseña en su próximo inicio de sesión' : 'El usuario deberá establecer su propia contraseña al primer inicio de sesión' }}</p>
                         </div>
                      </label>
                   </div>
@@ -908,7 +756,7 @@
                   <!-- En el primer paso, salir es Cancelar; después, Atrás. -->
                   <button type="button" data-testid="btn-atras"
                      (click)="isFirstStep() ? closePanel() : goBack()"
-                     class="flex-1 sm:flex-none px-5 h-11 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm transition-[background-color,transform] duration-150 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6D28D9]/40">
+                     class="flex-1 sm:flex-none btn-secondary">
                      {{ isFirstStep() ? 'Cancelar' : 'Atrás' }}
                   </button>
 
@@ -916,7 +764,7 @@
                        algo, goNext() lo señala en vez de quedarse mudo. -->
                   <button *ngIf="!isLastStep()" type="button" data-testid="btn-siguiente"
                      (click)="goNext()"
-                     class="flex-1 sm:flex-none justify-center px-6 h-11 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-white font-display font-bold text-sm active:scale-[0.98] transition-[background-color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#6D28D9] dark:focus-visible:ring-offset-slate-900 flex items-center gap-2">
+                     class="btn-primary flex-1 sm:flex-none">
                      Siguiente
                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -926,9 +774,9 @@
 
                   <!-- Último paso: guardar. -->
                   <button *ngIf="isLastStep()" data-testid="btn-guardar" (click)="save()" [disabled]="saving()"
-                     class="flex-1 sm:flex-none justify-center px-6 h-11 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-white font-display font-bold text-sm active:scale-[0.98] transition-[background-color,transform] duration-150 disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-600 disabled:active:scale-100 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#6D28D9] dark:focus-visible:ring-offset-slate-900 flex items-center gap-2">
+                     class="btn-primary flex-1 sm:flex-none">
                      <span *ngIf="saving()"
-                        class="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span>
+                        class="spinner-sm text-white"></span>
                      {{ saving() ? 'Guardando...' : (editingUser() ? 'Guardar Cambios' : 'Crear Usuario') }}
                   </button>
                </div>
@@ -940,139 +788,76 @@
 </div>
 
 <!-- Delete Confirmation Dialog -->
-<div data-testid="dialogo-borrado" *ngIf="showDeleteDialog()" @fadeIn
-   class="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-   <!-- Backdrop -->
-   <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" (click)="cancelDelete()"></div>
-
-   <!-- Dialog -->
-   <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl shadow-black/20 border border-slate-100 dark:border-slate-800 w-full max-w-sm p-6 flex flex-col gap-4">
-      <!-- Icon -->
-      <div class="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center shrink-0">
-         <svg class="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 6h18"></path>
-            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-         </svg>
-      </div>
-
-      <!-- Text -->
-      <div>
-         <h3 class="text-base font-display font-black text-slate-900 dark:text-white">Eliminar usuario</h3>
-         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            ¿Estás seguro de que deseas eliminar a
-            <span class="font-bold text-slate-700 dark:text-slate-300">{{ userToDelete()?.nombre }}</span>?
-            Esta acción no se puede deshacer.
-         </p>
-      </div>
-
-      <!-- Delete Error -->
-      <div data-testid="error-borrado" *ngIf="deleteError()" @fadeIn class="flex items-start gap-2 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200/60 dark:border-red-800/30 rounded-xl">
-         <svg class="w-4 h-4 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-         <p class="text-xs font-bold text-red-600 dark:text-red-400">{{ deleteError() }}</p>
-      </div>
-
-      <!-- Actions -->
-      <div class="flex items-center justify-end gap-3 pt-1">
-         <button data-testid="btn-cancelar-borrado" (click)="cancelDelete()"
-            class="px-4 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm transition-[transform,background-color] duration-[120ms] hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.97]">
-            Cancelar
-         </button>
-         <button data-testid="btn-confirmar-borrado" (click)="confirmDelete()"
-            class="px-4 h-10 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm shadow-lg shadow-red-500/25 transition-[transform,background-color,box-shadow] duration-[120ms] active:scale-[0.97] hover:shadow-red-500/30">
-            Eliminar
-         </button>
-      </div>
+<ng-container *ngIf="userToDelete() as uDel">
+<app-modal [open]="showDeleteDialog()" size="sm" title="Eliminar usuario" [hasFooter]="true"
+   (openChange)="$event || cancelDelete()">
+   <div data-testid="dialogo-borrado" class="flex flex-col gap-4">
+      <p class="text-sm text-slate-600 dark:text-slate-400">
+         ¿Estás seguro de que deseas eliminar a
+         <span class="font-bold text-slate-800 dark:text-slate-200">{{ uDel.nombre }}</span>?
+         Esta acción no se puede deshacer.
+      </p>
+      <app-aviso data-testid="error-borrado" *ngIf="deleteError()" tone="danger" [dense]="true">{{ deleteError() }}</app-aviso>
    </div>
-</div>
+   <ng-container slot="footer">
+      <button data-testid="btn-cancelar-borrado" (click)="cancelDelete()" class="btn-secondary">Cancelar</button>
+      <button data-testid="btn-confirmar-borrado" (click)="confirmDelete()" class="btn-danger">Eliminar</button>
+   </ng-container>
+</app-modal>
+</ng-container>
 
 <!-- Mail Access Confirmation Dialog -->
-<div data-testid="dialogo-envio-correo" *ngIf="userToMail()" @fadeIn
-   class="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-   <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" (click)="cancelarEnvioCorreo()"></div>
-   <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl shadow-black/20 border border-slate-100 dark:border-slate-800 w-full max-w-sm p-6 flex flex-col gap-4">
-      <div class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center shrink-0">
-         <svg class="w-6 h-6 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
-      </div>
-      <div>
-         <h3 class="text-base font-display font-black text-slate-900 dark:text-white">Enviar acceso por correo</h3>
-         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Se generará una contraseña temporal para
-            <span class="font-bold text-slate-700 dark:text-slate-300">{{ userToMail()?.nombre }}</span>
-            y se enviará a su correo. La contraseña actual dejará de funcionar. ¿Continuar?
-         </p>
-      </div>
-      <div class="flex items-center justify-end gap-3 pt-1">
-         <button data-testid="btn-cancelar-envio-correo" (click)="cancelarEnvioCorreo()"
-            class="px-4 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm transition-[transform,background-color] duration-[120ms] hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.97]">
-            Cancelar
-         </button>
-         <button data-testid="btn-confirmar-envio-correo" (click)="confirmarEnvioCorreo()"
-            class="px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-purple-700 text-white font-bold text-sm shadow-lg shadow-purple-500/25 transition-[transform,background-color] duration-[120ms] active:scale-[0.97]">
-            Enviar
-         </button>
-      </div>
-   </div>
-</div>
+<ng-container *ngIf="userToMail() as uMail">
+<app-modal [open]="true" size="sm" title="Enviar acceso por correo" [hasFooter]="true"
+   (openChange)="$event || cancelarEnvioCorreo()">
+   <p data-testid="dialogo-envio-correo" class="text-sm text-slate-600 dark:text-slate-400">
+      Se generará una contraseña temporal para
+      <span class="font-bold text-slate-800 dark:text-slate-200">{{ uMail.nombre }}</span>
+      y se enviará a su correo. La contraseña actual dejará de funcionar. ¿Continuar?
+   </p>
+   <ng-container slot="footer">
+      <button data-testid="btn-cancelar-envio-correo" (click)="cancelarEnvioCorreo()" class="btn-secondary">Cancelar</button>
+      <button data-testid="btn-confirmar-envio-correo" (click)="confirmarEnvioCorreo()" class="btn-primary">Enviar</button>
+   </ng-container>
+</app-modal>
+</ng-container>
 
 <!-- Credentials Dialog (Post-Creation WhatsApp) -->
-<div data-testid="dialogo-credenciales" *ngIf="showCredentialsDialog()" class="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-   <!-- Backdrop -->
-   <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeCredentialsDialog()"></div>
-   <!-- Dialog -->
-   <div class="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl shadow-black/30 border border-slate-100 dark:border-slate-800 w-full max-w-md overflow-hidden">
-      <!-- Header -->
-      <div class="relative">
-         <div class="relative px-5 sm:px-8 pt-6 sm:pt-8 pb-5 flex items-start gap-4 border-b border-slate-100 dark:border-slate-800">
-            <div class="w-12 h-12 rounded-xl bg-[#1da851] text-white flex items-center justify-center shrink-0">
-               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            </div>
-            <div>
-               <span class="inline-block px-2.5 py-1 rounded-lg text-[0.625rem] font-black uppercase tracking-widest bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 mb-1.5">Usuario Creado</span>
-               <h2 class="text-xl font-display font-black text-slate-900 dark:text-white tracking-tight">Credenciales generadas</h2>
-               <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Guarda o envía estas credenciales al usuario ahora. La contraseña no podrá recuperarse después.</p>
-            </div>
-         </div>
-      </div>
-      <!-- Credentials Body -->
-      <div *ngIf="lastCreatedCredentials() as creds" class="px-5 sm:px-8 py-4 space-y-3">
-         <div class="rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-4 py-3">
-            <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Nombre</p>
+<app-modal [open]="showCredentialsDialog()" size="md" title="Credenciales generadas"
+   subtitle="Guarda o envía estas credenciales al usuario ahora. La contraseña no podrá recuperarse después."
+   (openChange)="$event || closeCredentialsDialog()">
+   <div data-testid="dialogo-credenciales" class="space-y-3">
+      <div *ngIf="lastCreatedCredentials() as creds" class="space-y-3">
+         <div class="rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 px-4 py-3">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-0.5">Nombre</p>
             <p class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ creds.nombre }}</p>
          </div>
-         <div class="rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-4 py-3">
-            <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Usuario (correo)</p>
+         <div class="rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 px-4 py-3">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-0.5">Usuario (correo)</p>
             <p class="text-sm font-bold text-slate-800 dark:text-slate-200 font-mono">{{ creds.correo }}</p>
          </div>
          <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-800/30 px-4 py-3">
-            <p class="text-[0.625rem] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-0.5">Contraseña</p>
+            <p class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-0.5">Contraseña</p>
             <p class="text-sm font-bold text-slate-800 dark:text-slate-200 font-mono tracking-widest">{{ creds.contrasena }}</p>
          </div>
-         <div class="rounded-xl bg-red-50 dark:bg-red-900/10 border border-red-200/50 dark:border-red-800/20 px-4 py-3 flex items-start gap-2">
-            <svg class="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <p class="text-[0.625rem] text-red-600 dark:text-red-400 font-bold">Esta es la única vez que verás la contraseña en texto claro. Después se almacena encriptada.</p>
-         </div>
+         <app-aviso tone="danger" [dense]="true">Esta es la única vez que verás la contraseña en texto claro. Después se almacena encriptada.</app-aviso>
       </div>
-      <!-- Footer Actions -->
-      <div class="px-5 sm:px-8 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col gap-3">
+      <div class="flex flex-col gap-3 pt-1">
          <button *ngIf="lastCreatedCredentials()?.telefono" (click)="sendCredentialsByWhatsApp()"
-            class="w-full h-12 rounded-2xl bg-[#1da851] hover:bg-[#179044] text-white font-bold text-sm active:scale-[0.98] transition-[background-color,transform] duration-150 flex items-center justify-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1da851] dark:focus-visible:ring-offset-slate-900">
+            class="btn-lg w-full rounded-xl bg-[#1da851] hover:bg-[#179044] text-white font-bold text-sm inline-flex items-center justify-center gap-2.5">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             Enviar por WhatsApp
          </button>
-         <p *ngIf="!lastCreatedCredentials()?.telefono" class="text-center text-xs text-slate-400 italic">
+         <p *ngIf="!lastCreatedCredentials()?.telefono" class="text-center text-xs text-slate-500 italic">
             El usuario no tiene teléfono registrado. No se puede enviar por WhatsApp.
          </p>
-         <button (click)="sendCredentialsByEmail()" [disabled]="sendingCredentialsEmail()"
-            class="w-full h-12 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm active:scale-[0.98] transition-[transform] duration-150 flex items-center justify-center gap-2.5 disabled:opacity-50">
-            <svg *ngIf="!sendingCredentialsEmail()" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
-            <svg *ngIf="sendingCredentialsEmail()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+         <button (click)="sendCredentialsByEmail()" [disabled]="sendingCredentialsEmail()" class="btn-secondary btn-lg w-full">
+            <span *ngIf="sendingCredentialsEmail()" class="spinner-sm"></span>
             Enviar por correo
          </button>
-         <button data-testid="cerrar-credenciales" (click)="closeCredentialsDialog()"
-            class="w-full h-11 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm active:scale-[0.98] transition-all">
+         <button data-testid="cerrar-credenciales" (click)="closeCredentialsDialog()" class="btn-ghost btn-lg w-full">
             Listo, cerrar
          </button>
       </div>
    </div>
-</div>
+</app-modal>

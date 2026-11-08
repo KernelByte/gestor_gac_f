@@ -8,10 +8,10 @@ import { TransferenciaService } from '../../services/transferencia.service';
 import { CompletarTransferenciaRequest, CongregacionBuscada, CongregacionDestino, ImpactoMiembro, Transferencia } from '../../models/transferencia.model';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
 import { environment } from '../../../../../environments/environment';
+import { PageHeaderComponent, EmptyStateComponent, ModalComponent, ToastService } from '../../../../shared/components';
 import { inicialesDe, nombreLegal, nombreMostrado } from '../../../../core/utils/nombre.util';
 
 type ToastType = 'success' | 'error' | 'info';
-interface Toast { id: number; type: ToastType; msg: string; }
 
 interface PublicadorLite {
   id_publicador: number;
@@ -25,27 +25,8 @@ interface PublicadorLite {
 @Component({
   standalone: true,
   selector: 'app-transferencias',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, EmptyStateComponent, ModalComponent],
   template: `
-    <!-- ── TOASTS ── -->
-    <div class="toast-container fixed bottom-6 right-6 flex flex-col gap-2 z-[100] pointer-events-none w-max max-w-[90vw]" aria-live="polite" aria-atomic="false">
-      <div *ngFor="let n of notifications()"
-           [class]="n.type === 'success' ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200' :
-                    n.type === 'error'   ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/80 text-red-800 dark:text-red-200' :
-                    'border-violet-300 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/80 text-violet-800 dark:text-violet-200'"
-           class="animate-fadeInUp flex items-center gap-3 p-3.5 rounded-xl border shadow-lg pointer-events-auto transition-all" role="alert">
-        <span class="flex items-center justify-center w-5 h-5 shrink-0" aria-hidden="true">
-          <svg *ngIf="n.type === 'success'" class="w-5 h-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-          <svg *ngIf="n.type === 'error'"   class="w-5 h-5 text-red-600 dark:text-red-400"     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-          <svg *ngIf="n.type === 'info'"    class="w-5 h-5 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        </span>
-        <span class="text-sm font-semibold leading-none">{{ n.msg }}</span>
-        <button class="flex items-center justify-center w-6 h-6 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer" (click)="dismissToast(n.id)" aria-label="Cerrar notificación">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    </div>
-
     <!-- ── PUB DROPDOWN PANEL (fuera del modal para evitar backdrop-filter containing block) ── -->
     <ng-container *ngIf="pubDropOpen()">
       <div class="pub-drop-backdrop" [class.pub-drop-backdrop--hoja]="pubDropHoja()" style="position:fixed;inset:0;z-index:9998" (click)="pubDropOpen.set(false)"></div>
@@ -95,24 +76,11 @@ interface PublicadorLite {
     <!-- ══════════════════════════════════════════════════════════════ -->
     <!-- MODAL WIZARD                                                  -->
     <!-- ══════════════════════════════════════════════════════════════ -->
-    <div *ngIf="creando()" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title"
-         (click)="onOverlayClick($event)">
-
-      <!-- Dialog card -->
-      <div class="modal-dialog" (click)="$event.stopPropagation()">
-
-        <!-- ── Dialog Header ── -->
-        <div class="modal-header">
-          <div class="min-w-0">
-            <p class="modal-step-label">Nueva transferencia · Paso {{ wizardPaso() }} de 3</p>
-            <h2 id="modal-title" class="modal-title">
-              {{ wizardPaso() === 1 ? '¿Quién se va de la congregación?' : wizardPaso() === 2 ? '¿A qué congregación se muda?' : 'Notas para la carta de presentación' }}
-            </h2>
-          </div>
-          <button (click)="cerrarWizard()" class="modal-close-btn" aria-label="Cerrar" [disabled]="creandoTransferencia()">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
+    <app-modal *ngIf="creando()" [open]="true" [controlled]="true" variant="sheet" size="md" [hasFooter]="true"
+               [subtitle]="'Nueva transferencia · Paso ' + wizardPaso() + ' de 3'"
+               [title]="wizardPaso() === 1 ? '¿Quién se va de la congregación?' : wizardPaso() === 2 ? '¿A qué congregación se muda?' : 'Notas para la carta de presentación'"
+               (openChange)="$event || cerrarWizard()">
+      <div>
 
         <!-- ── Stepper ── -->
         <ol class="modal-stepper" aria-label="Pasos de la nueva transferencia">
@@ -139,7 +107,7 @@ interface PublicadorLite {
         </ol>
 
         <!-- ── Step content (scrollable) ── -->
-        <div class="modal-body">
+        <div>
           <div [class]="'wizard-body wizard-body--' + wizardDir()">
 
             <!-- PASO 1: una o varias personas. Con dos o más es una familia. -->
@@ -224,69 +192,51 @@ interface PublicadorLite {
         </div><!-- /modal-body -->
 
         <!-- ── Footer de navegación ── -->
-        <div class="modal-footer">
-          <button *ngIf="wizardPaso() === 1" type="button" (click)="cerrarWizard()" class="btn-wizard-back">Cancelar</button>
-          <button *ngIf="wizardPaso() > 1" type="button" (click)="wizardAnterior()" class="btn-wizard-back" [disabled]="creandoTransferencia()">
+        <ng-container slot="footer">
+          <button *ngIf="wizardPaso() === 1" type="button" (click)="cerrarWizard()" class="btn-secondary mr-auto">Cancelar</button>
+          <button *ngIf="wizardPaso() > 1" type="button" (click)="wizardAnterior()" class="btn-secondary mr-auto" [disabled]="creandoTransferencia()">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Atrás
           </button>
           <button *ngIf="wizardPaso() < 3" type="button"
                   [disabled]="!wizardPasoValido()"
                   (click)="wizardSiguiente()"
-                  class="btn-wizard-next">
+                  class="btn-primary ml-auto">
             Continuar
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
           <button *ngIf="wizardPaso() === 3" type="button"
                   [disabled]="!form.notas_para_carta.trim() || creandoTransferencia()"
                   (click)="crear()"
-                  class="btn-wizard-next">
+                  class="btn-primary ml-auto">
             <span *ngIf="!creandoTransferencia()">Crear la carta</span>
             <span *ngIf="creandoTransferencia()" class="flex items-center gap-2">
               <span class="wizard-create-spinner"></span>
               {{ creandoFase() }}
             </span>
           </button>
-        </div>
-
-      </div><!-- /modal-dialog -->
-    </div>
+        </ng-container>
+      </div>
+    </app-modal>
     <!-- /MODAL WIZARD -->
 
     <!-- ── MODAL: Vista previa de la carta ── -->
-    <div *ngIf="mostrandoPreview()" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="preview-modal-title" (click)="cerrarPreview()">
-      <div class="modal-dialog carta-preview-dialog" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2 id="preview-modal-title" class="modal-title">Vista previa de la carta</h2>
-          <button (click)="cerrarPreview()" class="modal-close-btn" aria-label="Cerrar vista previa">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-        <iframe *ngIf="previewUrl()" [src]="previewUrl()" class="carta-preview-iframe" title="Vista previa de la carta"></iframe>
-      </div>
-    </div>
+    <app-modal *ngIf="mostrandoPreview()" [open]="true" [controlled]="true" size="2xl" title="Vista previa de la carta" [padding]="false"
+               (openChange)="$event || cerrarPreview()">
+      <iframe *ngIf="previewUrl()" [src]="previewUrl()" class="carta-preview-iframe" title="Vista previa de la carta"></iframe>
+    </app-modal>
     <!-- /MODAL PREVIEW -->
 
     <div class="h-full flex flex-col overflow-hidden">
-    <div class="flex-1 flex flex-col m-1 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 min-h-0">
+    <app-page-header eyebrow="Administración" title="Transferencias"
+      subtitle="Gestiona y genera la documentación cuando un publicador se transfiere de congregación.">
+      <button (click)="abrirWizard()" class="btn-primary" type="button">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+        <span>Nueva transferencia</span>
+      </button>
+    </app-page-header>
 
-      <!-- ── HEADER ── -->
-      <header class="hero-grad text-white shrink-0">
-        <div class="relative z-10 px-4 sm:px-6 lg:px-10 py-4 sm:py-5 hero-inner">
-          <div>
-            <div class="hero-eyebrow">
-              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4M4 17h12m0 0l-4-4m4 4l-4 4"/></svg>
-              <span>Módulo Secretario</span>
-            </div>
-            <h1 class="hero-title">Transferencias</h1>
-            <p class="hero-desc">Gestiona y genera la documentación cuando un publicador se transfiere de congregación.</p>
-          </div>
-          <button (click)="abrirWizard()" class="btn-hero group hero-btn-desktop" type="button">
-            <svg class="w-4 h-4 transition-transform duration-200 group-hover:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
-            <span>Nueva transferencia</span>
-          </button>
-        </div>
-      </header>
+    <div class="flex-1 flex flex-col min-h-0">
 
       <!-- ── BODY ── -->
       <div class="flex-1 px-4 pt-4 pb-4 min-h-0 overflow-y-auto lg:overflow-hidden flex flex-col gap-4">
@@ -301,18 +251,18 @@ interface PublicadorLite {
             <div class="list-panel__head flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 gap-3 flex-wrap">
               <h2 class="font-display font-bold text-base text-slate-800 dark:text-slate-200 leading-none">Transferencias</h2>
               <!-- Filter pills -->
-              <div class="filter-pills-wrap flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl shrink-0">
-                <button (click)="filtro.set('todos')" class="filter-pill" [class.filter-pill--active]="filtro() === 'todos'" type="button">
-                  Todos <span class="filter-count">{{ items().length }}</span>
+              <div class="segmented filter-pills-wrap shrink-0" role="group" aria-label="Filtrar transferencias">
+                <button (click)="filtro.set('todos')" class="segmented-item" [class.is-active]="filtro() === 'todos'" [attr.aria-pressed]="filtro() === 'todos'" type="button">
+                  Todos <span class="tab-count">{{ items().length }}</span>
                 </button>
-                <button (click)="filtro.set('borrador')" class="filter-pill" [class.filter-pill--active]="filtro() === 'borrador'" type="button">
-                  Borradores <span class="filter-count filter-count--warn">{{ countBorradores() }}</span>
+                <button (click)="filtro.set('borrador')" class="segmented-item" [class.is-active]="filtro() === 'borrador'" [attr.aria-pressed]="filtro() === 'borrador'" type="button">
+                  Borradores <span class="tab-count">{{ countBorradores() }}</span>
                 </button>
-                <button (click)="filtro.set('finalizada')" class="filter-pill" [class.filter-pill--active]="filtro() === 'finalizada'" type="button">
-                  Finalizadas <span class="filter-count filter-count--ok">{{ countFinalizadas() }}</span>
+                <button (click)="filtro.set('finalizada')" class="segmented-item" [class.is-active]="filtro() === 'finalizada'" [attr.aria-pressed]="filtro() === 'finalizada'" type="button">
+                  Finalizadas <span class="tab-count">{{ countFinalizadas() }}</span>
                 </button>
-                <button *ngIf="countRecibidas() > 0" (click)="filtro.set('recibidas')" class="filter-pill" [class.filter-pill--active]="filtro() === 'recibidas'" type="button">
-                  Recibidas <span class="filter-count filter-count--ok">{{ countRecibidas() }}</span>
+                <button *ngIf="countRecibidas() > 0" (click)="filtro.set('recibidas')" class="segmented-item" [class.is-active]="filtro() === 'recibidas'" [attr.aria-pressed]="filtro() === 'recibidas'" type="button">
+                  Recibidas <span class="tab-count">{{ countRecibidas() }}</span>
                 </button>
               </div>
             </div>
@@ -323,10 +273,10 @@ interface PublicadorLite {
               <table class="w-full border-collapse text-left text-sm">
                 <thead>
                   <tr class="border-b border-slate-100 dark:border-slate-800">
-                    <th class="px-5 py-3 text-[0.65rem] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500" scope="col">Publicador</th>
-                    <th class="px-4 py-3 text-[0.65rem] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500" scope="col">Destino</th>
-                    <th class="px-4 py-3 text-[0.65rem] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500" scope="col">Estado</th>
-                    <th class="px-4 py-3 text-[0.65rem] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500" scope="col">Carta</th>
+                    <th class="px-5 py-3 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500" scope="col">Publicador</th>
+                    <th class="px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500" scope="col">Destino</th>
+                    <th class="px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500" scope="col">Estado</th>
+                    <th class="px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500" scope="col">Carta</th>
                     <th class="px-4 py-3 w-8" scope="col" aria-label="Acciones"></th>
                   </tr>
                 </thead>
@@ -334,10 +284,10 @@ interface PublicadorLite {
                   @if (loading()) {
                     @for (sk of [1,2,3]; track sk) {
                       <tr class="border-b border-slate-100 dark:border-slate-800/60">
-                        <td class="px-5 py-3.5"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse shrink-0"></div><div class="flex flex-col gap-1.5"><div class="h-3 w-28 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div><div class="h-2 w-16 bg-slate-100 dark:bg-slate-800/60 rounded animate-pulse"></div></div></div></td>
-                        <td class="px-4 py-3.5"><div class="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div></td>
-                        <td class="px-4 py-3.5"><div class="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse"></div></td>
-                        <td class="px-4 py-3.5"><div class="h-5 w-20 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse"></div></td>
+                        <td class="px-5 py-3.5"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg skeleton shrink-0"></div><div class="flex flex-col gap-1.5"><div class="h-3 w-28 skeleton rounded"></div><div class="h-2 w-16 skeleton rounded"></div></div></div></td>
+                        <td class="px-4 py-3.5"><div class="h-3 w-24 skeleton rounded"></div></td>
+                        <td class="px-4 py-3.5"><div class="h-5 w-16 skeleton rounded-full"></div></td>
+                        <td class="px-4 py-3.5"><div class="h-5 w-20 skeleton rounded-full"></div></td>
                         <td></td>
                       </tr>
                     }
@@ -349,12 +299,12 @@ interface PublicadorLite {
                       [style]="'--i: ' + idx">
                     <td class="px-5 py-3.5">
                       <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 font-bold font-display text-xs flex items-center justify-center shrink-0">
+                        <div class="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-brand-purple dark:text-violet-300 font-bold font-display text-xs flex items-center justify-center shrink-0">
                           {{ inicialesTransferencia(t) }}
                         </div>
                         <div class="flex flex-col min-w-0">
                           <span class="font-semibold text-slate-900 dark:text-slate-100 truncate text-sm leading-tight">{{ etiquetaTransferencia(t) }}</span>
-                          <span class="text-[0.7rem] text-slate-400 dark:text-slate-500 truncate mt-0.5 leading-none">
+                          <span class="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5 leading-none">
                             <span *ngIf="t.es_familiar">{{ t.miembros.length || 1 }} miembros</span>
                           </span>
                         </div>
@@ -363,11 +313,11 @@ interface PublicadorLite {
                     <td class="px-4 py-3.5">
                       <div class="flex items-center gap-1.5">
                         <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                        <span class="truncate max-w-[140px] text-sm font-medium text-slate-700 dark:text-slate-300 leading-none">{{ esIngreso(t) ? 'Desde ' + (t.congregacion_origen_nombre || '—') : (t.congregacion_destino || '—') }}</span>
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300 leading-tight" [title]="esIngreso(t) ? 'Desde ' + (t.congregacion_origen_nombre || '—') : (t.congregacion_destino || '—')">{{ esIngreso(t) ? 'Desde ' + (t.congregacion_origen_nombre || '—') : (t.congregacion_destino || '—') }}</span>
                       </div>
                     </td>
                     <td class="px-4 py-3.5">
-                      <span [class]="badgeEstadoCls(t)" class="text-[11px] px-2.5 py-1 rounded-lg font-semibold leading-none">
+                      <span [class]="badgeEstadoCls(t)" class="text-xs px-2.5 py-1 rounded-lg font-semibold leading-none">
                         {{ badgeEstadoTxt(t) }}
                       </span>
                     </td>
@@ -382,30 +332,11 @@ interface PublicadorLite {
                       <svg class="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-violet-400 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                     </td>
                   </tr>
-                  <tr *ngIf="!loading() && itemsFiltrados().length === 0" class="empty-state-row">
-                    <td colspan="5" class="empty-state-cell">
-                      <div class="empty-state">
-                        <!-- Ilustración -->
-                        <div class="empty-state__illustration" aria-hidden="true">
-                          <div class="empty-state__doc empty-state__doc--back"></div>
-                          <div class="empty-state__doc empty-state__doc--front">
-                            <svg class="w-5 h-5 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M4 17h12m0 0l-4-4m4 4l-4 4"/></svg>
-                          </div>
-                        </div>
-                        <!-- Copy -->
-                        <h3 class="empty-state__title">Todavía no hay transferencias registradas</h3>
-                        <p class="empty-state__desc">Cuando un publicador cambia de congregación, crea una transferencia para generar la documentación oficial (carta de presentación + tarjeta de servicio).</p>
-                        <!-- CTA -->
-                        <button (click)="abrirWizard()" type="button" class="empty-state__cta">
-                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                          Crear primera transferencia
-                        </button>
-                        <!-- Hint flecha apuntando al hero button (desktop) -->
-                        <p class="empty-state__hint hidden md:block">
-                          <svg class="inline w-3 h-3 mr-0.5 -rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7M17 7H7M17 7v10"/></svg>
-                          O usa el botón <strong>+ Nueva transferencia</strong> del encabezado
-                        </p>
-                      </div>
+                  <tr *ngIf="!loading() && itemsFiltrados().length === 0">
+                    <td colspan="5">
+                      <app-empty-state icon="file-text" title="Todavía no hay transferencias registradas"
+                        description="Cuando un publicador cambia de congregación, crea una transferencia para generar la documentación oficial (carta de presentación + tarjeta de servicio)."
+                        actionLabel="Crear primera transferencia" (action)="abrirWizard()"></app-empty-state>
                     </td>
                   </tr>
                 </tbody>
@@ -417,9 +348,9 @@ interface PublicadorLite {
             <div class="mobile-cards flex-col gap-3 p-4 bg-slate-50/50 dark:bg-slate-900/10">
               @if (loading()) {
                 @for (sk of [1,2,3]; track sk) {
-                  <div class="flex items-center gap-3 p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
-                    <div class="w-9 h-9 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse shrink-0"></div>
-                    <div class="flex-1 flex flex-col gap-2"><div class="h-3 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div><div class="h-2 w-20 bg-slate-100 dark:bg-slate-800/60 rounded animate-pulse"></div></div>
+                  <div class="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                    <div class="w-9 h-9 rounded-lg skeleton shrink-0"></div>
+                    <div class="flex-1 flex flex-col gap-2"><div class="h-3 w-32 skeleton rounded"></div><div class="h-2 w-20 skeleton rounded"></div></div>
                   </div>
                 }
               }
@@ -428,14 +359,14 @@ interface PublicadorLite {
                    [class.border-violet-500]="seleccionada()?.id_transferencia === t.id_transferencia"
                    [class.bg-violet-50/20]="seleccionada()?.id_transferencia === t.id_transferencia"
                    [class.dark:bg-violet-950/10]="seleccionada()?.id_transferencia === t.id_transferencia"
-                   class="flex items-center gap-3 p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-slate-300 dark:hover:border-slate-600 transition cursor-pointer active:scale-[0.99] shadow-sm">
-                <div class="avatar-initials w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 font-bold font-display text-sm flex items-center justify-center shrink-0">
+                   class="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-slate-300 dark:hover:border-slate-600 transition cursor-pointer active:scale-[0.99] shadow-sm">
+                <div class="avatar-initials w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-brand-purple dark:text-violet-300 font-bold font-display text-sm flex items-center justify-center shrink-0">
                   {{ inicialesTransferencia(t) }}
                 </div>
                 <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                   <div class="flex items-center justify-between gap-2">
                     <span class="font-bold text-slate-900 dark:text-slate-100 truncate text-sm leading-none">{{ etiquetaTransferencia(t) }}</span>
-                    <span [class]="badgeEstadoCls(t)" class="text-[10px] px-2 py-0.5 rounded-full leading-none font-semibold">
+                    <span [class]="badgeEstadoCls(t)" class="text-xs px-2 py-0.5 rounded-full leading-none font-semibold">
                       {{ badgeEstadoTxt(t) }}
                     </span>
                   </div>
@@ -450,20 +381,9 @@ interface PublicadorLite {
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
               </div>
-              <div *ngIf="!loading() && itemsFiltrados().length === 0" class="empty-state" style="min-height: 320px">
-                <div class="empty-state__illustration" aria-hidden="true">
-                  <div class="empty-state__doc empty-state__doc--back"></div>
-                  <div class="empty-state__doc empty-state__doc--front">
-                    <svg class="w-5 h-5 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M4 17h12m0 0l-4-4m4 4l-4 4"/></svg>
-                  </div>
-                </div>
-                <h3 class="empty-state__title">Sin transferencias registradas</h3>
-                <p class="empty-state__desc">Cuando un publicador cambia de congregación, crea aquí su transferencia.</p>
-                <button (click)="abrirWizard()" type="button" class="empty-state__cta">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                  Crear transferencia
-                </button>
-              </div>
+              <app-empty-state *ngIf="!loading() && itemsFiltrados().length === 0" icon="file-text" title="Sin transferencias registradas"
+                description="Cuando un publicador cambia de congregación, crea aquí su transferencia."
+                actionLabel="Crear transferencia" (action)="abrirWizard()"></app-empty-state>
             </div>
           </section>
 
@@ -471,7 +391,7 @@ interface PublicadorLite {
           <aside *ngIf="seleccionada() as t" class="card p-4 sm:p-5 detail-panel overflow-hidden flex flex-col">
 
             <!-- Mobile back button -->
-            <button class="md:hidden flex items-center justify-center gap-1.5 w-full py-3 mb-4 text-sm font-semibold text-violet-600 dark:text-violet-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer" (click)="cerrarDetalle()">
+            <button class="md:hidden flex items-center justify-center gap-1.5 w-full py-3 mb-4 text-sm font-semibold text-brand-purple dark:text-violet-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer" (click)="cerrarDetalle()">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
               Volver al listado
             </button>
@@ -480,7 +400,7 @@ interface PublicadorLite {
             <div *ngIf="confirmandoEliminar()" class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl animate-scale-in" role="alertdialog" aria-labelledby="confirm-title">
               <div class="flex items-start gap-3">
                 <div class="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0" aria-hidden="true">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 </div>
                 <div class="flex flex-col gap-0.5">
                   <p id="confirm-title" class="text-sm font-bold text-red-800 dark:text-red-200">¿Borrar esta transferencia?</p>
@@ -488,8 +408,8 @@ interface PublicadorLite {
                 </div>
               </div>
               <div class="flex gap-2 shrink-0 self-end sm:self-center">
-                <button class="btn-wizard-back" (click)="confirmandoEliminar.set(false)">Cancelar</button>
-                <button class="btn-confirmar btn-confirmar--peligro" (click)="confirmarEliminar()">Sí, borrar</button>
+                <button class="btn-secondary" (click)="confirmandoEliminar.set(false)">Cancelar</button>
+                <button class="btn-danger" (click)="confirmarEliminar()">Sí, borrar</button>
               </div>
             </div>
 
@@ -505,7 +425,7 @@ interface PublicadorLite {
                 </div>
                 <!-- Avatar individual -->
                 <div *ngIf="!t.es_familiar || !t.miembros || t.miembros.length <= 1"
-                     class="avatar-initials w-11 h-11 rounded-xl bg-violet-600 text-white font-bold font-display text-sm flex items-center justify-center shrink-0">
+                     class="avatar-initials w-11 h-11 rounded-xl bg-brand-purple text-white font-bold font-display text-sm flex items-center justify-center shrink-0">
                   {{ inicialesTransferencia(t) }}
                 </div>
                 <div class="min-w-0">
@@ -523,26 +443,26 @@ interface PublicadorLite {
             </header>
 
             <!-- Navigation Tabs -->
-            <nav *ngIf="!esIngreso(t)" class="tab-nav mb-5 w-full flex justify-start gap-1 p-1 bg-slate-100 dark:bg-slate-900/60 rounded-xl" role="tablist" aria-label="Secciones de la transferencia">
-              <button (click)="activeTab.set('info')" [class]="activeTab() === 'info' ? 'tab-item-active bg-violet-600 text-white shadow-sm' : 'tab-item text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800'" class="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] px-1 text-sm font-bold rounded-lg transition-all cursor-pointer" role="tab" [attr.aria-selected]="activeTab() === 'info'">
+            <nav *ngIf="!esIngreso(t)" class="tab-nav mb-5 w-full" role="tablist" aria-label="Secciones de la transferencia">
+              <button (click)="activeTab.set('info')" class="tab-item relative min-h-[44px] !px-2" role="tab" [attr.aria-selected]="activeTab() === 'info'">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 Info
               </button>
-              <button (click)="activeTab.set('notas')" [class]="activeTab() === 'notas' ? 'tab-item-active bg-violet-600 text-white shadow-sm' : 'tab-item text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800'" class="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] px-1 text-sm font-bold rounded-lg transition-all cursor-pointer relative" role="tab" [attr.aria-selected]="activeTab() === 'notas'">
+              <button (click)="activeTab.set('notas')" class="tab-item relative min-h-[44px] !px-2" role="tab" [attr.aria-selected]="activeTab() === 'notas'">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                 Notas
                 <span *ngIf="!seleccionada()?.notas_para_carta && activeTab() !== 'notas'" class="tab-dot tab-dot--warn" aria-hidden="true"></span>
                 <svg *ngIf="seleccionada()?.notas_para_carta" class="tab-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
                 <span *ngIf="seleccionada()?.notas_para_carta" class="sr-only">(hecho)</span>
               </button>
-              <button (click)="activeTab.set('carta')" [class]="activeTab() === 'carta' ? 'tab-item-active bg-violet-600 text-white shadow-sm' : 'tab-item text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800'" class="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] px-1 text-sm font-bold rounded-lg transition-all cursor-pointer relative" role="tab" [attr.aria-selected]="activeTab() === 'carta'">
+              <button (click)="activeTab.set('carta')" class="tab-item relative min-h-[44px] !px-2" role="tab" [attr.aria-selected]="activeTab() === 'carta'">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13 3v6h6"/></svg>
                 {{ seleccionada()?.sin_carta ? 'Nota' : 'Carta' }}
                 <span *ngIf="!presentacionLista(seleccionada()) && activeTab() !== 'carta'" class="tab-dot tab-dot--warn" aria-hidden="true"></span>
                 <svg *ngIf="presentacionLista(seleccionada())" class="tab-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
                 <span *ngIf="presentacionLista(seleccionada())" class="sr-only">(hecho)</span>
               </button>
-              <button *ngIf="!t.procesada_en" (click)="activeTab.set('completar')" [class]="activeTab() === 'completar' ? 'tab-item-active bg-violet-600 text-white shadow-sm' : 'tab-item text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800'" class="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] px-1 text-sm font-bold rounded-lg transition-all cursor-pointer relative" role="tab" [attr.aria-selected]="activeTab() === 'completar'">
+              <button *ngIf="!t.procesada_en" (click)="activeTab.set('completar')" class="tab-item relative min-h-[44px] !px-2" role="tab" [attr.aria-selected]="activeTab() === 'completar'">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Completar
               </button>
@@ -619,7 +539,7 @@ interface PublicadorLite {
                      ? 'border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-200'
                      : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300'">
                 <svg *ngIf="t.accion_realizada === 'trasladado'" class="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <svg *ngIf="t.accion_realizada !== 'trasladado'" class="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                <svg *ngIf="t.accion_realizada !== 'trasladado'" class="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 <div>
                   <p class="text-xs font-bold leading-tight mb-0.5">Transferencia completada</p>
                   <p class="text-xs leading-snug">{{ resultadoTexto(t) }}. {{ t.accion_realizada === 'trasladado'
@@ -736,7 +656,7 @@ interface PublicadorLite {
                         </li>
                       </ul>
                       <p *ngIf="ayudaMiembro(t) as ayuda" id="miembros-ayuda" class="field-help" style="margin:0">{{ ayuda }}</p>
-                      <button type="button" class="btn-wizard-back self-start" (click)="cerrarEditarMiembros()">Listo</button>
+                      <button type="button" class="btn-secondary self-start" (click)="cerrarEditarMiembros()">Listo</button>
                     </div>
                     <p *ngIf="guardandoMiembros()" class="destino-estado"><span class="spinner spinner-xs"></span> Guardando…</p>
                   </div>
@@ -842,8 +762,8 @@ interface PublicadorLite {
                   </div>
 
                   <div class="completar__acciones">
-                    <button type="button" class="btn-wizard-back" (click)="cancelarAgregar()" [disabled]="agregando()">Cancelar</button>
-                    <button type="button" class="btn-confirmar" (click)="ejecutarAgregar()"
+                    <button type="button" class="btn-secondary" (click)="cancelarAgregar()" [disabled]="agregando()">Cancelar</button>
+                    <button type="button" class="btn-primary" (click)="ejecutarAgregar()"
                             [disabled]="!agregarIds().length || cargandoImpacto() || agregando()">
                       <span *ngIf="agregando()" class="wizard-create-spinner"></span>
                       {{ agregando() ? 'Procesando…' : 'Trasladar a ' + (t.congregacion_destino || 'la misma congregación') }}
@@ -865,7 +785,7 @@ interface PublicadorLite {
               <div class="field-group">
                 <label class="form-label flex justify-between items-center w-full">
                   <span>Notas sobre {{ t.es_familiar ? 'los miembros' : 'el publicador' }}</span>
-                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Base para la carta</span>
+                  <span class="text-xs text-slate-400 dark:text-slate-500 font-normal">Base para la carta</span>
                 </label>
                 <textarea rows="7" class="form-control text-sm leading-relaxed" [(ngModel)]="t.notas_para_carta" [disabled]="soloLectura(t)"
                           [placeholder]="t.es_familiar ? 'Describe a cada miembro de la familia: antigüedad, privilegios, fortalezas espirituales, por qué se transfieren...' : 'Describe las fortalezas espirituales del publicador: antigüedad, privilegios, personalidad, apoyo a las reuniones y ministerio...'"></textarea>
@@ -904,15 +824,15 @@ interface PublicadorLite {
                 <p *ngIf="errorMejora()" class="mejora__error" role="alert">{{ errorMejora() }}</p>
                 <button *ngIf="cartaAnterior() !== null" type="button" class="mejora__deshacer" (click)="deshacerMejora()">Volver a la versión anterior</button>
               </div>
-              <div *ngIf="redactando()" class="mt-4 p-4 rounded-xl bg-violet-50/70 dark:bg-violet-950/10 border border-violet-100 dark:border-violet-900/30 flex flex-col gap-3 animate-pulse">
+              <div *ngIf="redactando()" class="mt-4 p-4 rounded-xl bg-violet-50/70 dark:bg-violet-950/10 border border-violet-100 dark:border-violet-900/30 flex flex-col gap-3 ">
                 <div class="flex items-center gap-2.5">
-                  <span class="spinner spinner-sm text-violet-600 dark:text-violet-400"></span>
+                  <span class="spinner spinner-sm text-brand-purple dark:text-violet-400"></span>
                   <span class="text-xs font-bold text-violet-800 dark:text-violet-300">Mejorando la redacción…</span>
                 </div>
                 <div class="w-full bg-violet-100 dark:bg-violet-900/50 h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-violet-600 dark:bg-violet-400 h-full w-2/3 rounded-full animate-progress-fast"></div>
+                  <div class="bg-brand-purple dark:bg-violet-400 h-full w-2/3 rounded-full animate-progress-fast"></div>
                 </div>
-                <span class="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">
+                <span class="text-xs text-slate-500 dark:text-slate-400 leading-normal">
                   Pulimos el texto de la carta con tono formal y respetuoso. Al terminar, se abrirá la pestaña "Carta".
                 </span>
               </div>
@@ -1161,8 +1081,8 @@ interface PublicadorLite {
                   </div>
 
                   <div *ngIf="completarAccion()" class="completar__acciones">
-                    <button type="button" class="btn-wizard-back" (click)="cancelarCompletar()" [disabled]="completando()">Cambiar de opción</button>
-                    <button type="button" class="btn-confirmar" [class.btn-confirmar--peligro]="completarAccion() === 'eliminar'"
+                    <button type="button" class="btn-secondary" (click)="cancelarCompletar()" [disabled]="completando()">Cambiar de opción</button>
+                    <button type="button" [ngClass]="completarAccion() === 'eliminar' ? 'btn-danger' : 'btn-primary'"
                             [disabled]="!completarValido() || completando()" (click)="ejecutarCompletar()">
                       <span *ngIf="completando()" class="wizard-create-spinner"></span>
                       {{ textoConfirmar(t) }}
@@ -1184,127 +1104,17 @@ interface PublicadorLite {
   styles: [`
     :host { display: block; height: 100%; }
 
-    /* ── Hero ── */
-    .hero-grad {
-      position: relative; overflow: hidden;
-      background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 60%, #a855f7 100%);
-      box-shadow: 0 6px 20px -6px rgba(109,40,217,0.4);
-    }
-    .hero-eyebrow {
-      display: flex; align-items: center; gap: 0.375rem;
-      color: rgba(196,181,253,0.9); font-size: 0.6rem; text-transform: uppercase;
-      letter-spacing: 0.18em; font-weight: 600; margin-bottom: 0.25rem;
-    }
-    .hero-title  { font-family: var(--font-display); font-size: 1.375rem; font-weight: 800; line-height: 1.15; color: #fff; letter-spacing: -0.02em; }
-    .hero-desc   { color: rgba(237,233,254,0.65); font-size: 0.75rem; margin-top: 0.125rem; line-height: 1.35; }
-    @media (min-width: 1024px) { .hero-title { font-size: 1.5rem; } }
-    .hero-inner  { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem; }
-    .hero-btn-desktop { display: inline-flex; }
-    @media (max-width: 767px) { .hero-desc { display: none; } }
-    @media (max-width: 479px) {
-      .hero-eyebrow { display: none; }
-      .hero-title { font-size: 1.2rem; }
-      .hero-inner { gap: 0.625rem; }
-    }
-
-    /* ══════════════════════════════════════════════════════════
-       MODAL OVERLAY
-       ══════════════════════════════════════════════════════════ */
-
-    @keyframes overlayIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-    @keyframes dialogIn {
-      from { opacity: 0; transform: translateY(20px) scale(0.96); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 200;
-      display: flex; align-items: center; justify-content: center;
-      padding: 1rem;
-      background: rgba(15, 10, 30, 0.6);
-      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-      animation: overlayIn 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    }
-
-    .modal-dialog {
-      position: relative;
-      display: flex; flex-direction: column;
-      width: 100%; max-width: 540px;
-      max-height: calc(100dvh - 2rem);
-      background: #fff;
-      border-radius: 1.25rem;
-      box-shadow: 0 32px 80px -12px rgba(0,0,0,0.28), 0 8px 24px -4px rgba(0,0,0,0.12);
-      overflow: hidden;
-      animation: dialogIn 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    }
-    :host-context(.dark) .modal-dialog {
-      background: #12172a;
-      box-shadow: 0 32px 80px -12px rgba(0,0,0,0.6), 0 8px 24px -4px rgba(0,0,0,0.4), 0 0 0 1px rgba(124,58,237,0.12);
-    }
-
-    /* Header */
-    .modal-header {
-      display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
-      padding: 1.5rem 1.5rem 0;
-      flex-shrink: 0;
-    }
-    .modal-step-label {
-      font-size: 0.75rem; font-weight: 600; color: #6d28d9; line-height: 1.2; margin-bottom: 0.25rem;
-    }
-    :host-context(.dark) .modal-step-label { color: #a78bfa; }
-    .modal-title {
-      font-family: var(--font-display, inherit);
-      font-size: 1.0625rem; font-weight: 700; color: #0f172a; line-height: 1.3;
-      text-wrap: balance;
-    }
-    :host-context(.dark) .modal-title { color: #f1f5f9; }
-    .modal-close-btn {
-      display: flex; align-items: center; justify-content: center;
-      width: 2.5rem; height: 2.5rem; margin: -0.5rem -0.5rem 0 0; border-radius: 0.625rem; border: none; cursor: pointer;
-      color: #94a3b8; background: transparent; flex-shrink: 0;
-      transition: color 130ms ease, background 130ms ease;
-    }
-    .modal-close-btn:hover { color: #64748b; background: #f1f5f9; }
-    :host-context(.dark) .modal-close-btn:hover { color: #cbd5e1; background: rgba(255,255,255,0.07); }
-
     /* Stepper inside modal */
     .modal-stepper {
       display: flex; align-items: flex-start;
-      padding: 1.25rem 1.5rem 0; margin: 0; list-style: none;
+      padding: 0; margin: 0 0 1.25rem; list-style: none;
       flex-shrink: 0;
-    }
-
-    /* Scrollable step content */
-    .modal-body {
-      flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
-      padding: 1.5rem;
-    }
-
-    /* Footer */
-    .modal-footer {
-      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-      padding: 1rem 1.5rem;
-      border-top: 1px solid #f1f5f9;
-      background: #fafafa;
-      flex-shrink: 0;
-    }
-    :host-context(.dark) .modal-footer {
-      border-top-color: rgba(51,65,85,0.5);
-      background: rgba(15,23,42,0.6);
     }
 
     /* Vista previa de la carta */
-    .carta-preview-dialog {
-      max-width: 720px;
-      width: 100%;
-      height: 90dvh;
-    }
     .carta-preview-iframe {
-      flex: 1;
-      min-height: 0;
+      display: block;
+      height: 75dvh;
       width: 100%;
       border: 0;
       background: #fff;
@@ -1312,14 +1122,7 @@ interface PublicadorLite {
 
     /* Teléfono: hoja inferior, botones a lo ancho y al alcance del pulgar */
     @media (max-width: 639px) {
-      .modal-overlay { padding: 0; align-items: flex-end; }
-      .modal-dialog  { max-width: 100%; border-radius: 1.25rem 1.25rem 0 0; max-height: 94dvh; }
-      .modal-header  { padding: 1.25rem 1.25rem 0; }
-      .modal-stepper { padding: 1rem 1.25rem 0; }
-      .modal-body    { padding: 1.25rem; }
-      .modal-footer  { padding: 0.875rem 1.25rem calc(0.875rem + env(safe-area-inset-bottom)); }
-      .modal-footer > button { flex: 1; justify-content: center; }
-      .btn-wizard-next, .btn-wizard-back, .btn-confirmar, .btn-completar, .btn-buscar, .btn-guardar-datos,
+      .btn-completar, .btn-buscar, .btn-guardar-datos,
       .pub-dropdown-trigger, .pub-dropdown-item, .persona-row__quitar, .btn-borrar-registro { min-height: 2.75rem; }
       .paso__accion { min-height: 2.75rem; }
       .privilegio { min-height: 2.75rem; }
@@ -1390,7 +1193,7 @@ interface PublicadorLite {
       border-color: #7c3aed; color: #7c3aed; background: #f5f3ff;
       box-shadow: 0 0 0 4px rgba(124,58,237,0.1);
     }
-    .wizard-step--active .wizard-step__label { color: #6d28d9; font-weight: 700; }
+    .wizard-step--active .wizard-step__label { color: var(--color-brand-purple); font-weight: 700; }
     .wizard-step--done   .wizard-step__bubble {
       border-color: #7c3aed; background: #7c3aed; color: #fff;
       animation: stepBubbleComplete 450ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -1461,7 +1264,7 @@ interface PublicadorLite {
     .persona-row__quitar:hover { color: #b91c1c; background: #fef2f2; }
     :host-context(.dark) .persona-row__quitar:hover { color: #fca5a5; background: rgba(239,68,68,0.1); }
     .pub-dropdown-trigger--agregar {
-      border-style: dashed !important; color: #6d28d9 !important; font-weight: 600; justify-content: flex-start;
+      border-style: dashed !important; color: var(--color-brand-purple) !important; font-weight: 600; justify-content: flex-start;
     }
     :host-context(.dark) .pub-dropdown-trigger--agregar { color: #c4b5fd !important; }
     .consent-alert {
@@ -1473,24 +1276,6 @@ interface PublicadorLite {
     :host-context(.dark) .consent-alert       { background: rgba(251,191,36,0.06); border-color: rgba(251,191,36,0.2); color: #fbbf24; }
 
 
-    /* ── Wizard buttons ── */
-    .btn-wizard-next, .btn-wizard-back {
-      display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
-      min-height: 2.5rem; padding: 0 1rem; font-size: 0.875rem; font-weight: 600;
-      border-radius: 0.5rem; cursor: pointer;
-      transition: background-color 150ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease;
-    }
-    .btn-wizard-next { margin-left: auto; border: none; background: #6d28d9; color: #fff; }
-    .btn-wizard-back { border: 1px solid #d1d5db; background: #fff; color: #374151; font-weight: 500; }
-    :host-context(.dark) .btn-wizard-back { border-color: #334155; background: transparent; color: #e2e8f0; }
-    @media (hover: hover) and (pointer: fine) {
-      .btn-wizard-next:hover:not(:disabled) { background: #5b21b6; }
-      .btn-wizard-back:hover:not(:disabled) { background: #f8fafc; }
-      :host-context(.dark) .btn-wizard-back:hover:not(:disabled) { background: rgba(255,255,255,0.05); }
-    }
-    .btn-wizard-next:active:not(:disabled), .btn-wizard-back:active:not(:disabled) { transform: scale(0.97); }
-    .btn-wizard-next:disabled, .btn-wizard-back:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-wizard-next:focus-visible, .btn-wizard-back:focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }
 
     .wizard-create-spinner {
       width: 0.875rem; height: 0.875rem; border-radius: 50%;
@@ -1528,60 +1313,17 @@ interface PublicadorLite {
     :host-context(.dark) .family-avatar--mas { background: #334155 !important; color: #cbd5e1; }
     @media (prefers-reduced-motion: reduce) { .family-avatar { animation: none; } }
 
-    /* ── Filter pills ── */
-    /* Con cuatro chips y el detalle abierto no caben: se acomodan en dos filas en vez de cortarse. */
-    .filter-pills-wrap { flex-wrap: wrap; max-width: 100%; }
-    .filter-pill {
-      display: inline-flex; align-items: center; gap: 0.375rem;
-      padding: 0.3125rem 0.625rem; font-size: 0.6875rem; font-weight: 600;
-      border-radius: 0.5rem; cursor: pointer; transition: all 150ms ease;
-      color: #64748b; white-space: nowrap;
-    }
-    .filter-pill--active { background: #fff; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); }
-    :host-context(.dark) .filter-pill { color: #94a3b8; }
-    :host-context(.dark) .filter-pill--active { background: #1e293b; color: #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-    @media (hover: hover) { .filter-pill:not(.filter-pill--active):hover { background: rgba(255,255,255,0.6); color: #475569; } }
-    .filter-count {
-      display: inline-flex; align-items: center; justify-content: center;
-      min-width: 1.125rem; height: 1.125rem; padding: 0 0.25rem;
-      background: #e2e8f0; color: #475569;
-      border-radius: 0.375rem; font-size: 0.625rem; font-weight: 700; font-variant-numeric: tabular-nums;
-    }
-    .filter-count--warn { background: rgba(251,146,60,0.15); color: #c2410c; }
-    .filter-count--ok   { background: rgba(16,185,129,0.12); color: #065f46; }
-    :host-context(.dark) .filter-count { background: #334155; color: #94a3b8; }
-    :host-context(.dark) .filter-count--warn { background: rgba(251,146,60,0.15); color: #fb923c; }
-    :host-context(.dark) .filter-count--ok   { background: rgba(16,185,129,0.12); color: #34d399; }
+    /* ── Filtro de la lista (segmentado) ── */
+    .filter-pills-wrap { max-width: 100%; }
 
     /* ── Tab dots ── */
     .tab-dot { position: absolute; top: 0.3rem; right: 0.3rem; width: 6px; height: 6px; border-radius: 50%; }
     .tab-dot--warn { background: #f59e0b; }
     @media (max-width: 459px) { .tab-nav > button > svg:not(.tab-check) { display: none; } }
     .tab-check { width: 0.875rem; height: 0.875rem; color: #059669; }
-    .tab-item-active .tab-check { color: #fff; }
+    .tab-item[aria-selected="true"] .tab-check { color: #fff; }
     :host-context(.dark) .tab-check { color: #34d399; }
-    :host-context(.dark) .tab-item-active .tab-check { color: #fff; }
-
-    /* ── Btn hero ── */
-    .btn-hero {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.625rem 1.125rem; font-size: 0.8125rem; font-weight: 600;
-      border-radius: 0.75rem; cursor: pointer; user-select: none;
-      white-space: nowrap; flex-shrink: 0;
-      background: rgba(255,255,255,0.15); color: #fff;
-      border: 1px solid rgba(255,255,255,0.30);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
-      transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
-    }
-    @media (hover: hover) and (pointer: fine) {
-      .btn-hero:hover { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.45); box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); transform: translateY(-1px); }
-    }
-    .btn-hero:active { transform: scale(0.97); }
-    @media (max-width: 479px) {
-      .btn-hero { padding: 0.5rem 0.8rem; font-size: 0.75rem; gap: 0.35rem; border-radius: 0.625rem; }
-    }
+    :host-context(.dark) .tab-item[aria-selected="true"] .tab-check { color: #fff; }
 
     /* ── Workspace ── */
     .workspace {
@@ -1625,7 +1367,7 @@ interface PublicadorLite {
     /* Filter pills: fill the row on a narrow panel so labels never clip */
     @container listpanel (max-width: 468px) {
       .filter-pills-wrap { width: 100%; }
-      .filter-pill { flex: 1 1 0; justify-content: center; padding-left: 0.4rem; padding-right: 0.4rem; }
+      .filter-pills-wrap .segmented-item { flex: 1 1 0; padding-left: 0.4rem; padding-right: 0.4rem; }
     }
 
     /* ── Stagger animation ── */
@@ -1635,7 +1377,6 @@ interface PublicadorLite {
       opacity: 0;
     }
 
-    .toast-container { pointer-events: none; }
     textarea { resize: vertical; }
 
     /* ── Custom publisher dropdown ─────────────────────────── */
@@ -1670,7 +1411,7 @@ interface PublicadorLite {
     .pub-dropdown-item--placeholder { color: #94a3b8; font-style: italic; font-size: 0.8rem; }
     .pub-item-avatar {
       width: 1.875rem; height: 1.875rem; border-radius: 0.4375rem;
-      background: #ede9fe; color: #5b21b6; font-weight: 700; font-size: 0.6875rem;
+      background: #ede9fe; color: #5b21b6; font-weight: 700; font-size: 0.75rem;
       display: inline-flex; align-items: center; justify-content: center;
       font-family: var(--font-display, inherit);
     }
@@ -1730,7 +1471,7 @@ interface PublicadorLite {
     /* El nombre se lee completo (pasa a otra línea) y la etiqueta no lo come */
     .pub-dropdown-panel--hoja .pub-dropdown-item { align-items: center; padding-top: 0.5rem; padding-bottom: 0.5rem; }
     .pub-dropdown-panel--hoja .pub-item-name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.3; }
-    .pub-dropdown-panel--hoja .pub-item-badge { font-size: 0.6875rem; padding: 0.125rem 0.5rem; max-width: 6.5rem; white-space: normal; overflow-wrap: normal; text-align: center; line-height: 1.2; flex-shrink: 0; }
+    .pub-dropdown-panel--hoja .pub-item-badge { font-size: 0.75rem; padding: 0.125rem 0.5rem; max-width: 6.5rem; white-space: normal; overflow-wrap: normal; text-align: center; line-height: 1.2; flex-shrink: 0; }
     .pub-drop-backdrop--hoja { background: rgba(2, 6, 23, 0.5); animation: hojaFondo 200ms ease-out both; }
     @keyframes hojaSube { from { transform: translateY(100%); } to { transform: translateY(0); } }
     @keyframes hojaFondo { from { opacity: 0; } to { opacity: 1; } }
@@ -1747,7 +1488,7 @@ interface PublicadorLite {
     :host-context(.dark) .pub-search-clear:hover { background: #475569; }
 
     .pub-item-badge {
-      font-size: 0.6875rem; font-weight: 600; padding: 0.125rem 0.4rem;
+      font-size: 0.75rem; font-weight: 600; padding: 0.125rem 0.4rem;
       background: rgba(251,146,60,0.15); color: #c2410c; border-radius: 0.3125rem; white-space: nowrap;
     }
     .pub-item-check { width: 1rem; height: 1rem; color: #7c3aed; }
@@ -1763,89 +1504,10 @@ interface PublicadorLite {
     :host-context(.dark) .pub-item-check  { color: #a78bfa; }
     /* ─────────────────────────────────────────────────────── */
 
-    .empty-state-row { }
-    .empty-state-cell { }
-    .empty-state-cell .empty-state { min-height: 360px; }
-
-    /* ── Empty state ─────────────────────────────────────────── */
-    @keyframes emptyFloat {
-      0%, 100% { transform: translateY(0); }
-      50%       { transform: translateY(-5px); }
-    }
-    @keyframes emptyFadeIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .empty-state {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: 3.5rem 1.5rem;
-      text-align: center;
-      animation: emptyFadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    }
-
-    /* Ilustración de documentos apilados */
-    .empty-state__illustration {
-      position: relative; width: 4rem; height: 4rem; margin-bottom: 1.25rem;
-      animation: emptyFloat 3.5s ease-in-out infinite;
-    }
-    .empty-state__doc {
-      position: absolute; border-radius: 0.625rem;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .empty-state__doc--back {
-      width: 3rem; height: 3.5rem;
-      background: #ddd6fe; top: 0.25rem; right: 0;
-      transform: rotate(6deg);
-    }
-    .empty-state__doc--front {
-      width: 3.25rem; height: 3.75rem;
-      background: #ede9fe; top: 0; left: 0;
-      box-shadow: 0 4px 12px rgba(109,40,217,0.2);
-    }
-    :host-context(.dark) .empty-state__doc--back  { background: rgba(109,40,217,0.15); }
-    :host-context(.dark) .empty-state__doc--front { background: rgba(109,40,217,0.22); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-
-    .empty-state__title {
-      font-family: var(--font-display, inherit);
-      font-weight: 700; font-size: 0.9375rem;
-      color: #1e293b; margin-bottom: 0.375rem;
-    }
-    :host-context(.dark) .empty-state__title { color: #f1f5f9; }
-
-    .empty-state__desc {
-      font-size: 0.8rem; color: #64748b; max-width: 26rem; line-height: 1.55;
-      margin-bottom: 1.25rem;
-    }
-    :host-context(.dark) .empty-state__desc { color: #94a3b8; }
-
-    .empty-state__cta {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.625rem 1.25rem; border-radius: 0.75rem;
-      font-size: 0.8125rem; font-weight: 700; cursor: pointer;
-      background: #7c3aed; color: #fff; border: none;
-      box-shadow: 0 4px 12px rgba(109,40,217,0.35);
-      transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
-    }
-    .empty-state__cta:hover {
-      background: #6d28d9;
-      box-shadow: 0 6px 18px rgba(109,40,217,0.45);
-      transform: translateY(-1px);
-    }
-    .empty-state__cta:active { transform: scale(0.97); }
-
-    .empty-state__hint {
-      margin-top: 0.75rem; font-size: 0.7rem; color: #94a3b8;
-    }
-    :host-context(.dark) .empty-state__hint { color: #475569; }
-    /* ─────────────────────────────────────────────────────────── */
-
     @media (prefers-reduced-motion: reduce) {
       .stagger-item, .animate-scale-in, .animate-fadeInUp {
         animation: none !important; opacity: 1 !important; transform: none !important;
       }
-      .empty-state__illustration { animation: none; }
-      .empty-state { animation: none; opacity: 1; }
     }
 
     /* ── List rows ───────────────────────────────────────────── */
@@ -1864,7 +1526,7 @@ interface PublicadorLite {
     .carta-badge {
       display: inline-flex; align-items: center; gap: 0.3rem;
       padding: 0.25rem 0.625rem; border-radius: 0.5rem;
-      font-size: 0.6875rem; font-weight: 600; line-height: 1;
+      font-size: 0.75rem; font-weight: 600; line-height: 1;
     }
     .carta-badge--done {
       background: rgba(16,185,129,0.1); color: #065f46;
@@ -1902,7 +1564,7 @@ interface PublicadorLite {
     :host-context(.dark) .detail-section { border-bottom-color: rgba(51,65,85,0.5); }
 
     .detail-section__label {
-      font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.1em; color: #64748b; margin-bottom: 0.625rem;
     }
     :host-context(.dark) .detail-section__label { color: #94a3b8; }
@@ -1922,7 +1584,7 @@ interface PublicadorLite {
     .mejora__fila { display: flex; align-items: center; gap: 0.5rem; }
     .mejora__ayuda {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 2.5rem; height: 2.5rem; border-radius: 0.5rem; color: #6d28d9; background: transparent; cursor: pointer;
+      width: 2.5rem; height: 2.5rem; border-radius: 0.5rem; color: var(--color-brand-purple); background: transparent; cursor: pointer;
       transition: background 120ms ease;
     }
     .mejora__ayuda:hover { background: #f5f3ff; }
@@ -1936,7 +1598,7 @@ interface PublicadorLite {
     :host-context(.dark) .mejora__pista { color: #94a3b8; }
     .mejora__error { font-size: 0.8125rem; line-height: 1.5; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 0.5rem; padding: 0.5rem 0.625rem; margin: 0; }
     :host-context(.dark) .mejora__error { color: #fcd34d; background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
-    .mejora__deshacer { align-self: flex-start; font-size: 0.8125rem; font-weight: 600; color: #6d28d9; text-decoration: underline; cursor: pointer; min-height: 2.5rem; }
+    .mejora__deshacer { align-self: flex-start; font-size: 0.8125rem; font-weight: 600; color: var(--color-brand-purple); text-decoration: underline; cursor: pointer; min-height: 2.5rem; }
     :host-context(.dark) .mejora__deshacer { color: #c4b5fd; }
     @media (max-width: 639px) { .mejora__ayuda { width: 2.75rem; height: 2.75rem; } }
 
@@ -1976,7 +1638,7 @@ interface PublicadorLite {
     .candidato:hover { background: #f5f3ff; border-color: #ddd6fe; }
     .candidato:active { transform: scale(0.99); }
     .candidato:focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }
-    .candidato__accion { font-size: 0.75rem; font-weight: 700; color: #6d28d9; }
+    .candidato__accion { font-size: 0.75rem; font-weight: 700; color: var(--color-brand-purple); }
     :host-context(.dark) .candidato { color: #e2e8f0; border-color: #334155; }
     :host-context(.dark) .candidato:hover { background: rgba(109,40,217,0.12); border-color: #5b21b6; }
     :host-context(.dark) .candidato__accion { color: #c4b5fd; }
@@ -1995,9 +1657,9 @@ interface PublicadorLite {
     }
     :host-context(.dark) .detail-subtitle__dest { color: #e2e8f0; }
     .detail-subtitle__tag {
-      flex-shrink: 0; font-size: 0.625rem; font-weight: 700; line-height: 1;
+      flex-shrink: 0; font-size: 0.75rem; font-weight: 700; line-height: 1;
       padding: 0.2rem 0.4rem; border-radius: 0.375rem;
-      background: #ede9fe; color: #6d28d9;
+      background: #ede9fe; color: var(--color-brand-purple);
     }
     :host-context(.dark) .detail-subtitle__tag { background: rgba(109,40,217,0.22); color: #c4b5fd; }
 
@@ -2045,7 +1707,7 @@ interface PublicadorLite {
       transition: background-color 250ms ease, border-color 250ms ease, color 250ms ease;
     }
     .paso__marca svg { width: 0.75rem; height: 0.75rem; }
-    .paso--actual .paso__marca { border-color: #7c3aed; color: #6d28d9; }
+    .paso--actual .paso__marca { border-color: #7c3aed; color: var(--color-brand-purple); }
     .paso--hecho .paso__marca  { border-color: #059669; background: #059669; color: #fff; }
     :host-context(.dark) .paso__marca { background: #0f172a; border-color: #475569; color: #94a3b8; }
     :host-context(.dark) .paso--actual .paso__marca { border-color: #a78bfa; color: #c4b5fd; }
@@ -2059,10 +1721,10 @@ interface PublicadorLite {
     .paso__accion {
       min-height: 2.25rem; min-width: 4.25rem; padding: 0 0.75rem; border-radius: 0.5rem; flex-shrink: 0;
       font-size: 0.75rem; font-weight: 600; cursor: pointer;
-      color: #6d28d9; background: transparent; border: 1px solid transparent;
+      color: var(--color-brand-purple); background: transparent; border: 1px solid transparent;
       transition: background-color 150ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1);
     }
-    .paso--actual .paso__accion { background: #6d28d9; color: #fff; }
+    .paso--actual .paso__accion { background: var(--color-brand-purple); color: #fff; }
     @media (hover: hover) and (pointer: fine) {
       .paso__accion:hover:not(:disabled) { background: #ede9fe; }
       .paso--actual .paso__accion:hover:not(:disabled) { background: #5b21b6; }
@@ -2095,7 +1757,7 @@ interface PublicadorLite {
       .completar { padding: 1rem; margin-left: -0.25rem; margin-right: -0.25rem; }
       .opcion { padding: 0.875rem; gap: 0.75rem; }
     }
-    .completar__eyebrow { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #6d28d9; margin-bottom: 0.25rem; }
+    .completar__eyebrow { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-brand-purple); margin-bottom: 0.25rem; }
     :host-context(.dark) .completar__eyebrow { color: #c4b5fd; }
     .completar__titulo { font-family: var(--font-display, inherit); font-size: 1rem; font-weight: 700; color: #1e1b4b; line-height: 1.3; }
     :host-context(.dark) .completar__titulo { color: #f5f3ff; }
@@ -2112,7 +1774,7 @@ interface PublicadorLite {
     .carta-herramientas { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin-top: 0.625rem; }
     .btn-carta-copiar {
       display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2rem; padding: 0 0.625rem; border-radius: 0.5rem; cursor: pointer;
-      font-size: 0.75rem; font-weight: 600; color: #6d28d9; background: #f5f3ff; border: 1px solid #ede9fe;
+      font-size: 0.75rem; font-weight: 600; color: var(--color-brand-purple); background: #f5f3ff; border: 1px solid #ede9fe;
       transition: background-color 150ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1);
     }
     .btn-carta-copiar:active { transform: scale(0.97); }
@@ -2136,7 +1798,7 @@ interface PublicadorLite {
     :host-context(.dark) .siguiente__check { background: #10b981; color: #052e16; }
     .siguiente__otra {
       min-height: 2.25rem; padding: 0 0.625rem; border-radius: 0.5rem; border: 0; background: transparent; cursor: pointer;
-      font-size: 0.8125rem; font-weight: 600; color: #6d28d9; text-decoration: underline; text-underline-offset: 3px;
+      font-size: 0.8125rem; font-weight: 600; color: var(--color-brand-purple); text-decoration: underline; text-underline-offset: 3px;
     }
     .siguiente__otra:disabled { opacity: 0.5; cursor: not-allowed; }
     :host-context(.dark) .siguiente__otra { color: #c4b5fd; }
@@ -2145,7 +1807,7 @@ interface PublicadorLite {
     .btn-completar {
       display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
       width: 100%; min-height: 2.5rem; border-radius: 0.5rem; border: none; cursor: pointer;
-      font-size: 0.875rem; font-weight: 600; background: #6d28d9; color: #fff;
+      font-size: 0.875rem; font-weight: 600; background: var(--color-brand-purple); color: #fff;
       transition: background-color 150ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1);
     }
     @media (hover: hover) and (pointer: fine) { .btn-completar:hover { background: #5b21b6; } }
@@ -2188,7 +1850,7 @@ interface PublicadorLite {
     .sub-paso__num {
       width: 1.375rem; height: 1.375rem; border-radius: 50%; flex-shrink: 0; margin-top: 0.0625rem;
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.6875rem; font-weight: 700; background: #ede9fe; color: #5b21b6;
+      font-size: 0.75rem; font-weight: 700; background: #ede9fe; color: #5b21b6;
     }
     :host-context(.dark) .sub-paso__num { background: rgba(124,58,237,0.25); color: #ddd6fe; }
     .sub-paso__titulo { font-size: 0.875rem; font-weight: 600; color: #1e293b; line-height: 1.35; }
@@ -2221,7 +1883,7 @@ interface PublicadorLite {
     @media (hover: hover) and (pointer: fine) {
       .privilegio:hover { background: rgba(124,58,237,0.06); }
     }
-    .privilegio__check { width: 1.125rem; height: 1.125rem; flex-shrink: 0; accent-color: #6d28d9; cursor: pointer; }
+    .privilegio__check { width: 1.125rem; height: 1.125rem; flex-shrink: 0; accent-color: var(--color-brand-purple); cursor: pointer; }
     .confirmacion .privilegio__check { accent-color: #dc2626; margin-top: 0.125rem; }
 
     .impacto-linea { position: relative; padding-left: 1rem; font-size: 0.8125rem; line-height: 1.5; color: #475569; }
@@ -2231,20 +1893,7 @@ interface PublicadorLite {
     }
     :host-context(.dark) .impacto-linea { color: #cbd5e1; }
 
-    .btn-confirmar {
-      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-      min-height: 2.5rem; padding: 0 1rem; border-radius: 0.5rem; border: none; cursor: pointer;
-      font-size: 0.875rem; font-weight: 600; background: #6d28d9; color: #fff;
-      transition: background-color 150ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease;
-    }
-    .btn-confirmar--peligro { background: #dc2626; }
-    @media (hover: hover) and (pointer: fine) {
-      .btn-confirmar:hover:not(:disabled) { background: #5b21b6; }
-      .btn-confirmar--peligro:hover:not(:disabled) { background: #b91c1c; }
-    }
-    .btn-confirmar:active:not(:disabled) { transform: scale(0.97); }
-    .btn-confirmar:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-confirmar:focus-visible, .btn-completar:focus-visible, .paso__accion:focus-visible,
+    .btn-completar:focus-visible, .paso__accion:focus-visible,
     .btn-buscar:focus-visible, .btn-guardar-datos:focus-visible, .btn-carta-copiar:focus-visible, .siguiente__otra:focus-visible, .btn-borrar-registro:focus-visible {
       outline: 2px solid #7c3aed; outline-offset: 2px;
     }
@@ -2273,14 +1922,7 @@ interface PublicadorLite {
       .form-control, .pub-search-input { font-size: 16px; }
     }
     :host * { -webkit-tap-highlight-color: transparent; }
-    .modal-body, .pub-dropdown-list { -webkit-overflow-scrolling: touch; }
-    .toast-container {
-      bottom: calc(1.5rem + env(safe-area-inset-bottom));
-      right:  calc(1.5rem + env(safe-area-inset-right));
-    }
-    @media (max-width: 479px) {
-      .modal-dialog { padding-bottom: env(safe-area-inset-bottom); }
-    }
+    .pub-dropdown-list { -webkit-overflow-scrolling: touch; }
   `]
 })
 export class TransferenciasPage implements OnInit, OnDestroy {
@@ -2343,6 +1985,8 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   completando         = signal(false);
   impacto             = signal<ImpactoMiembro[]>([]);
   cargandoImpacto     = signal(false);
+  /** No se pudo saber qué privilegios tiene: se conservan todos (no se cierra ninguno a ciegas). */
+  impactoFallo        = signal(false);
   privilegiosConservar = signal<Set<number>>(new Set());
   verificandoDestino  = signal(false);
   resultadosCong      = signal<CongregacionBuscada[]>([]);
@@ -2367,8 +2011,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   filtro = signal<'todos' | 'borrador' | 'finalizada' | 'recibidas'>('todos');
 
   // ── Toasts ──────────────────────────────────────────────────
-  notifications = signal<Toast[]>([]);
-  private _toastId = 0;
+  private toastSvc = inject(ToastService);
 
   // ── Formulario del wizard ────────────────────────────────────
   form: {
@@ -2455,7 +2098,10 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   // ── Lifecycle ────────────────────────────────────────────────
   ngOnInit() {
     this.svc.mejoraDisponible().subscribe({ next: r => this.mejoraDisponible.set(r.disponible), error: () => this.mejoraDisponible.set(false) });
-    this.svc.list().subscribe({
+    // Con la congregación elegida (el Administrador ve una a la vez, no todas mezcladas,
+    // y así «Recibidas» sabe cuáles son de ingreso).
+    const congLista = this.ctx.effectiveCongregacionId();
+    this.svc.list(congLista ? { id_congregacion: congLista } : {}).subscribe({
       next: t => {
         this.items.set(t);
         this.loading.set(false);
@@ -2998,16 +2644,27 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     const t = this.seleccionada();
     if (!t) return;
     this.cargandoImpacto.set(true);
+    this.impactoFallo.set(false);
     this.impacto.set([]);
+    this.privilegiosConservar.set(new Set());
+    // Si mientras tanto se abrió otra transferencia, esta respuesta ya no le corresponde.
+    const sigue = () => this.seleccionada()?.id_transferencia === t.id_transferencia;
     this.svc.impacto(t.id_transferencia).subscribe({
       next: (res) => {
+        if (!sigue()) return;
         this.impacto.set(res.miembros);
         this.privilegiosConservar.set(new Set(
           res.miembros.flatMap(m => m.privilegios.map(p => p.id_publicador_privilegio))
         ));
         this.cargandoImpacto.set(false);
       },
-      error: () => this.cargandoImpacto.set(false),
+      error: () => {
+        if (!sigue()) return;
+        // Antes se mandaba la lista vacía y se cerraban TODOS los privilegios sin que nadie lo eligiera.
+        this.impactoFallo.set(true);
+        this.cargandoImpacto.set(false);
+        this.toast('info', 'No se pudo cargar qué cambiará con el traslado. Si continúa, la persona conserva todos sus privilegios.', 7000);
+      },
     });
   }
 
@@ -3057,7 +2714,8 @@ export class TransferenciasPage implements OnInit, OnDestroy {
       ? {
           accion,
           id_congregacion_destino: this.destinoVerificado()?.id_congregacion,
-          privilegios_conservar: [...this.privilegiosConservar()],
+          // undefined = el servidor conserva todos (cuando no se pudo mostrar la elección).
+          privilegios_conservar: this.impactoFallo() ? undefined : [...this.privilegiosConservar()],
         }
       : { accion, opcion_usuario: 'eliminar_con_usuario' };
     this.svc.completar(t.id_transferencia, body).subscribe({
@@ -3308,7 +2966,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   }
   badgeEstadoCls(t: Transferencia): string {
     if (this.esIngreso(t)) return 'badge-recibida';
-    if (t.procesada_en) return t.accion_realizada === 'trasladado' ? 'badge-active' : 'badge-warning';
+    if (t.procesada_en) return t.accion_realizada === 'trasladado' ? 'badge-active' : 'badge-inactive';
     return t.estado === 'borrador' ? 'badge-warning' : 'badge-active';
   }
 
@@ -3411,12 +3069,6 @@ export class TransferenciasPage implements OnInit, OnDestroy {
 
   // ── Toasts ───────────────────────────────────────────────────
   toast(type: ToastType, msg: string, duration = 4500) {
-    const id = ++this._toastId;
-    this.notifications.update(n => [...n, { id, type, msg }]);
-    setTimeout(() => this.dismissToast(id), duration);
-  }
-
-  dismissToast(id: number) {
-    this.notifications.update(n => n.filter(x => x.id !== id));
+    this.toastSvc[type](msg, undefined, duration);
   }
 }

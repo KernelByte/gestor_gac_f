@@ -50,20 +50,20 @@ interface Configuracion {
 const CLS = {
    etiqueta: 'block text-sm font-semibold text-slate-700 dark:text-slate-200',
    ayuda:    'text-sm leading-relaxed text-slate-500 dark:text-slate-400',
-   campo:    'w-full h-12 px-4 rounded-xl border bg-white dark:bg-slate-800/60 text-[15px] font-medium text-slate-900 dark:text-white ' +
+   campo:    'w-full h-12 px-4 rounded-xl border bg-white dark:bg-slate-800/60 text-base font-medium text-slate-900 dark:text-white ' +
              'border-slate-300 dark:border-slate-700 placeholder:text-slate-400 dark:placeholder:text-slate-500 ' +
              'hover:border-slate-400 dark:hover:border-slate-600 focus:border-brand-purple dark:focus:border-purple-400 ' +
-             'focus:ring-4 focus:ring-purple-500/15 outline-none transition-[border-color,box-shadow] duration-150 ' +
+             'focus:ring-4 focus:ring-brand-purple/15 outline-none transition-[border-color,box-shadow] duration-150 ' +
              'read-only:bg-slate-50 read-only:dark:bg-slate-800/30 read-only:hover:border-slate-300 dark:read-only:hover:border-slate-700',
    btnSecundario: 'inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl border border-slate-300 dark:border-slate-600 ' +
              'bg-white dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 ' +
              'active:scale-[0.98] transition-[background-color,transform] duration-150 disabled:opacity-50 disabled:cursor-not-allowed ' +
-             'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25',
+             'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-purple/25',
    btnPrimario: 'inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-brand-purple text-white text-sm font-semibold ' +
-             'hover:bg-purple-700 active:scale-[0.98] transition-[background-color,transform] duration-150 ' +
-             'disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/30',
+             'hover:bg-[#5b21b6] active:scale-[0.98] transition-[background-color,transform] duration-150 ' +
+             'disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-purple/30',
    chip:     'h-11 px-4 rounded-xl border text-sm font-semibold transition-[background-color,border-color,color,transform] duration-150 ' +
-             'active:scale-[0.97] disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25',
+             'active:scale-[0.97] disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-purple/25',
    chipOn:   'border-brand-purple bg-brand-purple text-white',
    chipOff:  'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 ' +
              'hover:border-slate-400 dark:hover:border-slate-500 disabled:hover:border-slate-300',

@@ -37,7 +37,7 @@ export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
         <p class="delivery-desc">Documentos adjuntos y agenda comprimidos en un solo archivo.</p>
         <button (click)="descargarZip()" [disabled]="descargandoZip()" class="btn-secondary w-full justify-center">
           @if (descargandoZip()) {
-            <span class="inline-block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
+            <span class="spinner spinner-sm inline-block"></span>
             Generando ZIP…
           } @else {
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
@@ -79,7 +79,7 @@ export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
             </a>
 
             @if (!editandoFechaEnlace()) {
-              <p class="text-[0.65rem] text-slate-400 mt-1.5 flex items-center gap-1.5 flex-wrap">
+              <p class="text-xs text-slate-400 mt-1.5 flex items-center gap-1.5 flex-wrap">
                 <span>Expira el {{ enlace()!.fecha_expiracion | date:'short' }}</span>
                 <button (click)="abrirEdicionFechaEnlace()" class="link-edit-fecha" type="button">
                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-9.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 8.5-8.5z"/></svg>
@@ -157,7 +157,7 @@ export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
     :host {
       display: block;
       --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-      --brand-purple: #6D28D9;
+      --brand-purple: var(--color-brand-purple);
       --brand-purple-hover: #5B21B6;
       --border-light: #e2e8f0;
       --border-dark: #334155;
@@ -203,31 +203,6 @@ export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
     .form-label > span:first-child { display: flex; align-items: center; gap: 0.375rem; color: #475569; margin-bottom: 0.25rem; font-weight: 500; font-size: 0.8125rem; }
     :host-context(.dark) .form-label > span:first-child { color: #cbd5e1; }
 
-    /* ───── Botones ───── */
-    .btn-primary, .btn-secondary, .btn-ghost {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.5rem 0.875rem; font-size: 0.8125rem; font-weight: 500;
-      border-radius: 0.625rem;
-      transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), color 160ms var(--ease-out);
-      cursor: pointer; user-select: none;
-    }
-    .btn-primary { background: var(--brand-purple); color: #fff; box-shadow: 0 1px 2px rgba(109, 40, 217, 0.18); }
-    .btn-secondary { border: 1px solid var(--border-light); color: #475569; background: var(--bg-light); }
-    .btn-ghost { color: #64748b; }
-    .btn-primary:disabled, .btn-secondary:disabled, .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
-    :host-context(.dark) .btn-secondary { background: var(--bg-dark); border-color: var(--border-dark); color: #cbd5e1; }
-    :host-context(.dark) .btn-ghost { color: #94a3b8; }
-    @media (max-width: 767px) {
-      .btn-primary, .btn-secondary, .btn-ghost { min-height: 2.75rem; }
-    }
-    @media (hover: hover) and (pointer: fine) {
-      .btn-primary:hover:not(:disabled) { background: var(--brand-purple-hover); box-shadow: 0 4px 14px rgba(109,40,217,0.28); }
-      .btn-secondary:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
-      .btn-ghost:hover:not(:disabled) { background: rgba(100,116,139,0.08); color: #334155; }
-      :host-context(.dark) .btn-secondary:hover:not(:disabled) { background: #334155; border-color: #475569; color: #f1f5f9; }
-      :host-context(.dark) .btn-ghost:hover:not(:disabled) { background: rgba(148,163,184,0.12); color: #f1f5f9; }
-    }
-
     /* ───── Delivery cards ───── */
     .delivery-card-header {
       display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;
@@ -236,13 +211,13 @@ export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
       display: inline-flex; align-items: center; justify-content: center;
       width: 1.375rem; height: 1.375rem; border-radius: 9999px; flex-shrink: 0;
       background: var(--border-light); color: #64748b;
-      font-size: 0.6875rem; font-weight: 800;
+      font-size: 0.75rem; font-weight: 800;
     }
     :host-context(.dark) .delivery-step { background: var(--border-dark); color: #94a3b8; }
     .delivery-badge {
       display: inline-flex; align-items: center;
       padding: 0.125rem 0.5rem; border-radius: 9999px;
-      font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
     }
     .delivery-badge-amber { background: #fef3c7; color: #92400e; }
     .delivery-badge-emerald { background: #d1fae5; color: #065f46; }
@@ -276,7 +251,7 @@ export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
     }
     :host-context(.dark) .link-result { background: #0f172a; border-color: var(--border-dark); }
     .link-url {
-      display: block; font-size: 0.7rem; font-family: ui-monospace, monospace;
+      display: block; font-size: 0.75rem; font-family: ui-monospace, monospace;
       color: var(--brand-purple); word-break: break-all;
       text-decoration: underline; text-underline-offset: 2px;
     }
@@ -284,7 +259,7 @@ export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
 
     .link-edit-fecha {
       display: inline-flex; align-items: center; gap: 0.25rem;
-      font-size: 0.65rem; font-weight: 600; color: var(--brand-purple);
+      font-size: 0.75rem; font-weight: 600; color: var(--brand-purple);
       text-decoration: underline; text-underline-offset: 2px;
       cursor: pointer; background: none; border: none; padding: 0;
     }

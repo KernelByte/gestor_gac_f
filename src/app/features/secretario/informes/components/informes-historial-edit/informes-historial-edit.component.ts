@@ -7,12 +7,15 @@ import { PrivilegiosService } from '../../../privilegios/infrastructure/privileg
 import { PublicadorPrivilegio } from '../../../privilegios/domain/models/publicador-privilegio';
 import { Privilegio } from '../../../privilegios/domain/models/privilegio';
 import { DatePickerComponent } from '../../../../../shared/components/date-picker/date-picker.component';
+import { ModalComponent } from '../../../../../shared/components/modal/modal.component';
+import { ToastService } from '../../../../../shared/components/toast/toast.service';
 import { forkJoin, of } from 'rxjs';
+import { AvisoComponent } from '../../../../../shared/components/aviso/aviso.component';
 
 @Component({
    selector: 'app-informes-historial-edit',
    standalone: true,
-   imports: [CommonModule, FormsModule, DatePickerComponent],
+   imports: [CommonModule, FormsModule, DatePickerComponent, ModalComponent, AvisoComponent],
    templateUrl: './informes-historial-edit.component.html',
 })
 export class InformesHistorialEditComponent implements OnInit {
@@ -575,13 +578,10 @@ export class InformesHistorialEditComponent implements OnInit {
    }
 
    // Toast notification
-   toastMessage = signal<string | null>(null);
-   private toastTimer: ReturnType<typeof setTimeout> | null = null;
+   private toast = inject(ToastService);
 
    showToast(msg: string) {
-      if (this.toastTimer) clearTimeout(this.toastTimer);
-      this.toastMessage.set(msg);
-      this.toastTimer = setTimeout(() => this.toastMessage.set(null), 3000);
+      this.toast.success(msg);
    }
 
    switchTab(tab: 'informe' | 'privilegios') {

@@ -1,10 +1,11 @@
 import {
-  Component, ElementRef, EventEmitter, HostListener, Input, Output,
+  Component, ElementRef, EventEmitter, Input, Output,
   ViewChild, computed, inject, signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SelectPickerComponent, PickerOption } from '../../../../../../shared/components/select-picker/select-picker.component';
+import { ModalComponent } from '../../../../../../shared/components/modal/modal.component';
 import { SimpleDateFieldComponent } from './simple-date-field/simple-date-field.component';
 import { Privilegio } from '../../../../privilegios/domain/models/privilegio';
 import { formatearNombre, nombreMostrado } from '../../../../../../core/utils/nombre.util';
@@ -47,7 +48,7 @@ type StepId = 'nombre' | 'personal' | 'congregacion' | 'privilegios';
 @Component({
   selector: 'app-nuevo-publicador-wizard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SelectPickerComponent, SimpleDateFieldComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SelectPickerComponent, SimpleDateFieldComponent, ModalComponent],
   templateUrl: './nuevo-publicador-wizard.component.html',
   styleUrl: './nuevo-publicador-wizard.component.scss',
 })
@@ -346,11 +347,6 @@ export class NuevoPublicadorWizardComponent {
 
   puedeCrear = computed(() => this.congregacionId != null);
 
-  @HostListener('document:keydown.escape')
-  onEsc() {
-    if (this.isOpen()) this.intentarCerrar();
-  }
-
   intentarCerrar() {
     if (this.form.dirty && !this.confirmarDescarte()) {
       this.confirmarDescarte.set(true);
@@ -444,35 +440,5 @@ export class NuevoPublicadorWizardComponent {
     this.maxStepReached.set(0);
     this.avanzando.set(true);
     setTimeout(() => this.primerCampoRef?.nativeElement?.focus(), 80);
-  }
-
-  /** Mantiene el foco dentro del diálogo mientras está abierto. */
-  @HostListener('document:keydown.tab', ['$event'])
-  @HostListener('document:keydown.shift.tab', ['$event'])
-  onTab(event: Event) {
-    if (!this.isOpen() || !(event instanceof KeyboardEvent)) return;
-    const raiz = this.dialogoRef?.nativeElement;
-    if (!raiz) return;
-    const focusables = Array.from(
-      raiz.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )
-    ).filter(el => el.offsetParent !== null);
-    if (focusables.length === 0) return;
-
-    const primero = focusables[0];
-    const ultimo = focusables[focusables.length - 1];
-    const activo = document.activeElement as HTMLElement | null;
-
-    if (event.shiftKey && activo === primero) {
-      event.preventDefault();
-      ultimo.focus();
-    } else if (!event.shiftKey && activo === ultimo) {
-      event.preventDefault();
-      primero.focus();
-    } else if (activo && !raiz.contains(activo)) {
-      event.preventDefault();
-      primero.focus();
-    }
   }
 }

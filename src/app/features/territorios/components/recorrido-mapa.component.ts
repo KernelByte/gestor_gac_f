@@ -8,6 +8,7 @@ import * as L from 'leaflet';
 import { TerritoriosService } from '../services/territorios.service';
 import { crearCapaBasePropia } from '../utils/mapa-base-propio';
 import { fechaIsoLocal, hoyIso } from '../../../core/utils/fecha.util';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import { CriterioRecorrido, ManzanaRecorrido, PuntoSalidaOpcion, RecorridoRespuesta, SugerenciaSalida } from '../models/territorio.model';
 import { SalidaProgramada, SalidasProgramaService, horaLegible, tituloDia } from '../services/salidas-programa.service';
@@ -23,12 +24,12 @@ const ZOOM_NUMEROS = 15;
 @Component({
   selector: 'app-recorrido-mapa',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, SelectPickerComponent],
+  imports: [CommonModule, FormsModule, DatePipe, SelectPickerComponent, ModalComponent],
   template: `
     <div class="h-full min-h-0 flex flex-col lg:flex-row gap-3 lg:gap-4">
 
       <!-- ── Mapa: ocupa todo lo que puede; lo demás flota encima o va en el panel ── -->
-      <div class="relative h-[58dvh] min-h-[22rem] lg:h-auto lg:min-h-0 lg:flex-1 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/70 bg-slate-100 dark:bg-slate-900">
+      <div class="relative h-[58dvh] min-h-[22rem] lg:h-auto lg:min-h-0 lg:flex-1 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900">
         <div #mapa class="absolute inset-0" [class.rec-zoom-bajo]="zoomBajo()"></div>
 
         @if (cargando()) {
@@ -39,24 +40,24 @@ const ZOOM_NUMEROS = 15;
         @if (errorCarga()) {
           <div class="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-white/90 dark:bg-slate-900/90 text-center p-6" role="alert">
             <p class="text-base font-bold text-slate-900 dark:text-white">No se pudo cargar el recorrido</p>
-            <button type="button" (click)="cargar(true)" class="h-11 px-5 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">Reintentar</button>
+            <button type="button" (click)="cargar(true)" class="btn-primary">Reintentar</button>
           </div>
         }
 
         <!-- Avisos de modo, arriba y centrados -->
         @if (eligiendoInicio()) {
-          <div class="flota absolute top-3 left-14 right-3 z-30 flex items-center justify-between gap-3 rounded-xl bg-violet-700 text-white pl-4 pr-2 py-2 shadow-lg" role="status">
+          <div class="flota absolute top-3 left-14 right-3 z-30 flex items-center justify-between gap-3 rounded-xl bg-brand-purple text-white pl-4 pr-2 py-2 shadow-lg" role="status">
             <p class="text-sm font-semibold">Toque la manzana donde empieza el recorrido.</p>
             <button type="button" (click)="eligiendoInicio.set(false)" class="shrink-0 h-9 px-3 text-sm font-bold rounded-lg bg-white/15 hover:bg-white/25">Cancelar</button>
           </div>
         } @else if (marcando()) {
-          <div class="flota absolute top-3 left-14 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-30 rounded-xl bg-slate-900/90 text-white px-4 py-2 shadow-lg text-[13px] leading-snug text-center" role="status">
+          <div class="flota absolute top-3 left-14 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-30 rounded-xl bg-slate-900/90 text-white px-4 py-2 shadow-lg text-sm leading-snug text-center" role="status">
             Toque una manzana: <b class="text-emerald-300">predicada</b> → <b class="text-fuchsia-300">a medias</b> → <b>no se predicó</b>
           </div>
         }
 
         @if (vistaPasada(); as vp) {
-          <div class="flota absolute top-3 left-14 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-30 rounded-xl bg-slate-900/90 text-white px-4 py-2 shadow-lg text-[13px] leading-snug text-center" role="status">
+          <div class="flota absolute top-3 left-14 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-30 rounded-xl bg-slate-900/90 text-white px-4 py-2 shadow-lg text-sm leading-snug text-center" role="status">
             Vuelta pasada: {{ vp.ciclo.fecha_inicio | date:'d MMM y':'':'es' }}@if (vp.ciclo.fecha_fin) { → {{ vp.ciclo.fecha_fin | date:'d MMM y':'':'es' }} }
             <button type="button" (click)="volverALaActual()" class="ml-2 underline font-bold">Volver</button>
           </div>
@@ -67,9 +68,9 @@ const ZOOM_NUMEROS = 15;
           @if (!marcando()) {
             <!-- Se vuelve a crear con cada manzana tocada: la ficha «salta» desde su sitio y se nota que respondió al toque -->
             @for (k of [f.id_manzana]; track k) {
-            <div class="flota ficha absolute top-3 right-3 z-30 w-72 max-w-[calc(100%-4.5rem)] rounded-xl bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 shadow-lg p-3.5" aria-live="polite">
+            <div class="flota ficha absolute top-3 right-3 z-30 w-72 max-w-[calc(100%-4.5rem)] rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur border border-slate-200 dark:border-slate-700 shadow-lg p-3.5" aria-live="polite">
               <div class="flex items-start justify-between gap-2">
-                <p class="text-[15px] font-black text-slate-900 dark:text-white leading-tight">Manzana {{ f.numero }}
+                <p class="text-base font-bold text-slate-900 dark:text-white leading-tight">Manzana {{ f.numero }}
                   <span class="block text-xs font-semibold text-slate-500 dark:text-slate-400">Tarjeta {{ f.codigo }}@if (f.barrio) { · {{ f.barrio }} }</span></p>
                 <button type="button" (click)="foco.set(null)" class="-mr-1 -mt-1 w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Cerrar">✕</button>
               </div>
@@ -87,7 +88,7 @@ const ZOOM_NUMEROS = 15;
                   <span class="punto bg-slate-400"></span>Pendiente
                 }
               </p>
-              @if (f.asignada_a) { <p class="mt-1 text-xs font-semibold text-violet-700 dark:text-violet-300">Asignada a {{ f.asignada_a }}</p> }
+              @if (f.asignada_a) { <p class="mt-1 text-xs font-semibold text-brand-purple dark:text-violet-300">Asignada a {{ f.asignada_a }}</p> }
               <!-- Corregir lo marcado sin registrar otra salida -->
               @if (!vistaPasada() && !f.estado_tarjeta && (f.predicada || f.parcial)) {
                 <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
@@ -106,7 +107,7 @@ const ZOOM_NUMEROS = 15;
                       <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">¿Quitar la marca? La manzana vuelve a quedar pendiente.</p>
                       <div class="mt-2 flex gap-2">
                         <button type="button" (click)="correccion.set(null)" class="flex-1 h-10 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200">No</button>
-                        <button type="button" (click)="quitarDeFicha(f)" [disabled]="guardando()" class="flex-1 h-10 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-50">Sí, quitar</button>
+                        <button type="button" (click)="quitarDeFicha(f)" [disabled]="guardando()" class="flex-1 btn-danger">Sí, quitar</button>
                       </div>
                     }
                     @default {
@@ -134,7 +135,7 @@ const ZOOM_NUMEROS = 15;
         <!-- Leyenda plegable -->
         <div class="absolute bottom-3 left-3 z-30">
           @if (leyenda()) {
-            <div class="flota mb-2 rounded-xl bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 shadow-lg p-3" id="rec-leyenda">
+            <div class="flota mb-2 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur border border-slate-200 dark:border-slate-700 shadow-lg p-3" id="rec-leyenda">
               <ul class="space-y-1.5 text-xs text-slate-700 dark:text-slate-200">
                 <li class="flex items-center gap-2"><span class="mz bg-green-500/70 border border-green-700"></span>Predicada</li>
                 <li class="flex items-center gap-2"><span class="mz bg-green-500/25 border-2 border-dashed border-green-700"></span>A medias (falta una parte)</li>
@@ -154,13 +155,13 @@ const ZOOM_NUMEROS = 15;
       </div>
 
       <!-- ── Panel: un solo modo a la vez (resumen o registrar) ── -->
-      <aside class="lg:w-[22rem] xl:w-[24rem] shrink-0 flex flex-col lg:min-h-0 rounded-2xl border border-slate-200 dark:border-slate-700/70 bg-white dark:bg-slate-800 lg:overflow-hidden"
+      <aside class="lg:w-[22rem] xl:w-[24rem] shrink-0 flex flex-col lg:min-h-0 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 lg:overflow-hidden"
         [attr.aria-label]="marcando() ? 'Registrar predicación' : 'Recorrido'">
 
         @if (marcando()) {
           <!-- Registrar: el formulario vive aquí, el mapa queda libre para tocar las manzanas -->
           <header class="shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-700/60">
-            <h3 class="text-base font-black text-slate-900 dark:text-white">Registrar predicación</h3>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Registrar predicación</h3>
             <button type="button" (click)="cancelarMarcado()" class="w-9 h-9 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Cancelar">✕</button>
           </header>
 
@@ -185,12 +186,12 @@ const ZOOM_NUMEROS = 15;
               <div class="rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 p-3">
                 <div class="flex items-center gap-3">
                   <p class="flex-1 min-w-0 leading-tight">
-                    <span class="text-2xl font-black tabular-nums text-slate-900 dark:text-white">{{ nPendientesElegidas() }}</span>
+                    <span class="text-2xl font-bold tabular-nums text-slate-900 dark:text-white">{{ nPendientesElegidas() }}</span>
                     <span class="text-sm font-semibold text-slate-600 dark:text-slate-300"> {{ nPendientesElegidas() === 1 ? 'manzana' : 'manzanas' }}</span>
                     @if (tarjetasElegidas()) { <span class="block text-xs text-slate-500 dark:text-slate-400 truncate">{{ tarjetasElegidas() }}@if (aMedias().size) { · <b class="text-amber-700 dark:text-amber-300">{{ aMedias().size }} a medias</b> }</span> }
                   </p>
                   <!-- Se predicaron menos o más de las sugeridas: se ajusta siguiendo el orden -->
-                  <div class="flex items-center rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 overflow-hidden" role="group" aria-label="Ajustar cuántas se predicaron">
+                  <div class="flex items-center rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 overflow-hidden" role="group" aria-label="Ajustar cuántas se predicaron">
                     <button type="button" (click)="menosUna()" [disabled]="nPendientesElegidas() === 0" title="Quitar la última en el orden"
                       class="w-11 h-11 text-xl font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30" aria-label="Una menos">−</button>
                     <span class="w-px h-6 bg-slate-200 dark:bg-slate-600"></span>
@@ -250,17 +251,17 @@ const ZOOM_NUMEROS = 15;
                 ¿Quitar la marca de {{ nPredicadasElegidas() }} {{ nPredicadasElegidas() === 1 ? 'manzana' : 'manzanas' }}? Vuelven a quedar pendientes.
               </p>
               <div class="flex gap-2">
-                <button type="button" (click)="confirmarQuitar.set(false)" class="flex-1 h-11 rounded-xl border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200">No</button>
-                <button type="button" (click)="quitarMarcas()" [disabled]="guardando()" class="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-60">Sí, quitar</button>
+                <button type="button" (click)="confirmarQuitar.set(false)" class="flex-1 btn-secondary">No</button>
+                <button type="button" (click)="quitarMarcas()" [disabled]="guardando()" class="flex-1 btn-danger">Sí, quitar</button>
               </div>
             } @else {
               <button type="button" (click)="guardarMarcas()" [disabled]="guardando() || nPendientesElegidas() === 0"
-                class="btn-pri w-full h-12 rounded-xl text-white text-[15px] font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+                class="btn-primary btn-lg w-full">
                 {{ guardando() ? 'Guardando…' : 'Guardar lo predicado' + (nPendientesElegidas() ? ' (' + nPendientesElegidas() + ')' : '') }}
               </button>
               @if (nPredicadasElegidas() > 0) {
                 <button type="button" (click)="confirmarQuitar.set(true)"
-                  class="w-full h-10 rounded-xl text-sm font-bold text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20">
+                  class="w-full btn-ghost-danger">
                   Quitar la marca de {{ nPredicadasElegidas() }} ya {{ nPredicadasElegidas() === 1 ? 'predicada' : 'predicadas' }}
                 </button>
               }
@@ -274,7 +275,7 @@ const ZOOM_NUMEROS = 15;
               <section class="p-4 pb-5">
                 <div class="flex items-baseline justify-between gap-3">
                   <p class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ idTerritorio == null ? 'Toda la congregación' : 'Esta tarjeta' }}</p>
-                  <p class="text-sm tabular-nums text-slate-600 dark:text-slate-300"><b class="text-lg font-black text-slate-900 dark:text-white">{{ av.predicadas }}</b> de {{ av.total }} · <b class="text-emerald-700 dark:text-emerald-400">{{ porcentaje() }}%</b></p>
+                  <p class="text-sm tabular-nums text-slate-600 dark:text-slate-300"><b class="text-lg font-bold text-slate-900 dark:text-white">{{ av.predicadas }}</b> de {{ av.total }} · <b class="text-emerald-700 dark:text-emerald-400">{{ porcentaje() }}%</b></p>
                 </div>
                 <div class="mt-2 h-2.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden flex" role="progressbar" [attr.aria-valuenow]="porcentaje()" aria-valuemin="0" aria-valuemax="100" aria-label="Avance">
                   <div class="h-full bg-emerald-500 transition-[width] duration-500 ease-out" [style.width.%]="porcentaje()"></div>
@@ -282,7 +283,7 @@ const ZOOM_NUMEROS = 15;
                 </div>
                 <p class="mt-2.5 text-sm text-slate-700 dark:text-slate-200 leading-snug">
                   @if (siguienteVisible(); as s) {
-                    Sigue la <b class="font-black">manzana {{ s.numero }}</b>@if (idTerritorio == null) { <span class="text-slate-500 dark:text-slate-400"> · tarjeta {{ s.codigo }}</span> }@if (av.aMedias) { <span class="text-amber-700 dark:text-amber-300"> · {{ av.aMedias }} a medias</span> }
+                    Sigue la <b class="font-bold">manzana {{ s.numero }}</b>@if (idTerritorio == null) { <span class="text-slate-500 dark:text-slate-400"> · tarjeta {{ s.codigo }}</span> }@if (av.aMedias) { <span class="text-amber-700 dark:text-amber-300"> · {{ av.aMedias }} a medias</span> }
                   } @else if (av.total > 0) {
                     <span class="font-semibold text-emerald-700 dark:text-emerald-400">{{ idTerritorio == null ? 'Se predicó todo el territorio.' : 'Se predicaron todas las manzanas.' }}</span>
                   } @else {
@@ -290,7 +291,7 @@ const ZOOM_NUMEROS = 15;
                   }
                 </p>
                 <button type="button" (click)="empezarMarcado()" [disabled]="av.total === 0 || !!vistaPasada()"
-                  class="btn-pri mt-4 w-full h-12 rounded-xl text-white text-[15px] font-bold inline-flex items-center justify-center gap-2 disabled:opacity-50">
+                  class="btn-primary btn-lg mt-4 w-full">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                   Registrar predicación
                 </button>
@@ -307,7 +308,7 @@ const ZOOM_NUMEROS = 15;
               @if (porRegistrar().length) {
                 <section class="border-t border-slate-100 dark:border-slate-700/60 px-4 py-4" aria-label="Salidas por registrar">
                   <div class="flex items-center justify-between gap-2">
-                    <h3 class="text-sm font-black text-slate-900 dark:text-white">Por registrar <span class="ml-1 inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 text-xs tabular-nums">{{ porRegistrar().length }}</span></h3>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">Por registrar <span class="ml-1 inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 text-xs tabular-nums">{{ porRegistrar().length }}</span></h3>
                     <span class="text-xs text-slate-500 dark:text-slate-400">de la más antigua a la más nueva</span>
                   </div>
                   <ul class="mt-2 -mx-2">
@@ -316,8 +317,8 @@ const ZOOM_NUMEROS = 15;
                         <button type="button" (click)="registrarSalida(h)" [disabled]="guardando() || !!vistaPasada()"
                           class="fila w-full text-left flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/15">
                           <span class="w-11 shrink-0 text-center rounded-lg py-1" [class]="primera ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'">
-                            <span class="block text-base font-black leading-none tabular-nums">{{ h.fecha_programada | date:'d' }}</span>
-                            <span class="block text-[11px] font-bold leading-tight mt-0.5 opacity-80">{{ h.fecha_programada | date:'MMM':'':'es' }}</span>
+                            <span class="block text-base font-bold leading-none tabular-nums">{{ h.fecha_programada | date:'d' }}</span>
+                            <span class="block text-xs font-bold leading-tight mt-0.5 opacity-80">{{ h.fecha_programada | date:'MMM':'':'es' }}</span>
                           </span>
                           <span class="min-w-0 flex-1">
                             <span class="block text-sm font-bold text-slate-900 dark:text-white truncate"><span class="capitalize">{{ h.fecha_programada | date:'EEEE':'':'es' }}</span>@if (h.hora_inicio) { · {{ hora(h.hora_inicio) }} }</span>
@@ -364,7 +365,7 @@ const ZOOM_NUMEROS = 15;
               @if (puedeEditar) {
                 <section class="border-t border-slate-100 dark:border-slate-700/60 px-4 py-3">
                   <button type="button" (click)="ordenAbierto.set(true)" class="fila w-full text-left flex items-center gap-3 -mx-2 px-2 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/40">
-                    <span class="w-9 h-9 shrink-0 rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 flex items-center justify-center">
+                    <span class="w-9 h-9 shrink-0 rounded-lg bg-violet-50 dark:bg-violet-900/30 text-brand-purple dark:text-violet-300 flex items-center justify-center">
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
                     </span>
                     <span class="min-w-0 flex-1">
@@ -379,7 +380,7 @@ const ZOOM_NUMEROS = 15;
               <!-- Historial de vueltas de la tarjeta (empezar otra está en Configuración) -->
               @if (av.total > 0 && idTerritorio != null) {
                 <section class="border-t border-slate-100 dark:border-slate-700/60 px-4 py-4" aria-label="Vueltas">
-                  <h3 class="text-sm font-black text-slate-900 dark:text-white">Vueltas anteriores</h3>
+                  <h3 class="text-sm font-bold text-slate-900 dark:text-white">Vueltas anteriores</h3>
                   @if (vistaPasada(); as vp) {
                     <p class="mt-1.5 text-sm text-slate-700 dark:text-slate-200">Está viendo la vuelta del <b>{{ vp.ciclo.fecha_inicio | date:'d MMM y':'':'es' }}</b>@if (vp.ciclo.fecha_fin) { al <b>{{ vp.ciclo.fecha_fin | date:'d MMM y':'':'es' }}</b> }. Es solo para consultar.</p>
                     <button type="button" (click)="volverALaActual()" class="mt-2 w-full h-11 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-slate-200 dark:hover:bg-white dark:text-slate-900 text-white text-sm font-bold">Volver a la vuelta actual</button>
@@ -413,17 +414,10 @@ const ZOOM_NUMEROS = 15;
 
     <!-- ── Configuración (panel deslizable): orden del recorrido y vuelta nueva ── -->
     @if (ordenAbierto() && datos(); as d) {
-      <div class="fixed inset-0 z-[1100] flex justify-end" (keydown.escape)="ordenAbierto.set(false)">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" (click)="ordenAbierto.set(false)"></div>
-        <section class="cajon relative w-full sm:max-w-md h-full bg-white dark:bg-slate-800 shadow-2xl flex flex-col" role="dialog" aria-modal="true" aria-labelledby="orden-titulo">
-          <header class="shrink-0 flex items-center justify-between gap-2 px-5 py-4 border-b border-slate-100 dark:border-slate-700/60">
-            <div>
-              <h3 id="orden-titulo" class="text-lg font-black text-slate-900 dark:text-white">Configuración</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">{{ idTerritorio == null ? 'El orden del recorrido y cuándo empezar otra vuelta.' : 'Cuándo empezar otra vuelta en esta tarjeta.' }}</p>
-            </div>
-            <button type="button" (click)="ordenAbierto.set(false)" class="w-10 h-10 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Cerrar">✕</button>
-          </header>
-          <div class="flex-1 min-h-0 overflow-y-auto px-5 py-5 space-y-6">
+      <app-modal [open]="true" variant="drawer" size="md" title="Configuración"
+                 [subtitle]="idTerritorio == null ? 'El orden del recorrido y cuándo empezar otra vuelta.' : 'Cuándo empezar otra vuelta en esta tarjeta.'"
+                 (openChange)="$event || ordenAbierto.set(false)">
+          <div class="space-y-6">
             @if (idTerritorio == null) {
             <fieldset>
               <legend class="paso"><span>1</span>¿Cómo se avanza?</legend>
@@ -448,7 +442,7 @@ const ZOOM_NUMEROS = 15;
                 <ol class="space-y-1.5">
                   @for (b of barriosOrdenados(); track b.id_sector; let i = $index; let ultimo = $last) {
                     <li class="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-600 pl-3 pr-1 py-1">
-                      <span class="w-5 text-xs font-black tabular-nums text-slate-500">{{ i + 1 }}</span>
+                      <span class="w-5 text-xs font-bold tabular-nums text-slate-500">{{ i + 1 }}</span>
                       <span class="w-2.5 h-2.5 rounded-full shrink-0" [style.background-color]="b.color || '#94a3b8'"></span>
                       <span class="flex-1 min-w-0 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{{ b.nombre }}</span>
                       <button type="button" (click)="moverBarrio(i, -1)" [disabled]="i === 0 || guardandoConfig()" [attr.aria-label]="'Subir ' + b.nombre"
@@ -465,14 +459,14 @@ const ZOOM_NUMEROS = 15;
               <p class="paso"><span>2</span>¿Desde dónde empieza?</p>
               <p class="text-sm text-slate-800 dark:text-slate-100">
                 @if (inicioActual(); as ini) {
-                  Desde la <strong class="font-black">manzana {{ ini.numero }}</strong> <span class="text-slate-500 dark:text-slate-400">(tarjeta {{ ini.codigo }})</span>
+                  Desde la <strong class="font-bold">manzana {{ ini.numero }}</strong> <span class="text-slate-500 dark:text-slate-400">(tarjeta {{ ini.codigo }})</span>
                 } @else {
                   Desde el principio del orden.
                 }
               </p>
               <div class="mt-2 flex flex-wrap gap-2">
                 <button type="button" (click)="elegirInicioEnMapa()" [disabled]="guardandoConfig()"
-                  class="h-11 px-4 rounded-xl border border-violet-300 dark:border-violet-700 text-violet-800 dark:text-violet-200 text-sm font-bold hover:bg-violet-50 dark:hover:bg-violet-900/20">Elegir en el mapa</button>
+                  class="h-11 px-4 rounded-xl border border-violet-300 dark:border-brand-purple text-violet-800 dark:text-violet-200 text-sm font-bold hover:bg-violet-50 dark:hover:bg-violet-900/20">Elegir en el mapa</button>
                 @if (inicioActual()) {
                   <button type="button" (click)="guardarConfig({ inicio: null })" [disabled]="guardandoConfig()"
                     class="h-11 px-4 rounded-xl border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200">Desde el principio</button>
@@ -485,7 +479,7 @@ const ZOOM_NUMEROS = 15;
               <div class="flex items-center gap-3">
                 <button type="button" (click)="cambiarPorSalida(-1)" [disabled]="guardandoConfig() || d.config.manzanas_por_salida <= 1" aria-label="Una menos"
                   class="w-11 h-11 rounded-xl border border-slate-300 dark:border-slate-600 text-lg font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40">−</button>
-                <span class="min-w-[2.5rem] text-center text-2xl font-black tabular-nums text-slate-900 dark:text-white" aria-live="polite">{{ d.config.manzanas_por_salida }}</span>
+                <span class="min-w-[2.5rem] text-center text-2xl font-bold tabular-nums text-slate-900 dark:text-white" aria-live="polite">{{ d.config.manzanas_por_salida }}</span>
                 <button type="button" (click)="cambiarPorSalida(1)" [disabled]="guardandoConfig() || d.config.manzanas_por_salida >= 30" aria-label="Una más"
                   class="w-11 h-11 rounded-xl border border-slate-300 dark:border-slate-600 text-lg font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40">+</button>
               </div>
@@ -497,7 +491,7 @@ const ZOOM_NUMEROS = 15;
             <!-- Vuelta nueva: acción poco frecuente, por eso vive aquí y no junto a «Registrar predicación» -->
             @let av = avance()!;
             <div [class]="idTerritorio == null ? 'pt-5 border-t border-slate-100 dark:border-slate-700/60' : ''">
-              <p class="text-sm font-black text-slate-900 dark:text-white">Empezar una vuelta nueva</p>
+              <p class="text-sm font-bold text-slate-900 dark:text-white">Empezar una vuelta nueva</p>
               @if (av.predicadas === 0 && av.aMedias === 0) {
                 <p class="mt-1 text-sm text-slate-600 dark:text-slate-300 leading-snug">Aún no hay nada predicado en esta vuelta; no hay qué reiniciar.</p>
               } @else {
@@ -513,20 +507,19 @@ const ZOOM_NUMEROS = 15;
                       @else { Faltan <b>{{ av.total - av.predicadas }}</b> {{ av.total - av.predicadas === 1 ? 'manzana' : 'manzanas' }}: la vuelta se guarda como terminada (cuenta en el registro S-13). ¿Empezar la nueva? }
                     </p>
                     <div class="mt-2.5 flex gap-2">
-                      <button type="button" (click)="confirmarVuelta.set(false)" class="flex-1 h-11 rounded-xl border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200">No</button>
-                      <button type="button" (click)="empezarVueltaNueva()" [disabled]="guardando()" class="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-50">Sí, empezar</button>
+                      <button type="button" (click)="confirmarVuelta.set(false)" class="flex-1 btn-secondary">No</button>
+                      <button type="button" (click)="empezarVueltaNueva()" [disabled]="guardando()" class="flex-1 btn-danger">Sí, empezar</button>
                     </div>
                   </div>
                 } @else {
                   <button type="button" (click)="confirmarVuelta.set(true)" [disabled]="!!vistaPasada()"
-                    class="mt-3 h-11 px-4 rounded-xl border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-sm font-bold hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-40">Empezar vuelta nueva…</button>
+                    class="mt-3 btn-ghost-danger">Empezar vuelta nueva…</button>
                 }
                 @if (errorVuelta()) { <p class="mt-2 text-xs font-semibold text-red-600 dark:text-red-400" role="alert">{{ errorVuelta() }}</p> }
               }
             </div>
           </div>
-        </section>
-      </div>
+      </app-modal>
     }
   `,
   styles: [`
@@ -553,10 +546,7 @@ const ZOOM_NUMEROS = 15;
     .punto { display: inline-block; width: 8px; height: 8px; border-radius: 999px; margin-right: 6px; vertical-align: middle; }
     .mz { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; }
 
-    .btn-pri { background: rgb(5 150 105); box-shadow: 0 6px 16px -6px rgb(5 150 105 / 0.55); transition: background-color 150ms ease-out, transform 120ms ease-out; }
-    .btn-pri:hover:enabled { background: rgb(4 120 87); }
-    .btn-pri:active:enabled { transform: scale(0.98); }
-    .btn-pri:focus-visible, .fila:focus-visible { outline: 2px solid rgb(16 185 129); outline-offset: 2px; }
+    .fila:focus-visible { outline: 2px solid rgb(16 185 129); outline-offset: 2px; }
     .fila { transition: background-color 120ms ease-out, transform 120ms ease-out; }
     .fila:active:enabled { transform: scale(0.99); }
 
@@ -566,13 +556,11 @@ const ZOOM_NUMEROS = 15;
     :host ::ng-deep path.rec-foco { stroke: #2563eb; stroke-width: 3px; stroke-opacity: 1; stroke-dasharray: none; animation: rec-late 500ms cubic-bezier(0.23, 1, 0.32, 1); }
     @keyframes rec-late { 0% { stroke-width: 7px; stroke-opacity: 0.3; } 100% { stroke-width: 3px; stroke-opacity: 1; } }
     .flota { animation: rec-entra 180ms cubic-bezier(0.23, 1, 0.32, 1); }
-    .cajon { animation: rec-cajon 240ms cubic-bezier(0.32, 0.72, 0, 1); }
     @keyframes rec-entra { from { opacity: 0; transform: translateY(-4px); } }
-    @keyframes rec-cajon { from { transform: translateX(100%); } }
     @media (prefers-reduced-motion: reduce) {
-      .flota, .cajon, .ficha { animation: none; }
+      .flota, .ficha { animation: none; }
       :host ::ng-deep path.rec-foco { animation: none; }
-      .btn-pri:active:enabled, .fila:active:enabled { transform: none; }
+      .fila:active:enabled { transform: none; }
     }
   `],
 })

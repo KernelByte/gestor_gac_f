@@ -14,20 +14,18 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos' | 'acceso';
   selector: 'app-publicadores-main',
   imports: [CommonModule, PublicadoresListComponent, GruposListComponent, PublicadoresContactosComponent, AccesoAppComponent],
   template: `
-    <div class="flex flex-col gap-3 h-full">
+    <div class="tema-publicadores flex flex-col gap-3 h-full">
 
       <!-- Tab Navigation (mismo estilo que informes, colores naranja).
            En móvil el contenedor desplaza horizontalmente en vez de encoger
            los botones: con 4 tabs, encogerlos recorta el texto de la última
            pestaña ("Acceso app") en pantallas angostas. -->
-      <div class="shrink-0 flex items-center gap-1.5 bg-slate-100 dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200 dark:border-slate-800 transition-colors w-full sm:w-auto overflow-x-auto no-scrollbar">
+      <div class="tab-nav tab-compact shrink-0" role="tablist">
         @for (tab of visibleTabs(); track tab.id) {
           <button
             (click)="setTab(tab.id)"
-            class="shrink-0 px-4 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] flex items-center justify-center gap-1.5 whitespace-nowrap"
-            [ngClass]="currentTab() === tab.id
-              ? 'bg-brand-orange text-white shadow-md shadow-orange-500/20'
-              : 'text-slate-500 dark:text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800/80'"
+            role="tab" [attr.aria-selected]="currentTab() === tab.id"
+            [ngClass]="currentTab() === tab.id ? 'tab-item-active' : 'tab-item'"
           >
             <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
               @if (tab.id === 'listado') {

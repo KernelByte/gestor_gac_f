@@ -75,12 +75,12 @@ const PX_POR_MM = 96 / 25.4;
           </button>
 
           <div class="hidden sm:flex items-center gap-2.5 min-w-0">
-            <span class="shrink-0 w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300 flex items-center justify-center">
+            <span class="shrink-0 w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-900/30 text-brand-purple dark:text-violet-300 flex items-center justify-center">
               <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
             </span>
             <div class="min-w-0">
               <h2 id="estudio-titulo" class="text-sm font-black text-slate-800 dark:text-white leading-tight truncate">Imprimir programa</h2>
-              <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 leading-tight truncate">Logística · lo que ves es lo que sale en papel</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-tight truncate">Logística · lo que ves es lo que sale en papel</p>
             </div>
           </div>
 
@@ -101,22 +101,22 @@ const PX_POR_MM = 96 / 25.4;
           <!-- Hojas y papel: el dato que decide si hay que apretar algo. -->
           @if (estadoCarga() === 'listo') {
             <span
-              class="hidden md:inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-slate-100 dark:bg-slate-800 text-[0.7rem] font-bold text-slate-600 dark:text-slate-300 tabular-nums"
+              class="hidden md:inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 tabular-nums"
               data-testid="log-estudio-hojas"
               [title]="'Calculado con el papel y los márgenes elegidos'">
               <svg class="w-3.5 h-3.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
               {{ hojas() }} {{ hojas() === 1 ? 'hoja' : 'hojas' }} · {{ papelLabel() }}
               @if (reduccion() < 1) {
-                <span class="text-violet-600 dark:text-violet-300" data-testid="log-estudio-reduccion"
+                <span class="text-brand-purple dark:text-violet-300" data-testid="log-estudio-reduccion"
                       title="La hoja única se reduce sola para caber en una página">· al {{ reduccionPct() }} %</span>
               }
             </span>
           }
 
-          <span class="hidden lg:inline-flex items-center gap-1.5 text-[0.7rem] font-semibold min-w-[6.5rem] justify-end" aria-live="polite">
+          <span class="hidden lg:inline-flex items-center gap-1.5 text-xs font-semibold min-w-[6.5rem] justify-end" aria-live="polite">
             @switch (guardado()) {
               @case ('guardando') {
-                <span class="w-3 h-3 rounded-full border-2 border-slate-300 border-t-violet-500 animate-spin"></span>
+                <span class="spinner-xs text-violet-500"></span>
                 <span class="text-slate-500">Guardando…</span>
               }
               @case ('guardado') {
@@ -135,7 +135,7 @@ const PX_POR_MM = 96 / 25.4;
             (click)="imprimir()"
             [disabled]="estadoCarga() !== 'listo'"
             title="Imprimir (Ctrl/⌘ + P)"
-            class="shrink-0 flex items-center gap-2 h-11 sm:h-10 px-4 rounded-xl bg-brand-purple text-white text-sm font-bold shadow-violet hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            class="shrink-0 btn-primary">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
             Imprimir
           </button>
@@ -144,17 +144,14 @@ const PX_POR_MM = 96 / 25.4;
         <!-- Conmutador Vista / Estilo: solo en pantallas estrechas, donde no
              caben la hoja y el panel a la vez. -->
         <div class="lg:hidden shrink-0 px-3 py-2 border-b border-slate-200 dark:border-slate-800">
-          <div role="tablist" aria-label="Sección del estudio" class="flex items-center gap-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+          <div role="tablist" aria-label="Sección del estudio" class="tab-nav w-full">
             @for (v of vistasMovil; track v.id) {
               <button
                 type="button"
                 role="tab"
                 [attr.aria-selected]="vistaMovil() === v.id"
                 (click)="vistaMovil.set(v.id)"
-                class="flex-1 h-9 rounded-lg text-xs font-bold transition-colors"
-                [class]="vistaMovil() === v.id
-                  ? 'bg-white dark:bg-slate-900 text-violet-700 dark:text-violet-300 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400'">
+                class="tab-item !text-xs">
                 {{ v.label }}
               </button>
             }
@@ -175,11 +172,11 @@ const PX_POR_MM = 96 / 25.4;
                 <div class="flex justify-center px-4 py-8">
                   <div class="hoja-esqueleto rounded-sm bg-white shadow-card" [style.width.px]="anchoVisible()" [style.height.px]="anchoVisible() * 1.29">
                     <div class="p-[8%] flex flex-col gap-3">
-                      <div class="mx-auto h-4 w-1/2 rounded bg-slate-200 animate-pulse"></div>
-                      <div class="mx-auto h-2.5 w-1/3 rounded bg-slate-100 animate-pulse"></div>
+                      <div class="mx-auto h-4 w-1/2 rounded skeleton"></div>
+                      <div class="mx-auto h-2.5 w-1/3 rounded skeleton"></div>
                       @for (i of [1, 2, 3]; track i) {
-                        <div class="mt-4 h-3 w-full rounded bg-slate-200 animate-pulse"></div>
-                        <div class="h-20 w-full rounded bg-slate-100 animate-pulse"></div>
+                        <div class="mt-4 h-3 w-full rounded skeleton"></div>
+                        <div class="h-20 w-full rounded skeleton"></div>
                       }
                     </div>
                   </div>
@@ -221,7 +218,7 @@ const PX_POR_MM = 96 / 25.4;
                   @for (corte of cortes(); track corte.hoja) {
                     <div class="corte pointer-events-none absolute left-0 right-0 flex items-center" [style.top.px]="corte.y">
                       <span class="flex-1 border-t-2 border-dashed border-violet-400/80"></span>
-                      <span class="absolute right-2 -translate-y-1/2 top-0 origin-right px-2 py-0.5 rounded-full bg-violet-600 text-white text-[11px] font-bold shadow-sm whitespace-nowrap" [style.transform]="'translateY(-50%) scale(' + 1 / escala() + ')'">Empieza la hoja {{ corte.hoja }}</span>
+                      <span class="absolute right-2 -translate-y-1/2 top-0 origin-right px-2 py-0.5 rounded-full bg-brand-purple text-white text-xs font-bold shadow-sm whitespace-nowrap" [style.transform]="'translateY(-50%) scale(' + 1 / escala() + ')'">Empieza la hoja {{ corte.hoja }}</span>
                     </div>
                   }
                 </div>
@@ -269,8 +266,8 @@ const PX_POR_MM = 96 / 25.4;
                           </span>
                         }
                       </span>
-                      <span class="block text-[0.75rem] font-bold text-slate-700 dark:text-slate-200">{{ f.label }}</span>
-                      <span class="block text-[0.65rem] leading-snug text-slate-400 dark:text-slate-500">{{ f.ayuda }}</span>
+                      <span class="block text-xs font-bold text-slate-700 dark:text-slate-200">{{ f.label }}</span>
+                      <span class="block text-xs leading-snug text-slate-400 dark:text-slate-500">{{ f.ayuda }}</span>
                     </button>
                   }
                 </div>
@@ -297,7 +294,7 @@ const PX_POR_MM = 96 / 25.4;
                       <span class="block text-xs font-semibold text-slate-700 dark:text-slate-200">
                         Añadir {{ mesSiguienteLabel() }} {{ estilo().formato === 'hoja_unica' ? 'al fin de semana' : 'a la 2.ª hoja' }}
                       </span>
-                      <span class="block text-[0.68rem] text-slate-400 dark:text-slate-500">Fin de semana y discursos, para que la hoja no quede vieja a fin de mes.</span>
+                      <span class="block text-xs text-slate-400 dark:text-slate-500">Fin de semana y discursos, para que la hoja no quede vieja a fin de mes.</span>
                     </span>
                     <input
                       type="checkbox"
@@ -311,7 +308,7 @@ const PX_POR_MM = 96 / 25.4;
                   @if (estilo().formato === 'hoja_unica') {
                     <label class="block mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
                       <span class="block text-xs font-semibold text-slate-700 dark:text-slate-200">Aviso al pie de la hoja</span>
-                      <span class="block mb-1 text-[0.68rem] text-slate-400 dark:text-slate-500">Déjalo vacío para no mostrar ningún aviso.</span>
+                      <span class="block mb-1 text-xs text-slate-400 dark:text-slate-500">Déjalo vacío para no mostrar ningún aviso.</span>
                       <textarea
                         rows="2"
                         maxlength="200"
@@ -355,16 +352,16 @@ const PX_POR_MM = 96 / 25.4;
                         </span>
                       </span>
                       <span class="mt-1.5 flex items-center gap-1">
-                        <span class="min-w-0 truncate text-[0.72rem] font-bold text-slate-700 dark:text-slate-200">{{ p.nombre }}</span>
+                        <span class="min-w-0 truncate text-xs font-bold text-slate-700 dark:text-slate-200">{{ p.nombre }}</span>
                         @if (p.predeterminado) {
-                          <span class="shrink-0 px-1.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[0.56rem] font-bold leading-4" title="Estilo predeterminado">Predet.</span>
+                          <span class="shrink-0 px-1.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-brand-purple dark:text-violet-300 text-xs font-bold leading-4" title="Estilo predeterminado">Predet.</span>
                         }
                         <span class="flex-1"></span>
                         @if (presetActivo() === p.id) {
-                          <svg class="w-3.5 h-3.5 shrink-0 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          <svg class="w-3.5 h-3.5 shrink-0 text-brand-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         }
                       </span>
-                      <span class="block truncate text-[0.65rem] text-slate-400 dark:text-slate-500">{{ p.descripcion }}</span>
+                      <span class="block truncate text-xs text-slate-400 dark:text-slate-500">{{ p.descripcion }}</span>
                     </button>
                   }
                 </div>
@@ -377,7 +374,7 @@ const PX_POR_MM = 96 / 25.4;
                 <summary>Colores</summary>
                 <div class="px-4 pb-4 flex flex-col gap-4">
                   <div>
-                    <p class="mb-1 text-[0.62rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Tablas</p>
+                    <p class="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Tablas</p>
                     <div class="flex flex-col">
                       @for (t of tablas; track t.clave) {
                         <div class="flex items-center gap-2.5 py-1" [attr.data-testid]="'log-estudio-tabla-' + t.clave">
@@ -404,7 +401,7 @@ const PX_POR_MM = 96 / 25.4;
                   </div>
 
                   <div>
-                    <p class="mb-1 text-[0.62rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Textos</p>
+                    <p class="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Textos</p>
                     <div class="flex flex-col">
                       @for (c of camposTextoColor; track c.clave) {
                         <div class="flex items-center gap-2.5 py-1">
@@ -418,7 +415,7 @@ const PX_POR_MM = 96 / 25.4;
                           </label>
                           <span class="flex-1 min-w-0">
                             <span class="block text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{{ c.label }}</span>
-                            <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 truncate">{{ c.ayuda }}</span>
+                            <span class="block text-xs text-slate-400 dark:text-slate-500 truncate">{{ c.ayuda }}</span>
                           </span>
                           <input
                             type="text"
@@ -436,7 +433,7 @@ const PX_POR_MM = 96 / 25.4;
                   <label class="fila-toggle rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2">
                     <span class="min-w-0">
                       <span class="block text-xs font-semibold text-slate-700 dark:text-slate-200">Encabezados claros</span>
-                      <span class="block text-[0.68rem] text-slate-400 dark:text-slate-500">Sin relleno sólido: gasta mucha menos tinta.</span>
+                      <span class="block text-xs text-slate-400 dark:text-slate-500">Sin relleno sólido: gasta mucha menos tinta.</span>
                     </span>
                     <input
                       type="checkbox"
@@ -448,7 +445,7 @@ const PX_POR_MM = 96 / 25.4;
                   </label>
 
                   @for (aviso of avisosContraste(); track aviso) {
-                    <p class="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-[0.7rem] text-amber-800 dark:text-amber-300" role="status">
+                    <p class="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-xs text-amber-800 dark:text-amber-300" role="status">
                       <svg class="w-3.5 h-3.5 mt-px shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                       {{ aviso }}
                     </p>
@@ -483,20 +480,20 @@ const PX_POR_MM = 96 / 25.4;
                   <div class="grid grid-cols-2 gap-2">
                     <div>
                       <p class="mb-1 text-xs font-semibold text-slate-700 dark:text-slate-200">Papel</p>
-                      <div class="segmentado" role="radiogroup" aria-label="Tamaño de papel">
+                      <div class="segmented w-full" role="radiogroup" aria-label="Tamaño de papel">
                         @for (t of tamanos; track t.id) {
                           <button type="button" role="radio" [attr.aria-checked]="estilo().tamano_pagina === t.id"
-                                  (click)="cambiar('tamano_pagina', t.id)" [class.activo]="estilo().tamano_pagina === t.id">{{ t.label }}</button>
+                                  class="segmented-item" (click)="cambiar('tamano_pagina', t.id)">{{ t.label }}</button>
                         }
                       </div>
                     </div>
                     <div>
                       <p class="mb-1 text-xs font-semibold text-slate-700 dark:text-slate-200">Orientación</p>
-                      <div class="segmentado" role="radiogroup" aria-label="Orientación">
+                      <div class="segmented w-full" role="radiogroup" aria-label="Orientación">
                         @for (o of orientaciones; track o.id) {
                           <button type="button" role="radio" [attr.aria-checked]="estilo().orientacion === o.id"
                                   [attr.aria-label]="o.label" [title]="o.label"
-                                  (click)="cambiar('orientacion', o.id)" [class.activo]="estilo().orientacion === o.id">
+                                  class="segmented-item" (click)="cambiar('orientacion', o.id)">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
                               @if (o.id === 'vertical') { <rect x="6" y="3" width="12" height="18" rx="1.5"/> }
                               @else { <rect x="3" y="6" width="18" height="12" rx="1.5"/> }
@@ -515,7 +512,7 @@ const PX_POR_MM = 96 / 25.4;
 
             <!-- Pie del panel -->
             <footer class="shrink-0 border-t border-slate-200 dark:border-slate-800 px-4 py-3 flex flex-col gap-2.5">
-              <p class="flex items-start gap-2 text-[0.68rem] leading-snug text-slate-500 dark:text-slate-400">
+              <p class="flex items-start gap-2 text-xs leading-snug text-slate-500 dark:text-slate-400">
                 <svg class="w-3.5 h-3.5 mt-px shrink-0 text-violet-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
                 <span>Para quitar la fecha y la dirección web del papel, desactiva <b class="font-bold text-slate-600 dark:text-slate-300">Encabezados y pies de página</b> en el diálogo de impresión. Ahí también puedes elegir <b class="font-bold text-slate-600 dark:text-slate-300">Guardar como PDF</b>.</span>
               </p>
@@ -536,7 +533,7 @@ const PX_POR_MM = 96 / 25.4;
                   <button type="button" (click)="confirmandoReset.set(false)" class="h-9 px-3 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">No</button>
                 }
                 <span class="flex-1"></span>
-                <span class="lg:hidden text-[0.68rem] font-semibold" aria-hidden="true"
+                <span class="lg:hidden text-xs font-semibold" aria-hidden="true"
                       [class]="guardado() === 'error' ? 'text-red-600' : 'text-slate-400'">
                   {{ guardado() === 'guardando' ? 'Guardando…' : guardado() === 'guardado' ? 'Guardado ✓' : guardado() === 'error' ? 'No se pudo guardar' : '' }}
                 </span>
@@ -590,7 +587,7 @@ const PX_POR_MM = 96 / 25.4;
       align-items: center;
       justify-content: space-between;
       padding: 14px 16px 10px;
-      font-size: 0.68rem;
+      font-size: 0.75rem;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -642,19 +639,6 @@ const PX_POR_MM = 96 / 25.4;
     :host-context(.dark) .color-chip { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.28); }
     .color-chip:focus-within { outline: 2px solid rgb(139 92 246); outline-offset: 2px; }
 
-    .segmentado {
-      display: flex; gap: 2px; padding: 3px; border-radius: 10px;
-      background: rgb(241 245 249);
-    }
-    :host-context(.dark) .segmentado { background: rgb(30 41 59); }
-    .segmentado button {
-      flex: 1; height: 32px; display: flex; align-items: center; justify-content: center;
-      border-radius: 8px; font-size: 0.72rem; font-weight: 700; color: rgb(100 116 139);
-      transition: background var(--duration-fast, 120ms) ease, color var(--duration-fast, 120ms) ease;
-    }
-    .segmentado button.activo { background: #fff; color: rgb(109 40 217); box-shadow: 0 1px 2px rgb(15 23 42 / 0.08); }
-    :host-context(.dark) .segmentado button.activo { background: rgb(15 23 42); color: rgb(196 181 253); }
-
     .stepper {
       display: flex; align-items: center; height: 36px; flex-shrink: 0;
       border: 1px solid rgb(226 232 240); border-radius: 10px; overflow: hidden;
@@ -676,7 +660,7 @@ const PX_POR_MM = 96 / 25.4;
     }
     .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     .stepper input:focus { outline: none; }
-    .stepper .unidad { padding: 0 4px 0 3px; font-size: 0.65rem; font-weight: 600; color: rgb(148 163 184); }
+    .stepper .unidad { padding: 0 4px 0 3px; font-size: 0.75rem; font-weight: 600; color: rgb(148 163 184); }
 
     @media (prefers-reduced-motion: reduce) {
       .estudio-velo, .estudio-panel, .estudio-velo.saliendo, .estudio-velo.saliendo .estudio-panel { animation: none; }

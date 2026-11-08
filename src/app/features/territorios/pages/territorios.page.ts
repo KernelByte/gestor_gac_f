@@ -15,6 +15,10 @@ import { hoyIso } from '../../../core/utils/fecha.util';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
 import { EditorPanelComponent } from '../components/editor-panel.component';
+import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm.service';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { AvisoComponent } from '../../../shared/components/aviso/aviso.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import { descargarTarjetaS12 } from '../utils/tarjeta-s12.util';
@@ -43,7 +47,7 @@ import {
    standalone: true,
    selector: 'app-territorios-page',
    host: { class: 'tema-territorios' },
-   imports: [CommonModule, FormsModule, TerritorioMapComponent, EditorPanelComponent, DibujoLoteDialogComponent, PageHeaderComponent, SelectPickerComponent, GuiaConfiguracionComponent, RenumerarManzanasDialogComponent],
+   imports: [CommonModule, FormsModule, ModalComponent, EmptyStateComponent, AvisoComponent, TerritorioMapComponent, EditorPanelComponent, DibujoLoteDialogComponent, PageHeaderComponent, SelectPickerComponent, GuiaConfiguracionComponent, RenumerarManzanasDialogComponent],
    animations: [
       trigger('slideOver', [
          transition(':enter', [
@@ -62,22 +66,22 @@ import {
 
       <!-- 1. Encabezado: el subtítulo es el resumen vivo, no un texto de relleno -->
       <app-page-header spacing="none" title="Territorios" [subtitle]="resumenEncabezado()">
-        <button (click)="navigateToMap()" class="btn-secondary focus-ring-green whitespace-nowrap active:scale-[0.97] transition-transform">
+        <button (click)="navigateToMap()" class="btn-secondary whitespace-nowrap active:scale-[0.97] transition-transform">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
           Mapa general
         </button>
-        <button (click)="irASectores()" class="btn-secondary focus-ring-green whitespace-nowrap active:scale-[0.97] transition-transform">
+        <button (click)="irASectores()" class="btn-secondary whitespace-nowrap active:scale-[0.97] transition-transform">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
           Barrios
         </button>
         <!-- Dibujar manzanas en lote solo tiene sentido con tarjetas ya marcadas (paso 4 de la guía). -->
         @if (puedeDibujarLote() && (progreso()?.tarjetas_con_limite ?? 0) > 0) {
-          <button (click)="showDibujoLote.set(true)" class="btn-secondary focus-ring-green whitespace-nowrap active:scale-[0.97] transition-transform">
+          <button (click)="showDibujoLote.set(true)" class="btn-secondary whitespace-nowrap active:scale-[0.97] transition-transform">
             <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
             Dibujar manzanas de todas
           </button>
         }
-        <button *ngIf="puedeEditar()" (click)="openCreateModal()" class="btn-primary-green focus-ring-green whitespace-nowrap active:scale-[0.97] transition-transform">
+        <button *ngIf="puedeEditar()" (click)="openCreateModal()" class="btn-primary whitespace-nowrap active:scale-[0.97] transition-transform">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Nueva tarjeta
         </button>
@@ -94,38 +98,34 @@ import {
       <!-- La secuencia de manzanas (T01 del 1 al N, T02 sigue…) quedó con huecos o cruces. -->
       @if (puedeEditar() && progreso(); as pr) {
         @if (pr.manzanas_total > 0 && !pr.numeracion_en_orden) {
-          <div class="shrink-0 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-2.5" role="status">
-            <p class="flex-1 min-w-[14rem] text-sm font-semibold text-amber-900 dark:text-amber-100">
-              Los números de las manzanas no siguen una sola secuencia entre tarjetas.
-            </p>
-            <button type="button" (click)="showRenumerar.set(true)" class="btn-secondary focus-ring-green h-10 whitespace-nowrap">Numerar en secuencia</button>
-          </div>
+          <app-aviso tone="warning" class="shrink-0 block">
+            <div class="flex flex-wrap items-center gap-3">
+              <p class="flex-1 min-w-[14rem]">Los números de las manzanas no siguen una sola secuencia entre tarjetas.</p>
+              <button type="button" (click)="showRenumerar.set(true)" class="btn-secondary whitespace-nowrap">Numerar en secuencia</button>
+            </div>
+          </app-aviso>
         }
       }
 
       <!-- «Nueva tarjeta» antes de tiempo: explica qué falta y lleva directo a ese paso. -->
       @if (faltaParaCrear(); as falta) {
-        <div class="fixed inset-0 z-[110] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tituloFaltaCrear">
-          <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="faltaParaCrear.set(null)"></div>
-          <div class="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 text-center shadow-2xl space-y-4">
-            <h3 id="tituloFaltaCrear" class="text-lg font-black text-slate-900 dark:text-white">
-              {{ falta === 'mapa' ? 'Primero suba el mapa de la congregación' : 'Primero cree los barrios' }}
-            </h3>
-            <p class="text-base text-slate-600 dark:text-slate-400">
-              @if (falta === 'mapa') {
-                Las tarjetas se marcan dentro del límite de la congregación. Suba el archivo .kml en Mapa general; después cree los barrios y ya podrá crear tarjetas.
-              } @else {
-                Cada tarjeta pertenece a un barrio. Cree al menos uno y dibuje su zona; después vuelva aquí para crear tarjetas.
-              }
-            </p>
-            <div class="flex flex-col sm:flex-row gap-2 justify-center">
-              <button (click)="faltaParaCrear.set(null); irGuia(falta === 'mapa' ? { a: 'mapa' } : { a: 'barrios' })" class="btn-primary-green focus-ring-green justify-center">
-                {{ falta === 'mapa' ? 'Ir a Mapa general' : 'Ir a Barrios' }}
-              </button>
-              <button (click)="faltaParaCrear.set(null)" class="btn-secondary focus-ring-green justify-center">Ahora no</button>
-            </div>
-          </div>
-        </div>
+        <app-modal [open]="true" size="md"
+                   [title]="falta === 'mapa' ? 'Primero suba el mapa de la congregación' : 'Primero cree los barrios'"
+                   [hasFooter]="true" (openChange)="$event || faltaParaCrear.set(null)">
+          <p class="text-base text-slate-600 dark:text-slate-400">
+            @if (falta === 'mapa') {
+              Las tarjetas se marcan dentro del límite de la congregación. Suba el archivo .kml en Mapa general; después cree los barrios y ya podrá crear tarjetas.
+            } @else {
+              Cada tarjeta pertenece a un barrio. Cree al menos uno y dibuje su zona; después vuelva aquí para crear tarjetas.
+            }
+          </p>
+          <ng-container slot="footer">
+            <button (click)="faltaParaCrear.set(null)" class="btn-secondary">Ahora no</button>
+            <button (click)="faltaParaCrear.set(null); irGuia(falta === 'mapa' ? { a: 'mapa' } : { a: 'barrios' })" class="btn-primary">
+              {{ falta === 'mapa' ? 'Ir a Mapa general' : 'Ir a Barrios' }}
+            </button>
+          </ng-container>
+        </app-modal>
       }
 
       <!-- Guía de preparación: mapa → barrios → límites → manzanas -->
@@ -136,14 +136,14 @@ import {
 
       <!-- 2. Una sola barra: buscar, estado y filtros de actividad -->
       <div class="shrink-0 flex flex-wrap items-center gap-2" role="search">
-        <label class="relative flex-1 min-w-[min(100%,16rem)] group">
+        <label class="search-field flex-1 min-w-[min(100%,16rem)]">
           <span class="sr-only">Buscar territorio</span>
-          <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-600 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           <input
             [(ngModel)]="searchQuery"
             type="search"
             placeholder="Buscar por código o nombre"
-            class="w-full h-11 pl-10 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-[border-color,box-shadow]"
+            class="search-input"
           >
         </label>
         <app-select-picker class="w-full sm:w-56 shrink-0" colorScheme="emerald" ariaLabel="Estado"
@@ -156,7 +156,7 @@ import {
           @for (c of chips(); track c.id) {
             <button type="button" (click)="alternarChip(c.id)"
               [attr.aria-pressed]="chip() === c.id"
-              class="h-9 px-3.5 rounded-full text-[13px] font-semibold border transition-colors active:scale-[0.97] whitespace-nowrap"
+              class="h-9 px-3.5 rounded-full text-sm font-semibold border transition-colors active:scale-[0.97] whitespace-nowrap"
               [ngClass]="chip() === c.id ? c.activo : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'">
               {{ c.etiqueta }} <span class="font-bold ml-0.5">{{ c.cuenta }}</span>
             </button>
@@ -174,9 +174,9 @@ import {
               @if (loading()) {
                 <div class="divide-y divide-slate-100 dark:divide-slate-800" role="status" aria-label="Cargando territorios">
                   @for (i of [1,2,3,4,5,6]; track i) {
-                    <div class="px-5 py-4 flex items-center gap-4 animate-pulse">
-                      <div class="flex-1 space-y-2"><div class="h-4 w-16 rounded bg-slate-200 dark:bg-slate-700"></div><div class="h-3 w-40 rounded bg-slate-100 dark:bg-slate-800"></div></div>
-                      <div class="h-6 w-24 rounded-full bg-slate-100 dark:bg-slate-800"></div>
+                    <div class="px-5 py-4 flex items-center gap-4">
+                      <div class="flex-1 space-y-2"><div class="h-4 w-16 skeleton"></div><div class="h-3 w-40 skeleton"></div></div>
+                      <div class="h-6 w-24 rounded-full skeleton"></div>
                     </div>
                   }
                 </div>
@@ -184,20 +184,17 @@ import {
                 <div class="flex flex-col items-center justify-center py-16 px-6 gap-4 text-center" role="alert">
                   <p class="text-base font-bold text-slate-800 dark:text-slate-100">No se pudieron cargar los territorios</p>
                   <p class="text-sm text-slate-500 dark:text-slate-400 -mt-2">Revise la conexión e intente de nuevo.</p>
-                  <button (click)="loadTerritorios()" class="h-10 px-5 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors active:scale-[0.97]">Reintentar</button>
+                  <button (click)="loadTerritorios()" class="btn-primary">Reintentar</button>
                 </div>
               } @else if (filteredTerritorios().length === 0) {
-                <div class="flex flex-col items-center justify-center py-16 px-6 gap-3 text-center">
-                  @if (searchQuery || estadoFilter || sectorFilter || chip()) {
-                    <p class="text-base font-bold text-slate-800 dark:text-slate-100">Ningún territorio coincide</p>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Pruebe con otra búsqueda o quite los filtros.</p>
-                    <button (click)="limpiarFiltros()" class="h-10 px-5 text-sm font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">Quitar filtros</button>
-                  } @else {
-                    <p class="text-base font-bold text-slate-800 dark:text-slate-100">Aún no hay territorios</p>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 max-w-sm">Cree el primero: le pedirá el código y el barrio, y luego abrirá el mapa para marcar su límite.</p>
-                    <button *ngIf="puedeEditar()" (click)="openCreateModal()" class="h-10 px-5 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors active:scale-[0.97]">Nueva tarjeta</button>
-                  }
-                </div>
+                @if (searchQuery || estadoFilter || sectorFilter || chip()) {
+                  <app-empty-state accent="green" icon="search" title="Ningún territorio coincide"
+                    description="Pruebe con otra búsqueda o quite los filtros." actionLabel="Quitar filtros" (action)="limpiarFiltros()" />
+                } @else {
+                  <app-empty-state accent="green" title="Aún no hay territorios"
+                    description="Cree el primero: le pedirá el código y el barrio, y luego abrirá el mapa para marcar su límite."
+                    [actionLabel]="puedeEditar() ? 'Nueva tarjeta' : ''" (action)="openCreateModal()" />
+                }
               } @else {
               <table class="w-full text-left border-collapse">
                  <thead class="sticky top-0 z-10 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm">
@@ -234,7 +231,7 @@ import {
                             }
                           </div>
                           <!-- Con la lista angosta, lo que no cabe en columnas va aquí debajo -->
-                          <p class="@xl:hidden mt-1 flex items-center gap-1.5 text-[13px] text-slate-500 dark:text-slate-400">
+                          <p class="@xl:hidden mt-1 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
                             <span class="w-2 h-2 rounded-full shrink-0" [ngClass]="alertaDe(t.id_territorio)"></span>
                             {{ textoUltima(r) }}
                             @if (r?.asignado_a) { <span aria-hidden="true">·</span> {{ r!.asignado_a }} }
@@ -281,7 +278,7 @@ import {
 
            @if (!loading() && !loadError() && totalPages().length > 1) {
            <div class="shrink-0 px-5 py-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <span class="text-[13px] text-slate-500 dark:text-slate-400">{{ paginationStart() }}–{{ paginationEnd() }} de {{ filteredTerritorios().length }}</span>
+              <span class="text-sm text-slate-500 dark:text-slate-400">{{ paginationStart() }}–{{ paginationEnd() }} de {{ filteredTerritorios().length }}</span>
               <div class="flex gap-1">
                 @for (p of totalPages(); track p) {
                   <button (click)="currentPage.set(p)" [attr.aria-current]="currentPage() === p ? 'page' : null"
@@ -312,14 +309,14 @@ import {
                     </span>
                   </div>
                   @if (selectedTerritorio()!.nombre) {
-                    <p class="text-[15px] font-medium text-slate-600 dark:text-slate-300 mt-1.5">{{ selectedTerritorio()!.nombre }}</p>
+                    <p class="text-base font-medium text-slate-600 dark:text-slate-300 mt-1.5">{{ selectedTerritorio()!.nombre }}</p>
                   }
                 </div>
                 <button (click)="closeDetails()" aria-label="Cerrar detalle" class="w-10 h-10 -mr-2 -mt-1 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors shrink-0">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
               </div>
-              <dl class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-slate-500 dark:text-slate-400">
+              <dl class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
                 @if (selectedStats()) {
                   <div class="flex items-baseline gap-1"><dt class="sr-only">Manzanas</dt><dd class="font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ selectedStats()!.manzanas_count }}</dd> manzanas</div>
                   <div class="flex items-baseline gap-1"><dt class="sr-only">Direcciones</dt><dd class="font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ selectedStats()!.viviendas_count }}</dd> direcciones</div>
@@ -334,19 +331,16 @@ import {
            </div>
 
            <!-- Pestañas: las cuatro caben siempre -->
-           <div class="grid grid-cols-4 border-b border-slate-100 dark:border-slate-800 shrink-0" role="tablist">
+           <div class="px-4 pt-3 pb-1 shrink-0"><div class="tab-nav w-full" role="tablist">
              @for (tab of tabs; track tab.id) {
                <button
                  role="tab"
                  [attr.aria-selected]="activeDetailTab() === tab.id"
                  (click)="setDetailTab($any(tab.id))"
-                 class="h-11 px-1 text-[13px] font-semibold border-b-2 -mb-px transition-colors truncate"
-                 [ngClass]="activeDetailTab() === tab.id
-                   ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400'
-                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+                 class="tab-item truncate"
                >{{ tab.label }}</button>
              }
-           </div>
+           </div></div>
            <!-- Content -->
            <div class="flex-1 overflow-y-auto p-5 simple-scrollbar space-y-5">
 
@@ -362,7 +356,7 @@ import {
                    height="clamp(220px, 36vh, 420px)"
                    [interactive]="false" />
                } @else {
-                 <div class="w-full h-36 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center gap-2">
+                 <div class="w-full h-36 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center gap-2">
                    <svg class="w-8 h-8 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                    <span class="text-xs text-slate-400 font-medium">Aún sin dibujar — use el botón «Dibujar»</span>
                  </div>
@@ -374,8 +368,8 @@ import {
                    <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-2">Puntos en el mapa <span class="font-semibold text-slate-400">{{ puntos().length }}</span></h4>
                    <ul class="grid grid-cols-1 gap-2">
                      @for (p of puntos(); track p.id_punto) {
-                       <li class="flex items-center gap-3 pl-2.5 pr-1 py-2 rounded-xl border border-slate-200 dark:border-slate-700/70">
-                         <span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0"
+                       <li class="flex items-center gap-3 pl-2.5 pr-1 py-2 rounded-xl border border-slate-200 dark:border-slate-800">
+                         <span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
                               [ngClass]="p.tipo === 'Salida' ? 'bg-rose-500' : p.tipo === 'Lugar' ? 'bg-sky-600' : 'bg-slate-400'" aria-hidden="true">
                            {{ p.tipo === 'Salida' ? 'S' : p.tipo === 'Lugar' ? 'L' : 'P' }}
                          </span>
@@ -384,8 +378,8 @@ import {
                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ p.tipo === 'Salida' ? 'Punto de salida' : p.tipo === 'Lugar' ? 'Lugar de referencia' : 'Otro' }}</p>
                          </div>
                          <button *ngIf="puedeEditar()" (click)="deletePunto(p.id_punto)" [attr.aria-label]="'Borrar ' + p.nombre"
-                           class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors shrink-0">
-                           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                           class="btn-icon-sm tone-danger">
+                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                          </button>
                        </li>
                      }
@@ -405,7 +399,7 @@ import {
              @if (activeDetailTab() === 'manzanas') {
                @if (coberturaLoading()) {
                  <div class="flex flex-col items-center justify-center py-10 gap-3">
-                   <div class="w-7 h-7 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                   <div class="spinner-lg"></div>
                    <span class="text-xs text-slate-400">Cargando manzanas...</span>
                  </div>
                } @else if (manzanasConCobertura().length === 0) {
@@ -418,8 +412,8 @@ import {
                  <!-- Summary bar -->
                  <div class="bg-gradient-to-r from-emerald-50 to-emerald-50/40 dark:from-emerald-900/20 dark:to-transparent rounded-2xl p-4 border border-emerald-100 dark:border-emerald-800/30">
                    <div class="flex justify-between items-center mb-2">
-                     <span class="text-xs font-black text-emerald-700 dark:text-emerald-400">{{ manzanasPredicadasCount() }} de {{ manzanasConCobertura().length }} predicadas</span>
-                     <span class="text-lg font-black text-emerald-600 dark:text-emerald-400">{{ manzanasPorcentaje() | number:'1.0-0' }}%</span>
+                     <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400">{{ manzanasPredicadasCount() }} de {{ manzanasConCobertura().length }} predicadas</span>
+                     <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ manzanasPorcentaje() | number:'1.0-0' }}%</span>
                    </div>
                    <div class="w-full h-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-full overflow-hidden">
                      <div class="h-full bg-emerald-500 rounded-full transition-all duration-700" [style.width.%]="manzanasPorcentaje()"></div>
@@ -431,7 +425,7 @@ import {
                      @let isPredicada = m.ultimaCobertura?.estado === 'Predicada';
                      <div class="flex items-center gap-3 p-3 rounded-xl border transition-all"
                           [class]="isPredicada ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/30' : 'bg-white dark:bg-slate-800/60 border-slate-100 dark:border-slate-700/40 hover:border-emerald-200 dark:hover:border-emerald-800/40'">
-                       <div class="min-w-[2.25rem] h-9 px-2 rounded-xl font-black text-xs flex items-center justify-center shrink-0 transition-colors text-center leading-tight"
+                       <div class="min-w-[2.25rem] h-9 px-2 rounded-xl font-bold text-xs flex items-center justify-center shrink-0 transition-colors text-center leading-tight"
                             [class]="isPredicada ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200 dark:shadow-emerald-900' : 'bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300'">
                          {{ m.numero_manzana }}
                        </div>
@@ -474,25 +468,27 @@ import {
                              <p class="text-xs text-slate-400">Pendiente</p>
                            }
                          </div>
-                         <!-- Edit pencil button -->
-                         <button *ngIf="puedeEditar()" (click)="startEditManzana(m)"
-                           class="p-1.5 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 rounded-lg transition-colors shrink-0">
-                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                         <div class="row-actions">
+<!-- Edit pencil button -->
+                         <button *ngIf="puedeEditar()" (click)="startEditManzana(m)" aria-label="Editar manzana" title="Editar manzana"
+                           class="btn-icon-sm">
+                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                          </button>
                          <!-- Delete button -->
-                         <button *ngIf="puedeEditar()" (click)="deleteManzana(m.id_manzana)"
+                         <button *ngIf="puedeEditar()" (click)="deleteManzana(m.id_manzana)" aria-label="Borrar manzana" title="Borrar manzana"
                            [disabled]="manzanaDeleting() === m.id_manzana"
-                           class="p-1.5 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 rounded-lg transition-colors shrink-0 disabled:opacity-50">
+                           class="btn-icon-sm tone-danger">
                            @if (manzanaDeleting() === m.id_manzana) {
-                             <div class="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                             <div class="spinner-xs"></div>
                            } @else {
-                             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                            }
                          </button>
+</div>
                          @if (!isPredicada) {
                            <button (click)="marcarManzanaPredicada(m.id_manzana)"
                              [disabled]="coberturaSaving() === m.id_manzana"
-                             class="text-xs font-bold px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap shrink-0">
+                             class="btn-tonal">
                              {{ coberturaSaving() === m.id_manzana ? '...' : '✓ Marcar' }}
                            </button>
                          } @else {
@@ -514,7 +510,7 @@ import {
                  </p>
                  @if (puedeEditar()) {
                    <button type="button" (click)="openDireccionModal()" [disabled]="manzanasLista().length === 0"
-                     class="shrink-0 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+                     class="shrink-0 btn-primary btn-sm">
                      Agregar aviso
                    </button>
                  }
@@ -535,7 +531,7 @@ import {
                } @else {
                  @for (g of direccionesPorManzana(); track g.manzana) {
                    <div>
-                     <h4 class="text-[0.6875rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Manzana {{ g.manzana }}</h4>
+                     <h4 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Manzana {{ g.manzana }}</h4>
                      <ul class="space-y-2">
                        @for (v of g.items; track v.id_vivienda) {
                          <li class="rounded-xl border p-3"
@@ -562,10 +558,10 @@ import {
                                  }
                                  <button type="button" (click)="openDireccionModal(v)" class="px-2 py-1 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700">Editar</button>
                                  @if (confirmarEliminarDireccion() === v.id_vivienda) {
-                                   <button type="button" (click)="eliminarDireccion(v)" class="px-2 py-1 rounded-md text-xs font-bold bg-red-600 text-white">Sí, borrar</button>
+                                   <button type="button" (click)="eliminarDireccion(v)" class="btn-danger btn-sm">Sí, borrar</button>
                                    <button type="button" (click)="confirmarEliminarDireccion.set(null)" class="px-2 py-1 rounded-md text-xs font-bold text-slate-500">No</button>
                                  } @else {
-                                   <button type="button" (click)="confirmarEliminarDireccion.set(v.id_vivienda)" class="px-2 py-1 rounded-md text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">Borrar</button>
+                                   <button type="button" (click)="confirmarEliminarDireccion.set(v.id_vivienda)" class="btn-ghost-danger btn-sm">Borrar</button>
                                  }
                                </div>
                              }
@@ -588,13 +584,13 @@ import {
                      </div>
                      <div>
                        <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Asignado a</p>
-                       <p class="text-sm font-black text-slate-800 dark:text-white">{{ act.nombre_publicador ?? 'Publicador #' + act.id_publicador }}</p>
+                       <p class="text-sm font-bold text-slate-800 dark:text-white">{{ act.nombre_publicador ?? 'Publicador #' + act.id_publicador }}</p>
                      </div>
                    </div>
                    <p class="mb-3 inline-flex items-center rounded-lg bg-white/70 dark:bg-slate-900/40 border border-emerald-200 dark:border-emerald-800/50 px-2.5 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-200">
                      {{ textoAlcance(act) }}
                    </p>
-                   <p class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
+                   <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                      Desde {{ act.fecha_asignacion | date:'dd/MM/yyyy' }}
                    </p>
@@ -611,7 +607,7 @@ import {
                        <div class="mt-3 rounded-xl border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-900/20 p-3 space-y-2" role="alert">
                          <p class="text-sm font-semibold text-red-800 dark:text-red-200">¿Eliminar esta asignación? Se borra sin dejar registro, como si nunca se hubiera hecho.</p>
                          <div class="flex gap-2">
-                           <button type="button" (click)="eliminarAsignacion(act)" [disabled]="asignacionSaving()" class="flex-1 h-10 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-60">Sí, eliminar</button>
+                           <button type="button" (click)="eliminarAsignacion(act)" [disabled]="asignacionSaving()" class="flex-1 btn-danger">Sí, eliminar</button>
                            <button type="button" (click)="confirmarEliminarAsignacion.set(null)" class="flex-1 h-10 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200">No</button>
                          </div>
                        </div>
@@ -619,7 +615,7 @@ import {
                        <div class="mt-2 flex items-center justify-center gap-1">
                          <button type="button" (click)="openAsignarModal(act)" class="h-9 px-3 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition-colors">Editar</button>
                          <span class="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
-                         <button type="button" (click)="confirmarEliminarAsignacion.set(act.id_asignacion)" class="h-9 px-3 rounded-lg text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">Fue un error · Eliminar</button>
+                         <button type="button" (click)="confirmarEliminarAsignacion.set(act.id_asignacion)" class="btn-ghost-danger btn-sm">Fue un error · Eliminar</button>
                        </div>
                      }
                    }
@@ -629,7 +625,7 @@ import {
                  <div class="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-6 text-center">
                    <svg class="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Disponible para asignar</p>
-                   <button *ngIf="puedeEditar()" (click)="openAsignarModal()" class="w-full py-2.5 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm shadow-emerald-900/10 flex items-center justify-center gap-2">
+                   <button *ngIf="puedeEditar()" (click)="openAsignarModal()" class="w-full btn-primary">
                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                      Asignar Territorio
                    </button>
@@ -649,7 +645,7 @@ import {
                  <div class="space-y-1.5">
                    @for (a of historialAsignaciones(); track a.id_asignacion) {
                      @if (!a.activa) {
-                     <div class="flex items-center gap-3 p-3 bg-white dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                     <div class="flex items-center gap-3 p-3 bg-white dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800">
                        <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
                          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                        </div>
@@ -674,19 +670,19 @@ import {
               <!-- «Editar mapa» es lo que se busca casi siempre: va primero y en verde. «Editar datos» es el formulario. -->
               <button *ngIf="puedeEditar()" (click)="openMapEditor()" type="button"
                 title="Dibujar o corregir el límite de la tarjeta y sus manzanas en el mapa"
-                class="btn-primary-green focus-ring-green h-10 flex-1 min-w-[8rem] justify-center whitespace-nowrap">
+                class="btn-primary h-10 flex-1 min-w-[8rem] justify-center whitespace-nowrap">
                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
                  Editar mapa
               </button>
               <button *ngIf="puedeEditar()" (click)="openEditInfoModal()" type="button"
                 title="Cambiar el código, el nombre, el barrio, el estado y las notas"
-                class="btn-secondary focus-ring-green h-10 flex-1 min-w-[7.5rem] justify-center whitespace-nowrap">
+                class="btn-secondary h-10 flex-1 min-w-[7.5rem] justify-center whitespace-nowrap">
                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                  Editar datos
               </button>
               <button (click)="printCard()" [disabled]="generandoTarjeta()" type="button"
                 title="Descargar la tarjeta S-12 con el mapa, lista para imprimir"
-                class="btn-secondary focus-ring-green h-10 flex-1 min-w-[7.5rem] justify-center whitespace-nowrap disabled:opacity-60">
+                class="btn-secondary h-10 flex-1 min-w-[7.5rem] justify-center whitespace-nowrap disabled:opacity-60">
                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                  {{ generandoTarjeta() ? 'Generando…' : 'Imprimir' }}
               </button>
@@ -703,43 +699,38 @@ import {
       <!-- Modal Asignar Territorio -->
       <!-- Modal: dirección -->
       @if (showDireccionModal()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="dir-titulo">
-          <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="showDireccionModal.set(false)"></div>
-          <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md relative z-10 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="p-5 border-b border-slate-100 dark:border-slate-700/50">
-              <h3 id="dir-titulo" class="text-base font-black text-slate-900 dark:text-white">{{ direccionForm.id_vivienda ? 'Editar aviso' : 'Agregar aviso' }}</h3>
-            </div>
-            <div class="p-5 space-y-4">
+        <app-modal [open]="true" size="md" [title]="direccionForm.id_vivienda ? 'Editar aviso' : 'Agregar aviso'" [hasFooter]="true" (openChange)="$event || showDireccionModal.set(false)">
+          <div class="space-y-4">
               @if (direccionError()) {
                 <div class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-lg text-xs text-red-700 dark:text-red-400 font-medium">{{ direccionError() }}</div>
               }
               <div>
-                <label for="dir-manzana" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Manzana *</label>
+                <label for="dir-manzana" class="form-label">Manzana *</label>
                 <app-select-picker colorScheme="emerald" ariaLabel="Manzana" [(ngModel)]="direccionForm.id_manzana"
                   [options]="opcionesManzana()" placeholder="— Elige la manzana —" [clearable]="false"
                   [disabled]="!!direccionForm.id_vivienda" />
               </div>
               <div>
-                <label for="dir-direccion" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Calle o dirección *</label>
+                <label for="dir-direccion" class="form-label">Calle o dirección *</label>
                 <input id="dir-direccion" type="text" [(ngModel)]="direccionForm.direccion" placeholder="Ej: Calle 5"
-                  class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
+                  class="form-control" />
               </div>
               <div class="grid grid-cols-3 gap-3">
                 <div>
-                  <label for="dir-numero" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Número</label>
-                  <input id="dir-numero" type="text" [(ngModel)]="direccionForm.numero" class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
+                  <label for="dir-numero" class="form-label">Número</label>
+                  <input id="dir-numero" type="text" [(ngModel)]="direccionForm.numero" class="form-control" />
                 </div>
                 <div>
-                  <label for="dir-edificio" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Edificio</label>
-                  <input id="dir-edificio" type="text" [(ngModel)]="direccionForm.edificio" class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
+                  <label for="dir-edificio" class="form-label">Edificio</label>
+                  <input id="dir-edificio" type="text" [(ngModel)]="direccionForm.edificio" class="form-control" />
                 </div>
                 <div>
-                  <label for="dir-apto" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Apto.</label>
-                  <input id="dir-apto" type="text" [(ngModel)]="direccionForm.apartamento" class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
+                  <label for="dir-apto" class="form-label">Apto.</label>
+                  <input id="dir-apto" type="text" [(ngModel)]="direccionForm.apartamento" class="form-control" />
                 </div>
               </div>
               <fieldset>
-                <legend class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">¿Qué debe saber el publicador? *</legend>
+                <legend class="form-label">¿Qué debe saber el publicador? *</legend>
                 <div class="grid grid-cols-2 gap-2">
                   @for (t of tiposAviso; track t.id) {
                     <label class="relative flex flex-col gap-0.5 rounded-xl border p-3 cursor-pointer transition-colors has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-emerald-500/30"
@@ -752,62 +743,47 @@ import {
                 </div>
               </fieldset>
               <div>
-                <label for="dir-motivo" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Detalle <span class="font-normal normal-case text-slate-500">(se imprime en la tarjeta)</span></label>
+                <label for="dir-motivo" class="form-label">Detalle <span class="font-normal normal-case text-slate-500">(se imprime en la tarjeta)</span></label>
                 <input id="dir-motivo" type="text" [(ngModel)]="direccionForm.motivo_no_visitar" [placeholder]="ejemploAviso()" maxlength="140"
-                  class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
+                  class="form-control" />
                 <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Escriba la razón corta, sin nombres de personas: la tarjeta se imprime y se reparte.</p>
               </div>
             </div>
-            <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 flex justify-end gap-2">
-              <button type="button" (click)="showDireccionModal.set(false)" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700">Cancelar</button>
+            <ng-container slot="footer">
+              <button type="button" (click)="showDireccionModal.set(false)" class="btn-ghost">Cancelar</button>
               <button type="button" (click)="saveDireccion()" [disabled]="direccionSaving() || !direccionForm.id_manzana || !direccionForm.direccion?.trim() || !direccionForm.tipo_aviso || direccionForm.tipo_aviso === 'otro'"
-                class="px-4 py-2 rounded-lg text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50">
+                class="btn-primary">
                 {{ direccionSaving() ? 'Guardando...' : 'Guardar' }}
               </button>
-            </div>
-          </div>
-        </div>
+          </ng-container>
+        </app-modal>
       }
 
       @if (showAsignarModal()) {
-      <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="cerrarAsignarModal()"></div>
-        <!-- Cabecera y pie fijos; solo el cuerpo se desplaza, así los botones nunca quedan cortados. -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md max-h-[calc(100dvh-2rem)] relative z-10 shadow-2xl overflow-hidden animate-fadeIn flex flex-col"
-             role="dialog" aria-modal="true" aria-labelledby="asignar-titulo">
-          <div class="shrink-0 px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <h3 id="asignar-titulo" class="text-base font-black text-slate-900 dark:text-white">{{ asignacionEditando() ? 'Editar asignación' : 'Asignar tarjeta' }}</h3>
-              <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ selectedTerritorio()?.codigo }}{{ selectedTerritorio()?.nombre ? ' — ' + selectedTerritorio()?.nombre : '' }}</p>
-            </div>
-            <button type="button" (click)="cerrarAsignarModal()" aria-label="Cerrar" class="-mr-2 -mt-1 w-10 h-10 shrink-0 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-          </div>
-
-          <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar px-5 py-4 space-y-5">
+      <app-modal [open]="true" size="md" [title]="asignacionEditando() ? 'Editar asignación' : 'Asignar tarjeta'"
+                 [subtitle]="selectedTerritorio()?.codigo + (selectedTerritorio()?.nombre ? ' — ' + selectedTerritorio()?.nombre : '')"
+                 [hasFooter]="true" (openChange)="$event || cerrarAsignarModal()">
+          <div class="space-y-5">
             @if (asignacionError()) {
               <div class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-lg text-sm text-red-700 dark:text-red-400 font-medium" role="alert">{{ asignacionError() }}</div>
             }
 
             <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Publicador *</label>
+              <label class="form-label">Publicador *</label>
               <app-select-picker colorScheme="emerald" ariaLabel="Publicador" [(ngModel)]="newAsignacion.id_publicador"
                 [options]="opcionesPublicador()" placeholder="Elija un publicador" [clearable]="false" [searchable]="true" />
             </div>
 
             <div>
-              <span id="alcance-etiqueta" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">¿Qué se asigna? *</span>
+              <span id="alcance-etiqueta" class="form-label">¿Qué se asigna? *</span>
               <!-- Control de dos opciones, de una sola altura: se ve de un vistazo cuál está activa. -->
-              <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900/60" role="radiogroup" aria-labelledby="alcance-etiqueta">
+              <div class="segmented w-full" role="radiogroup" aria-labelledby="alcance-etiqueta">
                 <button type="button" role="radio" [attr.aria-checked]="newAsignacion.alcance === 'completa'" (click)="elegirAlcance('completa')" [disabled]="hayOcupadas()"
-                        class="h-10 rounded-lg text-sm font-bold transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/30"
-                        [ngClass]="newAsignacion.alcance === 'completa' ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'">
+                        class="segmented-item flex-1">
                   Toda la tarjeta
                 </button>
                 <button type="button" role="radio" [attr.aria-checked]="newAsignacion.alcance === 'manzanas'" (click)="elegirAlcance('manzanas')" [disabled]="!puedeRepartir()"
-                        class="h-10 rounded-lg text-sm font-bold transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/30"
-                        [ngClass]="newAsignacion.alcance === 'manzanas' ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'">
+                        class="segmented-item flex-1">
                   Solo algunas manzanas
                 </button>
               </div>
@@ -841,7 +817,7 @@ import {
                                 [attr.aria-pressed]="m.libre ? elegida : null"
                                 [attr.aria-label]="'Manzana ' + m.numero + (m.libre ? '' : ', ocupada por ' + m.asignada_a?.nombre_publicador)"
                                 [attr.title]="m.libre ? null : 'Ocupada por ' + m.asignada_a?.nombre_publicador"
-                                class="relative h-14 rounded-xl border text-base font-black tabular-nums transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.95] focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/30"
+                                class="relative h-14 rounded-xl border text-base font-bold tabular-nums transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.95] focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/30"
                                 [ngClass]="!m.libre ? 'cursor-not-allowed border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 bg-[repeating-linear-gradient(135deg,transparent_0_5px,rgb(148_163_184/0.18)_5px_6px)]'
                                          : elegida ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm shadow-emerald-900/20'
                                          : 'border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'">
@@ -872,94 +848,78 @@ import {
 
             <div class="grid grid-cols-1 sm:grid-cols-[11rem_1fr] gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Fecha</label>
+                <label class="form-label">Fecha</label>
                 <input type="date" [(ngModel)]="newAsignacion.fecha_asignacion"
-                  class="w-full h-11 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                  class="form-control" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notas <span class="font-normal normal-case">(opcional)</span></label>
+                <label class="form-label">Notas <span class="font-normal normal-case">(opcional)</span></label>
                 <input type="text" [(ngModel)]="newAsignacion.notas" placeholder="Observaciones..."
-                  class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full h-11 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                  class="form-control" />
               </div>
             </div>
           </div>
 
-          <div class="shrink-0 px-5 py-4 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/60 dark:bg-slate-900/30 flex gap-3">
-            <button (click)="cerrarAsignarModal()" class="btn-secondary focus-ring-green h-11 flex-1 justify-center">Cancelar</button>
+          <ng-container slot="footer">
+            <button (click)="cerrarAsignarModal()" class="btn-secondary">Cancelar</button>
             <button (click)="saveAsignacion()" [disabled]="!newAsignacion.id_publicador || asignacionSaving() || (newAsignacion.alcance === 'manzanas' && manzanasElegidas().size === 0)"
-              class="btn-primary-green focus-ring-green h-11 flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+              class="btn-primary">
               {{ asignacionSaving() ? 'Guardando...' : asignacionEditando() ? 'Guardar cambios' : 'Asignar' }}
             </button>
-          </div>
-        </div>
-      </div>
+          </ng-container>
+        </app-modal>
       }
 
       <!-- Modal Devolver Territorio -->
       @if (showDevolverModal()) {
-      <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="showDevolverModal.set(false)"></div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-sm relative z-10 shadow-2xl overflow-hidden animate-fadeIn">
-          <div class="p-5 border-b border-slate-100 dark:border-slate-700/50">
-            <h3 class="text-base font-black text-slate-900 dark:text-white">Registrar Devolución</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Asignado a: {{ asignacionADevolver()?.nombre_publicador }} · {{ asignacionADevolver() ? textoAlcance(asignacionADevolver()!) : '' }}</p>
-          </div>
-          <div class="p-5 space-y-4">
+      <app-modal [open]="true" size="sm" title="Registrar Devolución"
+                 [subtitle]="'Asignado a: ' + asignacionADevolver()?.nombre_publicador + ' · ' + (asignacionADevolver() ? textoAlcance(asignacionADevolver()!) : '')"
+                 [hasFooter]="true" (openChange)="$event || showDevolverModal.set(false)">
+          <div class="space-y-4">
             @if (asignacionError()) {
               <div class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-lg text-xs text-red-700 dark:text-red-400 font-medium">{{ asignacionError() }}</div>
             }
             <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Fecha de Devolución</label>
+              <label class="form-label">Fecha de Devolución</label>
               <input type="date" [(ngModel)]="devolucionData.fecha_devolucion" [min]="asignacionADevolver()?.fecha_asignacion?.slice(0, 10) ?? ''"
-                class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                class="form-control" />
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notas (opcional)</label>
+              <label class="form-label">Notas (opcional)</label>
               <input type="text" [(ngModel)]="devolucionData.notas" placeholder="Observaciones..."
-                class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                class="form-control" />
             </div>
           </div>
-          <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 flex gap-3">
-            <button (click)="showDevolverModal.set(false)" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
+          <ng-container slot="footer">
+            <button (click)="showDevolverModal.set(false)" class="btn-secondary">Cancelar</button>
             <button (click)="saveDevolucion()" [disabled]="asignacionSaving()"
-              class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-colors disabled:opacity-50">
+              class="btn-primary">
               {{ asignacionSaving() ? 'Guardando...' : 'Registrar Devolución' }}
             </button>
-          </div>
-        </div>
-      </div>
+          </ng-container>
+        </app-modal>
       }
 
       <!-- Modal Nuevo Territorio -->
       @if (showCreateModal()) {
-      <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="closeCreateModal()"></div>
-        
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md relative z-10 shadow-2xl overflow-hidden animate-fadeIn">
-          <div class="p-5 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
-            <h3 class="text-lg font-black text-slate-900 dark:text-white">Nueva tarjeta</h3>
-            <button (click)="closeCreateModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-          
-          <div class="p-5 space-y-4">
+      <app-modal [open]="true" size="md" title="Nueva tarjeta" [hasFooter]="true" (openChange)="$event || closeCreateModal()">
+          <div class="space-y-4">
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Código</label>
-              <input type="text" [(ngModel)]="newTerritorio.codigo" placeholder="T-01" class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all">
+              <label class="form-label">Código</label>
+              <input type="text" [(ngModel)]="newTerritorio.codigo" placeholder="T-01" class="form-control">
               @if (intentoCrear() && !newTerritorio.codigo) { <p class="mt-1.5 text-xs font-semibold text-red-600 dark:text-red-400" role="alert">Escriba el código de la tarjeta.</p> }
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nombre <span class="font-normal normal-case text-slate-500 dark:text-slate-400">(opcional)</span></label>
-              <input type="text" [(ngModel)]="newTerritorio.nombre" placeholder="Una referencia, si la quiere" class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all">
+              <label class="form-label">Nombre <span class="font-normal normal-case text-slate-500 dark:text-slate-400">(opcional)</span></label>
+              <input type="text" [(ngModel)]="newTerritorio.nombre" placeholder="Una referencia, si la quiere" class="form-control">
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Estado Inicial</label>
+              <label class="form-label">Estado Inicial</label>
               <app-select-picker colorScheme="emerald" ariaLabel="Estado inicial" [(ngModel)]="newTerritorio.estado_territorio"
                 [options]="opcionesEstadoNuevo" [clearable]="false" [searchable]="false" />
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Barrio</label>
+              <label class="form-label">Barrio</label>
               @if (sectores().length > 0) {
                 <app-select-picker colorScheme="emerald" ariaLabel="Barrio" [(ngModel)]="newTerritorio.id_sector"
                   [options]="opcionesSector()" placeholder="Elija un barrio" [clearable]="false" [searchable]="false" />
@@ -973,44 +933,25 @@ import {
             }
           </div>
           
-          <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20 flex justify-end gap-3">
-            <button (click)="closeCreateModal()" class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all">Cancelar</button>
-            <button (click)="saveNewTerritorio()" [disabled]="saving()" class="px-5 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-green-600/20 flex items-center gap-2">
+          <ng-container slot="footer">
+            <button (click)="closeCreateModal()" class="btn-ghost">Cancelar</button>
+            <button (click)="saveNewTerritorio()" [disabled]="saving()" class="btn-primary">
               @if (saving()) {
-                <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div class="spinner-sm text-white"></div>
               }
               Guardar
             </button>
-          </div>
-        </div>
-      </div>
+          </ng-container>
+        </app-modal>
       }
 
       <!-- Modal Editar Info -->
       @if (showEditInfoModal() && selectedTerritorio()) {
-      <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="closeEditInfoModal()"></div>
-
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md relative z-10 shadow-2xl overflow-hidden animate-fadeIn">
-
-          <!-- Header -->
-          <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between bg-gradient-to-r from-emerald-50/60 to-white dark:from-emerald-900/10 dark:to-slate-800">
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                <svg class="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-              </div>
-              <div>
-                <h3 class="text-base font-black text-slate-900 dark:text-white leading-tight">Editar Territorio</h3>
-                <p class="text-[0.7rem] text-slate-400 font-medium">{{ selectedTerritorio()!.codigo }}{{ selectedTerritorio()!.nombre ? ' · ' + selectedTerritorio()!.nombre : '' }}</p>
-              </div>
-            </div>
-            <button (click)="closeEditInfoModal()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
-              <svg class="w-4.5 h-4.5" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-
+      <app-modal [open]="true" size="md" title="Editar Territorio"
+                 [subtitle]="selectedTerritorio()!.codigo + (selectedTerritorio()!.nombre ? ' · ' + selectedTerritorio()!.nombre : '')"
+                 [hasFooter]="true" (openChange)="$event || closeEditInfoModal()">
           <!-- Form -->
-          <div class="px-6 py-5 space-y-4">
+          <div class="space-y-4">
 
             <!-- Error feedback -->
             @if (editInfoError()) {
@@ -1022,29 +963,29 @@ import {
 
             <!-- Código -->
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Código</label>
+              <label class="form-label">Código</label>
               <input
                 type="text"
                 [(ngModel)]="editingTerritorioInfo.codigo"
                 placeholder="T-01"
-                class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                class="form-control"
               >
             </div>
 
             <!-- Nombre -->
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Nombre <span class="font-normal normal-case text-slate-500 dark:text-slate-400">(opcional)</span></label>
+              <label class="form-label">Nombre <span class="font-normal normal-case text-slate-500 dark:text-slate-400">(opcional)</span></label>
               <input
                 type="text"
                 [(ngModel)]="editingTerritorioInfo.nombre"
                 placeholder="Una referencia, si la quiere"
-                class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                class="form-control"
               >
             </div>
 
             <!-- Estado -->
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Estado</label>
+              <label class="form-label">Estado</label>
               <app-select-picker colorScheme="emerald" ariaLabel="Estado" [(ngModel)]="editingTerritorioInfo.estado_territorio"
                 [options]="opcionesEstadoEditar()" [clearable]="false" [searchable]="false" [disabled]="estadoBloqueado()" />
               @if (estadoBloqueado()) {
@@ -1054,7 +995,7 @@ import {
 
             <!-- Barrio -->
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Barrio</label>
+              <label class="form-label">Barrio</label>
               @if (sectores().length > 0) {
                 <app-select-picker colorScheme="emerald" ariaLabel="Barrio" [(ngModel)]="editingTerritorioInfo.id_sector"
                   [options]="opcionesSector()" placeholder="Elija un barrio" [clearable]="false" [searchable]="false" />
@@ -1066,19 +1007,19 @@ import {
 
             <!-- Notas -->
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Notas / Instrucciones <span class="font-normal normal-case text-slate-400">(opcional)</span></label>
+              <label class="form-label">Notas / Instrucciones <span class="font-normal normal-case text-slate-400">(opcional)</span></label>
               <textarea
                 [(ngModel)]="editingTerritorioInfo.notas"
                 rows="3"
                 placeholder="Ej: muchas rejas"
-                class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none"
+                class="form-control"
               ></textarea>
             </div>
           </div>
 
           <!-- Eliminar territorio -->
           @if (puedeEditar()) {
-            <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-700/50">
+            <div class="mt-5 pt-4 border-t border-slate-200 dark:border-slate-800">
               @if (!confirmandoEliminar()) {
                 <button type="button" (click)="confirmandoEliminar.set(true)" class="text-sm font-bold text-red-600 dark:text-red-400 hover:underline">Eliminar este territorio</button>
               } @else {
@@ -1087,10 +1028,10 @@ import {
                     ¿Eliminar {{ selectedTerritorio()!.codigo }}? Se borran también sus manzanas, direcciones y puntos. No se puede deshacer.
                   </p>
                   <div class="flex flex-wrap gap-2">
-                    <button type="button" (click)="eliminarTerritorio()" [disabled]="saving()" class="px-3 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50">Sí, eliminar</button>
-                    <button type="button" (click)="confirmandoEliminar.set(false)" class="px-3 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700 rounded-lg">No</button>
+                    <button type="button" (click)="eliminarTerritorio()" [disabled]="saving()" class="btn-danger">Sí, eliminar</button>
+                    <button type="button" (click)="confirmandoEliminar.set(false)" class="btn-ghost btn-sm">No</button>
                     @if (puedeRetirar()) {
-                      <button type="button" (click)="retirarTerritorio()" class="px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-lg">Marcar como Inactivo</button>
+                      <button type="button" (click)="retirarTerritorio()" class="btn-secondary btn-sm">Marcar como Inactivo</button>
                     }
                   </div>
                 </div>
@@ -1098,38 +1039,36 @@ import {
             </div>
           }
 
-          <!-- Footer -->
-          <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20 flex justify-end gap-3">
-            <button (click)="closeEditInfoModal()" class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+          <ng-container slot="footer">
+            <button (click)="closeEditInfoModal()" class="btn-ghost">
               Cancelar
             </button>
             <button
               (click)="saveEditInfo()"
               [disabled]="saving()"
-              class="px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2"
+              class="btn-primary"
             >
               @if (saving()) {
-                <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div class="spinner-sm text-white"></div>
               } @else {
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
               }
               Guardar Cambios
             </button>
-          </div>
-        </div>
-      </div>
+          </ng-container>
+        </app-modal>
       }
         
       <!-- Editor cartográfico: pantalla completa, mapa + panel lateral -->
       @if (showMapEditModal() && selectedTerritorio()) {
       <div class="fixed inset-0 z-[100] flex flex-col bg-white dark:bg-slate-900 animate-fadeIn">
 
-        <div class="px-3 sm:px-5 h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 shrink-0 bg-white dark:bg-slate-800">
+        <div class="px-3 sm:px-5 h-14 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0 bg-white dark:bg-slate-900">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-9 h-9 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
               <svg class="text-green-700 dark:text-green-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
             </div>
-            <h3 class="text-base font-black text-slate-900 dark:text-white truncate">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white truncate">
               Editor cartográfico
               <span class="ml-1.5 px-2 py-0.5 rounded-md bg-slate-900/5 dark:bg-white/10 text-sm font-bold text-slate-700 dark:text-slate-200 tabular-nums">{{ selectedTerritorio()!.codigo }}</span>
               @if (selectedTerritorio()!.nombre) { <span class="hidden md:inline text-sm font-medium text-slate-500 dark:text-slate-400"> · {{ selectedTerritorio()!.nombre }}</span> }
@@ -1150,13 +1089,13 @@ import {
             @if (sinLimiteCongregacion()) {
               <div class="absolute inset-0 z-40 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px]" role="alert">
                 <div class="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 text-center shadow-2xl space-y-4">
-                  <p class="text-lg font-black text-slate-900 dark:text-white">Primero suba el territorio de la congregación</p>
+                  <p class="text-lg font-bold text-slate-900 dark:text-white">Primero suba el territorio de la congregación</p>
                   <p class="text-base text-slate-600 dark:text-slate-400">
                     Las tarjetas se dibujan dentro del límite de la congregación. Suba el archivo .kml en Mapa general y vuelva aquí.
                   </p>
                   <div class="flex flex-col sm:flex-row gap-2 justify-center">
-                    <button (click)="irAMapaGeneral()" class="btn-primary-green focus-ring-green justify-center">Ir a Mapa general</button>
-                    <button (click)="closeMapEditor()" class="btn-secondary focus-ring-green justify-center">Cerrar</button>
+                    <button (click)="irAMapaGeneral()" class="btn-primary">Ir a Mapa general</button>
+                    <button (click)="closeMapEditor()" class="btn-secondary">Cerrar</button>
                   </div>
                 </div>
               </div>
@@ -1225,6 +1164,7 @@ import {
 })
 export class TerritoriosPage implements OnInit {
    private territoriosService = inject(TerritoriosService);
+   private confirmar = inject(ConfirmService);
    private authStore = inject(AuthStore);
    /** Crear, editar o borrar del catálogo exige 'territorios.editar' (el
     *  backend también). Registrar la predicación y devolver solo 'ver'. */
@@ -2150,9 +2090,10 @@ export class TerritoriosPage implements OnInit {
       });
    }
 
-   deleteManzana(idManzana: number, confirmar = true): void {
+   async deleteManzana(idManzana: number, confirmar = true): Promise<void> {
       const t = this.selectedTerritorio();
-      if (!t || (confirmar && !confirm('¿Eliminar esta manzana? Esta acción no se puede deshacer.'))) return;
+      if (!t) return;
+      if (confirmar && !(await this.confirmar.ask({ title: '¿Eliminar esta manzana?', message: 'Esta acción no se puede deshacer.', confirmLabel: 'Eliminar' }))) return;
       this.manzanaDeleting.set(idManzana);
       this.territoriosService.deleteManzana(t.id_territorio, idManzana).subscribe({
          next: () => {
@@ -2501,13 +2442,13 @@ export class TerritoriosPage implements OnInit {
       }
    }
 
-   irAMapaGeneral(): void {
-      this.closeMapEditor();
+   async irAMapaGeneral(): Promise<void> {
+      if (!(await this.closeMapEditor())) return;
       void this.router.navigate(['/territorios/mapa']);
    }
 
-   closeMapEditor(): void {
-      if (this.limiteSinGuardar() && !confirm('El límite del territorio tiene cambios sin guardar. ¿Cerrar sin guardarlos?')) return;
+   async closeMapEditor(): Promise<boolean> {
+      if (this.limiteSinGuardar() && !(await this.confirmar.ask({ title: '¿Cerrar sin guardar?', message: 'El límite del territorio tiene cambios sin guardar.', confirmLabel: 'Cerrar sin guardar', severity: 'warning' }))) return false;
       this.limiteSinGuardar.set(false);
       this.propuestasManzanas.set(null);
       this.renumeracionPrevia.set(null);
@@ -2516,6 +2457,7 @@ export class TerritoriosPage implements OnInit {
       this.editingGeoJSON.set(null);
       this.lastEditedGeoJSON.set(null);
       this.geoSaveError.set(null);
+      return true;
    }
 
    openEditInfoModal(): void {
@@ -2734,7 +2676,7 @@ export class TerritoriosPage implements OnInit {
    getStatusColor(estado: string): string {
       switch (estado) {
          case 'Disponible': return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/25 dark:text-emerald-300 dark:border-emerald-800/60';
-         case 'Asignado': return 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/25 dark:text-violet-300 dark:border-violet-800/60';
+         case 'Asignado': return 'bg-violet-50 text-brand-purple border-violet-200 dark:bg-violet-900/25 dark:text-violet-300 dark:border-violet-800/60';
          case 'En Pausa': return 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600';
          default: return 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
       }
@@ -2743,7 +2685,7 @@ export class TerritoriosPage implements OnInit {
    getStatusDotColor(estado: string): string {
       switch (estado) {
          case 'Disponible': return 'bg-emerald-500';
-         case 'Asignado': return 'bg-violet-600';
+         case 'Asignado': return 'bg-brand-purple';
          case 'En Pausa': return 'bg-slate-400';
          default: return 'bg-slate-400';
       }

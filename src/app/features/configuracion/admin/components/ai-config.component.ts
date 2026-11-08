@@ -1,12 +1,13 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ModalComponent, AvisoComponent, ToastService, ConfirmService } from '../../../../shared/components';
 import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../services/ai-config.service';
 
 @Component({
   selector: 'app-ai-config',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent, AvisoComponent],
   styles: [`
     .custom-scrollbar::-webkit-scrollbar { width: 5px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -56,19 +57,19 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
               d="M9 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2h-2M9 3a2 2 0 002 2h2a2 2 0 002-2M9 3a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
           </svg>
           <div>
-            <h2 class="text-base font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">Cerebros de IA</h2>
-            <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium leading-tight">Modelos, APIs y prompts del sistema</p>
+            <h2 class="text-base font-display font-bold text-slate-900 dark:text-white tracking-tight leading-tight">Cerebros de IA</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-medium leading-tight">Modelos, APIs y prompts del sistema</p>
           </div>
         </div>
 
         <span *ngIf="sucio()" class="ml-auto mr-3 text-xs font-bold text-amber-600 dark:text-amber-400">Cambios sin guardar</span>
         <button (click)="saveChanges()" [disabled]="loading() || !config()"
-          class="relative group overflow-hidden bg-brand-purple hover:bg-purple-700 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-sm flex items-center gap-2 transition-all duration-200 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none">
+          class="relative group overflow-hidden btn-primary">
           <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-500"></div>
           <svg *ngIf="!loading()" class="w-4 h-4 relative shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
-          <span *ngIf="loading()" class="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full shrink-0"></span>
+          <span *ngIf="loading()" class="spinner-sm text-white shrink-0"></span>
           <span class="relative">{{ loading() ? 'Guardando...' : 'Guardar' }}</span>
         </button>
       </div>
@@ -94,7 +95,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
-              <h3 class="text-[0.6875rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Proveedores</h3>
+              <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Proveedores</h3>
             </div>
 
             <div class="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -102,7 +103,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                 class="provider-card p-3 space-y-3">
 
                 <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ring-1 ring-slate-100 dark:ring-slate-700/60 bg-white dark:bg-slate-800">
+                  <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ring-1 ring-slate-100 dark:ring-slate-700/60 bg-white dark:bg-slate-900">
                     <!-- Google Gemini: 4-pointed star with brand gradient -->
                     <svg *ngIf="provider === 'google'" class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <defs>
@@ -137,7 +138,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                       </g>
                     </svg>
                     <!-- Open Source -->
-                    <svg *ngIf="provider === 'open_source'" class="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg *ngIf="provider === 'open_source'" class="w-4 h-4 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
@@ -150,7 +151,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                       <div class="w-1.5 h-1.5 rounded-full shrink-0"
                         [ngClass]="getProvider(provider).api_key ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'">
                       </div>
-                      <span class="text-[0.625rem] font-medium"
+                      <span class="text-xs font-medium"
                         [ngClass]="getProvider(provider).api_key ? 'text-emerald-500' : 'text-slate-400'">
                         {{ getProvider(provider).api_key ? 'Configurada' : 'Sin configurar' }}
                       </span>
@@ -160,10 +161,10 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
 
                 <div class="space-y-2">
                   <div>
-                    <label class="block text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 pl-0.5">API Key</label>
+                    <label class="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 pl-0.5">API Key</label>
                     <div class="relative">
                       <input [type]="isKeyVisible(provider) ? 'text' : 'password'" [(ngModel)]="getProvider(provider).api_key"
-                        class="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-medium text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                        class="form-control w-full pl-3 pr-8"
                         placeholder="sk-••••••••••••••••">
                       <button type="button" (click)="toggleKeyVisibility(provider)"
                         class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
@@ -180,9 +181,9 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                     </div>
                   </div>
                   <div *ngIf="provider === 'open_source'">
-                    <label class="block text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 pl-0.5">Base URL</label>
+                    <label class="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 pl-0.5">Base URL</label>
                     <input type="text" [(ngModel)]="getProvider(provider).base_url"
-                      class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-medium text-[0.6875rem] focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all"
+                      class="form-control w-full"
                       placeholder="https://api.provider.ai/v1">
                   </div>
 
@@ -198,7 +199,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
               Las API Keys se almacenan de forma segura y nunca se comparten con terceros.
             </p>
           </div>
@@ -215,7 +216,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
               </svg>
-              <span class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Procesos</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Procesos</span>
             </div>
             <button (click)="openAddModal()"
               class="w-6 h-6 rounded-md bg-brand-purple/10 hover:bg-brand-purple/20 text-brand-purple flex items-center justify-center transition-colors"
@@ -240,7 +241,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                   {{ key }}
                 </div>
                 <div *ngIf="config()!.processes[key].description"
-                  class="text-[0.625rem] text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                  class="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">
                   {{ config()!.processes[key].description }}
                 </div>
               </div>
@@ -262,7 +263,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium">Sin procesos.<br>Usa "+" para agregar uno.</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Sin procesos.<br>Usa "+" para agregar uno.</p>
             </div>
           </div>
 
@@ -277,7 +278,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
             <!-- Editor header -->
             <div class="shrink-0 px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-end gap-3">
               <div class="flex-1 min-w-0">
-                <div class="text-[0.625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">Proceso activo</div>
+                <div class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">Proceso activo</div>
                 <h4 class="text-base font-display font-bold text-slate-900 dark:text-white truncate font-mono">{{ selectedProcessKey() }}</h4>
                 <p *ngIf="selectedProcess()?.description"
                   class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
@@ -287,7 +288,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
 
               <!-- Motor: nube o IA local (solo procesos de redacción) -->
               <div *ngIf="admiteLocal(selectedProcessKey()!)" class="flex flex-col gap-1">
-                <span class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Motor</span>
+                <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Motor</span>
                 <div class="inline-flex p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold" role="group" aria-label="Motor de IA">
                   <button type="button" (click)="usarLocal(false)"
                     class="px-3 py-1.5 rounded-md transition-[background-color,color,box-shadow] duration-200"
@@ -305,18 +306,18 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
               <ng-container *ngIf="!esLocal()">
                 <!-- Provider select -->
                 <div class="flex flex-col gap-1 w-36">
-                  <label class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Proveedor</label>
+                  <label class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Proveedor</label>
                   <select [(ngModel)]="config()!.processes[selectedProcessKey()!].provider"
-                    class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-bold text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all appearance-none cursor-pointer">
+                    class="form-select w-full">
                     <option *ngFor="let p of proveedoresNube()" [value]="p">{{ providerLabel(p) }}</option>
                   </select>
                 </div>
 
                 <!-- Model select -->
                 <div class="flex flex-col gap-1 w-52">
-                  <label class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Modelo</label>
+                  <label class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Modelo</label>
                   <select [(ngModel)]="config()!.processes[selectedProcessKey()!].model"
-                    class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-bold text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all appearance-none cursor-pointer">
+                    class="form-select w-full">
                     <option *ngFor="let m of getModelsForProvider(config()!.processes[selectedProcessKey()!].provider)" [value]="m.id">
                       {{ m.label }}
                     </option>
@@ -329,10 +330,10 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
             <div *ngIf="esLocal()" class="shrink-0 px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-x-5 gap-y-2 animate-slideIn">
               <div class="basis-full grid gap-3 sm:grid-cols-[1fr_1.4fr]">
                 <div class="min-w-0">
-                  <label class="block text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Token de acceso</label>
+                  <label class="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Token de acceso</label>
                   <div class="relative">
                     <input [type]="isKeyVisible('gpu_local') ? 'text' : 'password'" [(ngModel)]="getProvider('gpu_local').api_key" autocomplete="off"
-                      class="w-full pl-3 pr-9 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-mono text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                      class="form-control w-full pl-3 pr-9 font-mono"
                       placeholder="rk_app_…">
                     <button type="button" (click)="toggleKeyVisibility('gpu_local')" [attr.aria-label]="isKeyVisible('gpu_local') ? 'Ocultar token' : 'Mostrar token'"
                       class="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
@@ -343,9 +344,9 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                   </div>
                 </div>
                 <div class="min-w-0">
-                  <label class="block text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Dirección del servicio</label>
+                  <label class="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Dirección del servicio</label>
                   <input type="text" [(ngModel)]="getProvider('gpu_local').base_url" autocomplete="off"
-                    class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-mono text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    class="form-control w-full font-mono"
                     placeholder="https://su-dominio/api/v1/text-vision/chat">
                 </div>
               </div>
@@ -357,7 +358,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                   {{ probando() ? 'Probando...' : 'Probar conexión' }}
                 </button>
                 <input type="text" (input)="pegarConexion($any($event.target).value); $any($event.target).value = ''" autocomplete="off"
-                  class="flex-1 min-w-[14rem] px-3 py-2 bg-transparent border border-dashed border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-700 dark:text-slate-200 focus:border-brand-purple outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  class="form-control flex-1 min-w-[14rem]"
                   placeholder="O pegue aquí el ejemplo de uso completo y se rellenan los dos campos">
                 <p *ngIf="pruebaLocal() as r" class="basis-full text-xs font-semibold leading-snug animate-slideIn"
                   [ngClass]="r.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
@@ -366,14 +367,14 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
               </div>
 
               <label *ngIf="respaldoDisponible()" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer select-none">
-                <input type="checkbox" class="w-4 h-4 accent-[#6d28d9]" [checked]="!!selectedProcess()!.fallback_provider" (change)="alternarRespaldo($any($event.target).checked)">
+                <input type="checkbox" class="w-4 h-4" [checked]="!!selectedProcess()!.fallback_provider" (change)="alternarRespaldo($any($event.target).checked)">
                 Si no responde, usar {{ providerLabel(respaldoNube()!.provider) }}
               </label>
             </div>
 
             <!-- Prompt editor (fills remaining height) -->
             <div class="flex-1 min-h-0 flex flex-col p-3 gap-2">
-              <label class="shrink-0 flex items-center gap-1.5 text-[0.6875rem] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <label class="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -381,10 +382,10 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                 System Prompt
               </label>
               <textarea [(ngModel)]="config()!.processes[selectedProcessKey()!].prompt"
-                class="prompt-editor flex-1 w-full p-4 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 font-mono text-[0.8125rem] focus:border-brand-purple outline-none resize-none transition-all custom-scrollbar"
+                class="form-control flex-1 w-full font-mono resize-none custom-scrollbar"
                 placeholder="Defina el comportamiento y formato esperado del modelo...">
               </textarea>
-              <p class="shrink-0 text-[0.625rem] text-slate-400 dark:text-slate-500 font-medium px-1">
+              <p class="shrink-0 text-xs text-slate-400 dark:text-slate-500 font-medium px-1">
                 Optimizado para <span class="text-brand-purple font-bold">{{ providerLabel(config()!.processes[selectedProcessKey()!].provider) }}</span>
                 <ng-container *ngIf="!esLocal()"> · {{ config()!.processes[selectedProcessKey()!].model || '—' }}</ng-container>
               </p>
@@ -400,7 +401,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                   d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
               </svg>
               <p class="text-sm font-bold text-slate-400 dark:text-slate-500">Selecciona un proceso</p>
-              <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500">o crea uno nuevo con el botón "+"</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500">o crea uno nuevo con el botón "+"</p>
             </div>
           </ng-template>
 
@@ -411,140 +412,54 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
     </div>
 
     <!-- Modal: Agregar Proceso -->
-    <div *ngIf="showAddModal()"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
-      (click)="showAddModal.set(false)">
-      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700 animate-slideIn"
-        (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <app-modal [open]="showAddModal()" (openChange)="showAddModal.set($event)" size="md" title="Nuevo proceso" [hasFooter]="true">
+      <div class="space-y-4">
+        @if (addError()) {
+          <app-aviso tone="danger" [dense]="true">{{ addError() }}</app-aviso>
+        }
 
-        <!-- Modal header -->
-        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <svg class="w-4.5 h-4.5 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 class="text-base font-display font-bold text-slate-900 dark:text-white">Nuevo Proceso</h3>
-          </div>
-          <button (click)="showAddModal.set(false)"
-            class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+        <div>
+          <label class="form-label" for="ia-key">Identificador <span class="text-red-600">*</span></label>
+          <input id="ia-key" type="text" [(ngModel)]="newKey" class="form-control font-mono"
+            placeholder="ej: carta_servicio" (input)="addError.set(null)">
+          <p class="form-helper">Solo letras, números y guiones bajos. No se puede modificar luego.</p>
         </div>
 
-        <!-- Modal body -->
-        <div class="px-5 py-4 space-y-3.5">
-
-          <!-- Error -->
-          <div *ngIf="addError()"
-            class="flex items-center gap-2 px-3 py-2.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-xs font-medium text-red-600 dark:text-red-400">
-            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {{ addError() }}
-          </div>
-
-          <!-- Identificador -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-              Identificador <span class="text-red-400">*</span>
-            </label>
-            <input type="text" [(ngModel)]="newKey"
-              class="form-control !py-2 !text-sm font-mono"
-              placeholder="ej: carta_servicio"
-              (input)="addError.set(null)">
-            <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-1 ml-0.5">Solo letras, números y guiones bajos. No se puede modificar luego.</p>
-          </div>
-
-          <!-- Descripción -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-              Descripción <span class="text-slate-400 dark:text-slate-500 font-normal">(opcional)</span>
-            </label>
-            <input type="text" [(ngModel)]="newDescription"
-              class="form-control !py-2 !text-sm"
-              placeholder="ej: Analiza cartas de servicio del campo">
-          </div>
-
-          <!-- Proveedor -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Proveedor</label>
-            <select [(ngModel)]="newProvider" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-medium text-sm focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all appearance-none cursor-pointer">
-              <option *ngFor="let p of proveedoresNube()" [value]="p">{{ providerLabel(p) }}</option>
-            </select>
-          </div>
-
-          <!-- Modelo -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Modelo</label>
-            <select [(ngModel)]="newModel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-medium text-sm focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all appearance-none cursor-pointer">
-              <option value="" disabled>Selecciona un modelo</option>
-              <option *ngFor="let m of getModelsForProvider(newProvider)" [value]="m.id">
-                {{ m.label }}
-              </option>
-            </select>
-          </div>
-
-          <!-- System Prompt inicial -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-              System Prompt <span class="text-slate-400 dark:text-slate-500 font-normal">(opcional, editable luego)</span>
-            </label>
-            <textarea [(ngModel)]="newPrompt" rows="5"
-              class="w-full p-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 font-mono text-xs focus:border-brand-purple outline-none resize-none transition-all custom-scrollbar"
-              placeholder="Instrucciones del sistema..."></textarea>
-          </div>
-
+        <div>
+          <label class="form-label" for="ia-desc">Descripción <span class="font-normal text-slate-600 dark:text-slate-400">(opcional)</span></label>
+          <input id="ia-desc" type="text" [(ngModel)]="newDescription" class="form-control"
+            placeholder="ej: Analiza cartas de servicio del campo">
         </div>
 
-        <!-- Modal footer -->
-        <div class="px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
-          <button (click)="showAddModal.set(false)"
-            class="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            Cancelar
-          </button>
-          <button (click)="addProcess()"
-            class="px-5 py-2 rounded-xl bg-brand-purple hover:bg-purple-700 text-white text-sm font-bold shadow-sm transition-colors">
-            Agregar
-          </button>
+        <div>
+          <label class="form-label" for="ia-prov">Proveedor</label>
+          <select id="ia-prov" [(ngModel)]="newProvider" class="form-select">
+            <option *ngFor="let p of proveedoresNube()" [value]="p">{{ providerLabel(p) }}</option>
+          </select>
         </div>
 
+        <div>
+          <label class="form-label" for="ia-model">Modelo</label>
+          <select id="ia-model" [(ngModel)]="newModel" class="form-select">
+            <option value="" disabled>Selecciona un modelo</option>
+            <option *ngFor="let m of getModelsForProvider(newProvider)" [value]="m.id">{{ m.label }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label" for="ia-prompt">System Prompt <span class="font-normal text-slate-600 dark:text-slate-400">(opcional, editable luego)</span></label>
+          <textarea id="ia-prompt" [(ngModel)]="newPrompt" rows="5" class="form-control font-mono text-xs resize-none custom-scrollbar"
+            placeholder="Instrucciones del sistema..."></textarea>
+        </div>
       </div>
-    </div>
-
-    <!-- Toast notification -->
-    <div *ngIf="toast()" class="fixed bottom-6 right-6 z-[100] animate-slideIn">
-      <div class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border"
-        [ngClass]="toast()!.type === 'success'
-          ? 'bg-white dark:bg-slate-900 border-emerald-200 dark:border-emerald-800'
-          : 'bg-white dark:bg-slate-900 border-red-200 dark:border-red-800'">
-        <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-          [ngClass]="toast()!.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'">
-          <svg *ngIf="toast()!.type === 'success'" class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          <svg *ngIf="toast()!.type === 'error'" class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </div>
-        <span class="text-sm font-bold"
-          [ngClass]="toast()!.type === 'success' ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'">
-          {{ toast()!.message }}
-        </span>
-        <button (click)="toast.set(null)"
-          class="ml-1 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors">
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-    </div>
+      <ng-container slot="footer">
+        <button type="button" class="btn-secondary" (click)="showAddModal.set(false)">Cancelar</button>
+        <button type="button" class="btn-primary" (click)="addProcess()">Agregar</button>
+      </ng-container>
+    </app-modal>
   `
 })
-export class AIConfigComponent implements OnInit, OnDestroy {
+export class AIConfigComponent implements OnInit {
   private service = inject(AIConfigService);
 
   config = this.service.config;
@@ -573,9 +488,8 @@ export class AIConfigComponent implements OnInit, OnDestroy {
   newModel = '';
   newPrompt = '';
 
-  // Toast
-  toast = signal<{ type: 'success' | 'error'; message: string } | null>(null);
-  private toastTimer: any = null;
+  private toastSvc = inject(ToastService);
+  private confirm = inject(ConfirmService);
 
   // Computed: selected process object
   selectedProcess = computed<ProcessConfig | null>(() => {
@@ -594,10 +508,6 @@ export class AIConfigComponent implements OnInit, OnDestroy {
         if (keys.length > 0) this.selectedProcessKey.set(keys[0]);
       }
     });
-  }
-
-  ngOnDestroy() {
-    if (this.toastTimer) clearTimeout(this.toastTimer);
   }
 
   readonly providerModels: Record<string, { id: string; label: string }[]> = {
@@ -795,10 +705,16 @@ export class AIConfigComponent implements OnInit, OnDestroy {
   private marcarGuardado() { this.guardado = JSON.stringify(this.config()); }
   sucio(): boolean { return !!this.config() && JSON.stringify(this.config()) !== this.guardado; }
 
-  deleteProcess(key: string) {
+  async deleteProcess(key: string) {
     const cfg = this.config();
     if (!cfg) return;
-    if (!confirm(`¿Eliminar el proceso «${key}»? Se aplicará al pulsar Guardar.`)) return;
+    const ok = await this.confirm.ask({
+      title: `¿Eliminar el proceso «${key}»?`,
+      message: 'Se aplicará al pulsar Guardar.',
+      confirmLabel: 'Eliminar',
+      severity: 'danger',
+    });
+    if (!ok) return;
     const { [key]: _, ...remaining } = cfg.processes as { [k: string]: ProcessConfig };
     const updated: AIConfig = { ...cfg, processes: remaining };
     this.service.config.set(updated);
@@ -816,8 +732,7 @@ export class AIConfigComponent implements OnInit, OnDestroy {
   }
 
   showToast(type: 'success' | 'error', message: string) {
-    if (this.toastTimer) clearTimeout(this.toastTimer);
-    this.toast.set({ type, message });
-    this.toastTimer = setTimeout(() => this.toast.set(null), 3500);
+    if (type === 'success') this.toastSvc.success(message);
+    else this.toastSvc.error(message);
   }
 }

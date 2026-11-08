@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthStore } from '../../../core/auth/auth.store';
 import {
-  puedeVerConfiguracion, puedeVerExhibidores, puedeVerPublicadores, puedeVerReportes,
+  puedeVerAgenda, puedeVerConfiguracion, puedeVerExhibidores, puedeVerPublicadores, puedeVerReportes,
   puedeVerReuniones, puedeVerTerritorios,
 } from '../../../core/auth/acceso-modulos';
 import { LucideAngularModule } from 'lucide-angular';
@@ -22,6 +22,7 @@ export interface CommandItem {
 
 const DEFAULT_COMMANDS: CommandItem[] = [
   { key: 'home',         label: 'Ir al Dashboard',           group: 'Navegación', route: '/' },
+  { key: 'agenda',       label: 'Ver Mi Agenda',             group: 'Navegación', route: '/agenda', visible: puedeVerAgenda },
   { key: 'publicadores', label: 'Ver Publicadores',          group: 'Navegación', route: '/secretario/publicadores', visible: puedeVerPublicadores },
   { key: 'territorios',  label: 'Ver Territorios',           group: 'Navegación', route: '/territorios', visible: puedeVerTerritorios },
   { key: 'exhibidores',  label: 'Ver Exhibidores',           group: 'Navegación', route: '/exhibidores', visible: puedeVerExhibidores },
@@ -44,27 +45,27 @@ const DEFAULT_COMMANDS: CommandItem[] = [
       aria-modal="true"
       aria-label="Paleta de comandos"
     >
-      <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm animate-fadeIn" (click)="close()"></div>
+      <div class="absolute inset-0 backdrop-blur-[2px] animate-fadeIn" style="background: var(--velo)" (click)="close()"></div>
 
-      <div class="relative w-full max-w-xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+      <div class="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
         <!-- Search -->
-        <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-slate-700">
-          <lucide-icon name="search" [size]="20" class="text-gray-400 shrink-0"></lucide-icon>
+        <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+          <lucide-icon name="search" [size]="20" class="text-slate-400 shrink-0"></lucide-icon>
           <input
             #searchInput
             [value]="query()"
             (input)="onQuery($event)"
             (keydown)="onKey($event)"
-            class="flex-1 text-base bg-transparent outline-none placeholder:text-gray-400 dark:placeholder:text-slate-500 text-gray-900 dark:text-slate-100"
+            class="flex-1 text-base bg-transparent outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-slate-100"
             placeholder="Buscar comandos, ir a una página..."
             autofocus
           />
-          <kbd class="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 dark:bg-slate-700 text-xs font-mono text-gray-500 dark:text-slate-400">ESC</kbd>
+          <kbd class="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-700 text-xs font-mono text-slate-500 dark:text-slate-400">ESC</kbd>
         </div>
 
         <!-- Results -->
         <div class="max-h-[50vh] overflow-y-auto py-2">
-          <p *ngIf="filtered().length === 0" class="px-4 py-8 text-center text-sm text-gray-400 dark:text-slate-500">
+          <p *ngIf="filtered().length === 0" class="px-4 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
             Sin resultados para "{{ query() }}"
           </p>
 
@@ -75,13 +76,13 @@ const DEFAULT_COMMANDS: CommandItem[] = [
               type="button"
               (click)="run(cmd)"
               (mouseenter)="setActive(absoluteIndex(gi, i))"
-              class="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left transition hover:bg-gray-50 dark:hover:bg-slate-700/50"
+              class="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left transition hover:bg-slate-50 dark:hover:bg-slate-700/50"
               [class.bg-violet-50]="absoluteIndex(gi, i) === active()"
               [class.dark:bg-violet-950/40]="absoluteIndex(gi, i) === active()"
             >
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ cmd.label }}</p>
-                <p *ngIf="cmd.hint" class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{{ cmd.hint }}</p>
+                <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ cmd.label }}</p>
+                <p *ngIf="cmd.hint" class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ cmd.hint }}</p>
               </div>
               <lucide-icon
                 *ngIf="absoluteIndex(gi, i) === active()"
@@ -93,13 +94,13 @@ const DEFAULT_COMMANDS: CommandItem[] = [
         </div>
 
         <!-- Footer -->
-        <div class="flex items-center justify-between px-4 py-2 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/30 text-xs text-gray-500 dark:text-slate-400">
+        <div class="flex items-center justify-between px-4 py-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-xs text-slate-500 dark:text-slate-400">
           <span class="flex items-center gap-2">
-            <kbd class="px-1.5 py-0.5 rounded bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 font-mono dark:text-slate-300">↑↓</kbd>
+            <kbd class="px-1.5 py-0.5 rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 font-mono dark:text-slate-300">↑↓</kbd>
             navegar
           </span>
           <span class="flex items-center gap-2">
-            <kbd class="px-1.5 py-0.5 rounded bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 font-mono dark:text-slate-300">↵</kbd>
+            <kbd class="px-1.5 py-0.5 rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 font-mono dark:text-slate-300">↵</kbd>
             seleccionar
           </span>
         </div>

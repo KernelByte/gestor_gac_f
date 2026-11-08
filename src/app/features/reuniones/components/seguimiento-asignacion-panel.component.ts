@@ -1,8 +1,9 @@
 import {
-  Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, computed, signal,
+  Component, EventEmitter, Input, OnDestroy, OnInit, Output, computed, signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { ReunionesService } from '../services/reuniones.service';
 import {
   AsistenciaSeguimiento, NivelTiempo, Seguimiento,
@@ -37,39 +38,15 @@ export interface SeguimientoObjetivo {
 @Component({
   selector: 'app-seguimiento-asignacion-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent],
   template: `
-    <div class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm"
-      (click)="cerrar.emit()">
-      <div role="dialog" aria-modal="true" aria-labelledby="seg-panel-titulo"
-        class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md sm:max-h-[88vh] flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden"
-        (click)="$event.stopPropagation()">
-
-        <div class="flex justify-center pt-3 pb-1 sm:hidden">
-          <div class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></div>
-        </div>
-
-        <!-- Cabecera: de quién y de qué parte se está hablando -->
-        <div class="shrink-0 px-5 pt-3 pb-4 sm:pt-5 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <h2 id="seg-panel-titulo" class="text-base font-black text-slate-900 dark:text-white truncate">
-              {{ objetivo.nombre_completo || 'Sin asignar' }}
-            </h2>
-            <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-              {{ objetivo.nombre_parte || 'Parte de reunión' }}@if (objetivo.papel) {<span> · {{ objetivo.papel }}</span>}@if (objetivo.fecha) {<span> · {{ formatFecha(objetivo.fecha) }}</span>}
-            </p>
-          </div>
-          <button type="button" (click)="cerrar.emit()" aria-label="Cerrar"
-            class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-95">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-
-        <div class="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5">
+    <app-modal [open]="true" variant="sheet" size="lg" [title]="objetivo.nombre_completo || 'Sin asignar'"
+      [subtitle]="subtitulo" [padding]="false" [hasFooter]="true" [dismissible]="!guardando()" (closed)="cerrar.emit()">
+        <div class="p-5 flex flex-col gap-5">
 
           <!-- ── TIEMPO ── -->
           <fieldset class="flex flex-col gap-2.5">
-            <legend class="text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+            <legend class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
               Tiempo
               @if (objetivo.duracion_minutos) {
                 <span class="normal-case tracking-normal font-medium text-slate-400"> · previsto {{ objetivo.duracion_minutos }} min</span>
@@ -97,11 +74,11 @@ export interface SeguimientoObjetivo {
                 <input id="seg-tiempo" type="text" inputmode="numeric" [(ngModel)]="tiempoTexto"
                   (ngModelChange)="onTiempoTextoChange()" placeholder="mm:ss"
                   [class.tabular-nums]="true"
-                  class="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-lg font-black text-slate-800 dark:text-slate-100 tracking-wide placeholder:font-medium placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 transition-colors">
+                  class="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-lg font-bold text-slate-800 dark:text-slate-100 tracking-wide placeholder:font-medium placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 transition-colors">
               </div>
 
               @if (nivel(); as n) {
-                <span class="shrink-0 px-2.5 h-7 rounded-full text-[0.65rem] font-black flex items-center whitespace-nowrap"
+                <span class="shrink-0 px-2.5 h-7 rounded-full text-xs font-bold flex items-center whitespace-nowrap"
                   [class]="n === 'pasado'
                     ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                     : n === 'corto'
@@ -115,7 +92,7 @@ export interface SeguimientoObjetivo {
 
           <!-- ── ASISTENCIA ── -->
           <fieldset class="flex flex-col gap-2">
-            <legend class="text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">¿Cumplió?</legend>
+            <legend class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">¿Cumplió?</legend>
             <div class="flex items-center gap-1.5 flex-wrap">
               @for (op of ASISTENCIAS; track op.valor) {
                 <button type="button" (click)="toggleAsistencia(op.valor)"
@@ -132,7 +109,7 @@ export interface SeguimientoObjetivo {
 
           <!-- ── NOTAS ── -->
           <div class="flex flex-col gap-2">
-            <label for="seg-notas" class="text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Observaciones</label>
+            <label for="seg-notas" class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Observaciones</label>
             <textarea id="seg-notas" rows="4" [(ngModel)]="notas"
               placeholder="Qué se le dijo, en qué quedó, qué mirar la próxima vez…"
               class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 transition-colors resize-y"></textarea>
@@ -145,29 +122,19 @@ export interface SeguimientoObjetivo {
           }
         </div>
 
-        <!-- Pie -->
-        <div class="shrink-0 px-5 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+        <ng-container slot="footer">
           @if (objetivo.seguimiento) {
-            <button type="button" (click)="borrar()" [disabled]="guardando()"
-              class="px-3 h-10 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors active:scale-95 disabled:opacity-40">
-              Borrar
-            </button>
+            <button type="button" (click)="borrar()" [disabled]="guardando()" class="btn-ghost-danger mr-auto">Borrar</button>
           }
-          <span class="flex-1"></span>
-          <button type="button" (click)="cerrar.emit()" [disabled]="guardando()"
-            class="px-4 h-10 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-95 disabled:opacity-40">
-            Cancelar
-          </button>
-          <button type="button" (click)="guardar()" [disabled]="guardando()"
-            class="px-5 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-lg shadow-blue-500/20 transition-colors active:scale-95 disabled:opacity-50 flex items-center gap-2">
+          <button type="button" (click)="cerrar.emit()" [disabled]="guardando()" class="btn-secondary">Cancelar</button>
+          <button type="button" (click)="guardar()" [disabled]="guardando()" class="btn-primary">
             @if (guardando()) {
-              <span class="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin"></span>
+              <span class="spinner-xs"></span>
             }
             Guardar
           </button>
-        </div>
-      </div>
-    </div>
+        </ng-container>
+    </app-modal>
   `,
 })
 export class SeguimientoAsignacionPanelComponent implements OnInit, OnDestroy {
@@ -218,11 +185,6 @@ export class SeguimientoAsignacionPanelComponent implements OnInit, OnDestroy {
     this.pararIntervalo();
   }
 
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    this.cerrar.emit();
-  }
-
   // ── Cronómetro ──
 
   toggleCrono(): void {
@@ -265,6 +227,11 @@ export class SeguimientoAsignacionPanelComponent implements OnInit, OnDestroy {
   private parseTiempo = parseTiempo;
   readonly formatSegundos = formatSegundos;
   readonly formatFecha = formatFecha;
+
+  get subtitulo(): string {
+    const o = this.objetivo;
+    return (o.nombre_parte || 'Parte de reunión') + (o.papel ? ' · ' + o.papel : '') + (o.fecha ? ' · ' + formatFecha(o.fecha) : '');
+  }
 
   etiquetaNivel(n: NivelTiempo): string {
     return etiquetaNivel(n, this.segundos(), this.objetivo.duracion_minutos);

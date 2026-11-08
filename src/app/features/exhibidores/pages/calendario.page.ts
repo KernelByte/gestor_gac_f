@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
@@ -7,6 +7,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { ExhibidoresTabsComponent } from '../components/exhibidores-tabs.component';
 import { ExhibidoresService } from '../services/exhibidores.service';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { Hora12Pipe } from '../../../shared/pipes/hora12.pipe';
 import {
   DIAS_SEMANA, DIAS_SEMANA_CORTO, ExhibidorAsignacion, MESES_ES, MiTurno,
@@ -47,8 +48,9 @@ const MAX_PILDORAS_CELDA = 3;
 
 @Component({
   selector: 'app-calendario-exhibidores-page',
+  host: { class: 'tema-exhibidores' },
   standalone: true,
-  imports: [CommonModule, PageHeaderComponent, EmptyStateComponent, ExhibidoresTabsComponent, Hora12Pipe],
+  imports: [CommonModule, PageHeaderComponent, EmptyStateComponent, ExhibidoresTabsComponent, Hora12Pipe, ModalComponent],
   template: `
     <app-page-header
       title="Calendario de exhibidores"
@@ -264,7 +266,7 @@ const MAX_PILDORAS_CELDA = 3;
                       : 'text-slate-900 dark:text-slate-100'">
               {{ celda.dia }}
             </span>
-            <span *ngIf="celda.esHoy" class="text-[11px] font-bold uppercase tracking-wide text-exh-700 dark:text-exh-300">Hoy</span>
+            <span *ngIf="celda.esHoy" class="text-xs font-bold uppercase tracking-wide text-exh-700 dark:text-exh-300">Hoy</span>
             <svg *ngIf="celda.tieneMio && !celda.esHoy" class="w-4 h-4 text-exh-600 dark:text-exh-400" fill="currentColor" viewBox="0 0 24 24">
               <title>Tienes un turno este día</title>
               <path d="M11.48 3.5a.56.56 0 0 1 1.04 0l2.12 4.6 5.02.62c.47.06.66.65.31.97l-3.7 3.42.97 4.96c.09.47-.4.83-.82.6L12 16.2l-4.42 2.47c-.42.23-.91-.13-.82-.6l.97-4.96-3.7-3.42c-.35-.32-.16-.91.31-.97l5.02-.62 2.12-4.6Z"/>
@@ -292,13 +294,13 @@ const MAX_PILDORAS_CELDA = 3;
                    el día para saber de qué lugar se trata. Cada persona va en
                    su propia fila — unidas por comas, un nombre largo se
                    tragaba a los demás en el truncate. -->
-              <span class="block text-xs mbp:text-[13px] font-bold line-clamp-2">
+              <span class="block text-xs mbp:text-sm font-bold line-clamp-2">
                 {{ e.ubicacion }}
               </span>
-              <span *ngFor="let p of e.personas" class="block text-xs mbp:text-[13px] truncate opacity-85">
+              <span *ngFor="let p of e.personas" class="block text-xs mbp:text-sm truncate opacity-85">
                 {{ p }}
               </span>
-              <span *ngIf="e.personas.length === 0" class="block text-xs mbp:text-[13px] italic opacity-70">
+              <span *ngIf="e.personas.length === 0" class="block text-xs mbp:text-sm italic opacity-70">
                 Sin asignar
               </span>
             </div>
@@ -331,7 +333,7 @@ const MAX_PILDORAS_CELDA = 3;
              [ngClass]="celda.esHoy ? 'text-exh-700 dark:text-exh-300' : 'text-slate-900 dark:text-slate-100'">
             {{ celda.dia }}
           </p>
-          <p *ngIf="celda.esHoy" class="text-[11px] font-bold uppercase text-exh-700 dark:text-exh-300 mt-0.5">Hoy</p>
+          <p *ngIf="celda.esHoy" class="text-xs font-bold uppercase text-exh-700 dark:text-exh-300 mt-0.5">Hoy</p>
         </div>
 
         <div class="flex-1 min-w-0 space-y-2">
@@ -377,29 +379,11 @@ const MAX_PILDORAS_CELDA = 3;
     <!-- ═══ Detalle de un día ═══════════════════════════════════════
          Al tocar una celda se abre el día en grande. Es la red de
          seguridad de la cuadrícula: nada queda escondido en 12px. -->
-    <div *ngIf="diaAbierto() as d"
-         class="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm"
-         style="z-index: var(--z-modal)"
-         (click)="diaAbierto.set(null)">
-      <div class="w-full sm:max-w-lg max-h-[85vh] overflow-y-auto bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl"
-           role="dialog" aria-modal="true" [attr.aria-label]="'Salidas del ' + d.dia + ' de ' + nombreMes()"
-           (click)="$event.stopPropagation()">
-        <div class="flex items-start justify-between gap-4 p-5 border-b border-slate-200 dark:border-slate-700">
-          <div>
-            <p class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ diaNombreLargo(d.fecha) }}</p>
-            <p class="font-display font-extrabold text-2xl text-slate-900 dark:text-slate-50">
-              {{ d.dia }} de {{ nombreMes() }}
-            </p>
-          </div>
-          <button type="button" (click)="diaAbierto.set(null)" aria-label="Cerrar"
-                  class="w-11 h-11 shrink-0 flex items-center justify-center rounded-xl border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
-            </svg>
-          </button>
-        </div>
-
-        <div class="p-5 space-y-3">
+    @if (diaAbierto(); as d) {
+      <app-modal [open]="true" variant="sheet" size="lg"
+                 [title]="d.dia + ' de ' + nombreMes()" [subtitle]="diaNombreLargo(d.fecha)"
+                 (openChange)="$event || diaAbierto.set(null)">
+        <div class="space-y-3">
           <p *ngIf="d.bloqueado"
              class="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -424,8 +408,8 @@ const MAX_PILDORAS_CELDA = 3;
             </ul>
           </div>
         </div>
-      </div>
-    </div>
+      </app-modal>
+    }
   `,
 })
 export class CalendarioExhibidoresPage implements OnInit {
@@ -639,11 +623,6 @@ export class CalendarioExhibidoresPage implements OnInit {
   abrirDia(celda: CeldaCalendario): void {
     if (celda.otroMes || (celda.eventos.length === 0 && !celda.bloqueado)) return;
     this.diaAbierto.set(celda);
-  }
-
-  @HostListener('document:keydown.escape')
-  cerrarDia(): void {
-    this.diaAbierto.set(null);
   }
 
   etiquetaDia(celda: CeldaCalendario): string {

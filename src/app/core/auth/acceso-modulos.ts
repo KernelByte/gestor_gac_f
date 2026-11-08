@@ -52,3 +52,71 @@ export function puedeVerTerritorios(s: AuthStore): boolean {
 export function puedeVerConfiguracion(s: AuthStore): boolean {
   return algunRol(s, ['Administrador', 'Secretario', 'Coordinador']) || s.hasPermission('configuracion.ver');
 }
+
+// ── Administración (antes «Secretario») ─────────────────────────────────────
+// Cada opción del grupo tiene su propia regla; el grupo se muestra si alguna
+// aplica. Son el espejo de los guards de features/secretario-tools/routes.ts (URL /administracion).
+
+/**
+ * Coordinador por contenido y sin distinguir mayúsculas, igual que
+ * `es_coordinador` del backend (ILIKE '%coordinador%').
+ */
+export function esCoordinador(s: AuthStore): boolean {
+  return s.rolesEfectivos().some(r => r.includes('coordinador'));
+}
+
+/** Agenda, Visita del SC y Transferencias. */
+export function esSecretarioOAdmin(s: AuthStore): boolean {
+  return algunRol(s, ['Administrador', 'Secretario']);
+}
+
+/**
+ * Mi Agenda (/agenda): calendario y tareas en una sola pantalla. Va fuera de Administración.
+ * - 'secretaria': Secretario y Administrador (pendientes de la secretaría).
+ * - 'personal': el coordinador y los ancianos con cuenta (sus recordatorios y reuniones).
+ * - 'tareas': cualquiera con acceso a Tareas; solo ve la lista de sus tareas.
+ * El backend vuelve a comprobarlo en /secretario/agenda, /agenda y /tareas.
+ */
+export type AccesoAgenda = 'secretaria' | 'personal' | 'tareas';
+
+export function modoAgenda(s: AuthStore): AccesoAgenda | null {
+  if (esSecretarioOAdmin(s)) return 'secretaria';
+  if (esCoordinador(s) || !!s.user()?.es_anciano) return 'personal';
+  if (s.hasPermission('tareas.ver')) return 'tareas';
+  return null;
+}
+
+export function puedeVerAgenda(s: AuthStore): boolean {
+  return modoAgenda(s) !== null;
+}
+
+/** Crea, edita y convoca las reuniones de organización. */
+export function puedeGestionarReunionesAncianos(s: AuthStore): boolean {
+  return esSecretarioOAdmin(s) || esCoordinador(s);
+}
+
+/** Los gestores, y quien esté convocado a alguna reunión (la ve y propone puntos). */
+export function puedeVerReunionesAncianos(s: AuthStore): boolean {
+  // es_anciano ya no basta: el backend solo deja entrar a quien fue convocado.
+  return puedeGestionarReunionesAncianos(s) || !!s.user()?.participa_reuniones;
+}
+
+/** El Coordinador ve las actas de ancianos, pero no las edita. */
+export function puedeVerActas(s: AuthStore): boolean {
+  return esSecretarioOAdmin(s) || esCoordinador(s);
+}
+
+export function puedeEditarActas(s: AuthStore): boolean {
+  return esSecretarioOAdmin(s);
+}
+
+export function puedeVerAdministracion(s: AuthStore): boolean {
+  return esSecretarioOAdmin(s) || puedeVerReunionesAncianos(s) || puedeVerActas(s);
+}
+
+/** Primera opción del grupo que esta persona puede abrir, en el orden del menú. */
+export function primeraRutaAdministracion(s: AuthStore): string | null {
+  if (puedeVerReunionesAncianos(s)) return '/administracion/reuniones-teocraticas';
+  if (puedeVerActas(s)) return '/administracion/actas-reunion';
+  return null;
+}

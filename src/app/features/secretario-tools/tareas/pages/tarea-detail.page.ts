@@ -1,6 +1,10 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { combineLatest } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TareaDetailPanelComponent } from '../components/tarea-detail-panel.component';
+import { AuthStore } from '../../../../core/auth/auth.store';
+import { puedeVerActas } from '../../../../core/auth/acceso-modulos';
 
 @Component({
   standalone: true,
@@ -31,18 +35,23 @@ import { TareaDetailPanelComponent } from '../components/tarea-detail-panel.comp
     :host {
       display: block;
       height: 100%;
-      overflow-y: auto;
+      overflow: hidden;
       background: #f0f2f5;
     }
     :host-context(.dark) { background: #020618; }
 
+    /* La vista ocupa justo la pantalla: no hay scroll de página, solo el cuerpo de la tarjeta si el contenido no cabe. */
     .page-outer {
       max-width: 700px;
+      height: 100%;
       margin: 0 auto;
-      padding: 1.5rem 1.25rem 3rem;
+      padding: 1.25rem 1.25rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
     }
     @media (max-width: 640px) {
-      .page-outer { padding: 1rem 0.75rem 2rem; }
+      .page-outer { padding: 0.75rem 0.75rem 0.75rem; }
     }
 
     /* Header */
@@ -50,8 +59,9 @@ import { TareaDetailPanelComponent } from '../components/tarea-detail-panel.comp
       display: flex;
       align-items: center;
       gap: 0.875rem;
-      margin-bottom: 1.125rem;
+      margin-bottom: 0.875rem;
       padding: 0 0.125rem;
+      flex-shrink: 0;
     }
     .page-title {
       font-family: var(--font-display);
@@ -83,8 +93,13 @@ import { TareaDetailPanelComponent } from '../components/tarea-detail-panel.comp
 
     /* Card wrapper */
     .card-wrap {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
       border-radius: 16px;
-      overflow: hidden;
+      /* clip (no hidden): hidden crea su propio scroll y el pie fijo del panel dejaría de pegarse al borde de la pantalla */
+      overflow: clip;
       border: 1px solid rgba(0,0,0,0.07);
       box-shadow: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
       animation: cardIn 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
@@ -93,6 +108,7 @@ import { TareaDetailPanelComponent } from '../components/tarea-detail-panel.comp
       border-color: #1e2d45;
       box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
     }
+    .card-wrap app-tarea-detail-panel { flex: 1; min-height: 0; height: auto; display: flex; flex-direction: column; }
     @media (max-width: 480px) {
       .card-wrap { border-radius: 13px; }
     }
@@ -108,29 +124,34 @@ import { TareaDetailPanelComponent } from '../components/tarea-detail-panel.comp
 })
 export class TareaDetailPage implements OnInit {
   private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
   private router = inject(Router);
+  private store = inject(AuthStore);
 
   tareaId = 0;
   private origenActaId: number | null = null;
   private desde: string | null = null;
 
   ngOnInit() {
-    this.tareaId = Number(this.route.snapshot.paramMap.get('id'));
-    const origen = this.route.snapshot.queryParamMap.get('origen_acta');
-    const desde = this.route.snapshot.queryParamMap.get('desde');
-    if (origen) this.origenActaId = Number(origen);
-    if (desde) this.desde = desde;
+    // Si se pasa de una tarea a otra, Angular reutiliza esta página: hay que releer la dirección.
+    combineLatest([this.route.paramMap, this.route.queryParamMap])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([params, query]) => {
+        this.tareaId = Number(params.get('id'));
+        const origen = query.get('origen_acta');
+        this.origenActaId = origen ? Number(origen) : null;
+        this.desde = query.get('desde');
+      });
   }
 
   volver() {
-    if (this.desde === 'mis-tareas') {
-      this.router.navigate(['/herramientas/mis-tareas']);
-    } else if (this.desde === 'agenda') {
-      this.router.navigate(['/secretario-tools/agenda']);
-    } else if (this.origenActaId) {
-      this.router.navigate(['/secretario-tools/actas-reunion', this.origenActaId]);
+    // Agenda y Mis tareas son ya una sola pantalla (Administración → Agenda).
+    if (this.desde === 'agenda' || this.desde === 'mi-agenda') {
+      this.router.navigate(['/agenda']);
+    } else if (this.origenActaId && puedeVerActas(this.store)) {
+      this.router.navigate(['/administracion/actas-reunion', this.origenActaId]);
     } else {
-      this.router.navigate(['/secretario-tools/actas-reunion']);
+      this.router.navigate(['/agenda'], { queryParams: { vista: 'tareas' } });
     }
   }
 }

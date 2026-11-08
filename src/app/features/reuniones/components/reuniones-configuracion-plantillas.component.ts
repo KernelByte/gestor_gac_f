@@ -1,7 +1,10 @@
-﻿import { Component, signal, computed, inject, OnInit, effect, HostListener } from '@angular/core';
+﻿import { Component, signal, computed, inject, OnInit, effect, untracked, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ReunionesService } from '../services/reuniones.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
@@ -37,39 +40,19 @@ import {
 @Component({
   selector: 'app-reuniones-configuracion-plantillas',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePickerComponent, SelectPickerComponent, CatalogoDiscursosComponent, CatalogoCanticosComponent, ReportePrivilegiosDialogComponent],
+  imports: [CommonModule, FormsModule, DatePickerComponent, SelectPickerComponent, CatalogoDiscursosComponent, CatalogoCanticosComponent, ReportePrivilegiosDialogComponent, ModalComponent, ConfirmDialogComponent],
   template: `
-    <div class="cfg-root flex flex-col gap-5 h-full">
-
-       <!-- Toast -->
-       @if (toast()) {
-         <div class="shrink-0 animate-slideDown flex items-center gap-3 px-4 py-2.5 rounded-xl border shadow-sm"
-              [class]="toast()!.type === 'success'
-                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200/60 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300'
-                : 'bg-red-50 dark:bg-red-900/20 border-red-200/60 dark:border-red-800/50 text-red-700 dark:text-red-300'">
-           <div class="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
-                [class]="toast()!.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-red-100 dark:bg-red-900/40'">
-             @if (toast()!.type === 'success') {
-               <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-             } @else {
-               <svg class="w-3.5 h-3.5 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-             }
-           </div>
-           <span class="text-xs font-bold">{{ toast()!.message }}</span>
-         </div>
-       }
+    <div class="cfg-root tema-reuniones flex flex-col gap-5 h-full">
 
        <!-- ===== TAB PILLS + FILTROS (misma línea) ===== -->
        <div class="shrink-0 flex flex-wrap items-center gap-2 sm:gap-3 w-full">
            <!-- Tabs -->
-           <div class="flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors overflow-x-auto max-w-full scrollbar-none">
+           <div class="tab-nav" role="tablist">
              @for (tab of visibleTabs(); track tab.id) {
                <button
                  (click)="activeTab.set(tab.id)"
-                 class="px-2.5 sm:px-4 h-9 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap shrink-0"
-                 [class]="activeTab() === tab.id
-                   ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20'
-                   : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+                 role="tab" [attr.aria-selected]="activeTab() === tab.id"
+                 [class]="activeTab() === tab.id ? 'tab-item-active' : 'tab-item'">
                  @if (tab.id === 'privilegios') {
                    <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
                      <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -110,8 +93,8 @@ import {
 
             <!-- Perfil del algoritmo (solo indicador de guardado) -->
             @if (activeTab() === 'parametros' && profileSaving()) {
-              <div class="flex items-center gap-1.5 text-[0.625rem] font-bold text-[#6D28D9] dark:text-purple-400">
-                <div class="w-3 h-3 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
+              <div class="flex items-center gap-1.5 text-xs font-bold text-brand-purple dark:text-purple-400">
+                <div class="spinner-xs"></div>
                 Guardando perfil...
               </div>
             }
@@ -139,7 +122,7 @@ import {
                        ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-blue-300 hover:text-blue-500'">
                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
-                       <span class="hidden sm:inline text-[11px] font-bold">Hermanos</span>
+                       <span class="hidden sm:inline text-xs font-bold">Hermanos</span>
                    </button>
                    <button
                      (click)="setFiltroSexo('solo_mujeres')"
@@ -149,7 +132,7 @@ import {
                        ? 'bg-rose-500 border-rose-500 text-white shadow-sm'
                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-rose-300 hover:text-rose-500'">
                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M12 21v-8"/><path d="M9 14l3-3 3 3"/></svg>
-                       <span class="hidden sm:inline text-[11px] font-bold">Hermanas</span>
+                       <span class="hidden sm:inline text-xs font-bold">Hermanas</span>
                    </button>
                </div>
                <!-- Permission dropdown custom -->
@@ -157,9 +140,9 @@ import {
                  <!-- Trigger -->
                  <button
                    (click)="permisoDropdownOpen.set(!permisoDropdownOpen())"
-                   class="h-9 pl-3 pr-2.5 flex items-center gap-2 rounded-lg text-[11px] font-bold border transition-all whitespace-nowrap"
+                   class="h-9 pl-3 pr-2.5 flex items-center gap-2 rounded-lg text-xs font-bold border transition-all whitespace-nowrap"
                    [class]="filtroPermiso()
-                     ? 'border-[#6D28D9] bg-[#6D28D9]/10 dark:bg-[#6D28D9]/20 text-[#6D28D9] dark:text-purple-300 ring-2 ring-[#6D28D9]/20'
+                     ? 'border-brand-purple bg-brand-purple/10 dark:bg-brand-purple/20 text-brand-purple dark:text-purple-300 ring-2 ring-brand-purple/20'
                      : 'bg-white dark:bg-[#1a1b26] border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'">
                    <svg class="w-3.5 h-3.5 shrink-0 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                    <span>{{ filtroPermiso() ? getColLabel(filtroPermiso()!) : 'Con permiso...' }}</span>
@@ -171,14 +154,14 @@ import {
                      <!-- Clear option -->
                      <button
                        (click)="setFiltroPermiso(null)"
-                       class="w-full px-3 py-2 flex items-center gap-2.5 text-[11px] font-bold transition-colors text-left"
+                       class="w-full px-3 py-2 flex items-center gap-2.5 text-xs font-bold transition-colors text-left"
                        [class]="!filtroPermiso()
-                         ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-300'
+                         ? 'bg-brand-purple/10 text-brand-purple dark:text-purple-300'
                          : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-600 dark:hover:text-slate-500'">
                        <span class="w-4 h-4 rounded flex items-center justify-center shrink-0"
-                             [class]="!filtroPermiso() ? 'bg-[#6D28D9]/20' : ''">
+                             [class]="!filtroPermiso() ? 'bg-brand-purple/20' : ''">
                          @if (!filtroPermiso()) {
-                           <svg class="w-2.5 h-2.5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                           <svg class="w-2.5 h-2.5 text-brand-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                          }
                        </span>
                        Todos los publicadores
@@ -189,14 +172,14 @@ import {
                      @for (col of columnas(); track col.key) {
                        <button
                          (click)="setFiltroPermiso(col.key)"
-                         class="w-full px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-semibold transition-colors text-left"
+                         class="w-full px-3 py-1.5 flex items-center gap-2.5 text-xs font-semibold transition-colors text-left"
                          [class]="filtroPermiso() === col.key
-                           ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-300'
+                           ? 'bg-brand-purple/10 text-brand-purple dark:text-purple-300'
                            : 'text-slate-600 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60'">
                          <span class="w-4 h-4 rounded flex items-center justify-center shrink-0"
-                               [class]="filtroPermiso() === col.key ? 'bg-[#6D28D9]/20' : ''">
+                               [class]="filtroPermiso() === col.key ? 'bg-brand-purple/20' : ''">
                            @if (filtroPermiso() === col.key) {
-                             <svg class="w-2.5 h-2.5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                             <svg class="w-2.5 h-2.5 text-brand-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                            }
                          </span>
                          {{ col.label }}
@@ -208,7 +191,7 @@ import {
                <!-- Clear button -->
                @if (hasMatrizActiveFilters()) {
                  <button (click)="clearMatrizFilters()"
-                         class="h-9 px-2.5 flex items-center gap-1 rounded-lg text-[11px] font-bold text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-all border border-transparent whitespace-nowrap">
+                         class="h-9 px-2.5 flex items-center gap-1 rounded-lg text-xs font-bold text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-all border border-transparent whitespace-nowrap">
                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                    Limpiar
                  </button>
@@ -221,7 +204,7 @@ import {
                  (click)="abrirReporte()"
                  [disabled]="matrizLoading() || !publicadores().length"
                  title="Generar el reporte imprimible de permisos"
-                 class="h-9 px-3 flex items-center gap-1.5 rounded-lg text-[11px] font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1b26] text-slate-600 dark:text-slate-300 hover:border-[#6D28D9] hover:text-[#6D28D9] dark:hover:text-purple-300 disabled:opacity-40 disabled:cursor-not-allowed transition-[border-color,color,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap">
+                 class="h-9 px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1b26] text-slate-600 dark:text-slate-300 hover:border-brand-purple hover:text-brand-purple dark:hover:text-purple-300 disabled:opacity-40 disabled:cursor-not-allowed transition-[border-color,color,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap">
                  <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
                  <span class="hidden sm:inline">Reporte</span>
                </button>
@@ -233,24 +216,24 @@ import {
                *ngIf="hasEditPermission()"
                (click)="guardarMatriz()"
                [disabled]="!matrizHasPending() || matrizSaving()"
-               class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.97]">
+               class="btn-primary btn-sm">
                @if (matrizSaving()) {
-                 <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                 <span class="spinner-xs"></span>
                } @else {
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                }
                Guardar
                @if (matrizHasPending() && !matrizSaving()) {
-                 <span class="ml-0.5 px-1.5 py-0.5 rounded-md bg-white/20 text-[0.5625rem] font-black tabular-nums leading-none">{{ matrizPendingCount() }}</span>
+                 <span class="ml-0.5 px-1.5 py-0.5 rounded-md bg-white/20 text-xs font-bold tabular-nums leading-none">{{ matrizPendingCount() }}</span>
                }
              </button>
            }
 
            <!-- Guardar plantilla (cuando se edita) -->
            @if (activeTab() === 'plantillas' && plantillaEditing()) {
-             <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()" class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.97]">
+             <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()" class="btn-primary btn-sm">
                @if (plantillasLoading()) {
-                 <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                 <span class="spinner-xs"></span>
                } @else {
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                }
@@ -266,15 +249,13 @@ import {
 
        <!-- Selector de guía: dos plantillas globales distintas, cada una con
             su propio histórico y su propio importador de IA. -->
-       <div class="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/60 rounded-xl w-fit shrink-0">
-         <button (click)="setPlantillaTipoActivo('entre_semana')"
-                 class="px-3.5 h-8 rounded-lg text-[0.6875rem] font-bold transition-colors duration-150"
-                 [class]="plantillaTipoActivo() === 'entre_semana' ? 'bg-[#6D28D9] text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+       <div class="segmented shrink-0" role="tablist">
+         <button (click)="setPlantillaTipoActivo('entre_semana')" class="segmented-item" role="tab"
+                 [attr.aria-selected]="plantillaTipoActivo() === 'entre_semana'">
            Entre semana
          </button>
-         <button (click)="setPlantillaTipoActivo('fin_semana')"
-                 class="px-3.5 h-8 rounded-lg text-[0.6875rem] font-bold transition-colors duration-150"
-                 [class]="plantillaTipoActivo() === 'fin_semana' ? 'bg-[#6D28D9] text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+         <button (click)="setPlantillaTipoActivo('fin_semana')" class="segmented-item" role="tab"
+                 [attr.aria-selected]="plantillaTipoActivo() === 'fin_semana'">
            Fin de semana
          </button>
        </div>
@@ -282,15 +263,15 @@ import {
        <!-- Toolbar -->
        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 bg-[#6D28D9]/10 dark:bg-[#6D28D9]/20 rounded-xl flex items-center justify-center shrink-0">
-                 <svg class="w-4.5 h-4.5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <div class="w-9 h-9 bg-brand-purple/10 dark:bg-brand-purple/20 rounded-xl flex items-center justify-center shrink-0">
+                 <svg class="w-4.5 h-4.5 text-brand-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               </div>
               <div>
-                <h3 class="font-bold text-slate-800 dark:text-white text-[0.8125rem]">Generador de Plantillas</h3>
-                <p class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">
+                <h3 class="font-bold text-slate-800 dark:text-white text-sm">Generador de Plantillas</h3>
+                <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-0.5">
                   {{ plantillaTipoActivo() === 'fin_semana' ? 'Reunión Pública y Estudio de La Atalaya' : 'Vida y Ministerio Cristiano' }}
                 </p>
-                <p class="text-[0.6875rem] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
                   Sube el archivo .jwpub (recomendado, el mismo de JW Library) o el PDF.
                 </p>
               </div>
@@ -301,12 +282,12 @@ import {
            @if (!mwbLoading()) {
              <div class="flex items-center gap-2 flex-wrap">
                <button *ngIf="hasEditPermission()" (click)="fileInput.click()" [disabled]="mwbConfirming()"
-                       class="plt-btn-primary h-9 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[0.6875rem] font-bold rounded-lg shadow-sm flex items-center gap-2 shrink-0">
+                       class="plt-btn-primary h-9 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold rounded-lg shadow-sm flex items-center gap-2 shrink-0">
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                  <span>Subir archivo</span>
                </button>
                <button *ngIf="hasEditPermission()" (click)="mwbJsonInputOpen.set(!mwbJsonInputOpen())"
-                       class="plt-btn-secondary h-9 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-500 border border-slate-200 dark:border-slate-600 text-[0.6875rem] font-bold rounded-lg flex items-center gap-2 shrink-0">
+                       class="plt-btn-secondary h-9 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-500 border border-slate-200 dark:border-slate-600 text-xs font-bold rounded-lg flex items-center gap-2 shrink-0">
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                  <span>JSON</span>
                </button>
@@ -318,11 +299,11 @@ import {
          <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shrink-0 animate-fadeIn">
            <h4 class="text-xs font-bold text-slate-800 dark:text-white mb-2">Pega aquí el JSON generado</h4>
            <textarea [ngModel]="mwbJsonText()" (ngModelChange)="mwbJsonText.set($event)" rows="6"
-                     class="w-full text-xs font-mono p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-500 focus:ring-2 focus:ring-[#6D28D9]/50 outline-none resize-y mb-3 h-40"
+                     class="w-full text-xs font-mono p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-500 focus:ring-2 focus:ring-brand-purple/50 outline-none resize-y mb-3 h-40"
                      placeholder='{"mensaje": "OK", "semanas": [{ "titulo_semana": "...", "partes": [] }]}'></textarea>
            <div class="flex items-center gap-2 justify-end">
-              <button (click)="mwbJsonInputOpen.set(false)" class="plt-btn-secondary h-8 px-4 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 text-[0.6875rem] font-bold rounded-lg">Cancelar</button>
-              <button (click)="processJsonInput()" class="plt-btn-primary h-8 px-4 bg-[#6D28D9] text-white text-[0.6875rem] font-bold rounded-lg shadow-sm">Procesar JSON</button>
+              <button (click)="mwbJsonInputOpen.set(false)" class="plt-btn-secondary h-8 px-4 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 text-xs font-bold rounded-lg">Cancelar</button>
+              <button (click)="processJsonInput()" class="btn-primary btn-sm">Procesar JSON</button>
            </div>
          </div>
        }
@@ -335,15 +316,15 @@ import {
        @if (plantillaTipoActivo() === 'fin_semana') {
          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 shrink-0">
            <div class="flex items-center justify-between mb-3">
-             <h3 class="text-[0.6875rem] font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
-               <svg class="w-3.5 h-3.5 text-[#6D28D9] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+             <h3 class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
+               <svg class="w-3.5 h-3.5 text-brand-purple shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                Temas de La Atalaya Cargados
                @if (atalayaTemas().length > 0) {
-                 <span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 text-[9px] font-black tabular-nums">{{ atalayaTemas().length }}</span>
+                 <span class="ml-1 px-1.5 py-0.5 rounded-full bg-brand-purple/10 text-brand-purple dark:text-purple-400 text-xs font-bold tabular-nums">{{ atalayaTemas().length }}</span>
                }
              </h3>
              @if (atalayaTemasLoading()) {
-               <div class="w-3 h-3 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
+               <div class="spinner-xs"></div>
              }
            </div>
 
@@ -357,22 +338,22 @@ import {
                @for (tema of atalayaTemas(); track tema.id_parte) {
                  <div class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
                    <div class="min-w-0 flex-1">
-                     <h4 class="text-[0.6875rem] font-bold text-slate-700 dark:text-slate-200 truncate">{{ tema.titulo_semana }}</h4>
+                     <h4 class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{{ tema.titulo_semana }}</h4>
                      @if (tema.fuente_informacion) {
-                       <p class="text-[9px] text-slate-400 dark:text-slate-500 truncate">{{ tema.fuente_informacion }}</p>
+                       <p class="text-xs text-slate-400 dark:text-slate-500 truncate">{{ tema.fuente_informacion }}</p>
                      }
                    </div>
                    @if (puedeGestionarGuia()) {
                      <button (click)="eliminarTemaAtalaya(tema)" title="Quitar este tema"
                              class="plt-icon-btn w-8 h-8 flex items-center justify-center text-rose-400/60 rounded-lg shrink-0">
-                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                      </button>
                    }
                  </div>
                }
              </div>
            } @else if (!atalayaTemasLoading()) {
-             <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 text-center py-3">
+             <p class="text-xs text-slate-400 dark:text-slate-500 text-center py-3">
                Ningún mes tiene tema cargado todavía. Sube el archivo de La Atalaya (.jwpub o PDF) arriba para agregarlos.
              </p>
            }
@@ -387,16 +368,16 @@ import {
                 [class]="historialExpanded() ? 'min-h-0' : 'shrink-0'">
              <button class="plt-history-header px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20 w-full text-left"
                      (click)="toggleHistorial()">
-               <h3 class="text-[0.6875rem] font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
-                 <svg class="w-3.5 h-3.5 text-[#6D28D9] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+               <h3 class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
+                 <svg class="w-3.5 h-3.5 text-brand-purple shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                  Histórico Guardado
                  @if (savedPlantillas().length > 0) {
-                   <span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 text-[9px] font-black tabular-nums">{{ savedPlantillas().length }}</span>
+                   <span class="ml-1 px-1.5 py-0.5 rounded-full bg-brand-purple/10 text-brand-purple dark:text-purple-400 text-xs font-bold tabular-nums">{{ savedPlantillas().length }}</span>
                  }
                </h3>
                <div class="flex items-center gap-2">
                  @if (plantillasLoading()) {
-                   <div class="w-3 h-3 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
+                   <div class="spinner-xs"></div>
                  }
                  <!-- Flecha solo visible en móvil -->
                  <svg class="w-4 h-4 text-slate-400 lg:hidden transition-transform duration-200 ease-out shrink-0"
@@ -413,15 +394,15 @@ import {
                  <div class="plt-hist-item group flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-default transition-colors"
                       [attr.aria-current]="selectedPlantilla()?.id_plantilla === p.id_plantilla ? 'true' : null"
                       [class]="selectedPlantilla()?.id_plantilla === p.id_plantilla
-                        ? 'bg-violet-50 dark:bg-violet-900/25 border-violet-300 dark:border-violet-700'
+                        ? 'bg-violet-50 dark:bg-violet-900/25 border-violet-300 dark:border-brand-purple'
                         : 'bg-white dark:bg-slate-800/60 border-slate-100 dark:border-slate-800'">
                    <!-- Left border accent -->
                    <div class="w-1 self-stretch rounded-full shrink-0"
-                        [class]="p.tipo === 'entre_semana' ? 'bg-[#6D28D9]/30' : 'bg-emerald-400/40'"></div>
+                        [class]="p.tipo === 'entre_semana' ? 'bg-brand-purple/30' : 'bg-emerald-400/40'"></div>
                    <div class="min-w-0 flex-1">
-                     <h4 class="text-[0.6875rem] font-bold text-slate-700 dark:text-slate-200 truncate leading-tight" [title]="p.nombre">{{ p.nombre }}</h4>
-                     <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider"
-                           [class]="p.tipo === 'entre_semana' ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'">
+                     <h4 class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate leading-tight" [title]="p.nombre">{{ p.nombre }}</h4>
+                     <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider"
+                           [class]="p.tipo === 'entre_semana' ? 'bg-brand-purple/10 text-brand-purple dark:text-purple-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'">
                        {{ p.tipo === 'entre_semana' ? 'Estudio' : 'Fin de Sem' }}
                      </span>
                    </div>
@@ -431,12 +412,12 @@ import {
                    @if (puedeGestionarGuia()) {
                      <div class="flex items-center gap-0.5 shrink-0">
                        <button (click)="editPlantilla(p.id_plantilla)"
-                               class="plt-icon-btn w-8 h-8 flex items-center justify-center text-[#6D28D9]/60 dark:text-purple-400/60 rounded-lg" title="Editar">
+                               class="plt-icon-btn w-8 h-8 flex items-center justify-center text-brand-purple/60 dark:text-purple-400/60 rounded-lg" title="Editar">
                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                        </button>
                        <button (click)="deletePlantilla(p.id_plantilla)"
                                class="plt-icon-btn w-8 h-8 flex items-center justify-center text-rose-400/60 rounded-lg" title="Eliminar">
-                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                        </button>
                      </div>
                    }
@@ -447,7 +428,7 @@ import {
                      <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-2">
                        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                      </div>
-                     <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400">Sin plantillas guardadas</p>
+                     <p class="text-xs font-bold text-slate-500 dark:text-slate-400">Sin plantillas guardadas</p>
                    </div>
                  }
                }
@@ -460,10 +441,10 @@ import {
                <!-- Panel header -->
                <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
                  <div class="min-w-0">
-                   <h3 class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate">
+                   <h3 class="text-sm font-bold text-slate-800 dark:text-white truncate">
                      {{ plantillaEditing() ? 'Modificando Plantilla' : (mwbPreview()?.mensaje || 'Confirmación de Estructura') }}
                    </h3>
-                   <p class="text-[0.625rem] font-medium mt-0.5"
+                   <p class="text-xs font-medium mt-0.5"
                       [class]="plantillaEditing() ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'">
                      {{ plantillaEditing() ? 'Los cambios afectarán solo a las generaciones futuras.' : (mwbPreview()?.origen === 'jwpub' ? 'Leído del archivo oficial. Las fechas ya vienen puestas: revise y confirme.' : 'Verifique y confirme la estructura propuesta por la IA.') }}
                    </p>
@@ -471,22 +452,22 @@ import {
                  <div class="flex items-center gap-2 shrink-0 ml-3">
                    @if (plantillaEditing()) {
                     <button (click)="closePlantillaEditor()"
-                            class="plt-btn-secondary h-8 px-3 border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-[0.6875rem] font-bold rounded-lg flex items-center gap-1.5">
+                            class="plt-btn-secondary h-8 px-3 border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-lg flex items-center gap-1.5">
                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 18L18 6M6 6l12 12"/></svg>
                       <span class="hidden sm:inline">Cerrar</span>
                     </button>
                     <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()"
-                            class="plt-btn-primary h-8 px-4 bg-[#6D28D9] text-white text-[0.6875rem] font-bold rounded-lg shadow-sm shadow-purple-500/20 flex items-center gap-1.5">
+                            class="btn-primary btn-sm">
                       @if (plantillasLoading()) {
-                        <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span class="spinner-xs"></span>
                       }
                       Guardar
                     </button>
                   } @else {
                      <button (click)="confirmMWB()" [disabled]="mwbConfirming()"
-                             class="plt-btn-primary h-8 px-4 bg-emerald-500 text-white text-[0.6875rem] font-bold rounded-lg shadow-sm shadow-emerald-900/20 flex items-center gap-1.5 disabled:opacity-50">
+                             class="plt-btn-primary h-8 px-4 bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-sm shadow-emerald-900/20 flex items-center gap-1.5 disabled:opacity-50">
                        @if (mwbConfirming()) {
-                         <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                         <span class="spinner-xs"></span>
                          <span>Importando...</span>
                        } @else {
                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -501,8 +482,8 @@ import {
                  <div class="flex items-center gap-2 flex-wrap px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
                    <!-- Mes / año de referencia: solo cuando la guía no trae las fechas (PDF o JSON) -->
                <div class="flex items-center gap-0 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 h-9 overflow-hidden shrink-0">
-                 <span class="pl-3 pr-2 text-[9px] uppercase tracking-wider font-black text-slate-400 dark:text-slate-500 border-r border-slate-200 dark:border-slate-700 h-full flex items-center shrink-0">Mes</span>
-                 <select [ngModel]="mwbTargetMonth()" (ngModelChange)="setMwbTarget('mes', +$event)" class="h-full text-[0.6875rem] font-bold bg-transparent outline-none px-2 text-slate-700 dark:text-slate-200 cursor-pointer">
+                 <span class="pl-3 pr-2 text-xs uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 border-r border-slate-200 dark:border-slate-700 h-full flex items-center shrink-0">Mes</span>
+                 <select [ngModel]="mwbTargetMonth()" (ngModelChange)="setMwbTarget('mes', +$event)" class="h-full text-xs font-bold bg-transparent outline-none px-2 text-slate-700 dark:text-slate-200 cursor-pointer">
                    <option [value]="1">Enero</option><option [value]="2">Febrero</option><option [value]="3">Marzo</option>
                    <option [value]="4">Abril</option><option [value]="5">Mayo</option><option [value]="6">Junio</option>
                    <option [value]="7">Julio</option><option [value]="8">Agosto</option><option [value]="9">Septiembre</option>
@@ -510,9 +491,9 @@ import {
                  </select>
                  <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1 shrink-0"></span>
                  <input type="number" [ngModel]="mwbTargetYear()" (ngModelChange)="setMwbTarget('ano', +$event)"
-                        class="w-16 h-full text-[0.6875rem] font-bold bg-transparent outline-none pl-1 pr-3 text-slate-700 dark:text-slate-200 text-center" min="2020" max="2100">
+                        class="w-16 h-full text-xs font-bold bg-transparent outline-none pl-1 pr-3 text-slate-700 dark:text-slate-200 text-center" min="2020" max="2100">
                </div>
-                   <p class="text-[0.625rem] font-medium text-slate-500 dark:text-slate-400 flex-1 min-w-[180px]">
+                   <p class="text-xs font-medium text-slate-500 dark:text-slate-400 flex-1 min-w-[180px]">
                      Este archivo no trae las fechas. Elige el año (y el mes si el título de la semana no lo dice) y se recalculan; luego puedes ajustar cada una.
                    </p>
                  </div>
@@ -525,11 +506,11 @@ import {
                      <div class="border border-slate-200 dark:border-slate-700/80 rounded-[14px] overflow-hidden shadow-sm">
                        <div class="bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                          <div class="flex items-center gap-2.5 flex-1 min-w-0">
-                           <div class="w-6 h-6 rounded-lg bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 flex items-center justify-center font-black text-[0.6rem] shrink-0">W{{ i + 1 }}</div>
+                           <div class="w-6 h-6 rounded-lg bg-brand-purple/10 text-brand-purple dark:text-purple-400 flex items-center justify-center font-bold text-xs shrink-0">W{{ i + 1 }}</div>
                            <div class="flex flex-col gap-0.5 min-w-0 flex-1">
-                             <input [(ngModel)]="semana.titulo_semana" class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1 min-w-0">
+                             <input [(ngModel)]="semana.titulo_semana" class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-xs outline-none focus:ring-1 focus:ring-brand-purple/50 rounded px-1 min-w-0">
                              @if (semana.lectura_semanal) {
-                               <div class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 flex items-center gap-1 px-1">
+                               <div class="text-xs font-semibold text-slate-400 dark:text-slate-500 flex items-center gap-1 px-1">
                                  <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                                  Lectura: {{ semana.lectura_semanal }}
                                </div>
@@ -539,7 +520,7 @@ import {
                          <div class="flex items-center gap-1.5 shrink-0">
                            <svg class="w-3.5 h-3.5 text-slate-400 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                            <input type="date" [ngModel]="mwbDates().get(i) || ''" (ngModelChange)="updateMwbDate(i, $event)"
-                                  class="h-7 px-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-[0.625rem] font-medium focus:ring-2 focus:ring-[#6D28D9]/50 outline-none w-[130px]">
+                                  class="h-7 px-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium focus:ring-2 focus:ring-brand-purple/50 outline-none w-[130px]">
                          </div>
                        </div>
                        <div class="bg-white dark:bg-slate-900">
@@ -548,31 +529,31 @@ import {
                              @for (parte of semana.partes; track $index) {
                                <tr class="plt-parte-row border-b last:border-b-0 border-slate-100 dark:border-slate-800/50">
                                  <td class="py-2 px-3 w-[100px] sm:w-[130px] align-top pt-2.5">
-                                   <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-widest leading-none" [style.color]="getSectionColor(parte.seccion)">{{ parte.seccion }}</span>
+                                   <span class="text-xs sm:text-xs font-bold uppercase tracking-widest leading-none" [style.color]="getSectionColor(parte.seccion)">{{ parte.seccion }}</span>
                                  </td>
                                  <td class="py-2 px-2 align-middle">
                                    <div class="flex flex-col gap-1">
-                                     <input [(ngModel)]="parte.nombre_parte" class="text-[0.6875rem] font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-[#6D28D9]/40 rounded px-1 w-full">
+                                     <input [(ngModel)]="parte.nombre_parte" class="text-xs font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-brand-purple/40 rounded px-1 w-full">
                                      @if (parte.fuente_informacion) {
-                                       <div class="text-[9px] text-slate-400 dark:text-slate-500 italic px-1 truncate">{{ parte.fuente_informacion }}</div>
+                                       <div class="text-xs text-slate-400 dark:text-slate-500 italic px-1 truncate">{{ parte.fuente_informacion }}</div>
                                      }
                                      @if (parte.descripcion) {
-                                       <p class="text-[0.625rem] leading-snug text-slate-500 dark:text-slate-400 whitespace-pre-line px-1">{{ parte.descripcion }}</p>
+                                       <p class="text-xs leading-snug text-slate-500 dark:text-slate-400 whitespace-pre-line px-1">{{ parte.descripcion }}</p>
                                      }
                                      <div class="flex items-center gap-1.5 px-1">
                                        <button (click)="parte.aplica_sala_b = !parte.aplica_sala_b"
-                                               class="plt-tag-toggle px-2 py-1 rounded-md text-[8px] font-black uppercase leading-none"
-                                               [class]="parte.aplica_sala_b ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 ring-1 ring-[#6D28D9]/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'">Sala B</button>
+                                               class="plt-tag-toggle px-2 py-1 rounded-md text-xs font-bold uppercase leading-none"
+                                               [class]="parte.aplica_sala_b ? 'bg-brand-purple/10 text-brand-purple dark:text-purple-400 ring-1 ring-brand-purple/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'">Sala B</button>
                                        <button (click)="parte.requiere_pareja = !parte.requiere_pareja"
-                                               class="plt-tag-toggle px-2 py-1 rounded-md text-[8px] font-black uppercase leading-none"
+                                               class="plt-tag-toggle px-2 py-1 rounded-md text-xs font-bold uppercase leading-none"
                                                [class]="parte.requiere_pareja ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 ring-1 ring-amber-500/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'">Pareja</button>
                                      </div>
                                    </div>
                                  </td>
                                  <td class="py-2 px-3 text-right w-16 sm:w-20 align-middle">
                                    <div class="flex items-center justify-end gap-1">
-                                     <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-9 h-7 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded-lg text-[0.625rem] font-black outline-none border border-transparent focus:ring-1 focus:ring-[#6D28D9]/40 focus:bg-white dark:focus:bg-slate-900 transition-colors">
-                                     <span class="text-[8px] font-bold text-slate-400 uppercase">min</span>
+                                     <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-9 h-7 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded-lg text-xs font-bold outline-none border border-transparent focus:ring-1 focus:ring-brand-purple/40 focus:bg-white dark:focus:bg-slate-900 transition-colors">
+                                     <span class="text-xs font-bold text-slate-400 uppercase">min</span>
                                    </div>
                                  </td>
                                </tr>
@@ -589,27 +570,27 @@ import {
                    <div class="border border-slate-200 dark:border-slate-700/80 rounded-[14px] overflow-hidden shadow-sm">
                      <div class="bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 border-b border-slate-200 dark:border-slate-700">
                        <input [(ngModel)]="selectedPlantilla()!.nombre" placeholder="Nombre Único de Plantilla"
-                              class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1">
+                              class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-xs outline-none focus:ring-1 focus:ring-brand-purple/50 rounded px-1">
                      </div>
                    </div>
 
                    @for (week of plantillaByWeek(); track week.ordinal) {
                      <div class="border border-slate-200 dark:border-slate-700/80 rounded-[14px] overflow-hidden shadow-sm">
                        <div class="bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2.5">
-                         <div class="w-6 h-6 rounded-lg bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 flex items-center justify-center font-black text-[0.55rem] shrink-0">{{ week.ordinal === 0 ? 'GEN' : ('S' + week.ordinal) }}</div>
+                         <div class="w-6 h-6 rounded-lg bg-brand-purple/10 text-brand-purple dark:text-purple-400 flex items-center justify-center font-bold text-xs shrink-0">{{ week.ordinal === 0 ? 'GEN' : ('S' + week.ordinal) }}</div>
                          <div class="flex flex-col gap-0.5 min-w-0 flex-1">
                            @if (week.ordinal === 0) {
-                             <span class="text-[0.6875rem] font-bold text-slate-800 dark:text-white uppercase tracking-wide px-1">General — se repite en cada semana</span>
+                             <span class="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wide px-1">General — se repite en cada semana</span>
                            } @else {
                              <input [ngModel]="week.titulo_semana || ''" (ngModelChange)="updateSemanaMeta(week.ordinal, 'titulo_semana', $event)"
                                     placeholder="Título de la semana"
-                                    class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1 min-w-0">
+                                    class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-xs outline-none focus:ring-1 focus:ring-brand-purple/50 rounded px-1 min-w-0">
                              <div class="flex items-center gap-1 px-1">
                                <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                               <span class="text-[9px] font-bold text-slate-400">Lectura:</span>
+                               <span class="text-xs font-bold text-slate-400">Lectura:</span>
                                <input [ngModel]="week.lectura_semanal || ''" (ngModelChange)="updateSemanaMeta(week.ordinal, 'lectura_semanal', $event)"
                                       placeholder="—"
-                                      class="flex-1 bg-transparent border-none text-[9px] font-bold text-slate-500 dark:text-slate-400 outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1 min-w-0">
+                                      class="flex-1 bg-transparent border-none text-xs font-bold text-slate-500 dark:text-slate-400 outline-none focus:ring-1 focus:ring-brand-purple/50 rounded px-1 min-w-0">
                              </div>
                            }
                          </div>
@@ -620,37 +601,37 @@ import {
                              @for (parte of week.partes; track $index) {
                                <tr class="plt-parte-row border-b last:border-b-0 border-slate-100 dark:border-slate-800/50">
                                  <td class="py-2 px-3 w-[100px] sm:w-[130px] align-top pt-2.5">
-                                   <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-widest leading-none" [style.color]="getSectionColor(parte.seccion)">{{ parte.seccion }}</span>
+                                   <span class="text-xs sm:text-xs font-bold uppercase tracking-widest leading-none" [style.color]="getSectionColor(parte.seccion)">{{ parte.seccion }}</span>
                                  </td>
                                  <td class="py-2 px-2 align-middle">
                                    <div class="flex flex-col gap-1">
-                                     <input [(ngModel)]="parte.nombre_parte" class="text-[0.6875rem] font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-[#6D28D9]/40 rounded px-1 w-full">
+                                     <input [(ngModel)]="parte.nombre_parte" class="text-xs font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-brand-purple/40 rounded px-1 w-full">
                                      @if (parte.fuente_informacion) {
-                                       <div class="text-[9px] text-slate-400 dark:text-slate-500 italic px-1 truncate">{{ parte.fuente_informacion }}</div>
+                                       <div class="text-xs text-slate-400 dark:text-slate-500 italic px-1 truncate">{{ parte.fuente_informacion }}</div>
                                      }
                                      @if (parte.descripcion) {
-                                       <p class="text-[0.625rem] leading-snug text-slate-500 dark:text-slate-400 whitespace-pre-line px-1">{{ parte.descripcion }}</p>
+                                       <p class="text-xs leading-snug text-slate-500 dark:text-slate-400 whitespace-pre-line px-1">{{ parte.descripcion }}</p>
                                      }
                                      <div class="flex items-center gap-1.5 px-1">
                                        <button (click)="parte.aplica_sala_b = !parte.aplica_sala_b"
-                                               class="plt-tag-toggle px-2 py-1 rounded-md text-[8px] font-black uppercase leading-none"
-                                               [class]="parte.aplica_sala_b ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 ring-1 ring-[#6D28D9]/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'">Sala B</button>
+                                               class="plt-tag-toggle px-2 py-1 rounded-md text-xs font-bold uppercase leading-none"
+                                               [class]="parte.aplica_sala_b ? 'bg-brand-purple/10 text-brand-purple dark:text-purple-400 ring-1 ring-brand-purple/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'">Sala B</button>
                                        <button (click)="parte.requiere_pareja = !parte.requiere_pareja"
-                                               class="plt-tag-toggle px-2 py-1 rounded-md text-[8px] font-black uppercase leading-none"
+                                               class="plt-tag-toggle px-2 py-1 rounded-md text-xs font-bold uppercase leading-none"
                                                [class]="parte.requiere_pareja ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 ring-1 ring-amber-500/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'">Pareja</button>
                                      </div>
                                    </div>
                                  </td>
                                  <td class="py-2 px-3 text-right w-16 sm:w-20 align-middle">
                                    <div class="flex items-center justify-end gap-1">
-                                     <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-9 h-7 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded-lg text-[0.625rem] font-black outline-none border border-transparent focus:ring-1 focus:ring-[#6D28D9]/40 focus:bg-white dark:focus:bg-slate-900 transition-colors">
-                                     <span class="text-[8px] font-bold text-slate-400 uppercase">min</span>
+                                     <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-9 h-7 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded-lg text-xs font-bold outline-none border border-transparent focus:ring-1 focus:ring-brand-purple/40 focus:bg-white dark:focus:bg-slate-900 transition-colors">
+                                     <span class="text-xs font-bold text-slate-400 uppercase">min</span>
                                    </div>
                                  </td>
                                  <td class="py-2 pr-2 w-8 align-middle">
                                    <button (click)="removeParte(parte)" title="Quitar parte"
                                            class="plt-icon-btn w-7 h-7 flex items-center justify-center text-rose-400/60 rounded-lg">
-                                     <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                     <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                                    </button>
                                  </td>
                                </tr>
@@ -658,7 +639,7 @@ import {
                            </tbody>
                          </table>
                          <button (click)="addParte(week.ordinal)"
-                                 class="w-full flex items-center justify-center gap-1.5 py-2 text-[0.625rem] font-bold text-[#6D28D9]/70 dark:text-purple-400/70 hover:bg-[#6D28D9]/5 dark:hover:bg-purple-400/5 border-t border-slate-100 dark:border-slate-800/50 transition-colors">
+                                 class="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-brand-purple/70 dark:text-purple-400/70 hover:bg-brand-purple/5 dark:hover:bg-purple-400/5 border-t border-slate-100 dark:border-slate-800/50 transition-colors">
                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                            Agregar parte
                          </button>
@@ -668,12 +649,12 @@ import {
 
                    @if (plantillaEditing() && selectedPlantilla()) {
                      <button (click)="addSemana()"
-                             class="w-full flex items-center justify-center gap-1.5 h-10 rounded-[14px] border border-dashed border-slate-300 dark:border-slate-700 text-[0.6875rem] font-bold text-slate-500 dark:text-slate-400 hover:border-[#6D28D9]/40 hover:text-[#6D28D9] dark:hover:text-purple-400 transition-colors">
+                             class="w-full flex items-center justify-center gap-1.5 h-10 rounded-[14px] border border-dashed border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-500 dark:text-slate-400 hover:border-brand-purple/40 hover:text-brand-purple dark:hover:text-purple-400 transition-colors">
                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                        {{ plantillaTipoActivo() === 'fin_semana' ? 'Agregar parte general' : 'Agregar semana' }}
                      </button>
                      @if (plantillaTipoActivo() === 'fin_semana') {
-                       <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 text-center px-2 -mt-1">
+                       <p class="text-xs text-slate-400 dark:text-slate-500 text-center px-2 -mt-1">
                          El tema semanal de La Atalaya (título, cántico) se agrega solo, importando el archivo arriba — esto es solo para el resto de la reunión.
                        </p>
                      }
@@ -688,26 +669,14 @@ import {
 
       <!-- ===== MODAL: CONFIRMAR ELIMINAR PLANTILLA ===== -->
       @if (confirmDeleteId() !== null) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="confirmDeleteId.set(null)">
-          <div class="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm"></div>
-          <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-700/80 w-full max-w-sm p-6 flex flex-col gap-5 animate-fadeIn" (click)="$event.stopPropagation()">
-            <!-- Icon -->
-            <div class="flex flex-col items-center gap-3 text-center">
-              <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/40 flex items-center justify-center">
-                <svg class="w-6 h-6 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-              </div>
-              <div>
-                <h3 class="text-sm font-black text-slate-900 dark:text-white">Eliminar plantilla</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Esta acción es permanente. Los programas ya creados <span class="font-bold text-slate-700 dark:text-slate-500">no se verán afectados</span>.</p>
-              </div>
-            </div>
-            <!-- Actions -->
-            <div class="flex items-center gap-2">
-              <button (click)="confirmDeleteId.set(null)" class="flex-1 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancelar</button>
-              <button (click)="confirmDelete()" class="flex-1 h-9 rounded-xl bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs font-bold shadow-sm shadow-rose-900/20 transition-all">Sí, eliminar</button>
-            </div>
-          </div>
-        </div>
+        <app-confirm-dialog
+          [open]="true"
+          title="Eliminar plantilla"
+          message="Esta acción es permanente. Los programas ya creados no se verán afectados."
+          confirmLabel="Sí, eliminar"
+          severity="danger"
+          (confirmed)="confirmDelete()"
+          (openChange)="$event || confirmDeleteId.set(null)" />
       }
 
        <!-- ===== TAB: AUSENCIAS ===== -->
@@ -722,7 +691,7 @@ import {
            <div class="px-4 sm:px-5 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800">
              <div class="flex items-start gap-3">
                <div class="aus-form-icon shrink-0 w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20 flex items-center justify-center">
-                 <svg class="w-4.5 h-4.5 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9.5" y1="16" x2="14.5" y2="16"/></svg>
+                 <svg class="w-4.5 h-4.5 text-brand-purple dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9.5" y1="16" x2="14.5" y2="16"/></svg>
                </div>
                <div class="min-w-0">
                  <h3 class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Registrar ausencia</h3>
@@ -799,9 +768,9 @@ import {
                      [disabled]="!puedeRegistrarAusencia() || guardandoAusencia()"
                      aria-label="Registrar ausencia"
                      title="Registrar ausencia"
-                     class="aus-submit shrink-0 flex items-center justify-center gap-1.5 px-4 min-h-[44px] rounded-xl bg-[#6D28D9] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
+                     class="btn-primary shrink-0">
                      @if (guardandoAusencia()) {
-                       <div class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                       <span class="spinner-xs"></span>
                      } @else {
                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                      }
@@ -831,7 +800,7 @@ import {
              <!-- Resumen + buscador: en móvil se apilan -->
              <div class="shrink-0 flex flex-col sm:flex-row sm:items-center gap-3 px-4 sm:px-5 py-3 border-b border-slate-100 dark:border-slate-800">
                <div class="flex items-center gap-2 flex-wrap min-w-0">
-                 <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Registradas</p>
+                 <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Registradas</p>
                  <span class="aus-chip aus-chip-neutral">{{ ausencias().length }}</span>
                  @if (ausenciasEnCurso() > 0) {
                    <span class="aus-chip aus-chip-live">
@@ -860,7 +829,7 @@ import {
 
            @if (loadingAusencias()) {
              <div class="sm:flex-1 flex flex-col items-center justify-center gap-3 py-14">
-               <div class="w-6 h-6 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-[#6D28D9] animate-spin"></div>
+               <div class="spinner text-brand-purple"></div>
                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Cargando ausencias...</p>
              </div>
 
@@ -881,7 +850,7 @@ import {
              <div class="sm:flex-1 flex flex-col items-center justify-center gap-2 py-14 text-center px-6">
                <p class="text-sm font-bold text-slate-600 dark:text-slate-300">Sin coincidencias</p>
                <p class="text-xs text-slate-400 dark:text-slate-500">Nadie coincide con "{{ ausenciaFiltro() }}".</p>
-               <button (click)="ausenciaFiltro.set('')" class="aus-clear mt-1 px-3 min-h-[36px] rounded-lg text-xs font-bold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20">
+               <button (click)="ausenciaFiltro.set('')" class="aus-clear mt-1 px-3 min-h-[36px] rounded-lg text-xs font-bold text-brand-purple dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20">
                  Limpiar búsqueda
                </button>
              </div>
@@ -896,7 +865,7 @@ import {
 
                    <!-- Avatar: mismo lenguaje que la matriz de privilegios -->
                    <div
-                     class="aus-avatar shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-[0.7rem] ring-1 ring-white dark:ring-slate-800 border border-white/50"
+                     class="aus-avatar shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-xs ring-1 ring-white dark:ring-slate-800 border border-white/50"
                      [class]="avatarAusenciaClass(a)"
                      aria-hidden="true">
                      {{ inicialesAusencia(a) }}
@@ -904,14 +873,14 @@ import {
 
                    <div class="min-w-0 flex-1">
                      <div class="flex items-center gap-2 min-w-0">
-                       <p class="text-[0.8125rem] sm:text-sm font-bold text-slate-800 dark:text-white truncate">{{ a.nombre_completo }}</p>
+                       <p class="text-sm sm:text-sm font-bold text-slate-800 dark:text-white truncate">{{ a.nombre_completo }}</p>
                        <span class="aus-state shrink-0" [attr.data-estado]="estadoAusencia(a)">
                          @if (estadoAusencia(a) === 'en_curso') { <span class="aus-dot"></span> }
                          {{ estadoAusenciaLabel(a) }}
                        </span>
                      </div>
 
-                     <p class="text-[0.6875rem] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap leading-tight">
+                     <p class="text-xs sm:text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap leading-tight">
                        <span class="data-num">{{ formatRangoAusencia(a) }}</span>
                        <span class="text-slate-300 dark:text-slate-600" aria-hidden="true">&#183;</span>
                        <span>{{ duracionAusencia(a) }}</span>
@@ -922,7 +891,7 @@ import {
                      </p>
 
                      @if (a.motivo) {
-                       <p class="text-[0.6875rem] sm:text-xs text-slate-400 dark:text-slate-500 mt-1 truncate italic">{{ a.motivo }}</p>
+                       <p class="text-xs sm:text-xs text-slate-400 dark:text-slate-500 mt-1 truncate italic">{{ a.motivo }}</p>
                      }
                    </div>
 
@@ -943,28 +912,15 @@ import {
        }
 
       <!-- ===== MODAL: CONFIRMAR ELIMINAR AUSENCIA ===== -->
-      @if (ausenciaAEliminar() !== null) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="ausenciaAEliminar.set(null)">
-          <div class="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm"></div>
-          <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-700/80 w-full max-w-sm p-6 flex flex-col gap-5 animate-fadeIn" (click)="$event.stopPropagation()">
-            <div class="flex flex-col items-center gap-3 text-center">
-              <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/40 flex items-center justify-center">
-                <svg class="w-6 h-6 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-              </div>
-              <div>
-                <h3 class="text-sm font-black text-slate-900 dark:text-white">Eliminar ausencia</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                  <span class="font-bold text-slate-700 dark:text-slate-300">{{ ausenciaAEliminar()!.nombre_completo }}</span>
-                  volverá a estar disponible del {{ formatRangoAusencia(ausenciaAEliminar()!) }}.
-                </p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button (click)="ausenciaAEliminar.set(null)" class="flex-1 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancelar</button>
-              <button (click)="confirmarEliminarAusencia()" class="flex-1 h-9 rounded-xl bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs font-bold shadow-sm shadow-rose-900/20 transition-all">Sí, eliminar</button>
-            </div>
-          </div>
-        </div>
+      @if (ausenciaAEliminar(); as aus) {
+        <app-confirm-dialog
+          [open]="true"
+          title="Eliminar ausencia"
+          [message]="aus.nombre_completo + ' volverá a estar disponible del ' + formatRangoAusencia(aus) + '.'"
+          confirmLabel="Sí, eliminar"
+          severity="danger"
+          (confirmed)="confirmarEliminarAusencia()"
+          (openChange)="$event || ausenciaAEliminar.set(null)" />
       }
 
       <!-- ===== TAB: SEMANAS SIN REUNIÓN ===== -->
@@ -1038,9 +994,9 @@ import {
                     [disabled]="!puedeMarcarSemana() || guardandoSemana()"
                     aria-label="Marcar semana sin reunión"
                     title="Marcar semana sin reunión"
-                    class="aus-submit shrink-0 flex items-center justify-center gap-1.5 px-4 min-h-[44px] rounded-xl bg-[#6D28D9] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
+                    class="btn-primary shrink-0">
                     @if (guardandoSemana()) {
-                      <div class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                      <span class="spinner-xs"></span>
                     } @else {
                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     }
@@ -1062,7 +1018,7 @@ import {
         <div class="aus-card shrink-0 sm:shrink sm:flex-1 sm:min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 overflow-hidden flex flex-col">
           @if (loadingSemanas()) {
             <div class="flex items-center justify-center py-16">
-              <div class="w-6 h-6 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
+              <div class="spinner"></div>
             </div>
           } @else if (semanasSinReunion().length === 0) {
             <div class="flex flex-col items-center justify-center py-14 px-6 text-center gap-3">
@@ -1070,13 +1026,13 @@ import {
                 <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </div>
               <p class="text-xs font-bold text-slate-500 dark:text-slate-400">No hay semanas marcadas</p>
-              <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
+              <p class="text-xs text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
                 Marca aquí las semanas de asamblea, congreso o Conmemoración para que no se programe a nadie.
               </p>
             </div>
           } @else {
             <div class="shrink-0 flex items-center gap-2 flex-wrap px-4 sm:px-5 py-3 border-b border-slate-100 dark:border-slate-800">
-              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Marcadas</p>
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Marcadas</p>
               <span class="aus-chip aus-chip-neutral">{{ semanasSinReunion().length }}</span>
             </div>
 
@@ -1088,7 +1044,7 @@ import {
                       <p class="text-xs font-bold text-slate-800 dark:text-white">{{ formatRangoSemana(s) }}</p>
                       <span class="aus-chip aus-chip-neutral">{{ etiquetaAlcance(s.alcance) }}</span>
                     </div>
-                    <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 mt-0.5">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       Semana {{ s.semana_iso }} de {{ s.ano_iso }}@if (s.motivo) { · {{ s.motivo }} }
                     </p>
                   </div>
@@ -1097,7 +1053,7 @@ import {
                     class="btn-icon-delete shrink-0"
                     aria-label="Quitar marca"
                     title="Quitar marca">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                   </button>
                 </div>
               }
@@ -1108,63 +1064,30 @@ import {
       }
 
       <!-- ===== MODAL: CONFIRMAR MARCAR SEMANA (destructivo) ===== -->
-      @if (semanaAConfirmar() !== null) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="semanaAConfirmar.set(null)">
-          <div class="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm"></div>
-          <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-700/80 w-full max-w-sm p-6 flex flex-col gap-5 animate-fadeIn" (click)="$event.stopPropagation()">
-            <div class="flex flex-col items-center gap-3 text-center">
-              <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 flex items-center justify-center">
-                <svg class="w-6 h-6 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              </div>
-              <div>
-                <h3 class="text-sm font-black text-slate-900 dark:text-white">Marcar semana sin reunión</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                  {{ formatRangoSemana(semanaAConfirmar()!) }} —
-                  {{ etiquetaAlcance(semanaAConfirmar()!.alcance) }}.
-                </p>
-                @if ((semanaAConfirmar()!.borradas ?? 0) > 0) {
-                  <p class="text-xs mt-2 leading-relaxed font-bold text-rose-600 dark:text-rose-400">
-                    Se borrarán {{ semanaAConfirmar()!.borradas }} asignaciones ya hechas, incluidas las confirmadas.
-                    Esto no se puede deshacer.
-                  </p>
-                } @else {
-                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                    No hay nada programado en esa semana todavía.
-                  </p>
-                }
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button (click)="semanaAConfirmar.set(null)" class="flex-1 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancelar</button>
-              <button (click)="confirmarMarcarSemana()" [disabled]="guardandoSemana()" class="flex-1 h-9 rounded-xl bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs font-bold shadow-sm shadow-rose-900/20 transition-all disabled:opacity-50">Sí, marcar</button>
-            </div>
-          </div>
-        </div>
+      @if (semanaAConfirmar(); as previo) {
+        <app-confirm-dialog
+          [open]="true"
+          title="Marcar semana sin reunión"
+          [message]="formatRangoSemana(previo) + ' — ' + etiquetaAlcance(previo.alcance) + '.\\n' + ((previo.borradas ?? 0) > 0
+            ? 'Se borrarán ' + previo.borradas + ' asignaciones ya hechas, incluidas las confirmadas. Esto no se puede deshacer.'
+            : 'No hay nada programado en esa semana todavía.')"
+          confirmLabel="Sí, marcar"
+          severity="warning"
+          [busy]="guardandoSemana()"
+          (confirmed)="confirmarMarcarSemana()"
+          (openChange)="$event || semanaAConfirmar.set(null)" />
       }
 
       <!-- ===== MODAL: CONFIRMAR QUITAR MARCA ===== -->
-      @if (semanaAEliminar() !== null) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="semanaAEliminar.set(null)">
-          <div class="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm"></div>
-          <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-700/80 w-full max-w-sm p-6 flex flex-col gap-5 animate-fadeIn" (click)="$event.stopPropagation()">
-            <div class="flex flex-col items-center gap-3 text-center">
-              <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/40 flex items-center justify-center">
-                <svg class="w-6 h-6 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </div>
-              <div>
-                <h3 class="text-sm font-black text-slate-900 dark:text-white">Quitar la marca</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                  {{ formatRangoSemana(semanaAEliminar()!) }} volverá a programarse.
-                  Las asignaciones que se borraron no se recuperan: hay que volver a generar.
-                </p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button (click)="semanaAEliminar.set(null)" class="flex-1 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancelar</button>
-              <button (click)="confirmarEliminarSemana()" class="flex-1 h-9 rounded-xl bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs font-bold shadow-sm shadow-rose-900/20 transition-all">Sí, quitar</button>
-            </div>
-          </div>
-        </div>
+      @if (semanaAEliminar(); as marca) {
+        <app-confirm-dialog
+          [open]="true"
+          title="Quitar la marca"
+          [message]="formatRangoSemana(marca) + ' volverá a programarse. Las asignaciones que se borraron no se recuperan: hay que volver a generar.'"
+          confirmLabel="Sí, quitar"
+          severity="danger"
+          (confirmed)="confirmarEliminarSemana()"
+          (openChange)="$event || semanaAEliminar.set(null)" />
       }
 
        <!-- ===== TAB: PARÁMETROS DEL ALGORITMO ===== -->
@@ -1172,15 +1095,15 @@ import {
         <div class="flex-1 min-h-0 flex flex-col gap-5 algo-tab animate-fadeIn overflow-y-auto simple-scrollbar pb-8">
           @if (algoLoading()) {
             <div class="flex items-center justify-center py-16">
-              <div class="w-6 h-6 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
+              <div class="spinner"></div>
             </div>
           } @else if (algoProfiles().length > 0) {
 
             <!-- Sección Perfil -->
             <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 shrink-0">
               <div class="mb-5">
-                <h4 class="text-sm font-black text-slate-800 dark:text-slate-100 mb-0.5">Perfil del Algoritmo</h4>
-                <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 leading-relaxed">Selecciona el comportamiento del motor de asignaciones. Estos perfiles ajustan automáticamente los pesos heurísticos y ventanas de tiempo.</p>
+                <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-0.5">Perfil del Algoritmo</h4>
+                <p class="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">Selecciona el comportamiento del motor de asignaciones. Estos perfiles ajustan automáticamente los pesos heurísticos y ventanas de tiempo.</p>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1189,13 +1112,13 @@ import {
                     (click)="selectProfile(perfil.id)"
                     class="algo-profile-card relative flex flex-col items-start p-4 rounded-xl border-2 text-left overflow-hidden"
                     [class]="activeProfileId() === perfil.id
-                      ? 'border-[#6D28D9] bg-gradient-to-br from-[#6D28D9]/[0.06] to-[#6D28D9]/[0.02] dark:from-[#6D28D9]/20 dark:to-[#6D28D9]/5 shadow-md shadow-purple-500/10'
+                      ? 'border-brand-purple bg-gradient-to-br from-brand-purple/[0.06] to-brand-purple/[0.02] dark:from-brand-purple/20 dark:to-brand-purple/5 shadow-md shadow-brand-purple/10'
                       : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'"
                     [style.animation-delay]="(i * 60) + 'ms'"
                   >
                     <!-- Check badge activo -->
                     @if (activeProfileId() === perfil.id) {
-                      <div class="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#6D28D9] flex items-center justify-center shadow-sm shadow-purple-500/30">
+                      <div class="absolute top-3 right-3 w-5 h-5 rounded-full bg-brand-purple flex items-center justify-center shadow-sm shadow-brand-purple/30">
                         <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       </div>
                     }
@@ -1203,7 +1126,7 @@ import {
                     <!-- Ícono -->
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-all duration-200"
                       [class]="activeProfileId() === perfil.id
-                        ? 'bg-[#6D28D9] text-white shadow-lg shadow-purple-500/30'
+                        ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/30'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'">
                       @if (perfil.id === 'balanceado') {
                         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -1214,13 +1137,13 @@ import {
                       }
                     </div>
 
-                    <h5 class="text-[0.8125rem] font-bold mb-1 transition-colors duration-150"
+                    <h5 class="text-sm font-bold mb-1 transition-colors duration-150"
                       [class]="activeProfileId() === perfil.id
-                        ? 'text-[#6D28D9] dark:text-[#a78bfa]'
+                        ? 'text-brand-purple dark:text-[#a78bfa]'
                         : 'text-slate-800 dark:text-slate-100'">
                       {{ perfil.label }}
                     </h5>
-                    <p class="text-[0.625rem] text-slate-500 dark:text-slate-400 leading-relaxed">{{ perfil.description }}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{{ perfil.description }}</p>
                   </button>
                 }
               </div>
@@ -1229,13 +1152,13 @@ import {
             <!-- Ajustes adicionales -->
             <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden shrink-0">
               <div class="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/80">
-                <h4 class="text-[0.6875rem] font-black text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ajustes Adicionales</h4>
-                <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5">Límites estrictos que aplican independientemente del perfil.</p>
+                <h4 class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ajustes Adicionales</h4>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Límites estrictos que aplican independientemente del perfil.</p>
               </div>
               <div class="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4">
                 <div class="flex-1 min-w-0">
-                  <div class="text-[0.8125rem] font-bold text-slate-700 dark:text-slate-200">Límite de partes cruzadas</div>
-                  <div class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug">Número máximo de partes permitidas para un publicador en la misma semana.</div>
+                  <div class="text-sm font-bold text-slate-700 dark:text-slate-200">Límite de partes cruzadas</div>
+                  <div class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 leading-snug">Número máximo de partes permitidas para un publicador en la misma semana.</div>
                 </div>
                 <!-- Stepper +/- -->
                 <div class="flex items-center gap-0 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 self-start sm:self-auto">
@@ -1244,7 +1167,7 @@ import {
                           class="algo-stepper-btn w-9 h-9 flex items-center justify-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 disabled:opacity-30 border-r border-slate-200 dark:border-slate-700">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   </button>
-                  <div class="w-12 h-9 flex items-center justify-center text-base font-black tabular-nums text-slate-800 dark:text-white bg-white dark:bg-slate-900 select-none">
+                  <div class="w-12 h-9 flex items-center justify-center text-base font-bold tabular-nums text-slate-800 dark:text-white bg-white dark:bg-slate-900 select-none">
                     {{ algoMaxPartesCruzadas() }}
                   </div>
                   <button (click)="onMaxPartesChange(algoMaxPartesCruzadas() + 1)"
@@ -1269,7 +1192,7 @@ import {
            @if (matrizLoading()) {
              <div class="flex-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-center">
                <div class="flex flex-col items-center gap-3">
-                 <div class="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-[#6D28D9] animate-spin"></div>
+                 <div class="spinner-lg text-brand-purple"></div>
                  <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Cargando publicadores...</p>
                </div>
              </div>
@@ -1309,16 +1232,16 @@ import {
                             {{ inicialesDe(pub) }}
                           </div>
                          <div class="flex-1 min-w-0">
-                           <p class="text-[0.8125rem] font-bold text-slate-800 dark:text-white leading-tight break-words">
+                           <p class="text-sm font-bold text-slate-800 dark:text-white leading-tight break-words">
                              {{ nombreMostrado(pub) }}
                            </p>
                            <div class="flex flex-wrap gap-1 mt-0.5">
                              @if (pub.privilegios.length > 0) {
                                @for (priv of pub.privilegios; track priv) {
-                                 <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md leading-none" [class]="privilegioBadgeClass(priv)">{{ privilegioLabel(priv) }}</span>
+                                 <span class="text-xs font-bold px-1.5 py-0.5 rounded-md leading-none" [class]="privilegioBadgeClass(priv)">{{ privilegioLabel(priv) }}</span>
                                }
                              } @else {
-                               <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">{{ isHermano(pub) ? 'Hermano' : 'Hermana' }}</span>
+                               <span class="text-xs text-slate-400 dark:text-slate-500 font-semibold">{{ isHermano(pub) ? 'Hermano' : 'Hermana' }}</span>
                              }
                            </div>
                          </div>
@@ -1347,7 +1270,7 @@ import {
                                         (change)="togglePermiso(pub, col.key)"
                                         [disabled]="!hasEditPermission()"
                                         class="priv-check shrink-0">
-                                 <span class="text-[11px] font-semibold leading-snug text-slate-600 dark:text-slate-500">
+                                 <span class="text-xs font-semibold leading-snug text-slate-600 dark:text-slate-500">
                                    {{ col.label }}
                                  </span>
                                </label>
@@ -1356,7 +1279,7 @@ import {
                            <!-- Restricciones (fondo ámbar) -->
                            @if (restriccionColumnas().length > 0) {
                              <div class="rounded-lg bg-amber-50/60 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-700/30 px-3 py-2.5 mb-3">
-                               <p class="text-[9px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider mb-2">Restricciones</p>
+                               <p class="text-xs font-bold text-amber-500 dark:text-amber-400 uppercase tracking-wider mb-2">Restricciones</p>
                                <div class="grid grid-cols-1 gap-y-2">
                                  @for (col of restriccionColumnas(); track col.key) {
                                    <label class="flex items-center gap-2 cursor-pointer" [class.opacity-50]="!hasEditPermission()"
@@ -1366,7 +1289,7 @@ import {
                                             (change)="togglePermiso(pub, col.key)"
                                             [disabled]="!hasEditPermission()"
                                             class="priv-check shrink-0">
-                                     <span class="text-[11px] font-semibold leading-snug text-amber-700 dark:text-amber-400">
+                                     <span class="text-xs font-semibold leading-snug text-amber-700 dark:text-amber-400">
                                        {{ col.label }}
                                      </span>
                                    </label>
@@ -1376,7 +1299,7 @@ import {
                            }
                            <!-- Oratoria -->
                            <div class="flex items-center gap-3 pt-1">
-                             <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0">Oratoria</span>
+                             <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0">Oratoria</span>
                              <select [ngModel]="getOratoria(pub)"
                                      (ngModelChange)="setOratoria(pub, $event)"
                                      [attr.data-level]="getOratoria(pub)"
@@ -1403,7 +1326,7 @@ import {
                           <thead class="priv-thead sticky top-0 z-30">
                            <tr>
                               <th class="priv-th-publisher is-sticky px-2 py-1.5 sticky left-0 z-40 min-w-[170px] text-left">
-                                <span class="text-[9px] font-black text-white uppercase tracking-[0.14em]">Publicador</span>
+                                <span class="text-xs font-bold text-white uppercase tracking-[0.14em]">Publicador</span>
                               </th>
                               @for (col of regularColumnas(); track col.key) {
                                 <th class="priv-th px-0.5 py-1.5 text-center min-w-[40px] border-l border-white/[0.07] cursor-pointer select-none transition-colors hover:bg-white/10"
@@ -1411,11 +1334,11 @@ import {
                                     [class.!text-slate-900]="filtroPermiso() === col.key"
                                     [title]="'Filtrar por ' + col.label + (filtroPermiso() === col.key ? ' (activo — clic para quitar)' : '')"
                                     (click)="setFiltroPermiso(filtroPermiso() === col.key ? null : col.key)">
-                                  <span class="text-[9px] font-black uppercase tracking-[0.02em] leading-tight whitespace-normal block"
+                                  <span class="text-xs font-bold uppercase tracking-[0.02em] leading-tight whitespace-normal block"
                                         [class]="filtroPermiso() === col.key ? 'text-slate-900' : 'text-white'">
                                     {{ col.label }}
                                     @if (filtroPermiso() === col.key) {
-                                      <span class="block text-[8px] mt-0.5 opacity-80">✓ filtrado</span>
+                                      <span class="block text-xs mt-0.5 opacity-80">✓ filtrado</span>
                                     }
                                   </span>
                                 </th>
@@ -1430,18 +1353,18 @@ import {
                                          [class]="filtroPermiso() === col.key ? 'text-slate-900' : 'text-amber-300'">
                                       <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
                                     </svg>
-                                    <span class="text-[9px] font-black uppercase tracking-[0.02em] leading-tight whitespace-normal"
+                                    <span class="text-xs font-bold uppercase tracking-[0.02em] leading-tight whitespace-normal"
                                           [class]="filtroPermiso() === col.key ? 'text-slate-900' : 'text-amber-200'">
                                       {{ col.label }}
                                       @if (filtroPermiso() === col.key) {
-                                        <span class="block text-[8px] mt-0.5 opacity-80">✓ filtrado</span>
+                                        <span class="block text-xs mt-0.5 opacity-80">✓ filtrado</span>
                                       }
                                     </span>
                                   </div>
                                 </th>
                               }
                               <th class="priv-th priv-th-oratoria px-0.5 py-1.5 text-center min-w-[80px] border-l border-white/[0.07]">
-                                <span class="text-[9px] font-black text-white uppercase tracking-[0.02em] leading-tight whitespace-normal block">Oratoria</span>
+                                <span class="text-xs font-bold text-white uppercase tracking-[0.02em] leading-tight whitespace-normal block">Oratoria</span>
                               </th>
                            </tr>
                          </thead>
@@ -1454,7 +1377,7 @@ import {
                                       : (idx % 2 === 1 ? 'bg-slate-50/40 dark:bg-slate-800/20' : '')">
                                      <td class="px-2.5 py-1.5 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-purple-50/40 dark:group-hover:bg-purple-900/10 transition-colors border-r border-slate-100 dark:border-slate-800/60">
                                         <div class="flex items-center gap-1.5">
-                                             <div class="priv-avatar w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-semibold text-[0.625rem] shadow-sm ring-1 ring-white border border-white/50"
+                                             <div class="priv-avatar w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-semibold text-xs shadow-sm ring-1 ring-white border border-white/50"
                                                   [ngClass]="getAvatarClass(pub)">
                                                {{ inicialesDe(pub) }}
                                              </div>
@@ -1465,14 +1388,14 @@ import {
                                       <div class="flex flex-wrap gap-0.5 mt-0.5">
                                           @if (pub.privilegios.length > 0) {
                                             @for (priv of pub.privilegios; track priv) {
-                                              <div class="text-[8px] font-bold px-1 py-0.5 inline-block rounded-md leading-none"
+                                              <div class="text-xs font-bold px-1 py-0.5 inline-block rounded-md leading-none"
                                                    [title]="priv"
                                                    [class]="privilegioBadgeClass(priv)">
                                                 {{ privilegioLabel(priv) }}
                                               </div>
                                             }
                                           } @else {
-                                            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold tracking-wide">{{ isHermano(pub) ? 'Hermano' : 'Hermana' }}</span>
+                                            <span class="text-xs text-slate-400 dark:text-slate-500 font-semibold tracking-wide">{{ isHermano(pub) ? 'Hermano' : 'Hermana' }}</span>
                                           }
                                       </div>
                                             </div>
@@ -1515,7 +1438,7 @@ import {
 
                   <!-- Pagination -->
                   <div class="priv-pagination shrink-0 px-4 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
-                    <span class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium tabular-nums">
+                    <span class="text-xs text-slate-400 dark:text-slate-500 font-medium tabular-nums">
                       {{ (currentPage() - 1) * pageSize() + 1 }}–{{ Math.min(currentPage() * pageSize(), filteredPublicadores().length) }}
                       <span class="text-slate-300 dark:text-slate-600">de</span>
                       {{ filteredPublicadores().length }}
@@ -1528,12 +1451,12 @@ import {
                         </button>
                         @for (item of getPagesArray(); track $index) {
                           @if (item === null) {
-                            <span class="w-7 h-7 flex items-center justify-center text-[0.6875rem] text-slate-300 dark:text-slate-600 select-none">···</span>
+                            <span class="w-7 h-7 flex items-center justify-center text-xs text-slate-300 dark:text-slate-600 select-none">···</span>
                           } @else {
                             <button (click)="setPage(item)"
                                     class="priv-page-btn w-7 h-7 rounded-lg text-xs font-bold"
                                     [class]="currentPage() === item
-                                      ? 'bg-[#6D28D9] text-white shadow-sm'
+                                      ? 'bg-brand-purple text-white shadow-sm'
                                       : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200'">
                               {{ item }}
                             </button>
@@ -1574,9 +1497,9 @@ import {
 
        <!-- ===== MODAL: DUPLICATE DETECTION MWB ===== -->
        @if (mwbShowDuplicateModal()) {
-         <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-           <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slideDown">
-             <div class="p-6">
+         <app-modal [open]="true" size="md" [title]="mwbEnUsoPor().length > 0 ? 'Esta guía está en uso' : 'Esta guía ya está subida'"
+           [hasFooter]="true" [dismissible]="!mwbConfirming()" (closed)="dismissDuplicateModal()">
+             <div>
                <div class="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center mb-4 mx-auto">
                  <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                </div>
@@ -1585,7 +1508,6 @@ import {
                  <!-- La guía es global: si alguna congregación ya generó su
                       programación a partir de ella, reimportarla reescribiría
                       las partes de las que cuelga. No se ofrece reemplazar. -->
-                 <h3 class="text-lg font-black text-slate-900 dark:text-white text-center tracking-tight">Esta guía está en uso</h3>
                  <p class="text-sm text-slate-500 dark:text-slate-400 text-center mt-2 leading-relaxed px-2">
                    «{{ mwbNombreGuia() }}» ya está importada y hay congregaciones que han generado
                    su programación a partir de ella. No se puede reimportar sin destruir esa
@@ -1595,24 +1517,23 @@ import {
                  <div class="mt-5 space-y-2 max-h-48 overflow-y-auto pr-1 simple-scrollbar">
                    @for (cong of mwbEnUsoPor(); track cong.id_congregacion) {
                      <div class="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
-                       <p class="text-[0.6875rem] font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate">{{ cong.nombre }}</p>
-                       <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 uppercase tracking-tighter tabular-nums">{{ cong.programas }} programas</span>
+                       <p class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate">{{ cong.nombre }}</p>
+                       <span class="text-xs font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 uppercase tracking-tighter tabular-nums">{{ cong.programas }} programas</span>
                      </div>
                    }
                  </div>
 
-                 <p class="text-[0.6875rem] text-slate-400 text-center mt-4 leading-relaxed px-2">
+                 <p class="text-xs text-slate-400 text-center mt-4 leading-relaxed px-2">
                    Cada congregación debe eliminar antes su programación desde «Eliminar guía»,
                    en su pestaña de programación.
                  </p>
                  @if (mwbPreview()?.origen === 'jwpub') {
-                   <p class="text-[0.6875rem] text-slate-500 dark:text-slate-400 text-center mt-3 leading-relaxed px-2">
+                   <p class="text-xs text-slate-500 dark:text-slate-400 text-center mt-3 leading-relaxed px-2">
                      Si solo quieres que las partes de <b>Seamos Mejores Maestros</b> muestren su
                      detalle, puedes completarlo sin tocar la programación.
                    </p>
                  }
                } @else {
-                 <h3 class="text-lg font-black text-slate-900 dark:text-white text-center tracking-tight">Esta guía ya está subida</h3>
                  <p class="text-sm text-slate-500 dark:text-slate-400 text-center mt-2 leading-relaxed px-2">
                    «{{ mwbNombreGuia() }}» ya existe, pero ninguna congregación la está usando
                    todavía. Si continúa, sus partes serán <b>reemplazadas</b> por las de esta
@@ -1621,87 +1542,78 @@ import {
                }
              </div>
 
-             <div class="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
-               <button (click)="dismissDuplicateModal()"
-                       class="flex-1 h-10 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]">
+             <ng-container slot="footer">
+               <button type="button" (click)="dismissDuplicateModal()" class="btn-secondary">
                  {{ mwbEnUsoPor().length > 0 ? 'Entendido' : 'Cancelar' }}
                </button>
                @if (mwbEnUsoPor().length > 0 && mwbPreview()?.origen === 'jwpub') {
-                 <button (click)="completarDescripciones()"
-                         [disabled]="mwbConfirming()"
-                         class="flex-1 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.97] disabled:opacity-50 flex items-center justify-center gap-2">
+                 <button type="button" (click)="completarDescripciones()" [disabled]="mwbConfirming()" class="btn-primary">
                    @if (mwbConfirming()) {
-                     <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                     <span class="spinner-xs"></span>
                    }
                    Completar descripciones
                  </button>
                }
                @if (mwbEnUsoPor().length === 0) {
-                 <button (click)="acceptDuplicateReplace()"
-                         [disabled]="mwbConfirming()"
-                         class="flex-1 h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm shadow-amber-900/20 transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.97] flex items-center justify-center gap-2">
+                 <button type="button" (click)="acceptDuplicateReplace()" [disabled]="mwbConfirming()"
+                   class="btn-primary" style="--accent: #d97706; --accent-hover: #b45309">
                    @if (mwbConfirming()) {
-                     <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                     <span class="spinner-xs"></span>
                    }
                    Reemplazar Datos
                  </button>
                }
-             </div>
-           </div>
-         </div>
+             </ng-container>
+         </app-modal>
        }
 
       <!-- ===== AI LOADING OVERLAY ===== -->
       @if (mwbLoading()) {
-        <div class="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-fadeIn">
-          <!-- Backdrop -->
-          <div class="absolute inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-md"></div>
-
-          <!-- Card -->
-          <div class="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-700/60 w-full max-w-sm p-8 flex flex-col items-center gap-6">
+        <app-modal [open]="true" size="sm" [dismissible]="false">
+          <div class="flex flex-col items-center gap-6 py-2" role="status" aria-live="polite">
 
             <!-- AI orb with double ping rings -->
             <div class="relative flex items-center justify-center">
               <div class="absolute w-24 h-24 rounded-full bg-purple-400/10 animate-ping" style="animation-duration:2s"></div>
               <div class="absolute w-16 h-16 rounded-full bg-purple-400/15 animate-ping" style="animation-duration:1.5s;animation-delay:0.3s"></div>
-              <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#6D28D9] to-[#a78bfa] flex items-center justify-center shadow-xl shadow-purple-500/40">
+              <div class="w-16 h-16 rounded-full bg-gradient-to-br from-brand-purple to-[#a78bfa] flex items-center justify-center shadow-xl shadow-brand-purple/40">
                 <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg>
               </div>
             </div>
 
             <!-- Text content -->
             <div class="text-center flex flex-col gap-2 w-full">
-              <p class="text-[0.6875rem] font-black uppercase tracking-widest text-[#6D28D9] dark:text-purple-400">{{ mwbEsJwpub() ? 'Leyendo el archivo oficial' : 'Motor IA activo' }}</p>
+              <p class="text-xs font-bold uppercase tracking-widest text-brand-purple dark:text-purple-400">{{ mwbEsJwpub() ? 'Leyendo el archivo oficial' : 'Motor IA activo' }}</p>
               <p class="text-sm font-bold text-slate-800 dark:text-white leading-snug min-h-[2.5rem] flex items-center justify-center text-center px-2">
                 {{ mwbProgressMessage() || 'Leyendo el archivo...' }}
               </p>
-              <p class="text-[0.625rem] text-slate-400 dark:text-slate-500">Este proceso puede tardar unos momentos</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500">Este proceso puede tardar unos momentos</p>
             </div>
 
             <!-- Percentage -->
-            <div class="text-4xl font-black tabular-nums text-[#6D28D9] dark:text-purple-400 leading-none">
+            <div class="text-4xl font-bold tabular-nums text-brand-purple dark:text-purple-400 leading-none">
               {{ mwbProgress() }}<span class="text-xl font-bold">%</span>
             </div>
 
             <!-- Progress bar -->
             <div class="w-full flex flex-col gap-1.5">
               <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden relative">
-                <div class="bg-gradient-to-r from-[#6D28D9] via-[#8B5CF6] to-[#a78bfa] h-full rounded-full transition-all duration-500 ease-out"
+                <div class="bg-gradient-to-r from-brand-purple via-[#8B5CF6] to-[#a78bfa] h-full rounded-full transition-all duration-500 ease-out"
                      [style.width.%]="mwbProgress()"></div>
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_1.8s_ease-in-out_infinite]"></div>
               </div>
               <!-- Animated dots -->
               <div class="flex items-center justify-center gap-1 pt-0.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-[#6D28D9]/40 animate-bounce" style="animation-delay:0ms"></span>
-                <span class="w-1.5 h-1.5 rounded-full bg-[#6D28D9]/60 animate-bounce" style="animation-delay:200ms"></span>
-                <span class="w-1.5 h-1.5 rounded-full bg-[#6D28D9] animate-bounce" style="animation-delay:400ms"></span>
-                <span class="w-1.5 h-1.5 rounded-full bg-[#6D28D9]/60 animate-bounce" style="animation-delay:600ms"></span>
-                <span class="w-1.5 h-1.5 rounded-full bg-[#6D28D9]/40 animate-bounce" style="animation-delay:800ms"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-purple/40 animate-bounce" style="animation-delay:0ms"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-purple/60 animate-bounce" style="animation-delay:200ms"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-purple animate-bounce" style="animation-delay:400ms"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-purple/60 animate-bounce" style="animation-delay:600ms"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-purple/40 animate-bounce" style="animation-delay:800ms"></span>
               </div>
             </div>
 
           </div>
-        </div>
+        </app-modal>
       }
 
     </div>
@@ -1748,14 +1660,14 @@ import {
 
      /* Header */
      .priv-thead {
-       background: #6d28d9 !important;
+       background: var(--color-brand-purple) !important;
        box-shadow: 0 1px 0 rgba(255,255,255,0.12), 0 4px 12px -4px rgba(109,40,217,0.3);
      }
      .priv-thead th { background: transparent !important; }
 
      /* Sticky publisher column */
      .priv-thead .priv-th-publisher {
-       background: #6d28d9 !important;
+       background: var(--color-brand-purple) !important;
        z-index: 40 !important;
        box-shadow: inset -1px 0 0 rgba(255,255,255,0.12);
      }
@@ -1790,7 +1702,7 @@ import {
         left: 0; top: 3px; bottom: 3px;
         width: 3px;
         border-radius: 0 3px 3px 0;
-        background: #6D28D9;
+        background: var(--color-brand-purple);
         transform: scaleY(0);
         transform-origin: center;
         transition: transform 220ms var(--ease-out-strong);
@@ -1826,14 +1738,14 @@ import {
       :host-context(.dark) .priv-check { background: #0f172a; border-color: #475569; }
       @media (hover: hover) and (pointer: fine) {
         .priv-check:hover:not(:disabled) {
-          border-color: #6D28D9;
+          border-color: var(--color-brand-purple);
           box-shadow: 0 0 0 3px rgba(109,40,217,0.10);
         }
       }
       .priv-check:active:not(:disabled) { transform: scale(0.9); }
       .priv-check:checked {
-        background: linear-gradient(180deg, #7c3aed, #6D28D9);
-        border-color: #6D28D9;
+        background: linear-gradient(180deg, #7c3aed, var(--color-brand-purple));
+        border-color: var(--color-brand-purple);
         box-shadow: 0 2px 6px -2px rgba(109,40,217,0.45);
       }
       .priv-check:checked::after {
@@ -1869,7 +1781,7 @@ import {
                    transform 140ms var(--ease-out-strong);
      }
      .priv-select:active:not(:disabled) { transform: scale(0.96); }
-     .priv-select:focus { box-shadow: 0 0 0 4px rgba(109,40,217,0.18); border-color: #6D28D9 !important; outline: none; }
+     .priv-select:focus { box-shadow: 0 0 0 4px rgba(109,40,217,0.18); border-color: var(--color-brand-purple) !important; outline: none; }
      .priv-select[data-level="1"] { background-color: #f8fafc; color: #475569; border-color: #e2e8f0 !important; }
      .priv-select[data-level="2"] { background-color: #f0f9ff; color: #0369a1; border-color: #bae6fd !important; }
      .priv-select[data-level="3"] { background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe !important; }
@@ -1883,7 +1795,7 @@ import {
 
      /* Search input refinement */
      .priv-search { transition: border-color 160ms var(--ease-out-strong), box-shadow 160ms var(--ease-out-strong); }
-     .priv-search:focus { box-shadow: 0 0 0 4px rgba(109,40,217,0.15); border-color: #6D28D9; }
+     .priv-search:focus { box-shadow: 0 0 0 4px rgba(109,40,217,0.15); border-color: var(--color-brand-purple); }
 
       /* Pagination button feedback */
      .priv-page-btn { transition: background-color 160ms ease, color 160ms ease, transform 140ms var(--ease-out-strong); }
@@ -1914,7 +1826,7 @@ import {
                    transform 120ms cubic-bezier(0.23,1,0.32,1);
      }
      @media (hover: hover) and (pointer: fine) {
-       .plt-icon-btn:hover { background-color: rgba(109,40,217,0.08); color: #6D28D9; }
+       .plt-icon-btn:hover { background-color: rgba(109,40,217,0.08); color: var(--color-brand-purple); }
        .plt-icon-btn[title="Eliminar"]:hover { background-color: rgba(244,63,94,0.08); color: #f43f5e; }
      }
      .plt-icon-btn:active { transform: scale(0.88); }
@@ -1988,7 +1900,7 @@ import {
                    transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
      }
      @media (hover: hover) and (pointer: fine) {
-       .algo-stepper-btn:not(:disabled):hover { background-color: #ede9fe; color: #6D28D9; }
+       .algo-stepper-btn:not(:disabled):hover { background-color: #ede9fe; color: var(--color-brand-purple); }
        :host-context(.dark) .algo-stepper-btn:not(:disabled):hover { background-color: rgba(109,40,217,0.20); color: #a78bfa; }
      }
      .algo-stepper-btn:not(:disabled):active { transform: scale(0.88); }
@@ -2003,7 +1915,7 @@ import {
      @media (min-width: 1200px) {
        .priv-table .priv-select {
          width: 96px;
-         font-size: 11px;
+         font-size: 12px;
          padding-right: 16px !important;
        }
      }
@@ -2024,7 +1936,7 @@ import {
        .priv-table .priv-name { max-width: 104px; }
        .priv-table .priv-select {
          width: 84px;
-         font-size: 10px;
+         font-size: 12px;
          padding-left: 5px;
          padding-right: 14px !important;
          background-position: right 3px center;
@@ -2112,7 +2024,7 @@ import {
        display: inline-flex; align-items: center; gap: 0.3rem;
        height: 1.35rem; padding: 0 0.5rem;
        border-radius: 9999px;
-       font-size: 0.625rem; font-weight: 800;
+       font-size: 0.75rem; font-weight: 800;
        letter-spacing: 0.02em;
        white-space: nowrap;
      }
@@ -2131,7 +2043,7 @@ import {
        display: inline-flex; align-items: center; gap: 0.3rem;
        height: 1.15rem; padding: 0 0.45rem;
        border-radius: 9999px;
-       font-size: 0.5625rem; font-weight: 800;
+       font-size: 0.75rem; font-weight: 800;
        text-transform: uppercase; letter-spacing: 0.05em;
        white-space: nowrap;
      }
@@ -2231,6 +2143,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
 
   private reunionesSvc = inject(ReunionesService);
+  private toastSvc = inject(ToastService);
   private congregacionCtx = inject(CongregacionContextService);
 
   /**
@@ -2267,9 +2180,11 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   });
 
   visibleTabs = computed(() => {
+    // Parámetros es de la congregación (el backend pide reuniones.configuracion
+    // y el alcance de la congregación); lo demás oculto es global.
     return this.puedeGestionarPlantillas()
       ? this.allTabs
-      : this.allTabs.filter(t => t.id !== 'plantillas' && t.id !== 'parametros' && t.id !== 'catalogo' && t.id !== 'catalogo-canticos');
+      : this.allTabs.filter(t => t.id !== 'plantillas' && t.id !== 'catalogo' && t.id !== 'catalogo-canticos');
   });
 
   activeTab = signal('privilegios');
@@ -2284,7 +2199,6 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   protected readonly Math = Math;
 
   // ── Toast ──
-  toast = signal<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // ── MWB State ──
   mwbLoading = signal(false);
@@ -2406,6 +2320,14 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     this.reunionesSvc.eliminarTemaAtalaya(this.atalayaPlantillaId, tema.semana_ordinal).subscribe({
       next: () => {
         this.showToast('success', 'Tema eliminado');
+        // Si el editor está abierto, que tampoco lo lleve en su copia.
+        const abierta = this.selectedPlantilla();
+        if (abierta && abierta.id_plantilla === this.atalayaPlantillaId) {
+          this.selectedPlantilla.set({
+            ...abierta,
+            partes: abierta.partes.filter(x => !(x.titulo_semana && x.semana_ordinal === tema.semana_ordinal)),
+          });
+        }
         this.loadAtalayaTemas();
       },
       error: (err) => {
@@ -2583,23 +2505,69 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   );
 
   constructor() {
+    // La pestaña activa y la congregación deciden qué se carga. Los loaders
+    // corren en untracked: así el efecto solo depende de esas dos señales.
     effect(() => {
-      if (this.activeTab() === 'parametros' && !this.algoLoaded) {
-        this.loadAlgoProfiles();
-      }
-      if (this.activeTab() === 'privilegios' && !this.matrizLoaded) {
-        this.loadMatriz();
-      }
-      // El picker de publicador de Ausencias reutiliza la misma lista: si aún
-      // no se cargó (nadie visitó "Privilegios" primero), se carga aquí.
-      if (this.activeTab() === 'ausencias') {
-        if (!this.matrizLoaded) this.loadMatriz();
-        if (!this.ausenciasLoaded) this.loadAusencias();
-      }
-      if (this.activeTab() === 'sin-reunion' && !this.semanasLoaded) {
-        this.loadSemanasSinReunion();
-      }
+      const tab = this.activeTab();
+      const idCong = this.congregacionCtx.effectiveCongregacionId();
+      untracked(() => {
+        if (idCong !== this.congCargada) {
+          this.reiniciarDatosDeCongregacion();
+          this.congCargada = idCong;
+        }
+        this.cargarPestana(tab);
+      });
     });
+  }
+
+  /** Congregación de la que son los datos en pantalla (undefined = ninguna aún). */
+  private congCargada: number | null | undefined = undefined;
+
+  private cargarPestana(tab: string): void {
+    if (tab === 'parametros' && !this.algoLoaded) {
+      this.loadAlgoProfiles();
+    }
+    if (tab === 'privilegios' && !this.matrizLoaded) {
+      this.loadMatriz();
+    }
+    // El picker de publicador de Ausencias reutiliza la misma lista: si aún
+    // no se cargó (nadie visitó "Privilegios" primero), se carga aquí.
+    if (tab === 'ausencias') {
+      if (!this.matrizLoaded) this.loadMatriz();
+      if (!this.ausenciasLoaded) this.loadAusencias();
+    }
+    if (tab === 'sin-reunion' && !this.semanasLoaded) {
+      this.loadSemanasSinReunion();
+    }
+  }
+
+  /**
+   * El Admin cambió de congregación: todo lo que es de la congregación se
+   * descarta (también los cambios sin guardar de la matriz, que eran de la
+   * otra) y se vuelve a pedir. Las guías son globales y se quedan.
+   */
+  private reiniciarDatosDeCongregacion(): void {
+    this.algoLoaded = false;
+    this.matrizLoaded = false;
+    this.ausenciasLoaded = false;
+    this.semanasLoaded = false;
+    this.algoProfiles.set([]);
+    this.publicadores.set([]);
+    this.columnas.set([]);
+    this.grupos.set([]);
+    this.dirtyMap.clear();
+    this.dirtyOratoriaMap.clear();
+    this.matrizPendingCount.set(0);
+    this.currentPage.set(1);
+    this.ausencias.set([]);
+    this.ausenciaError.set(null);
+    this.ausenciaAEliminar.set(null);
+    this.ausenciaIdPublicador = null;
+    this.semanasSinReunion.set([]);
+    this.semanaError.set(null);
+    this.semanaAConfirmar.set(null);
+    this.semanaAEliminar.set(null);
+    this.reporteAbierto.set(false);
   }
 
   // ── Lifecycle ──
@@ -3132,7 +3100,24 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
     this.reunionesSvc.updatePlantilla(p.id_plantilla, payload).subscribe({
       next: (res) => {
-        this.showToast('success', 'Plantilla actualizada correctamente');
+        const conservadas = res.partes_conservadas ?? [];
+        if (conservadas.length) {
+          // Lo que se quitó pero tiene asignados sigue en la guía: sin este
+          // aviso la parte "vuelve" al reabrir el editor sin explicación.
+          const nombres = [...new Set(conservadas.map(c => c.parte))].join(', ');
+          const sitios = conservadas
+            .slice(0, 4)
+            .map(c => `${c.congregacion} (${c.fecha})`)
+            .join('; ');
+          const mas = conservadas.length > 4 ? ` y ${conservadas.length - 4} más` : '';
+          this.toastSvc.warning(
+            'Guía guardada, pero algunas partes no se pudieron quitar',
+            `${nombres}: ya tienen hermanos asignados en ${sitios}${mas}. Quite esas asignaciones y vuelva a guardar.`,
+            12000,
+          );
+        } else {
+          this.showToast('success', 'Plantilla actualizada correctamente');
+        }
         this.loadSavedPlantillas();
         if (this.plantillaTipoActivo() === 'fin_semana') this.loadAtalayaTemas();
         this.closePlantillaEditor();
@@ -3140,7 +3125,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       },
       error: (err) => {
         console.error(err);
-        this.showToast('error', 'Error al guardar cambios');
+        this.showToast('error', typeof err?.error?.detail === 'string' ? err.error.detail : 'Error al guardar cambios');
         this.plantillasLoading.set(false);
       }
     });
@@ -3154,6 +3139,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     this.algoLoading.set(true);
     this.reunionesSvc.getAlgorithmProfiles(idCong).subscribe({
       next: (res) => {
+        if (idCong !== this.congregacionCtx.effectiveCongregacionId()) return; // respuesta de la congregación anterior
         this.algoProfiles.set(res.perfiles);
         this.activeProfileId.set(res.perfil_activo);
         this.algoMaxPartesCruzadas.set(res.algo_max_partes_cruzadas);
@@ -3258,6 +3244,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
     this.reunionesSvc.getMatrizConfiguracion(idCong).subscribe({
       next: (res) => {
+        if (idCong !== this.congregacionCtx.effectiveCongregacionId()) return; // respuesta de la congregación anterior
         this.publicadores.set(res.publicadores);
         this.columnas.set(res.columnas);
         this.grupos.set(res.grupos ?? []);
@@ -3280,6 +3267,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     this.ausenciasLoaded = true;
     this.reunionesSvc.getAusencias(idCong).subscribe({
       next: (res) => {
+        if (idCong !== this.congregacionCtx.effectiveCongregacionId()) return; // respuesta de la congregación anterior
         this.ausencias.set(res);
         this.loadingAusencias.set(false);
       },
@@ -3340,6 +3328,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     this.semanasLoaded = true;
     this.reunionesSvc.getSemanasSinReunion(idCong).subscribe({
       next: (res) => {
+        if (idCong !== this.congregacionCtx.effectiveCongregacionId()) return; // respuesta de la congregación anterior
         this.semanasSinReunion.set(res);
         this.loadingSemanas.set(false);
       },
@@ -3681,7 +3670,6 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     if (!idCong || this.matrizPendingCount() === 0) return;
 
     this.matrizSaving.set(true);
-    this.toast.set(null);
 
     const cambios: CambioPermisoPublicador[] = [];
     const changedIds = new Set([...this.dirtyMap.keys(), ...this.dirtyOratoriaMap.keys()]);
@@ -3793,8 +3781,8 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   }
 
   private showToast(type: 'success' | 'error', message: string): void {
-    this.toast.set({ type, message });
-    setTimeout(() => this.toast.set(null), 4000);
+    if (type === 'success') this.toastSvc.success(message);
+    else this.toastSvc.error(message);
   }
 }
 

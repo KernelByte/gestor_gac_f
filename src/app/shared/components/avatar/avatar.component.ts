@@ -25,7 +25,7 @@ function hash(str: string): number {
   template: `
     <div
       class="rounded-full flex items-center justify-center shrink-0 font-semibold select-none"
-      [class.w-7]="size === 'xs'" [class.h-7]="size === 'xs'" [class.text-[10px]]="size === 'xs'"
+      [class.w-7]="size === 'xs'" [class.h-7]="size === 'xs'" [class.text-xs]="size === 'xs'"
       [class.w-9]="size === 'sm'" [class.h-9]="size === 'sm'" [class.text-xs]="size === 'sm'"
       [class.w-11]="size === 'md'" [class.h-11]="size === 'md'" [class.text-sm]="size === 'md'"
       [class.w-14]="size === 'lg'" [class.h-14]="size === 'lg'" [class.text-base]="size === 'lg'"

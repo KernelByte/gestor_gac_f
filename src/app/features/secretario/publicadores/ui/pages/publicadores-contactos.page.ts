@@ -2,6 +2,8 @@ import { Component, inject, signal, computed, effect, untracked, DestroyRef } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { ModalComponent } from '../../../../../shared/components/modal/modal.component';
+import { ToastService } from '../../../../../shared/components/toast/toast.service';
 import { lastValueFrom } from 'rxjs';
 import { PublicadoresFacade } from '../../application/publicadores.facade';
 import { Publicador } from '../../domain/models/publicador';
@@ -22,30 +24,14 @@ interface ContactoEmergencia {
     solo_urgencias?: boolean;
 }
 
-interface Toast {
-    type: 'success' | 'error';
-    message: string;
-}
-
 @Component({
     standalone: true,
     selector: 'app-publicadores-contactos',
-    imports: [CommonModule, FormsModule, ReactiveFormsModule],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, ModalComponent],
     template: `
-    <div class="h-full flex flex-col md:flex-row gap-0 md:gap-6 relative overflow-hidden">
+    <div class="tema-publicadores h-full flex flex-col md:flex-row gap-0 md:gap-6 relative overflow-hidden">
 
       <!-- TOAST -->
-      <div *ngIf="toast()" class="fixed bottom-6 right-6 z-[100] animate-toastIn pointer-events-none">
-        <div class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-semibold"
-             [ngClass]="toast()!.type === 'success'
-                 ? 'bg-white dark:bg-slate-800 border-emerald-100 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
-                 : 'bg-white dark:bg-slate-800 border-red-100 dark:border-red-800 text-red-600 dark:text-red-400'">
-          <svg *ngIf="toast()!.type === 'success'" class="w-4 h-4 shrink-0 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-          <svg *ngIf="toast()!.type === 'error'" class="w-4 h-4 shrink-0 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-          <span>{{ toast()!.message }}</span>
-        </div>
-      </div>
-
       <!-- Mobile FAB — only visible on mobile (< md) when a publisher is selected -->
       <button *ngIf="canEditContactos() && selectedPublicador()"
           (click)="initNewContacto()"
@@ -67,7 +53,7 @@ interface Toast {
            [ngClass]="selectedPublicador() ? 'hidden md:flex h-full' : 'flex h-full'">
 
         <!-- Sidebar Header -->
-        <div class="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm sticky top-0 z-10">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 sticky top-0 z-10">
           <!-- Desktop/Tablet heading row -->
           <div class="hidden md:flex items-center justify-between mb-3">
             <h3 class="font-display font-bold text-slate-800 dark:text-white text-lg">Directorio</h3>
@@ -75,7 +61,7 @@ interface Toast {
                 class="p-2 -mr-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Exportar Lista de Contactos (PDF)">
               <svg *ngIf="!downloadingPdf()" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-              <div *ngIf="downloadingPdf()" class="w-4 h-4 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin"></div>
+              <div *ngIf="downloadingPdf()" class="spinner-sm text-emerald-500"></div>
             </button>
           </div>
 
@@ -88,7 +74,7 @@ interface Toast {
             </div>
             <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
                 placeholder="Buscar publicador..."
-                class="w-full pl-9 h-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all shadow-sm"
+                class="w-full pl-9 h-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all shadow-sm"
                 [class.pr-8]="searchQuery()" [class.pr-3]="!searchQuery()">
             <button *ngIf="searchQuery()" (click)="searchQuery.set('')"
                 aria-label="Limpiar búsqueda"
@@ -100,23 +86,23 @@ interface Toast {
           <div class="flex flex-wrap justify-between gap-1.5 mt-3">
             <button (click)="toggleFilter('all')"
                 class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-xs font-bold transition-[background-color,border-color,color] duration-150 border shrink-0 flex items-center justify-center"
-                [ngClass]="activeFilters().has('all') ? 'bg-slate-800 dark:bg-slate-100 border-slate-800 dark:border-white text-white dark:text-slate-900 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                [ngClass]="activeFilters().has('all') ? 'bg-slate-800 dark:bg-slate-100 border-slate-800 dark:border-white text-white dark:text-slate-900 shadow-sm' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'">
               Todos
             </button>
             <button (click)="toggleFilter('active')"
                 class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-xs font-bold transition-[background-color,border-color,color] duration-150 border shrink-0 flex items-center justify-center gap-1"
-                [ngClass]="activeFilters().has('active') ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'">
+                [ngClass]="activeFilters().has('active') ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'">
               <span class="w-1 h-1 rounded-full shrink-0" [ngClass]="activeFilters().has('active') ? 'bg-emerald-500' : 'bg-emerald-400'"></span>
               Activos
             </button>
             <button (click)="toggleFilter('inactive')"
                 class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-xs font-bold transition-[background-color,border-color,color] duration-150 border shrink-0 flex items-center justify-center"
-                [ngClass]="activeFilters().has('inactive') ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'">
+                [ngClass]="activeFilters().has('inactive') ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'">
               Inactivos
             </button>
             <button (click)="toggleFilter('no-phone')" title="Publicadores sin ningún contacto de emergencia con teléfono registrado"
                 class="flex-none px-2 py-1.5 rounded-lg text-xs font-bold transition-[background-color,border-color,color] duration-150 border shrink-0 flex items-center justify-center gap-1"
-                [ngClass]="activeFilters().has('no-phone') ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400'">
+                [ngClass]="activeFilters().has('no-phone') ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400'">
               <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
               Sin Teléfono
             </button>
@@ -126,7 +112,7 @@ interface Toast {
         <!-- List -->
         <div class="flex-1 overflow-y-auto simple-scrollbar bg-slate-50/30 dark:bg-slate-900/30">
           <div *ngIf="vm().loading && vm().list.length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400">
-            <div class="w-6 h-6 border-2 border-slate-200 border-t-brand-orange rounded-full animate-spin mb-3"></div>
+            <div class="spinner text-brand-orange mb-3"></div>
             <span class="text-xs font-bold">Cargando directorio...</span>
           </div>
 
@@ -187,7 +173,7 @@ interface Toast {
 
         <!-- EMPTY STATE — no publisher selected (tablet/desktop only) -->
         <div *ngIf="!selectedPublicador()" class="flex-1 w-full h-full flex flex-col items-center justify-center p-8 bg-white dark:bg-slate-900 z-10 select-none">
-          <div class="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 flex items-center justify-center mb-6">
+          <div class="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center mb-6">
             <svg class="w-8 h-8 text-brand-orange/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
             </svg>
@@ -196,7 +182,7 @@ interface Toast {
           <p class="text-sm text-slate-500 dark:text-slate-400 max-w-[280px] text-center mt-2 leading-relaxed">
             Elige un nombre del directorio para ver y gestionar sus contactos de emergencia.
           </p>
-          <div class="hidden md:flex items-center gap-1.5 mt-8 text-[0.625rem] text-slate-300 dark:text-slate-700 font-black uppercase tracking-widest">
+          <div class="hidden md:flex items-center gap-1.5 mt-8 text-xs text-slate-300 dark:text-slate-700 font-black uppercase tracking-widest">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
             Directorio
           </div>
@@ -226,11 +212,11 @@ interface Toast {
               <!-- Name + meta -->
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-baseline gap-2 md:gap-3">
-                  <h1 class="text-base md:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-none truncate">
+                  <h1 class="page-title truncate">
                     {{ nombreMostrado(p) }}
                   </h1>
                   <span *ngIf="p.id_estado_publicador === 1"
-                        class="hidden md:inline shrink-0 text-[0.625rem] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800 uppercase tracking-wide">
+                        class="hidden md:inline shrink-0 text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800 uppercase tracking-wide">
                     Activo
                   </span>
                 </div>
@@ -244,7 +230,7 @@ interface Toast {
             <!-- Add button — tablet/desktop only (mobile uses fixed FAB above) -->
             <div class="hidden md:block md:absolute md:right-6 lg:right-8 md:bottom-8 z-10">
               <button *ngIf="canEditContactos()" (click)="initNewContacto()" aria-label="Añadir contacto de emergencia"
-                  class="group flex items-center justify-center gap-2 px-5 py-2.5 bg-brand-orange text-white rounded-xl font-bold shadow-md shadow-orange-500/25 hover:bg-orange-600 hover:shadow-orange-600/35 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:ring-offset-2 transition-[background-color,box-shadow,transform] duration-150 active:scale-[0.95]"
+                  class="btn-primary"
                   title="Añadir Contacto">
                 <span class="group-hover:rotate-90 transition-transform duration-200">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -257,29 +243,13 @@ interface Toast {
           <!-- CONTENT BODY -->
           <div class="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950/50 p-4 md:p-6 lg:p-8 relative">
 
-            <!-- Form overlay / bottom-sheet on mobile -->
-            <div *ngIf="showForm()" class="fixed inset-0 z-50 md:relative md:inset-auto md:z-auto md:mb-8 animate-fadeInUp flex flex-col justify-end md:block">
-              <div class="absolute inset-0 bg-black/40 backdrop-blur-sm md:hidden" (click)="cancelForm()"></div>
-              <div class="relative w-full bg-white dark:bg-slate-900 rounded-t-3xl md:rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] md:shadow-xl border-t md:border border-slate-200 dark:border-slate-800 overflow-hidden max-w-3xl mx-auto h-[85vh] md:h-auto flex flex-col md:block">
-
-                <!-- Header — shows which contact is being edited -->
-                <div class="px-6 py-4 border-b border-orange-600/20 flex justify-between items-start bg-brand-orange">
-                  <div>
-                    <h3 class="font-display font-bold text-white">
-                      {{ editingContacto() ? 'Editar contacto' : 'Nuevo contacto de emergencia' }}
-                    </h3>
-                    <p *ngIf="editingContacto()" class="text-xs text-orange-100 mt-0.5">
-                      {{ editingContacto()!.nombre }}
-                      <span *ngIf="editingContacto()!.parentesco" class="text-orange-200"> · {{ editingContacto()!.parentesco }}</span>
-                    </p>
-                  </div>
-                  <button (click)="cancelForm()" aria-label="Cerrar formulario"
-                      class="p-2 mt-0.5 hover:bg-orange-600 rounded-full transition-colors text-orange-100 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
-                  </button>
-                </div>
-
-                <div class="p-4 flex-1 overflow-y-auto max-h-[70vh] md:max-h-none" [formGroup]="form">
+            <!-- Formulario de contacto (hoja inferior en móvil, diálogo desde sm) -->
+            @if (showForm()) {
+              <app-modal [open]="true" variant="sheet" size="xl" [controlled]="true" [hasFooter]="true"
+                         [title]="editingContacto() ? 'Editar contacto' : 'Nuevo contacto de emergencia'"
+                         [subtitle]="editingContacto() ? editingContacto()!.nombre + (editingContacto()!.parentesco ? ' · ' + editingContacto()!.parentesco : '') : ''"
+                         (closed)="cancelForm()">
+                <div [formGroup]="form">
 
                   <!-- Core fields -->
                   <div class="grid grid-cols-12 gap-3 mb-4">
@@ -289,7 +259,7 @@ interface Toast {
                       </label>
                       <input formControlName="nombre"
                              (blur)="form.get('nombre')!.markAsTouched()"
-                             class="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 rounded-lg text-sm text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-1 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 transition-all"
+                             class="w-full h-10 px-3 bg-slate-50 dark:bg-slate-900 rounded-lg text-sm text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-1 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 transition-all"
                              [ngClass]="isNombreInvalid()
                                  ? 'border border-red-400 dark:border-red-500 focus:ring-red-400 focus:border-red-400'
                                  : 'border border-slate-200 dark:border-slate-700 focus:ring-brand-orange focus:border-brand-orange'"
@@ -312,17 +282,17 @@ interface Toast {
                                (focus)="openParentescoDropdown()"
                                placeholder="Buscar parentesco..."
                                autocomplete="off"
-                               class="w-full h-10 pl-3 pr-8 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"/>
+                               class="form-control pl-3 pr-8"/>
                         <!-- Chevron -->
                         <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                           <svg class="w-4 h-4 transition-transform duration-150" [class.rotate-180]="showParentescoDropdown()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
                         <!-- Dropdown -->
                         <div *ngIf="showParentescoDropdown()"
-                             class="absolute z-20 top-full mt-1 left-0 right-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl max-h-56 overflow-y-auto py-1">
+                             class="absolute z-20 top-full mt-1 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl max-h-56 overflow-y-auto py-1">
                           <ng-container *ngFor="let grupo of filteredParentescos()">
                             <ng-container *ngIf="grupo.opciones.length > 0">
-                              <div class="px-3 pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest sticky top-0 bg-white dark:bg-slate-800">{{ grupo.grupo }}</div>
+                              <div class="px-3 pt-2 pb-1 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest sticky top-0 bg-white dark:bg-slate-900">{{ grupo.grupo }}</div>
                               <button *ngFor="let opcion of grupo.opciones"
                                       type="button"
                                       (mousedown)="selectParentesco(opcion)"
@@ -342,7 +312,7 @@ interface Toast {
                     <div class="col-span-6 space-y-1">
                       <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">Teléfono</label>
                       <input formControlName="telefono" inputmode="tel"
-                             class="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                             class="form-control"
                              placeholder="0412-555-0000">
                     </div>
 
@@ -364,7 +334,7 @@ interface Toast {
                           </button>
                         </label>
                         <input formControlName="direccion"
-                               class="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                               class="form-control"
                                placeholder="Dirección o información adicional">
                       </div>
                     </div>
@@ -382,11 +352,7 @@ interface Toast {
                                : 'bg-slate-50 dark:bg-slate-800/60 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'">
                       <input formControlName="es_principal" type="checkbox" class="sr-only peer">
                       <!-- Toggle pill -->
-                      <span class="relative flex-none inline-flex items-center w-10 h-[22px] rounded-full transition-colors duration-200 focus-within:ring-2 focus-within:ring-emerald-400/50"
-                            [ngClass]="form.get('es_principal')?.value ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'">
-                        <span class="absolute w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200"
-                              [ngClass]="form.get('es_principal')?.value ? 'translate-x-[20px]' : 'translate-x-[2px]'"></span>
-                      </span>
+                      <span class="switch shrink-0" aria-hidden="true" [attr.aria-checked]="!!form.get('es_principal')?.value"><span class="toggle-thumb"></span></span>
                       <div class="min-w-0 flex-1">
                         <p class="text-sm font-bold leading-tight transition-colors"
                            [ngClass]="form.get('es_principal')?.value ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-300'">
@@ -404,11 +370,7 @@ interface Toast {
                                : 'bg-slate-50 dark:bg-slate-800/60 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'">
                       <input formControlName="solo_urgencias" type="checkbox" class="sr-only peer">
                       <!-- Toggle pill -->
-                      <span class="relative flex-none inline-flex items-center w-10 h-[22px] rounded-full transition-colors duration-200"
-                            [ngClass]="form.get('solo_urgencias')?.value ? 'bg-amber-400' : 'bg-slate-200 dark:bg-slate-700'">
-                        <span class="absolute w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200"
-                              [ngClass]="form.get('solo_urgencias')?.value ? 'translate-x-[20px]' : 'translate-x-[2px]'"></span>
-                      </span>
+                      <span class="switch shrink-0" aria-hidden="true" [attr.aria-checked]="!!form.get('solo_urgencias')?.value"><span class="toggle-thumb"></span></span>
                       <div class="min-w-0 flex-1">
                         <p class="text-sm font-bold leading-tight transition-colors"
                            [ngClass]="form.get('solo_urgencias')?.value ? 'text-amber-700 dark:text-amber-300' : 'text-slate-700 dark:text-slate-300'">
@@ -436,17 +398,13 @@ interface Toast {
                       </button>
                     </div>
                   </div>
-
-                  <!-- Action buttons -->
-                  <div class="flex gap-3">
-                    <button (click)="cancelForm()" class="flex-1 h-11 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all focus:outline-none focus:ring-2 focus:ring-slate-300">Cancelar</button>
-                    <button (click)="save()" class="flex-[2] h-11 rounded-xl bg-brand-orange text-white font-bold text-sm shadow-md shadow-orange-500/20 hover:bg-orange-600 active:scale-[0.97] transition-[background-color,box-shadow,transform] duration-150 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:ring-offset-2">
-                      {{ editingContacto() ? 'Guardar cambios' : 'Guardar contacto' }}
-                    </button>
-                  </div>
                 </div>
-              </div>
-            </div>
+                <ng-container slot="footer">
+                  <button type="button" (click)="cancelForm()" class="btn-secondary">Cancelar</button>
+                  <button type="button" (click)="save()" class="btn-primary">{{ editingContacto() ? 'Guardar cambios' : 'Guardar contacto' }}</button>
+                </ng-container>
+              </app-modal>
+            }
 
             <!-- CARDS GRID
                  mobile:  1 col
@@ -458,7 +416,7 @@ interface Toast {
               <!-- Empty state: no contacts yet -->
               <div *ngIf="contactos().length === 0 && !showForm()"
                    class="lg:col-span-2 xl:col-span-3 flex flex-col items-center justify-center p-10 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50">
-                <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center mb-4">
                   <svg class="w-7 h-7 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
                   </svg>
@@ -490,15 +448,15 @@ interface Toast {
                 <!-- Row 1: Parentesco + badges (left) — Action buttons (right, in flow) -->
                 <div class="flex items-start justify-between gap-2 mb-2">
                   <div class="flex flex-wrap items-center gap-1.5 min-w-0">
-                    <span class="text-[0.625rem] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                    <span class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                       {{ c.parentesco || 'Familiar' }}
                     </span>
                     <span *ngIf="c.es_principal"
-                          class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[0.625rem] font-black uppercase tracking-wide border border-emerald-200 dark:border-emerald-800">
+                          class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-black uppercase tracking-wide border border-emerald-200 dark:border-emerald-800">
                       Principal
                     </span>
                     <span *ngIf="c.solo_urgencias"
-                          class="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[0.625rem] font-black uppercase tracking-wide border border-amber-200 dark:border-amber-800/50">
+                          class="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-xs font-black uppercase tracking-wide border border-amber-200 dark:border-amber-800/50">
                       Solo urgencias
                     </span>
                   </div>
@@ -506,22 +464,20 @@ interface Toast {
                   <!-- Action buttons — in-flow (right of parentesco row, never over the name) -->
                   <div *ngIf="canEditContactos()" class="action-buttons shrink-0 -mt-0.5 -mr-1">
                     <div *ngIf="pendingDeleteId() === c.id_contacto_emergencia"
-                         class="flex items-center gap-1.5 bg-white dark:bg-slate-800 rounded-lg px-3 py-2 shadow-md border border-red-100 dark:border-red-900 animate-fadeIn">
+                         class="flex items-center gap-1.5 bg-white dark:bg-slate-900 rounded-lg px-3 py-2 shadow-md border border-red-100 dark:border-red-900 animate-fadeIn">
                       <span class="text-xs font-bold text-slate-600 dark:text-slate-300 mr-1 whitespace-nowrap">¿Eliminar?</span>
                       <button (click)="confirmDelete(c)" aria-label="Confirmar eliminación del contacto"
-                          class="px-2.5 py-1 rounded-md bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-red-400">Sí</button>
+                          class="btn-danger btn-sm">Sí</button>
                       <button (click)="pendingDeleteId.set(null)" aria-label="Cancelar eliminación"
                           class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 text-xs font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400">No</button>
                     </div>
                     <div *ngIf="pendingDeleteId() !== c.id_contacto_emergencia"
-                         class="flex gap-0.5 bg-white dark:bg-slate-800/90 rounded-lg p-0.5 shadow-sm border border-slate-200 dark:border-slate-700">
-                      <button (click)="edit(c)" aria-label="Editar contacto"
-                          class="p-2 text-slate-400 hover:text-brand-orange hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange/30">
-                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                         class="row-actions bg-white dark:bg-slate-800/90 rounded-lg p-0.5 shadow-sm border border-slate-200 dark:border-slate-700">
+                      <button (click)="edit(c)" aria-label="Editar contacto" class="btn-icon-sm">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                       </button>
-                      <button (click)="pendingDeleteId.set(c.id_contacto_emergencia ?? null)" aria-label="Eliminar contacto"
-                          class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-300">
-                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      <button (click)="pendingDeleteId.set(c.id_contacto_emergencia ?? null)" aria-label="Eliminar contacto" class="btn-icon-sm tone-danger">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                       </button>
                     </div>
                   </div>
@@ -532,11 +488,11 @@ interface Toast {
                   {{ c.nombre }}
                 </h4>
 
-                <div class="h-px bg-slate-100 dark:bg-slate-800 mb-4"></div>
+                <div class="h-px bg-slate-100 dark:bg-slate-900 mb-4"></div>
 
                 <!-- Row 3: Phone -->
                 <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 group-hover:bg-orange-50 dark:group-hover:bg-orange-900/20 transition-colors">
+                  <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-900 flex items-center justify-center shrink-0 group-hover:bg-orange-50 dark:group-hover:bg-orange-900/20 transition-colors">
                     <svg class="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-brand-orange transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                     </svg>
@@ -556,7 +512,7 @@ interface Toast {
               <!-- Añadir otro — divider CTA -->
               <div *ngIf="canEditContactos() && contactos().length > 0"
                    class="lg:col-span-2 xl:col-span-3 flex items-center gap-4 py-1">
-                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-900"></div>
                 <button (click)="initNewContacto()" aria-label="Añadir otro contacto de emergencia"
                     class="group inline-flex items-center gap-2 text-sm font-bold text-slate-400 dark:text-slate-600 hover:text-brand-orange transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange/30 rounded px-1 py-0.5">
                   <svg class="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -564,15 +520,15 @@ interface Toast {
                   </svg>
                   Añadir otro contacto
                 </button>
-                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-900"></div>
               </div>
 
             </div>
 
             <!-- Loading Overlay -->
-            <div *ngIf="loadingContactos" class="absolute inset-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-[2px] z-20 flex items-center justify-center">
-              <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl flex flex-col items-center gap-3">
-                <div class="w-10 h-10 border-4 border-slate-100 dark:border-slate-700 border-t-brand-orange rounded-full animate-spin"></div>
+            <div *ngIf="loadingContactos" class="absolute inset-0 bg-white/70 dark:bg-slate-900/70 z-20 flex items-center justify-center">
+              <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-xl flex flex-col items-center gap-3">
+                <div class="spinner-lg text-brand-orange"></div>
                 <span class="text-xs font-bold text-slate-500 dark:text-slate-400">{{ savingContactos ? 'Guardando...' : 'Cargando...' }}</span>
               </div>
             </div>
@@ -696,8 +652,7 @@ export class PublicadoresContactosComponent {
     downloadingPdf = signal(false);
 
     // Toast feedback
-    toast = signal<Toast | null>(null);
-    private toastTimer: ReturnType<typeof setTimeout> | null = null;
+    private toastSvc = inject(ToastService);
 
     // Inline delete confirmation
     pendingDeleteId = signal<number | null>(null);
@@ -896,10 +851,9 @@ export class PublicadoresContactosComponent {
     }
 
     // ── Toast helper ────────────────────────────────────────
-    private showToast(type: Toast['type'], message: string) {
-        if (this.toastTimer) clearTimeout(this.toastTimer);
-        this.toast.set({ type, message });
-        this.toastTimer = setTimeout(() => this.toast.set(null), 3500);
+    private showToast(type: 'success' | 'error', message: string) {
+        if (type === 'success') this.toastSvc.success(message);
+        else this.toastSvc.error(message);
     }
 
     // ── Form helpers ─────────────────────────────────────────

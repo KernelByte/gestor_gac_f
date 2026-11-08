@@ -17,6 +17,10 @@ import {
   MotivoConsideracion,
   PrecursorConsideracion,
 } from '../../../privilegios/domain/models/precursor-consideracion';
+import { ModalComponent } from '../../../../../shared/components/modal/modal.component';
+import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ConfirmService } from '../../../../../shared/components/confirm-dialog/confirm.service';
+import { ToastService } from '../../../../../shared/components/toast/toast.service';
 import { DatePickerComponent } from '../../../../../shared/components/date-picker/date-picker.component';
 import { whatsappUrl } from '../../../../../shared/whatsapp';
 import { hoyIso } from '../../../../../core/utils/fecha.util';
@@ -29,6 +33,7 @@ import {
 import { environment } from '../../../../../../environments/environment';
 import { formatearNombre, inicialesDe, nombreLegal, nombreMostrado } from '../../../../../core/utils/nombre.util';
 import { FormatoNombreService } from '../../../../../core/utils/formato-nombre.service';
+import { AvisoComponent } from '../../../../../shared/components/aviso/aviso.component';
 
 interface Estado {
   id_estado: number;
@@ -72,7 +77,7 @@ interface TableColumn {
 @Component({
   standalone: true,
   selector: 'app-publicadores-list',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, DatePickerComponent, NuevoPublicadorWizardComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, DatePickerComponent, NuevoPublicadorWizardComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
   templateUrl: './publicadores.page.html',
   styleUrl: './publicadores.page.scss',
 })
@@ -85,6 +90,8 @@ export class PublicadoresListComponent implements OnInit {
   // Público: la plantilla pasa la congregación en contexto al asistente de alta.
   congregacionContext = inject(CongregacionContextService);
   private http = inject(HttpClient);
+  private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
   private accesoApp = inject(AccesoAppService);
   private fb = inject(FormBuilder);
   /** La regla con la que se compone el nombre cuando no hay alias. */
@@ -306,10 +313,18 @@ export class PublicadoresListComponent implements OnInit {
     type: 'success' | 'error' | 'warning' = 'success',
     actions?: { label: string, run: () => void }[]
   ) {
+    // Sin acciones va al sistema de avisos común; con acciones (p. ej. «Ver ficha»)
+    // se queda el aviso propio, porque ToastService aún no admite botones.
+    if (!actions?.length) {
+      if (type === 'success') this.toast.success(text);
+      else if (type === 'warning') this.toast.warning(text);
+      else this.toast.error(text);
+      return;
+    }
     if (this.toastTimer) clearTimeout(this.toastTimer);
     this.toastMessage.set({ text, type, actions });
-    // Con acciones hay que leer y decidir: 3 s no alcanzan.
-    this.toastTimer = setTimeout(() => this.toastMessage.set(null), actions?.length ? 8000 : 3000);
+    // Hay que leer y decidir: 3 s no alcanzan.
+    this.toastTimer = setTimeout(() => this.toastMessage.set(null), 8000);
   }
 
   runToastAction(accion: { label: string, run: () => void }) {
@@ -1558,9 +1573,15 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   // Dirty Check - Warn user if there are unsaved changes
-  tryClosePanel() {
+  async tryClosePanel() {
     if (this.publicadorForm.dirty) {
-      const confirmClose = confirm('Tienes cambios sin guardar. ¿Estás seguro de que quieres cerrar?');
+      const confirmClose = await this.confirm.ask({
+        title: '¿Cerrar sin guardar?',
+        message: 'Tienes cambios sin guardar. ¿Estás seguro de que quieres cerrar?',
+        confirmLabel: 'Cerrar sin guardar',
+        cancelLabel: 'Seguir editando',
+        severity: 'warning',
+      });
       if (confirmClose) {
         this.closePanel();
       }
@@ -1825,7 +1846,7 @@ export class PublicadoresListComponent implements OnInit {
     const roles: { label: string, short: string, type: 'pill' | 'text', class: string }[] = [];
 
     if (roleNames.some(r => r.includes('precursor regular'))) {
-      roles.push({ label: 'PRECURSOR REGULAR', short: 'Prec. Regular', type: 'pill', class: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' });
+      roles.push({ label: 'PRECURSOR REGULAR', short: 'Prec. Regular', type: 'pill', class: 'bg-purple-100 dark:bg-purple-900/30 text-brand-purple dark:text-purple-400' });
     }
     // La consideración especial no se muestra aquí a propósito: es un dato
     // sensible (edad avanzada o salud delicada) y el listado se proyecta y se
@@ -2031,7 +2052,7 @@ export class PublicadoresListComponent implements OnInit {
       this.loadContactos();
     } catch (e) {
       console.error('Error saving contacto', e);
-      alert('Error al guardar contacto');
+      void this.confirm.notify({ title: 'Error al guardar contacto' });
     }
   }
 

@@ -19,6 +19,7 @@ const CATEGORIAS: Record<string, string> = {
 
 @Component({
   selector: 'app-configuracion-exhibidores-page',
+  host: { class: 'tema-exhibidores' },
   standalone: true,
   imports: [CommonModule, FormsModule, PageHeaderComponent, ExhibidoresTabsComponent],
   template: `
@@ -51,7 +52,7 @@ const CATEGORIAS: Record<string, string> = {
                     (click)="setPreferencia(pref.key, op.id)">
               <div class="flex items-center justify-between mb-1">
                 <span class="font-semibold text-sm text-slate-900 dark:text-slate-100">{{ op.label }}</span>
-                <span *ngIf="prefValores()[pref.key] === op.id" class="badge-active !text-[10px]">Activo</span>
+                <span *ngIf="prefValores()[pref.key] === op.id" class="badge-active !text-xs">Activo</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{{ op.description }}</p>
             </button>
@@ -80,7 +81,7 @@ const CATEGORIAS: Record<string, string> = {
                 (click)="aplicarPerfil(p)">
           <div class="flex items-center justify-between mb-1">
             <span class="font-semibold text-sm text-slate-900 dark:text-slate-100">{{ p.label }}</span>
-            <span *ngIf="perfilActivo() === p.id" class="badge-active !text-[10px]">Activo</span>
+            <span *ngIf="perfilActivo() === p.id" class="badge-active !text-xs">Activo</span>
           </div>
           <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{{ p.description }}</p>
         </button>

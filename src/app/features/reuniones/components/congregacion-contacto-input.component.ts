@@ -89,11 +89,11 @@ import { CongregacionContacto } from '../models/discursos.models';
                   {{ c.nombre }}{{ c.activo ? '' : ' · inactiva' }}
                 </span>
                 @if (c.ciudad || c.departamento) {
-                  <span class="text-[0.65rem] text-slate-400 truncate">{{ ubicacion(c) }}</span>
+                  <span class="text-xs text-slate-400 truncate">{{ ubicacion(c) }}</span>
                 }
               </span>
               @if (c.hora_reunion_fin_semana) {
-                <span class="shrink-0 text-[0.65rem] text-slate-400">{{ c.dia_reunion_fin_semana || '' }} {{ c.hora_reunion_fin_semana }}</span>
+                <span class="shrink-0 text-xs text-slate-400">{{ c.dia_reunion_fin_semana || '' }} {{ c.hora_reunion_fin_semana }}</span>
               }
             </button>
           }
@@ -114,14 +114,14 @@ import { CongregacionContacto } from '../models/discursos.models';
            cortaba a la mitad; así los botones caen debajo y todo se lee.
            El nombre no se repite aquí porque está en el campo de arriba. -->
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 px-2 py-1.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-200/70 dark:border-teal-800/50">
-        <span class="text-[0.65rem] leading-tight text-teal-800 dark:text-teal-300">
+        <span class="text-xs leading-tight text-teal-800 dark:text-teal-300">
           No está en el directorio
         </span>
         <button type="button"
           (click)="crearAhora()"
           [disabled]="creando()"
           [title]="'Guardar ' + nombre + ' en el directorio de congregaciones'"
-          class="px-2 h-6 rounded-md bg-teal-600 hover:bg-teal-700 disabled:opacity-60 disabled:cursor-wait text-white text-[0.6rem] font-bold transition-colors active:scale-95">
+          class="px-2 h-6 rounded-md bg-teal-600 hover:bg-teal-700 disabled:opacity-60 disabled:cursor-wait text-white text-xs font-bold transition-colors active:scale-95">
           {{ creando() ? 'Añadiendo…' : 'Añadir' }}
         </button>
         <button type="button"

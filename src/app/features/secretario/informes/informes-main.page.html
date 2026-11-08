@@ -1,15 +1,10 @@
 <div class="flex flex-col gap-3 h-full overflow-hidden p-1 print:!overflow-visible print:!p-0 print:!h-auto">
    <!-- Template de los Tabs para usarlos dinámicamente -->
    <ng-template #tabsNav>
-      <div role="tablist" aria-label="Secciones de informes"
-         class="shrink-0 flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors w-full"
-         style="scrollbar-width: none;">
+      <div role="tablist" aria-label="Secciones de informes" class="tab-nav tab-compact shrink-0 w-full">
          <button type="button" role="tab" *ngFor="let tab of visibleTabs()" (click)="tryChangeTab(tab.id)"
-            [attr.aria-selected]="activeTab() === tab.id" [title]="tab.label"
-            class="flex-1 min-w-0 px-1 h-12 lg:h-9 rounded-lg text-[11px] lg:text-xs font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.97] active:transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
-            [ngClass]="activeTab() === tab.id 
-           ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20'
-           : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+            [attr.aria-selected]="activeTab() === tab.id"
+            class="flex-1 min-w-0 justify-center" [ngClass]="activeTab() === tab.id ? 'tab-item-active' : 'tab-item'">
             <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5" aria-hidden="true">
                <svg *ngIf="tab.id === 'entrada'" class="w-full h-full" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor">
@@ -35,7 +30,7 @@
    <!-- Header Area: Tabs + Stats (Solo Visible arriba si NO estamos en historial) -->
    <div *ngIf="activeTab() !== 'historial'" class="print:hidden flex flex-col sm:flex-row sm:items-start gap-3">
       <!-- Render original de Tabs Navigation si no es historial -->
-      <div class="w-full sm:w-[300px] xl:w-[380px] shrink-0">
+      <div class="w-full sm:w-[22rem] xl:w-[27rem] shrink-0">
          <ng-container *ngTemplateOutlet="tabsNav"></ng-container>
       </div>
       <!-- Unified Filters & Stats (Solo en Entrada Mensual) -->
@@ -55,7 +50,7 @@
       <div *ngIf="activeTab() === 'sucursal'"
          class="flex-1 min-w-0 max-w-full flex justify-start sm:justify-end overflow-visible relative z-20 mt-2 sm:mt-0">
          <div
-            class="shrink-0 flex items-center gap-2 sm:gap-3 px-3 py-2 bg-white dark:bg-[#1a1b26] rounded-2xl shadow-sm dark:shadow-md border border-[#8854FF]/40 dark:border-[#8854FF]/50 transition-colors">
+            class="shrink-0 flex items-center gap-2 sm:gap-3 px-3 py-2 bg-white dark:bg-slate-900 rounded-2xl shadow-sm dark:shadow-md border border-brand-purple/40 dark:border-brand-purple/50 transition-colors">
             <!-- Backdrop para cerrar dropdown -->
             <div *ngIf="sucursalDropdownOpen" (click)="sucursalDropdownOpen = false" class="fixed inset-0 z-10 cursor-default"
                aria-hidden="true"></div>
@@ -74,7 +69,7 @@
                <div class="relative">
                   <button type="button" (click)="sucursalDropdownOpen = !sucursalDropdownOpen"
                      [attr.aria-expanded]="sucursalDropdownOpen" aria-haspopup="true"
-                     class="flex items-center gap-1.5 px-3 py-1.5 md:py-2.5 rounded-lg bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors focus:ring-1 focus:ring-brand-purple border border-slate-200 dark:border-transparent min-w-[110px] justify-between shadow-sm touch-manipulation">
+                     class="min-w-[110px] touch-manipulation btn-secondary btn-sm">
                      <span class="truncate">{{ getMesLabel(selectedMes ?? '') }} {{ selectedAno }}</span>
                      <svg class="w-3.5 h-3.5 text-slate-400 transition-transform shrink-0"
                         [class.rotate-180]="sucursalDropdownOpen" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -88,7 +83,7 @@
                      class="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-[#1e2030] rounded-xl shadow-xl border border-slate-200 dark:border-white/10 overflow-hidden flex divide-x divide-slate-100 dark:divide-white/5 animate-in fade-in slide-in-from-top-1 duration-150">
                      <!-- Columna Año -->
                      <div class="w-20 max-h-[16.5rem] overflow-y-auto p-1.5 flex flex-col gap-0.5" style="scrollbar-width: thin;">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider text-center py-1 mb-1 border-b border-slate-100 dark:border-white/5">Año</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider text-center py-1 mb-1 border-b border-slate-100 dark:border-white/5">Año</p>
                         <button *ngFor="let a of anos" (click)="selectAno(a); sucursalDropdownOpen = false"
                            class="w-full px-1 py-1.5 rounded-md text-xs font-bold transition-all text-center"
                            [ngClass]="selectedAno === a ? 'bg-brand-purple text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'">
@@ -97,7 +92,7 @@
                      </div>
                      <!-- Columna Mes -->
                      <div class="flex-1 max-h-[16.5rem] overflow-y-auto p-1.5 flex flex-col gap-0.5" style="scrollbar-width: thin;">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider pl-2 py-1 mb-1 border-b border-slate-100 dark:border-white/5">Mes</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider pl-2 py-1 mb-1 border-b border-slate-100 dark:border-white/5">Mes</p>
                         <div class="grid grid-cols-2 gap-1">
                            <button *ngFor="let m of meses" (click)="selectMes(m.value); sucursalDropdownOpen = false"
                               class="w-full text-left px-2 py-1.5 rounded-md text-xs font-medium transition-all truncate"
@@ -136,7 +131,7 @@
 
             <!-- Botón Imprimir -->
             <button type="button" (click)="imprimirSucursal()" aria-label="Imprimir resumen"
-               class="h-9 md:h-11 flex items-center gap-1.5 px-3 rounded-lg bg-brand-purple text-white text-xs font-display font-bold hover:bg-purple-700 shadow-md shadow-purple-500/15 hover:shadow-lg hover:shadow-purple-500/20 transition-colors active:scale-[0.97] active:transition-transform touch-manipulation">
+               class="touch-manipulation btn-primary btn-sm">
                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round"
                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -152,17 +147,11 @@
       class="flex-1 min-h-0 overflow-hidden flex flex-col print:!overflow-visible print:!h-auto print:block pt-1 md:pt-0">
       <!-- Tab 1: Entrada Mensual -->
       <div [ngClass]="activeTab() === 'entrada' ? 'flex flex-col gap-3 flex-1 min-h-0 overflow-hidden' : 'hidden'">
-         <!-- Mes ya enviado a la sucursal: se puede corregir, pero solo cambia la tarjeta personal -->
-         <div *ngIf="resumen()?.cierre" role="note"
-              class="shrink-0 flex items-start gap-2 px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-200">
-            <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p class="text-xs sm:text-sm">
-               <strong>Este mes ya se envió a la sucursal.</strong>
-               Los totales del mes son los que se enviaron. Si corriges un informe, el cambio solo queda en la tarjeta de ese publicador.
-            </p>
-         </div>
+         <!-- Mes cerrado (marcado como enviado o cerrado solo): se puede corregir, pero solo cambia la tarjeta personal -->
+         <app-aviso *ngIf="resumen()?.cierre" tone="success" [dense]="true" class="shrink-0 block">
+            <strong>{{ resumen()?.cierre?.origen === 'automatico' ? 'Este mes se cerró solo.' : 'Este mes está marcado como enviado.' }}</strong>
+            Los totales del mes quedaron guardados como estaban. Si corriges un informe, el cambio solo queda en la tarjeta de ese publicador.
+         </app-aviso>
          <!-- Data List/Table Container -->
          <app-informes-table [resumen]="filteredResumen()" [canEdit]="canEditInformes()"
             [autoSaveStatus]="autoSaveStatus()" [hasPendingChanges]="hasPendingChanges()"
@@ -199,42 +188,6 @@
             [puedeCerrar]="canViewResumenSucursalAllGroups()"
             [puedeReabrir]="isAdminOrSecretario()">
          </app-resumen-sucursal>
-      </div>
-   </div>
-
-   <!-- Toast Notification -->
-   <div class="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 left-4 sm:left-auto z-[100] sm:max-w-md" role="status" aria-live="polite">
-      <div *ngIf="toastMessage()" class="animate-fadeInUp flex items-start gap-3 px-5 py-4 rounded-xl shadow-xl border" [ngClass]="toastMessage()?.type === 'success'
-        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:border-emerald-800/60 dark:text-emerald-200'
-        : toastMessage()?.type === 'error'
-        ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-950 dark:border-red-800/60 dark:text-red-200'
-        : 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950 dark:border-blue-800/60 dark:text-blue-200'">
-         <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" aria-hidden="true"
-            [ngClass]="toastMessage()?.type === 'success' ? 'bg-emerald-500' : toastMessage()?.type === 'error' ? 'bg-red-500' : 'bg-blue-500'">
-            <svg *ngIf="toastMessage()?.type === 'success'" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="3">
-               <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            <svg *ngIf="toastMessage()?.type === 'error'" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="3">
-               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <svg *ngIf="toastMessage()?.type === 'info'" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="3">
-               <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-         </div>
-         <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold">{{ toastMessage()?.title }}</p>
-            <p *ngIf="toastMessage()?.text" class="text-xs mt-1 opacity-90 whitespace-pre-line">{{ toastMessage()?.text }}</p>
-         </div>
-         <button type="button" (click)="toastMessage.set(null)" aria-label="Cerrar aviso"
-            class="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-         </button>
       </div>
    </div>
 </div>

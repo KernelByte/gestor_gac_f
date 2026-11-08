@@ -126,7 +126,7 @@ function isoLocal(d: Date): string {
         type="button"
         (click)="theme.toggleTheme()"
         [attr.aria-label]="theme.darkMode() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
-        class="grid place-items-center w-10 h-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-violet-600 dark:hover:text-violet-300 transition shrink-0">
+        class="grid place-items-center w-10 h-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-brand-purple dark:hover:text-violet-300 transition shrink-0">
         @if (theme.darkMode()) {
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>
         } @else {
@@ -138,7 +138,7 @@ function isoLocal(d: Date): string {
 
   @if (cargando()) {
     <div class="flex-1 flex items-center justify-center p-6">
-      <div class="text-center text-violet-600 dark:text-violet-400">
+      <div class="text-center text-brand-purple dark:text-violet-400">
         <span class="spinner mx-auto mb-3"></span>
         <p class="text-sm text-gray-500 dark:text-slate-400">Cargando el programa…</p>
       </div>
@@ -197,7 +197,7 @@ function isoLocal(d: Date): string {
         @for (f of semanaActualFechas(); track f.fecha; let i = $index) {
           <article class="card overflow-hidden h-full flex flex-col" [class.animate-fadeInUp]="true" [style.animation-delay.ms]="i * 70">
             <header class="flex items-center gap-3 px-4 sm:px-5 py-2 bg-gray-50 dark:bg-slate-900/60 border-b border-gray-200 dark:border-slate-700">
-              <span class="grid place-items-center w-9 h-9 rounded-lg bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-300 shrink-0">
+              <span class="grid place-items-center w-9 h-9 rounded-lg bg-violet-50 dark:bg-violet-950/40 text-brand-purple dark:text-violet-300 shrink-0">
                 @if (f.tipoReunion === 'entre_semana') {
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
                 } @else {
@@ -205,7 +205,7 @@ function isoLocal(d: Date): string {
                 }
               </span>
               <div class="min-w-0">
-                <p class="text-[11px] font-bold uppercase tracking-wide text-gray-400 dark:text-slate-500">
+                <p class="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-slate-500">
                   {{ f.tipoReunion === 'entre_semana' ? 'Entre semana' : 'Fin de semana' }}
                 </p>
                 <p class="font-display font-bold text-base sm:text-lg text-gray-900 dark:text-slate-100 tracking-tight">{{ f.diaSemana }}, {{ f.fechaLarga }}</p>
@@ -218,14 +218,14 @@ function isoLocal(d: Date): string {
                   <div>
                     <div class="flex items-center gap-1.5 mb-1.5">
                       <span class="w-1.5 h-1.5 rounded-full bg-sky-500 dark:bg-sky-400"></span>
-                      <p class="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-slate-400">Apoyo en auditorio</p>
+                      <p class="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-slate-400">Apoyo en auditorio</p>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       @for (fila of f.filasApoyo; track fila.etiqueta) {
                         <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/70 dark:bg-slate-900/50 px-2.5 py-2 flex flex-col gap-0.5">
                           <div class="flex items-center gap-1.5 text-gray-400 dark:text-slate-500">
                             <ng-container [ngTemplateOutlet]="iconoRol" [ngTemplateOutletContext]="{ $implicit: fila.icono }"></ng-container>
-                            <span class="text-[10px] font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
+                            <span class="text-xs font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
                           </div>
                           <div class="flex flex-col gap-0.5">
                             @for (nombre of fila.nombres; track nombre) {
@@ -242,14 +242,14 @@ function isoLocal(d: Date): string {
                   <div>
                     <div class="flex items-center gap-1.5 mb-1.5">
                       <span class="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400"></span>
-                      <p class="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-slate-400">Técnica</p>
+                      <p class="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-slate-400">Técnica</p>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       @for (fila of f.filasTecnica; track fila.etiqueta) {
                         <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/70 dark:bg-slate-900/50 px-2.5 py-2 flex flex-col gap-0.5">
                           <div class="flex items-center gap-1.5 text-gray-400 dark:text-slate-500">
                             <ng-container [ngTemplateOutlet]="iconoRol" [ngTemplateOutletContext]="{ $implicit: fila.icono }"></ng-container>
-                            <span class="text-[10px] font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
+                            <span class="text-xs font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
                           </div>
                           <div class="flex flex-col gap-0.5">
                             @for (nombre of fila.nombres; track nombre) {
@@ -266,14 +266,14 @@ function isoLocal(d: Date): string {
                   <div>
                     <div class="flex items-center gap-1.5 mb-1.5">
                       <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
-                      <p class="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-slate-400">Grupos</p>
+                      <p class="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-slate-400">Grupos</p>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       @for (fila of f.filasGrupos; track fila.etiqueta) {
                         <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/70 dark:bg-slate-900/50 px-2.5 py-2 flex flex-col gap-0.5" [class.col-span-full]="f.filasGrupos.length === 1">
                           <div class="flex items-center gap-1.5 text-gray-400 dark:text-slate-500">
                             <ng-container [ngTemplateOutlet]="iconoRol" [ngTemplateOutletContext]="{ $implicit: fila.icono }"></ng-container>
-                            <span class="text-[10px] font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
+                            <span class="text-xs font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
                           </div>
                           <span class="text-sm font-bold text-gray-900 dark:text-slate-100 leading-snug">{{ fila.nombres[0] }}</span>
                         </div>
@@ -326,7 +326,7 @@ function isoLocal(d: Date): string {
               </div>
 
               <div class="flex items-center gap-3 mb-6">
-                <span class="grid place-items-center w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-300 shrink-0">
+                <span class="grid place-items-center w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-950/40 text-brand-purple dark:text-violet-300 shrink-0">
                   @if (f.tipoReunion === 'entre_semana') {
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
                   } @else {
@@ -334,7 +334,7 @@ function isoLocal(d: Date): string {
                   }
                 </span>
                 <div class="min-w-0">
-                  <p class="text-[11px] font-bold uppercase tracking-wide text-gray-400 dark:text-slate-500">
+                  <p class="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-slate-500">
                     {{ f.tipoReunion === 'entre_semana' ? 'Entre semana' : 'Fin de semana' }}
                   </p>
                   <p class="font-display font-bold text-xl text-gray-900 dark:text-slate-100 tracking-tight">{{ f.diaSemana }}, {{ f.fechaLarga }}</p>
@@ -352,7 +352,7 @@ function isoLocal(d: Date): string {
                       <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60 px-3.5 py-3 flex flex-col gap-1">
                         <div class="flex items-center gap-1.5 text-gray-400 dark:text-slate-500">
                           <ng-container [ngTemplateOutlet]="iconoRol" [ngTemplateOutletContext]="{ $implicit: fila.icono }"></ng-container>
-                          <span class="text-[10px] font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
+                          <span class="text-xs font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
                         </div>
                         <div class="flex flex-col gap-0.5">
                           @for (nombre of fila.nombres; track nombre) {
@@ -376,7 +376,7 @@ function isoLocal(d: Date): string {
                       <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60 px-3.5 py-3 flex flex-col gap-1">
                         <div class="flex items-center gap-1.5 text-gray-400 dark:text-slate-500">
                           <ng-container [ngTemplateOutlet]="iconoRol" [ngTemplateOutletContext]="{ $implicit: fila.icono }"></ng-container>
-                          <span class="text-[10px] font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
+                          <span class="text-xs font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
                         </div>
                         <div class="flex flex-col gap-0.5">
                           @for (nombre of fila.nombres; track nombre) {
@@ -400,7 +400,7 @@ function isoLocal(d: Date): string {
                       <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60 px-3.5 py-3 flex flex-col gap-1" [class.col-span-2]="f.filasGrupos.length === 1">
                         <div class="flex items-center gap-1.5 text-gray-400 dark:text-slate-500">
                           <ng-container [ngTemplateOutlet]="iconoRol" [ngTemplateOutletContext]="{ $implicit: fila.icono }"></ng-container>
-                          <span class="text-[10px] font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
+                          <span class="text-xs font-bold uppercase tracking-wide">{{ fila.etiqueta }}</span>
                         </div>
                         <span class="text-sm font-bold text-gray-900 dark:text-slate-100 leading-snug">{{ fila.nombres[0] }}</span>
                       </div>
@@ -410,7 +410,7 @@ function isoLocal(d: Date): string {
               }
 
               <div class="mt-6 pt-4 border-t border-gray-100 dark:border-slate-800 text-center">
-                <p class="text-[10px] text-gray-400 dark:text-slate-500 tracking-wide">Sistema GAC · Programa de logística</p>
+                <p class="text-xs text-gray-400 dark:text-slate-500 tracking-wide">Sistema GAC · Programa de logística</p>
               </div>
             </div>
           </div>

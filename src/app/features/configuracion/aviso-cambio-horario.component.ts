@@ -41,7 +41,7 @@ const CLAVE_MAS_TARDE = 'gac.aviso-cambio-horario.mas-tarde';
          </div>
          <div class="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
             <a routerLink="/configuracion" [queryParams]="{ 'cambio-horario': 1 }"
-               class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-purple px-5 text-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-out hover:bg-purple-700 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/30">
+               class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-purple px-5 text-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-out hover:bg-[#5b21b6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-purple/30">
                {{ r.atrasado ? 'Sí, cambió' : 'Sí, cambia' }}
             </a>
             <button type="button" (click)="sinCambio(r.ano)" [disabled]="trabajando()"

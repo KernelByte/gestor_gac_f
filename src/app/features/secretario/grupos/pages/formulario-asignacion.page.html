@@ -1,11 +1,11 @@
-<div class="asig">
+<div class="asig tema-publicadores">
 
   <!-- Anuncios para lectores de pantalla (mover, descartar, guardar) -->
   <div class="sr-only" aria-live="polite" aria-atomic="true">{{ liveAnnouncement() }}</div>
 
   <!-- ── Cabecera ───────────────────────────────────────────────────── -->
   <header class="cab">
-    <button type="button" class="ctrl cab-volver" (click)="volver()" aria-label="Volver a la lista de grupos">
+    <button type="button" class="btn-secondary cab-volver" (click)="volver()" aria-label="Volver a la lista de grupos">
       <lucide-icon name="arrow-left" [size]="16" aria-hidden="true"></lucide-icon>
       <span class="cab-volver-texto">Grupos</span>
     </button>
@@ -36,11 +36,11 @@
     @if (estadoCarga() === 'listo') {
       <div class="cab-acciones">
         @if (totalCambios() > 0) {
-          <button type="button" class="ctrl" (click)="descartarCambios()" [disabled]="saving()">
+          <button type="button" class="btn-secondary" (click)="descartarCambios()" [disabled]="saving()">
             Descartar cambios
           </button>
         }
-        <button type="button" class="btn-primario" (click)="save()" [disabled]="saving() || totalCambios() === 0">
+        <button type="button" class="btn-primary" (click)="save()" [disabled]="saving() || totalCambios() === 0">
           @if (saving()) {
             <span class="spinner" aria-hidden="true"></span>
             Guardando…
@@ -62,9 +62,9 @@
         <p class="aviso-detalle">Si sales ahora, el grupo queda como estaba.</p>
       </div>
       <div class="aviso-acciones">
-        <button type="button" class="ctrl ctrl-sm" (click)="confirmarSalida.set(false)">Seguir editando</button>
-        <button type="button" class="ctrl ctrl-sm ctrl-peligro" (click)="salirSinGuardar()">Salir sin guardar</button>
-        <button type="button" class="btn-primario ctrl-sm" (click)="save()" [disabled]="saving()">Guardar y salir</button>
+        <button type="button" class="btn-secondary btn-sm" (click)="confirmarSalida.set(false)">Seguir editando</button>
+        <button type="button" class="btn-ghost-danger btn-sm" (click)="salirSinGuardar()">Salir sin guardar</button>
+        <button type="button" class="btn-primary btn-sm" (click)="save()" [disabled]="saving()">Guardar y salir</button>
       </div>
     </div>
   }
@@ -77,8 +77,8 @@
         <p class="aviso-detalle">{{ mensaje }}</p>
       </div>
       <div class="aviso-acciones">
-        <button type="button" class="ctrl ctrl-sm" (click)="errorGuardado.set(null)">Cerrar</button>
-        <button type="button" class="btn-primario ctrl-sm" (click)="save()" [disabled]="saving()">
+        <button type="button" class="btn-secondary btn-sm" (click)="errorGuardado.set(null)">Cerrar</button>
+        <button type="button" class="btn-primary btn-sm" (click)="save()" [disabled]="saving()">
           <lucide-icon name="refresh-cw" [size]="13" aria-hidden="true"></lucide-icon>
           Reintentar
         </button>
@@ -118,8 +118,8 @@
         <h2 class="estado-titulo">No se pudo cargar el grupo</h2>
         <p class="estado-texto">Revisa tu conexión y vuelve a intentarlo. Si el problema sigue, el grupo puede haber sido eliminado.</p>
         <div class="estado-acciones">
-          <button type="button" class="ctrl" (click)="goBack()">Volver a grupos</button>
-          <button type="button" class="btn-primario" (click)="loadData()">
+          <button type="button" class="btn-secondary" (click)="goBack()">Volver a grupos</button>
+          <button type="button" class="btn-primary" (click)="loadData()">
             <lucide-icon name="refresh-cw" [size]="14" aria-hidden="true"></lucide-icon>
             Reintentar
           </button>
@@ -129,18 +129,18 @@
 
     @case ('listo') {
       <!-- Pestañas: solo en pantallas estrechas -->
-      <div class="pestanas" role="tablist" aria-label="Paneles de asignación">
-        <button type="button" role="tab" class="pestana" id="tab-available"
+      <div class="pestanas tab-nav w-full" role="tablist" aria-label="Paneles de asignación">
+        <button type="button" role="tab" class="tab-item" id="tab-available"
           [attr.aria-selected]="activeTab() === 'available'" aria-controls="panel-available"
           (click)="activeTab.set('available')">
           Sin grupo
-          <span class="pestana-total">{{ totalDe('available') }}</span>
+          <span class="tab-count">{{ totalDe('available') }}</span>
         </button>
-        <button type="button" role="tab" class="pestana" id="tab-members"
+        <button type="button" role="tab" class="tab-item" id="tab-members"
           [attr.aria-selected]="activeTab() === 'members'" aria-controls="panel-members"
           (click)="activeTab.set('members')">
           Miembros
-          <span class="pestana-total">{{ totalDe('members') }}</span>
+          <span class="tab-count">{{ totalDe('members') }}</span>
         </button>
       </div>
 
@@ -173,19 +173,19 @@
       <!-- Barra de acciones: solo en pantallas estrechas -->
       <div class="barra-movil">
         @if (activeTab() === 'available') {
-          <button type="button" class="ctrl ctrl-mover" (click)="moverDesdeBarra()" [disabled]="!hasAvailableSelected()">
+          <button type="button" class="btn-secondary ctrl-mover" (click)="moverDesdeBarra()" [disabled]="!hasAvailableSelected()">
             <lucide-icon name="user-plus" [size]="16" aria-hidden="true"></lucide-icon>
             Agregar al grupo
             @if (seleccionDisponibles() > 0) { <span class="contador">{{ seleccionDisponibles() }}</span> }
           </button>
         } @else {
-          <button type="button" class="ctrl" (click)="moverDesdeBarra()" [disabled]="!hasMembersSelected()">
+          <button type="button" class="btn-secondary" (click)="moverDesdeBarra()" [disabled]="!hasMembersSelected()">
             <lucide-icon name="arrow-left" [size]="16" aria-hidden="true"></lucide-icon>
             Quitar del grupo
             @if (seleccionMiembros() > 0) { <span class="contador">{{ seleccionMiembros() }}</span> }
           </button>
         }
-        <button type="button" class="btn-primario" (click)="save()" [disabled]="saving() || totalCambios() === 0">
+        <button type="button" class="btn-primary" (click)="save()" [disabled]="saving() || totalCambios() === 0">
           @if (saving()) {
             <span class="spinner" aria-hidden="true"></span>
             Guardando…
@@ -299,7 +299,7 @@
               <lucide-icon name="search" [size]="22" class="vacio-icono" aria-hidden="true"></lucide-icon>
               <p class="vacio-titulo">Nadie coincide con «{{ busquedaDe(panel) }}»</p>
               <p class="vacio-texto">Prueba con otro nombre o apellido.</p>
-              <button type="button" class="ctrl ctrl-sm" (click)="limpiarBusqueda(panel)">Limpiar búsqueda</button>
+              <button type="button" class="btn-secondary btn-sm" (click)="limpiarBusqueda(panel)">Limpiar búsqueda</button>
             } @else if (panel === 'available') {
               <lucide-icon name="check-circle-2" [size]="22" class="vacio-icono vacio-icono--pos" aria-hidden="true"></lucide-icon>
               <p class="vacio-titulo">Todos los publicadores tienen grupo</p>
@@ -315,12 +315,4 @@
       </ul>
     </section>
   </ng-template>
-
-  <!-- Confirmación de guardado -->
-  @if (showSuccess()) {
-    <div class="toast" role="status">
-      <lucide-icon name="check-circle-2" [size]="18" class="toast-icono" aria-hidden="true"></lucide-icon>
-      Asignación guardada. Volviendo a grupos…
-    </div>
-  }
 </div>

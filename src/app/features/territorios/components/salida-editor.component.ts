@@ -1,6 +1,7 @@
 import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { TimePickerComponent } from '../../../shared/components/time-picker/time-picker.component';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import { DIAS, GrupoOpcion, PersonaRef, SalidaForm } from '../services/salidas-programa.service';
@@ -14,28 +15,15 @@ import { PuntoSalidaOpcion } from '../models/territorio.model';
 @Component({
   standalone: true,
   selector: 'app-salida-editor',
-  imports: [CommonModule, FormsModule, SelectPickerComponent, TimePickerComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, SelectPickerComponent, TimePickerComponent],
   template: `
-    <div class="fixed inset-0 z-[120] flex justify-end">
-      <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] anim-fade" (click)="cancelar.emit()"></div>
-
-      <aside class="relative w-full sm:max-w-md h-full bg-white dark:bg-slate-800 sm:border-l border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col anim-panel"
-             role="dialog" aria-modal="true" [attr.aria-label]="titulo">
-        <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-3">
-          <div>
-            <h3 class="text-base font-black text-slate-900 dark:text-white">{{ titulo }}</h3>
-            @if (subtitulo) { <p class="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">{{ subtitulo }}</p> }
-          </div>
-          <button (click)="cancelar.emit()" title="Cerrar" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </header>
-
-        <div class="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+    <app-modal [open]="true" variant="drawer" size="md" [title]="titulo" [subtitle]="subtitulo"
+               [hasFooter]="true" (openChange)="$event || cancelar.emit()">
+        <div class="space-y-5">
           <!-- Cuándo -->
           @if (modo === 'plantilla') {
             <div>
-              <label class="lbl">Día</label>
+              <label class="form-label">Día</label>
               <div class="grid grid-cols-7 gap-1.5">
                 @for (d of dias; track $index) {
                   <button type="button" (click)="form.dia_semana = $index + 1" [title]="d"
@@ -48,61 +36,61 @@ import { PuntoSalidaOpcion } from '../models/territorio.model';
             </div>
           } @else {
             <div>
-              <label class="lbl" for="se-fecha">Fecha</label>
-              <input id="se-fecha" type="date" [(ngModel)]="form.fecha_programada" class="campo" />
+              <label class="form-label" for="se-fecha">Fecha</label>
+              <input id="se-fecha" type="date" [(ngModel)]="form.fecha_programada" class="form-control" />
             </div>
           }
           <div>
-            <span class="lbl">Hora</span>
+            <span class="form-label">Hora</span>
             <app-time-picker colorScheme="emerald" [(ngModel)]="form.hora_inicio" />
           </div>
 
           <!-- Dónde -->
           <!-- Un solo campo: el lugar de reunión ES el punto de salida; si no es un punto marcado (Zoom, una casa), se escribe -->
           <div>
-            <span class="lbl">Lugar de reunión</span>
+            <span class="form-label">Lugar de reunión</span>
             @if (!otroLugar() && opcionesPunto().length) {
               <app-select-picker colorScheme="emerald" ariaLabel="Lugar de reunión" [(ngModel)]="form.id_punto_salida"
                 (ngModelChange)="alElegirPunto($event)" [options]="opcionesPunto()" placeholder="Elija el punto de salida" />
-              <button type="button" (click)="usarOtroLugar()" class="mt-2 text-[13px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline">Es otro lugar (Zoom, una casa…)</button>
+              <button type="button" (click)="usarOtroLugar()" class="mt-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:underline">Es otro lugar (Zoom, una casa…)</button>
             } @else {
-              <input id="se-lugar" type="text" [(ngModel)]="form.lugar" maxlength="200" placeholder="Ej.: Zoom, Familia Sierra, Salón del Reino" class="campo" />
+              <input id="se-lugar" type="text" [(ngModel)]="form.lugar" maxlength="200" placeholder="Ej.: Zoom, Familia Sierra, Salón del Reino" class="form-control" />
               @if (opcionesPunto().length) {
-                <button type="button" (click)="usarPunto()" class="mt-2 text-[13px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline">Elegir un punto de salida</button>
+                <button type="button" (click)="usarPunto()" class="mt-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:underline">Elegir un punto de salida</button>
               } @else {
-                <p class="ayuda">Aún no hay puntos de salida. Márquelos en el mapa de cada tarjeta y podrá elegirlos aquí.</p>
+                <p class="form-helper">Aún no hay puntos de salida. Márquelos en el mapa de cada tarjeta y podrá elegirlos aquí.</p>
               }
             }
           </div>
 
           <!-- Quién -->
           <div>
-            <label class="lbl">Grupos <span class="opc">(opcional)</span></label>
+            <label class="form-label">Grupos <span class="opc">(opcional)</span></label>
             @if (grupos.length) {
               <div class="flex flex-wrap gap-1.5">
                 @for (g of grupos; track g.id_grupo) {
                   <button type="button" (click)="alternarGrupo(g)"
-                    class="h-9 px-3 rounded-full text-[13px] font-semibold border transition-colors"
+                    class="h-9 px-3 rounded-full text-sm font-semibold border transition-colors"
                     [class]="tieneGrupo(g.id_grupo) ? 'bg-emerald-50 border-emerald-300 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-200' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300'">
                     {{ g.nombre }}
                   </button>
                 }
               </div>
-              <p class="ayuda">Al elegir un grupo se agrega su capitán.</p>
+              <p class="form-helper">Al elegir un grupo se agrega su capitán.</p>
             } @else {
-              <p class="ayuda">La congregación todavía no tiene grupos.</p>
+              <p class="form-helper">La congregación todavía no tiene grupos.</p>
             }
           </div>
 
           <div>
-            <label class="lbl" for="se-capitan">Capitanes</label>
+            <label class="form-label" for="se-capitan">Capitanes</label>
             @if (modo === 'plantilla') {
-              <p class="-mt-0.5 mb-2 text-[12px] leading-snug text-slate-500 dark:text-slate-400">Opcional. Si lo deja vacío, al crear el programa se turnan los habilitados como capitán.</p>
+              <p class="-mt-0.5 mb-2 text-xs leading-snug text-slate-500 dark:text-slate-400">Opcional. Si lo deja vacío, al crear el programa se turnan los habilitados como capitán.</p>
             }
             @if (capitanes().length) {
               <div class="flex flex-wrap gap-1.5 mb-2">
                 @for (c of capitanes(); track c.id_publicador) {
-                  <span class="chip-cap inline-flex items-center gap-1 h-9 pl-3 pr-1 rounded-full bg-emerald-50 dark:bg-emerald-900/25 border border-emerald-200 dark:border-emerald-800/60 text-[13px] font-semibold text-emerald-900 dark:text-emerald-100">
+                  <span class="chip-cap inline-flex items-center gap-1 h-9 pl-3 pr-1 rounded-full bg-emerald-50 dark:bg-emerald-900/25 border border-emerald-200 dark:border-emerald-800/60 text-sm font-semibold text-emerald-900 dark:text-emerald-100">
                     {{ c.nombre }}
                     <button type="button" (click)="quitarCapitan(c.id_publicador)" [attr.aria-label]="'Quitar a ' + c.nombre"
                       class="w-7 h-7 rounded-full flex items-center justify-center text-emerald-700/70 dark:text-emerald-300/70 hover:text-red-600 hover:bg-white dark:hover:bg-slate-700 transition-colors">
@@ -123,7 +111,7 @@ import { PuntoSalidaOpcion } from '../models/territorio.model';
                 (keydown.arrowdown)="mover($event, 1)" (keydown.arrowup)="mover($event, -1)"
                 (keydown.enter)="$event.preventDefault(); elegirActual()" (keydown.escape)="cerrarLista($event)"
                 [placeholder]="habilitados.length ? 'Buscar o elegir de la lista' : 'Escriba un nombre para agregar'"
-                class="campo !pl-10 !pr-10" />
+                class="form-control !pl-10 !pr-10" />
               <button type="button" tabindex="-1" (mousedown)="$event.preventDefault()" (click)="abierto() ? abierto.set(false) : abrir(); inputCap.focus()"
                 [attr.aria-label]="abierto() ? 'Cerrar la lista' : 'Abrir la lista'"
                 class="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -134,7 +122,7 @@ import { PuntoSalidaOpcion } from '../models/territorio.model';
                 <ul id="se-capitan-lista" role="listbox" class="lista-cap absolute z-20 left-0 right-0 mt-1.5 max-h-64 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl p-1">
                   @for (o of opcionesCap(); track o.p.id_publicador; let i = $index) {
                     @if (o.cabecera) {
-                      <li role="presentation" class="px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ o.cabecera }}</li>
+                      <li role="presentation" class="px-3 pt-2 pb-1 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ o.cabecera }}</li>
                     }
                     <li role="option" [attr.aria-selected]="i === indice()">
                       <button type="button" tabindex="-1" (mousedown)="$event.preventDefault()" (click)="agregarCapitan(o.p); inputCap.focus()" (mouseenter)="indice.set(i)"
@@ -152,64 +140,50 @@ import { PuntoSalidaOpcion } from '../models/territorio.model';
             <!-- Con la lista abierta se reserva su alto: así el panel se desplaza y la lista se ve completa -->
             @if (abierto()) { <div class="h-64" aria-hidden="true"></div> }
             @if (!habilitados.length) {
-              <p class="ayuda">Nadie tiene aún el permiso «Cap. Predicación» (Reuniones → Configuración); puede buscar a cualquier publicador.</p>
+              <p class="form-helper">Nadie tiene aún el permiso «Cap. Predicación» (Reuniones → Configuración); puede buscar a cualquier publicador.</p>
             } @else {
-              <p class="ayuda">Salen primero los habilitados como capitán de predicación; escriba para buscar a cualquier otro publicador.</p>
+              <p class="form-helper">Salen primero los habilitados como capitán de predicación; escriba para buscar a cualquier otro publicador.</p>
             }
           </div>
 
           <!-- Dónde se predica: primero el barrio; de aquí salen las manzanas que se le sugieren a la salida -->
           <div>
-            <span class="lbl">Barrio donde se predica <span class="opc">(opcional)</span></span>
+            <span class="form-label">Barrio donde se predica <span class="opc">(opcional)</span></span>
             <app-select-picker colorScheme="emerald" ariaLabel="Barrio" [(ngModel)]="form.id_sector"
               [options]="opcionesBarrio()" placeholder="Cualquiera: sigue el recorrido" />
-            <p class="ayuda">Se le sugerirán las manzanas que siguen en ese barrio. Si lo deja vacío, las que siguen en el recorrido general.</p>
+            <p class="form-helper">Se le sugerirán las manzanas que siguen en ese barrio. Si lo deja vacío, las que siguen en el recorrido general.</p>
           </div>
 
           <div>
-            <label class="lbl" for="se-notas">Notas <span class="opc">(opcional)</span></label>
-            <input id="se-notas" type="text" [(ngModel)]="form.notas" placeholder="Ej.: traer tarjetas de invitación" class="campo" />
+            <label class="form-label" for="se-notas">Notas <span class="opc">(opcional)</span></label>
+            <input id="se-notas" type="text" [(ngModel)]="form.notas" placeholder="Ej.: traer tarjetas de invitación" class="form-control" />
           </div>
         </div>
 
-        <footer class="px-5 py-4 border-t border-slate-100 dark:border-slate-700/60 flex items-center gap-2">
+        <ng-container slot="footer">
           @if (puedeEliminar) {
-            @if (!confirmarEliminar()) {
-              <button type="button" (click)="confirmarEliminar.set(true)" class="h-11 px-4 rounded-xl text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">Quitar</button>
-            } @else {
-              <button type="button" (click)="eliminar.emit()" class="h-11 px-4 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition-colors">Sí, quitar</button>
-            }
+            <div class="mr-auto">
+              @if (!confirmarEliminar()) {
+                <button type="button" (click)="confirmarEliminar.set(true)" class="btn-ghost-danger">Quitar</button>
+              } @else {
+                <button type="button" (click)="eliminar.emit()" class="btn-danger">Sí, quitar</button>
+              }
+            </div>
           }
-          <button type="button" (click)="cancelar.emit()" class="ml-auto h-11 px-4 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
-          <button type="button" (click)="enviar()" [disabled]="!valido() || guardando"
-            class="h-11 px-5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition-[background-color,transform] active:scale-[0.97]">
+          <button type="button" (click)="cancelar.emit()" class="btn-ghost">Cancelar</button>
+          <button type="button" (click)="enviar()" [disabled]="!valido() || guardando" class="btn-primary">
             {{ guardando ? 'Guardando…' : 'Guardar' }}
           </button>
-        </footer>
-      </aside>
-    </div>
+        </ng-container>
+    </app-modal>
   `,
   styles: [`
-    .lbl { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: rgb(51 65 85); }
-    :host-context(.dark) .lbl { color: rgb(226 232 240); }
     .opc { font-weight: 500; color: rgb(148 163 184); }
-    .ayuda { margin-top: 6px; font-size: 12px; color: rgb(100 116 139); }
-    :host-context(.dark) .ayuda { color: rgb(148 163 184); }
-    .campo {
-      width: 100%; height: 44px; padding: 0 12px; border-radius: 12px; font-size: 15px;
-      border: 1px solid rgb(203 213 225); background: #fff; color: rgb(15 23 42);
-    }
-    .campo:focus { outline: none; border-color: rgb(16 185 129); box-shadow: 0 0 0 3px rgba(16,185,129,0.2); }
-    :host-context(.dark) .campo { background: rgb(51 65 85); border-color: rgb(71 85 105); color: #fff; }
     .lista-cap { transform-origin: top center; animation: lista 140ms cubic-bezier(0.23, 1, 0.32, 1); }
     .chip-cap { animation: chip 160ms cubic-bezier(0.23, 1, 0.32, 1); }
     @keyframes lista { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
     @keyframes chip { from { opacity: 0; transform: scale(0.92); } }
-    .anim-fade { animation: fade 160ms ease-out; }
-    .anim-panel { animation: panel 220ms cubic-bezier(0.32, 0.72, 0, 1); }
-    @keyframes fade { from { opacity: 0; } }
-    @keyframes panel { from { transform: translateX(24px); opacity: 0; } }
-    @media (prefers-reduced-motion: reduce) { .anim-fade, .anim-panel, .lista-cap, .chip-cap { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .lista-cap, .chip-cap { animation: none; } }
   `],
 })
 export class SalidaEditorComponent implements OnInit {

@@ -129,7 +129,7 @@ function iconoPin(color: string, contenido: string): L.DivIcon {
               aria-label="Ir a mi ubicación"
               (click)="irAMiUbicacion()">
         <span *ngIf="buscandoUbicacion()"
-              class="w-4 h-4 rounded-full border-2 border-slate-300 border-t-emerald-500 animate-spin"></span>
+              class="spinner-sm text-emerald-500"></span>
         <svg *ngIf="!buscandoUbicacion()" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/>

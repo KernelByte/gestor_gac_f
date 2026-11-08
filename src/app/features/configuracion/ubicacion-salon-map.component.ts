@@ -49,27 +49,27 @@ function iconoPin(): L.DivIcon {
       @if (!readonly) {
         @if (bloqueado()) {
           <button type="button" (click)="empezarCambio()"
-            class="inline-flex items-center justify-center h-11 px-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition-[background-color,transform] duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25">
+            class="btn-secondary">
             Cambiar ubicación
           </button>
         } @else {
           <button type="button" (click)="buscarDireccion()" [disabled]="buscando()"
-            class="inline-flex items-center justify-center h-11 px-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition-[background-color,transform] duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25">
+            class="btn-secondary">
             {{ buscando() ? 'Buscando…' : 'Buscar la dirección escrita' }}
           </button>
           @if (editando()) {
             <button type="button" (click)="terminarCambio()"
-              class="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-brand-purple text-white text-sm font-semibold hover:bg-purple-700 active:scale-[0.98] transition-[background-color,transform] duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/30">
+              class="btn-primary">
               Listo
             </button>
             <button type="button" (click)="cancelarCambio()"
-              class="inline-flex items-center justify-center h-11 px-4 rounded-xl text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+              class="inline-flex items-center justify-center h-11 px-4 rounded-xl text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-purple/25 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
               Cancelar
             </button>
           }
           @if (tienePunto()) {
             <button type="button" (click)="quitar()"
-              class="inline-flex items-center justify-center h-11 px-4 rounded-xl text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10">
+              class="btn-ghost-danger">
               Quitar ubicación
             </button>
           }
@@ -77,7 +77,7 @@ function iconoPin(): L.DivIcon {
       }
       @if (tienePunto()) {
         <a [href]="enlaceMapa()" target="_blank" rel="noopener"
-          class="inline-flex items-center justify-center h-11 px-4 rounded-xl text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25 text-brand-purple dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-500/10">
+          class="inline-flex items-center justify-center h-11 px-4 rounded-xl text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-purple/25 text-brand-purple dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-500/10">
           Abrir en Google Maps
         </a>
       }
@@ -90,9 +90,9 @@ function iconoPin(): L.DivIcon {
           <input id="coordenadas-salon" type="text" inputmode="decimal" autocomplete="off"
             [value]="textoCoord()" (input)="textoCoord.set($any($event.target).value)" (keydown.enter)="[$event.preventDefault(), usarCoordenadas()]"
             placeholder="Ejemplo: 4.711000, -74.072000"
-            class="flex-1 min-w-[220px] h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-base text-slate-800 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25" />
+            class="form-control flex-1 min-w-[220px]" />
           <button type="button" (click)="usarCoordenadas()"
-            class="inline-flex items-center justify-center h-11 px-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition-[background-color,transform] duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25">
+            class="btn-secondary">
             Ubicar en el mapa
           </button>
         </div>

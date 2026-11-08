@@ -100,7 +100,7 @@ type Situacion =
     }
     .sugerencia.activa { background: color-mix(in oklch, var(--acento) 12%, transparent); color: var(--txt-1); }
     .sugerencia.actual { color: var(--txt-3); cursor: default; }
-    .sugerencia .aqui { font-size: 0.6875rem; color: var(--txt-3); }
+    .sugerencia .aqui { font-size: 0.75rem; color: var(--txt-3); }
     .sugerencias .sin-resultados { padding: 0.5rem 0.625rem; font-size: 0.8125rem; color: var(--txt-3); }
 
     .paginador { display: flex; align-items: center; gap: 0.375rem; }
@@ -208,7 +208,7 @@ type Situacion =
     .acciones { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0.75rem; }
     .campo { display: flex; flex-direction: column; gap: 0.3125rem; }
     .campo-rotulo {
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -254,7 +254,7 @@ type Situacion =
     }
     .situacion-icono svg { width: 0.8125rem; height: 0.8125rem; }
     .situacion-titulo {
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -335,7 +335,7 @@ type Situacion =
     .tabla thead th:nth-child(5) { width: 4.25rem; }
     .tabla th, .tabla td { padding: 0.5rem 0.75rem; vertical-align: top; }
     .tabla thead th {
-      font-size: 0.625rem;
+      font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -408,7 +408,7 @@ type Situacion =
       .tabla tbody tr:first-child > td { box-shadow: inset 0 1px 0 var(--linea-suave); }
       .tabla tbody td[data-label]::before {
         content: attr(data-label);
-        font-size: 0.625rem;
+        font-size: 0.75rem;
         font-weight: 600;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -519,7 +519,6 @@ type Situacion =
     }
     .tabla-scroll:focus-visible { outline: 2px solid var(--acento); outline-offset: -2px; }
 
-    .esqueleto { border-radius: 0.75rem; background: color-mix(in oklch, var(--linea) 55%, transparent); }
 
     /* Una sola entrada al cargar (y al cambiar de precursor con ← →): la
        pantalla cambia de contenido, no de sitio. */
@@ -872,18 +871,18 @@ type Situacion =
           </div>
         </div>
       } @else {
-        <div class="space-y-5 animate-pulse motion-reduce:animate-none" aria-busy="true">
+        <div class="space-y-5" aria-busy="true">
           <p class="sr-only" role="status">Cargando el detalle del precursor…</p>
-          <div class="h-16 esqueleto w-2/3"></div>
-          <div class="h-20 esqueleto"></div>
+          <div class="h-16 skeleton w-2/3"></div>
+          <div class="h-20 skeleton"></div>
           <div class="kpis-grid">
             @for (i of [1, 2, 3, 4, 5]; track i) {
-              <div class="h-[6.5rem] esqueleto"></div>
+              <div class="h-[6.5rem] skeleton"></div>
             }
           </div>
           <div class="rejilla-detalle grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div class="h-96 esqueleto"></div>
-            <div class="h-96 esqueleto"></div>
+            <div class="h-96 skeleton"></div>
+            <div class="h-96 skeleton"></div>
           </div>
         </div>
       }

@@ -19,9 +19,9 @@ export type StatCardColor = 'orange' | 'green' | 'blue' | 'violet' | 'red' | 'gr
   template: `
     <!-- Variante minimal: solo label + número, sin ícono -->
     <div *ngIf="variant === 'minimal'" class="card p-4">
-      <p class="text-xs font-medium uppercase tracking-widest text-gray-400 dark:text-slate-500 mb-1">{{ label }}</p>
-      <p class="text-2xl font-bold text-gray-900 dark:text-slate-100">{{ value }}</p>
-      <p *ngIf="sub" class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{{ sub }}</p>
+      <p class="text-xs font-medium uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">{{ label }}</p>
+      <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ value }}</p>
+      <p *ngIf="sub" class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ sub }}</p>
     </div>
 
     <!-- Variante standard: ícono + número + label -->
@@ -39,9 +39,9 @@ export type StatCardColor = 'orange' | 'green' | 'blue' | 'violet' | 'red' | 'gr
         </ng-content>
       </div>
       <div class="min-w-0">
-        <p class="text-2xl font-bold text-gray-900 dark:text-slate-100 leading-none">{{ value }}</p>
-        <p class="text-xs font-medium uppercase tracking-widest text-gray-400 dark:text-slate-500 mt-1">{{ label }}</p>
-        <p *ngIf="sub" class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{{ sub }}</p>
+        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 leading-none">{{ value }}</p>
+        <p class="text-xs font-medium uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1">{{ label }}</p>
+        <p *ngIf="sub" class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ sub }}</p>
       </div>
     </div>
   `,
@@ -60,7 +60,7 @@ export class StatCardComponent {
       blue:   'bg-blue-100 dark:bg-blue-950/50',
       violet: 'bg-violet-100 dark:bg-violet-950/50',
       red:    'bg-red-100 dark:bg-red-950/50',
-      gray:   'bg-gray-100 dark:bg-slate-700',
+      gray:   'bg-slate-100 dark:bg-slate-700',
     };
     return map[this.color];
   }
@@ -72,7 +72,7 @@ export class StatCardComponent {
       blue:   'text-blue-600',
       violet: 'text-violet-600',
       red:    'text-red-500',
-      gray:   'text-gray-400',
+      gray:   'text-slate-400',
     };
     return map[this.color];
   }

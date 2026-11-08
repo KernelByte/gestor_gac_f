@@ -9,7 +9,7 @@ type RolEtiqueta = { label: string, class: string };
 
 /** Colores de las etiquetas de privilegio, con su variante oscura. */
 const ROL_CLASES = {
-   regular:  'bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300',
+   regular:  'bg-purple-100 text-brand-purple dark:bg-brand-purple/15 dark:text-purple-300',
    auxiliar: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
    especial: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
    anciano:  'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',

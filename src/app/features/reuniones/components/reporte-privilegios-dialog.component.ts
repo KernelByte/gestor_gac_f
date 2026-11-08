@@ -1,5 +1,6 @@
-import { Component, computed, input, output, signal, ChangeDetectionStrategy, HostListener, OnInit } from '@angular/core';
+import { Component, computed, input, output, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import {
   ColumnaPermiso,
   GrupoMatrizOption,
@@ -29,37 +30,14 @@ interface ConteoPermiso {
 @Component({
   selector: 'app-reporte-privilegios-dialog',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-slate-900/50 backdrop-blur-sm animate-fadeIn"
-         (click)="cerrar.emit()">
-      <div class="rp-panel w-full max-w-5xl max-h-full flex flex-col bg-white dark:bg-[#12131c] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slideDown"
-           (click)="$event.stopPropagation()"
-           role="dialog" aria-modal="true" aria-labelledby="rp-titulo">
-
-        <!-- ── Cabecera ── -->
-        <header class="shrink-0 flex items-start gap-3 px-5 sm:px-6 py-4 border-b border-slate-200/80 dark:border-slate-800">
-          <div class="w-9 h-9 rounded-xl bg-[#6D28D9]/10 dark:bg-[#6D28D9]/20 flex items-center justify-center shrink-0">
-            <svg class="w-4 h-4 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-              <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
-            </svg>
-          </div>
-          <div class="flex-1 min-w-0">
-            <h2 id="rp-titulo" class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Reporte de permisos</h2>
-            <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-              Elige qué entra en el documento. El resumen de la derecha se recalcula al instante.
-            </p>
-          </div>
-          <button (click)="cerrar.emit()" aria-label="Cerrar"
-                  class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </header>
-
+    <app-modal [open]="true" variant="dialog" size="3xl" title="Reporte de permisos"
+      subtitle="Elige qué entra en el documento. El resumen de la derecha se recalcula al instante."
+      [padding]="false" [hasFooter]="true" (closed)="cerrar.emit()">
         <!-- ── Cuerpo ── -->
-        <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_19rem] overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_19rem]">
 
           <!-- Opciones -->
           <div class="min-h-0 overflow-y-auto simple-scrollbar px-5 sm:px-6 py-5 flex flex-col gap-6">
@@ -86,22 +64,22 @@ interface ConteoPermiso {
               <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <div>
                   <span class="rp-sublabel">Sexo</span>
-                  <div class="rp-segmented">
+                  <div class="segmented" role="radiogroup">
                     @for (s of SEXOS; track s.id) {
-                      <button type="button" (click)="sexo.set(s.id)"
-                              [class.rp-seg-on]="sexo() === s.id">{{ s.label }}</button>
+                      <button type="button" role="radio" class="segmented-item" (click)="sexo.set(s.id)"
+                              [attr.aria-checked]="sexo() === s.id">{{ s.label }}</button>
                     }
                   </div>
                 </div>
 
                 <div>
                   <span class="rp-sublabel">Nombramiento</span>
-                  <div class="rp-segmented">
-                    <button type="button" (click)="privilegio.set(null)"
-                            [class.rp-seg-on]="privilegio() === null">Todos</button>
+                  <div class="segmented" role="radiogroup">
+                    <button type="button" role="radio" class="segmented-item" (click)="privilegio.set(null)"
+                            [attr.aria-checked]="privilegio() === null">Todos</button>
                     @for (p of PRIVILEGIOS; track p) {
-                      <button type="button" (click)="privilegio.set(p)"
-                              [class.rp-seg-on]="privilegio() === p">{{ etiquetaPrivilegio(p) }}</button>
+                      <button type="button" role="radio" class="segmented-item" (click)="privilegio.set(p)"
+                              [attr.aria-checked]="privilegio() === p">{{ etiquetaPrivilegio(p) }}</button>
                     }
                   </div>
                 </div>
@@ -133,7 +111,7 @@ interface ConteoPermiso {
                 <input type="checkbox" class="rp-check"
                        [checked]="soloConPermiso()"
                        (change)="soloConPermiso.set(!soloConPermiso())">
-                <span class="text-[0.6875rem] font-semibold text-slate-600 dark:text-slate-300">
+                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">
                   Omitir a quien no tenga ninguno de los permisos elegidos
                 </span>
               </label>
@@ -167,10 +145,10 @@ interface ConteoPermiso {
             @if (formato() === 'matriz') {
               <section>
                 <h3 class="rp-label">Agrupar filas por</h3>
-                <div class="rp-segmented">
+                <div class="segmented" role="radiogroup">
                   @for (a of AGRUPACIONES; track a.id) {
-                    <button type="button" (click)="agruparPor.set(a.id)"
-                            [class.rp-seg-on]="agruparPor() === a.id">{{ a.label }}</button>
+                    <button type="button" role="radio" class="segmented-item" (click)="agruparPor.set(a.id)"
+                            [attr.aria-checked]="agruparPor() === a.id">{{ a.label }}</button>
                   }
                 </div>
               </section>
@@ -181,10 +159,10 @@ interface ConteoPermiso {
           <aside class="min-h-0 border-t lg:border-t-0 lg:border-l border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 flex flex-col">
             <div class="px-5 py-4 border-b border-slate-200/80 dark:border-slate-800">
               <p class="rp-label !mb-1">En el reporte</p>
-              <p class="text-2xl font-black text-slate-800 dark:text-white tabular-nums leading-none">
+              <p class="text-2xl font-bold text-slate-800 dark:text-white tabular-nums leading-none">
                 {{ incluidos().length }}
               </p>
-              <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium mt-1">
+              <p class="text-xs text-slate-400 dark:text-slate-500 font-medium mt-1">
                 de {{ publicadores().length }} publicadores ·
                 {{ permisos().size }} permiso{{ permisos().size === 1 ? '' : 's' }}
               </p>
@@ -196,19 +174,19 @@ interface ConteoPermiso {
                   @for (c of conteos(); track c.key) {
                     <li>
                       <div class="flex items-baseline justify-between gap-2">
-                        <span class="text-[0.6875rem] font-semibold text-slate-600 dark:text-slate-300 truncate" [title]="c.label">{{ c.label }}</span>
-                        <span class="text-[0.6875rem] font-bold tabular-nums shrink-0"
+                        <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 truncate" [title]="c.label">{{ c.label }}</span>
+                        <span class="text-xs font-bold tabular-nums shrink-0"
                               [class]="c.total ? 'text-slate-700 dark:text-slate-200' : 'text-amber-600 dark:text-amber-400'">{{ c.total }}</span>
                       </div>
                       <div class="mt-1 h-1 rounded-full bg-slate-200/80 dark:bg-slate-800 overflow-hidden">
-                        <div class="h-full rounded-full bg-[#6D28D9] transition-[width] duration-300 ease-out"
+                        <div class="h-full rounded-full bg-brand-purple transition-[width] duration-300 ease-out"
                              [style.width.%]="porcentaje(c)"></div>
                       </div>
                     </li>
                   }
                 </ul>
               } @else {
-                <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
+                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
                   Selecciona permisos para ver cuánta gente cubre cada uno.
                 </p>
               }
@@ -216,74 +194,57 @@ interface ConteoPermiso {
           </aside>
         </div>
 
-        <!-- ── Pie ── -->
-        <footer class="shrink-0 flex items-center justify-between gap-3 px-5 sm:px-6 py-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#12131c]">
-          <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-medium hidden sm:block">
+        <ng-container slot="footer">
+          <p class="text-xs text-slate-400 dark:text-slate-500 font-medium hidden sm:block mr-auto">
             {{ pistaFormato() }}
           </p>
-          <div class="flex items-center gap-2 ml-auto">
-            <button type="button" (click)="cerrar.emit()"
-                    class="h-9 px-4 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-              Cancelar
-            </button>
-            <!-- Excel en esmeralda: el mismo verde que ya usa la app para
-                 "positivo" (badge de Precursor Regular, toast de éxito), no
-                 el verde de marca de Office — así el botón se siente propio
-                 del sistema y no un sticker pegado encima. PDF se queda con
-                 el violeta de marca: es el mismo acento del botón "Guardar",
-                 así que sigue leyéndose como LA acción principal del diálogo. -->
-            <button type="button" (click)="emitirDescarga('xlsx')"
-                    [disabled]="!puedeDescargar()"
-                    class="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm shadow-emerald-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.98]">
-              @if (descargando() === 'xlsx') {
-                <span class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                Generando...
-              } @else {
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
-                </svg>
-                Excel
-              }
-            </button>
-            <button type="button" (click)="emitirDescarga('pdf')"
-                    [disabled]="!puedeDescargar()"
-                    class="h-9 px-4 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold flex items-center gap-2 shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.98]">
-              @if (descargando() === 'pdf') {
-                <span class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                Generando...
-              } @else {
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                Descargar PDF
-              }
-            </button>
-          </div>
-        </footer>
-      </div>
-    </div>
+          <button type="button" (click)="cerrar.emit()" class="btn-secondary btn-sm">Cancelar</button>
+          <!-- Excel en esmeralda: el mismo verde que ya usa la app para «positivo». -->
+          <button type="button" (click)="emitirDescarga('xlsx')" [disabled]="!puedeDescargar()"
+                  class="btn-primary btn-sm" style="--accent: #059669; --accent-hover: #047857">
+            @if (descargando() === 'xlsx') {
+              <span class="spinner-xs"></span>
+              Generando...
+            } @else {
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+              Excel
+            }
+          </button>
+          <button type="button" (click)="emitirDescarga('pdf')" [disabled]="!puedeDescargar()" class="btn-primary btn-sm">
+            @if (descargando() === 'pdf') {
+              <span class="spinner-xs"></span>
+              Generando...
+            } @else {
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Descargar PDF
+            }
+          </button>
+        </ng-container>
+    </app-modal>
   `,
   styles: [`
     /* Un solo acento y hairlines de 1px: el diálogo es un formulario largo y
        cualquier sombra o color extra lo vuelve ruido. */
-    .rp-panel { box-shadow: 0 24px 60px -20px rgb(15 23 42 / 0.28); }
-
     .rp-label {
-      font-size: 0.625rem; font-weight: 800; letter-spacing: 0.06em;
+      font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em;
       text-transform: uppercase; color: rgb(100 116 139); margin-bottom: 0.625rem;
     }
     :host-context(.dark) .rp-label { color: rgb(100 116 139); }
 
     .rp-sublabel {
-      display: block; font-size: 0.625rem; font-weight: 700;
+      display: block; font-size: 0.75rem; font-weight: 700;
       color: rgb(148 163 184); margin-bottom: 0.375rem;
     }
 
-    .rp-hint { margin-top: 0.5rem; font-size: 0.625rem; font-weight: 500; color: rgb(148 163 184); }
+    .rp-hint { margin-top: 0.5rem; font-size: 0.75rem; font-weight: 500; color: rgb(148 163 184); }
     .rp-hint-alerta { color: rgb(217 119 6); }
 
     .rp-link {
-      font-size: 0.625rem; font-weight: 700; color: #6D28D9;
+      font-size: 0.75rem; font-weight: 700; color: var(--color-brand-purple);
       transition: opacity 150ms ease-out;
     }
     .rp-link:hover { opacity: 0.7; }
@@ -296,49 +257,34 @@ interface ConteoPermiso {
       transition: border-color 150ms ease-out, background-color 150ms ease-out;
     }
     .rp-card:hover { border-color: rgb(203 213 225); }
-    .rp-card-on { border-color: #6D28D9; background: rgb(109 40 217 / 0.05); }
+    .rp-card-on { border-color: var(--color-brand-purple); background: color-mix(in oklab, var(--color-brand-purple) 5%, transparent); }
     .rp-card-title { font-size: 0.75rem; font-weight: 700; color: rgb(30 41 59); }
-    .rp-card-desc { font-size: 0.625rem; font-weight: 500; color: rgb(148 163 184); line-height: 1.45; }
-    .rp-card-on .rp-card-title { color: #6D28D9; }
+    .rp-card-desc { font-size: 0.75rem; font-weight: 500; color: rgb(148 163 184); line-height: 1.45; }
+    .rp-card-on .rp-card-title { color: var(--color-brand-purple); }
     :host-context(.dark) .rp-card { background: rgb(15 23 42 / 0.5); border-color: rgb(51 65 85); }
     :host-context(.dark) .rp-card-title { color: rgb(226 232 240); }
-    :host-context(.dark) .rp-card-on { border-color: #6D28D9; background: rgb(109 40 217 / 0.15); }
+    :host-context(.dark) .rp-card-on { border-color: var(--color-brand-purple); background: color-mix(in oklab, var(--color-brand-purple) 15%, transparent); }
     :host-context(.dark) .rp-card-on .rp-card-title { color: rgb(196 181 253); }
-
-    /* Segmented control */
-    .rp-segmented {
-      display: inline-flex; align-items: center; gap: 0.125rem; padding: 0.1875rem;
-      border-radius: 0.625rem; background: rgb(241 245 249); flex-wrap: wrap;
-    }
-    .rp-segmented > button {
-      height: 1.75rem; padding: 0 0.625rem; border-radius: 0.5rem;
-      font-size: 0.6875rem; font-weight: 700; color: rgb(100 116 139);
-      transition: background-color 150ms ease-out, color 150ms ease-out;
-    }
-    .rp-segmented > button:hover { color: rgb(51 65 85); }
-    .rp-seg-on { background: #fff; color: #6D28D9 !important; box-shadow: 0 1px 2px rgb(15 23 42 / 0.06); }
-    :host-context(.dark) .rp-segmented { background: rgb(30 41 59 / 0.6); }
-    :host-context(.dark) .rp-seg-on { background: rgb(109 40 217 / 0.25); color: rgb(196 181 253) !important; box-shadow: none; }
 
     /* Chips */
     .rp-chip {
       height: 1.75rem; padding: 0 0.625rem; border-radius: 0.5rem;
-      font-size: 0.6875rem; font-weight: 700; color: rgb(100 116 139);
+      font-size: 0.75rem; font-weight: 700; color: rgb(100 116 139);
       background: #fff; border: 1px solid rgb(226 232 240);
       transition: border-color 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out;
     }
     .rp-chip:hover { border-color: rgb(203 213 225); color: rgb(51 65 85); }
-    .rp-chip-on { border-color: #6D28D9; background: rgb(109 40 217 / 0.08); color: #6D28D9; }
+    .rp-chip-on { border-color: var(--color-brand-purple); background: color-mix(in oklab, var(--color-brand-purple) 8%, transparent); color: var(--color-brand-purple); }
     :host-context(.dark) .rp-chip { background: rgb(15 23 42 / 0.5); border-color: rgb(51 65 85); }
-    :host-context(.dark) .rp-chip-on { background: rgb(109 40 217 / 0.2); border-color: #6D28D9; color: rgb(196 181 253); }
+    :host-context(.dark) .rp-chip-on { background: color-mix(in oklab, var(--color-brand-purple) 20%, transparent); border-color: var(--color-brand-purple); color: rgb(196 181 253); }
 
     .rp-check {
       width: 0.9375rem; height: 0.9375rem; border-radius: 0.25rem;
-      accent-color: #6D28D9; cursor: pointer;
+      accent-color: var(--color-brand-purple); cursor: pointer;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .rp-panel, .rp-card, .rp-chip, .rp-segmented > button { transition: none; animation: none; }
+      .rp-card, .rp-chip { transition: none; animation: none; }
     }
   `],
 })
@@ -399,9 +345,6 @@ export class ReportePrivilegiosDialogComponent implements OnInit {
     this.privilegio.set(this.privilegioInicial());
     this.seleccionarTodosLosPermisos();
   }
-
-  @HostListener('document:keydown.escape')
-  onEscape(): void { this.cerrar.emit(); }
 
   etiquetaPrivilegio(p: string): string { return this.ETIQUETAS_PRIVILEGIO[p] ?? p; }
 

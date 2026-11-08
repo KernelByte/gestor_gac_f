@@ -42,6 +42,7 @@ interface GrupoFecha {
 
 @Component({
   selector: 'app-programacion-exhibidores-page',
+  host: { class: 'tema-exhibidores' },
   standalone: true,
   imports: [
     CommonModule, FormsModule, PageHeaderComponent, ModalComponent,
@@ -263,7 +264,7 @@ interface GrupoFecha {
                         class="group inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-sm transition-all focus-ring-blue"
                         [ngClass]="clasesSlot(a)"
                         (click)="abrirAsignar(a, celda)">
-                  <span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                  <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                         [ngClass]="a.publicador
                           ? 'bg-exh-600 text-white'
                           : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'">
@@ -274,7 +275,7 @@ interface GrupoFecha {
                     {{ a.publicador?.nombre_completo ?? textoSlotVacio(a) }}
                   </span>
                   <span *ngIf="a.estado === 'reasignado'"
-                        class="text-[10px] font-bold uppercase text-exh-700 dark:text-exh-300"
+                        class="text-xs font-bold uppercase text-exh-700 dark:text-exh-300"
                         title="Reemplazo">R</span>
                 </button>
               </div>
@@ -404,10 +405,10 @@ interface GrupoFecha {
           <span class="min-w-0 flex-1">
             <span class="flex items-center gap-2">
               <span class="font-medium text-sm text-slate-800 dark:text-slate-200 truncate min-w-0 flex-1">{{ c.nombre }}</span>
-              <span *ngIf="c.tiene_fluidez" class="badge-neutral !text-[10px] shrink-0">Fluidez</span>
-              <span *ngIf="c.es_precursor" class="badge-neutral !text-[10px] shrink-0">Precursor</span>
+              <span *ngIf="c.tiene_fluidez" class="badge-neutral !text-xs shrink-0">Fluidez</span>
+              <span *ngIf="c.es_precursor" class="badge-neutral !text-xs shrink-0">Precursor</span>
               <span *ngIf="c.id_publicador === asignacionActiva()?.publicador?.id_publicador"
-                    class="badge-active !text-[10px] shrink-0">Actual</span>
+                    class="badge-active !text-xs shrink-0">Actual</span>
             </span>
             <!-- Sin truncate: el motivo de inelegibilidad es justo lo que el
                  coordinador necesita leer completo, no un texto cortado a la mitad. -->
@@ -419,7 +420,7 @@ interface GrupoFecha {
         </button>
 
         <ng-container *ngIf="otrosFiltrados().length > 0">
-          <p class="eyebrow !text-[10px] px-1 pt-2 pb-0.5">Otros publicadores</p>
+          <p class="eyebrow !text-xs px-1 pt-2 pb-0.5">Otros publicadores</p>
           <button *ngFor="let p of otrosFiltrados()" type="button"
                   class="w-full flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all focus-ring-blue
                          border-slate-200 dark:border-slate-700 hover:border-exh-400 dark:hover:border-exh-600 hover:bg-exh-50/60 dark:hover:bg-exh-950/40"
@@ -486,8 +487,8 @@ interface GrupoFecha {
                 {{ f.motivo || 'Sin motivo' }} · {{ f.ubicacion_nombre || 'Todas las ubicaciones' }}
               </p>
             </div>
-            <button class="btn-icon-delete shrink-0" (click)="eliminarBloqueada(f)" aria-label="Quitar bloqueo">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <button class="btn-icon-sm tone-danger" (click)="eliminarBloqueada(f)" aria-label="Quitar bloqueo">
+              <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
               </svg>
             </button>

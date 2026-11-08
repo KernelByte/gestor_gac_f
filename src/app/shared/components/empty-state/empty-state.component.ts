@@ -18,7 +18,15 @@ export type EmptyStateAccent = 'orange' | 'green' | 'blue' | 'violet';
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   template: `
-    <div class="flex flex-col items-center justify-center text-center px-6 py-12 animate-slide-up">
+    <!-- Compacto: una fila con icono pequeño, para listas, tablas y paneles
+         angostos donde el bloque grande sobra. -->
+    <div *ngIf="compact" class="flex items-center justify-center gap-2.5 px-4 py-6 text-sm text-slate-600 dark:text-slate-400" role="status">
+      <lucide-icon [name]="iconName" [size]="18" class="shrink-0" [ngClass]="iconColorClass" aria-hidden="true"></lucide-icon>
+      <span class="min-w-0">{{ title }}<span *ngIf="description" class="text-slate-500 dark:text-slate-500"> · {{ description }}</span></span>
+      <button *ngIf="actionLabel" type="button" (click)="action.emit()" class="btn-link shrink-0">{{ actionLabel }}</button>
+    </div>
+
+    <div *ngIf="!compact" class="flex flex-col items-center justify-center text-center px-6 py-12 animate-slide-up">
       <!-- Chip de icono: mismo lenguaje que stat-card / confirm-dialog -->
       <div class="w-14 h-14 rounded-2xl flex items-center justify-center ring-1 ring-inset"
            [ngClass]="chipClass">
@@ -28,7 +36,7 @@ export type EmptyStateAccent = 'orange' | 'green' | 'blue' | 'violet';
       <p class="display-section text-lg mt-4">{{ title }}</p>
 
       <p *ngIf="description"
-         class="text-sm text-gray-600 dark:text-slate-400 max-w-sm leading-relaxed mt-1.5">
+         class="text-sm text-slate-600 dark:text-slate-400 max-w-sm leading-relaxed mt-1.5">
         {{ description }}
       </p>
 
@@ -55,6 +63,8 @@ export type EmptyStateAccent = 'orange' | 'green' | 'blue' | 'violet';
 })
 export class EmptyStateComponent {
   @Input() variant: EmptyStateVariant = 'empty';
+  /** Una sola línea (icono + texto + enlace de acción) en vez del bloque centrado. */
+  @Input() compact: boolean = false;
   @Input() accent: EmptyStateAccent = 'violet';
   /** Nombre Lucide (kebab-case) registrado en shared/icons.ts. Vacío = icono por variante. */
   @Input() icon: string = '';

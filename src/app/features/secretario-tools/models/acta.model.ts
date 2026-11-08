@@ -85,6 +85,8 @@ export interface Subtarea {
   completada: boolean;
   orden: number;
   completado_en?: string | null;
+  /** Quién añadió el paso (null = el creador de la tarea). El asignado borra solo los suyos. */
+  creado_por?: number | null;
 }
 
 /** Alta desde Mis tareas: sin asignado, la tarea es para quien la crea. */

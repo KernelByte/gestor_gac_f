@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { lastValueFrom } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
+import { ModalComponent } from '../../shared/components';
 import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/activar-dos-pasos.component';
 
 /**
@@ -12,11 +13,10 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
 @Component({
   standalone: true,
   selector: 'app-force-two-factor',
-  imports: [CommonModule, ActivarDosPasosComponent],
+  imports: [CommonModule, ModalComponent, ActivarDosPasosComponent],
   template: `
-    <div class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-      <div role="dialog" aria-modal="true" aria-labelledby="titulo-2fa"
-        class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 w-full max-w-md my-auto">
+    <app-modal [open]="true" size="md" [dismissible]="false" [closeOnBackdrop]="false" [padding]="false">
+      <div aria-labelledby="titulo-2fa">
         <div class="px-6 sm:px-8 pt-7 pb-4 flex items-start gap-4">
           <div class="w-12 h-12 rounded-2xl bg-brand-purple text-white flex items-center justify-center shrink-0">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -24,8 +24,8 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
             </svg>
           </div>
           <div>
-            <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200 mb-1.5">Acción requerida</span>
-            <h2 id="titulo-2fa" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Protege tu cuenta</h2>
+            <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-brand-purple/10 text-brand-purple dark:bg-brand-purple/20 dark:text-purple-200 mb-1.5">Acción requerida</span>
+            <h2 id="titulo-2fa" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Protege tu cuenta</h2>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
               Los administradores deben activar la verificación en dos pasos: además de la contraseña,
               se pedirá un código de tu teléfono al entrar.
@@ -40,7 +40,7 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
           </button>
         </div>
       </div>
-    </div>
+    </app-modal>
   `,
 })
 export class ForceTwoFactorComponent {

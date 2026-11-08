@@ -496,6 +496,18 @@ export interface PlantillaDetailResponse {
   tiene_sala_b: boolean;
   activo: boolean;
   partes: PlantillaParteDetail[];
+  /** Solo en la respuesta del PUT: cuántas filas de programación cambiaron. */
+  programaciones_actualizadas?: number;
+  /** Solo en la respuesta del PUT: partes quitadas que siguen vivas porque
+   *  alguien ya está asignado en esa fecha. */
+  partes_conservadas?: ParteConservada[];
+}
+
+export interface ParteConservada {
+  parte: string;
+  id_congregacion: number;
+  congregacion: string;
+  fecha: string;
 }
 
 export interface PlantillaUpdateRequest {

@@ -6,9 +6,10 @@ import {
   Input,
   Output,
   EventEmitter,
-  HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ReunionesService } from '../services/reuniones.service';
@@ -39,48 +40,24 @@ type AjustesTab = 'semanas' | 'ausencias';
 @Component({
   selector: 'app-reuniones-ajustes-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, DatePickerComponent, SelectPickerComponent],
+  imports: [CommonModule, FormsModule, RouterLink, DatePickerComponent, SelectPickerComponent, ModalComponent, ConfirmDialogComponent],
   template: `
     @if (abierto) {
-      <!-- El overlay cierra al pulsar fuera; el panel detiene la propagación.
-           z-[60] queda por encima de los popups de la programación (z-40/50). -->
-      <div
-        class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4"
-        (click)="pedirCierre()">
-
-        <div class="absolute inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-sm animate-aj-fade"></div>
-
-        <!-- Hoja inferior en móvil, diálogo centrado desde sm:. En un teléfono
-             el pulgar llega antes al borde de abajo que al centro, y el teclado
-             al escribir el motivo empuja el panel sin taparlo. -->
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="aj-titulo"
-          (click)="$event.stopPropagation()"
-          class="aj-panel relative w-full sm:max-w-3xl flex flex-col min-h-0
-                 max-h-[92dvh] sm:max-h-[88dvh]
-                 bg-white dark:bg-slate-900
-                 rounded-t-3xl sm:rounded-2xl
-                 border-t sm:border border-slate-200 dark:border-slate-700
-                 shadow-2xl shadow-slate-900/10 dark:shadow-black/40">
-
-          <!-- Asa: en móvil dice "esto se arrastra/se cierra" sin gastar texto. -->
-          <div class="sm:hidden shrink-0 pt-2.5 pb-1 flex justify-center" aria-hidden="true">
-            <span class="w-9 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
-          </div>
+      <app-modal [open]="true" variant="sheet" size="2xl" [padding]="false" [hasFooter]="true" [controlled]="true"
+        [dismissible]="!semanaAConfirmar() && !confirmarBorrado()" (closed)="pedirCierre()">
+        <div role="group" aria-labelledby="aj-titulo" class="flex flex-col min-h-0 max-h-[78dvh]">
 
           <!-- ── CABECERA ── -->
           <div class="shrink-0 px-4 sm:px-5 pt-3 sm:pt-4 pb-3 border-b border-slate-100 dark:border-slate-800">
             <div class="flex items-start gap-3">
               <div class="shrink-0 w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20 flex items-center justify-center">
-                <svg class="w-4 h-4 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <svg class="w-4 h-4 text-brand-purple dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               </div>
               <div class="min-w-0 flex-1">
-                <h2 id="aj-titulo" class="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-tight">
+                <h2 id="aj-titulo" class="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight">
                   Excepciones de programación
                 </h2>
-                <p class="text-[0.7rem] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                <p class="text-xs sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
                   Semanas que no se programan y personas que no están disponibles.
                 </p>
               </div>
@@ -97,15 +74,13 @@ type AjustesTab = 'semanas' | 'ausencias';
                  Dos destinos: el control segmentado los muestra ambos a la vez
                  en vez de esconder uno detrás de un desplegable. El contador
                  dice si ya hay algo registrado sin tener que entrar a mirar. -->
-            <div role="tablist" aria-label="Secciones" class="mt-3 flex items-center gap-1 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/60">
+            <div role="tablist" aria-label="Secciones" class="tab-nav w-full mt-3">
               <button
+                type="button"
                 role="tab"
                 [attr.aria-selected]="tab() === 'semanas'"
                 (click)="tab.set('semanas')"
-                class="aj-seg flex-1 min-w-0 flex items-center justify-center gap-1.5 h-9 px-2 rounded-lg text-[0.7rem] sm:text-xs font-bold transition-colors"
-                [class]="tab() === 'semanas'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                class="tab-item min-w-0 !px-2">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="15" x2="15" y2="19"/><line x1="15" y1="15" x2="9" y2="19"/></svg>
                 <span class="truncate">Semanas sin reunión</span>
                 @if (semanas().length > 0) {
@@ -113,13 +88,11 @@ type AjustesTab = 'semanas' | 'ausencias';
                 }
               </button>
               <button
+                type="button"
                 role="tab"
                 [attr.aria-selected]="tab() === 'ausencias'"
                 (click)="tab.set('ausencias')"
-                class="aj-seg flex-1 min-w-0 flex items-center justify-center gap-1.5 h-9 px-2 rounded-lg text-[0.7rem] sm:text-xs font-bold transition-colors"
-                [class]="tab() === 'ausencias'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                class="tab-item min-w-0 !px-2">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 <span class="truncate">Ausencias</span>
                 @if (ausencias().length > 0) {
@@ -139,7 +112,7 @@ type AjustesTab = 'semanas' | 'ausencias';
                    aviso va antes del formulario, no debajo del botón. -->
               <div class="shrink-0 flex items-start gap-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/70 dark:border-amber-500/25 px-3 py-2.5">
                 <svg class="w-4 h-4 shrink-0 mt-px text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <p class="text-[0.7rem] leading-relaxed text-amber-800 dark:text-amber-200">
+                <p class="text-xs leading-relaxed text-amber-800 dark:text-amber-200">
                   Para asambleas o la Conmemoración. No se programará a nadie esa semana.
                   <span class="font-bold text-rose-600 dark:text-rose-400">Se borra la programación de reuniones y logística, incluso lo confirmado.</span>
                   Los discursos públicos se conservan y se ven como «sin reunión».
@@ -201,9 +174,9 @@ type AjustesTab = 'semanas' | 'ausencias';
                       [disabled]="!puedeMarcarSemana() || guardandoSemana()"
                       aria-label="Marcar semana sin reunión"
                       title="Marcar semana sin reunión"
-                      class="aj-submit shrink-0 flex items-center justify-center px-4 min-h-[44px] rounded-xl bg-brand-purple text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed">
+                      class="shrink-0 min-h-[44px] btn-primary btn-sm">
                       @if (guardandoSemana()) {
-                        <div class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                        <div class="spinner-xs"></div>
                       } @else {
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                       }
@@ -222,7 +195,7 @@ type AjustesTab = 'semanas' | 'ausencias';
               <!-- Lista de semanas marcadas -->
               @if (loadingSemanas()) {
                 <div class="shrink-0 flex flex-col items-center justify-center gap-3 py-10">
-                  <div class="w-6 h-6 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-brand-purple animate-spin"></div>
+                  <div class="spinner text-brand-purple"></div>
                   <p class="text-xs font-medium text-slate-400 dark:text-slate-500">Cargando semanas...</p>
                 </div>
 
@@ -232,7 +205,7 @@ type AjustesTab = 'semanas' | 'ausencias';
                     <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
                   <p class="text-sm font-bold text-slate-700 dark:text-slate-200">No hay semanas marcadas</p>
-                  <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
+                  <p class="text-xs text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
                     Marca arriba la semana de una asamblea, congreso o la Conmemoración y el motor dejará de programarla.
                   </p>
                 </div>
@@ -250,10 +223,10 @@ type AjustesTab = 'semanas' | 'ausencias';
                       </div>
                       <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
-                          <p class="text-[0.8125rem] font-bold text-slate-800 dark:text-white data-num">{{ formatRangoSemana(s) }}</p>
+                          <p class="text-sm font-bold text-slate-800 dark:text-white data-num">{{ formatRangoSemana(s) }}</p>
                           <span class="aj-chip aj-chip-amber">{{ etiquetaAlcance(s.alcance) }}</span>
                         </div>
-                        <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                           Semana {{ s.semana_iso }} de {{ s.ano_iso }}@if (s.motivo) { · {{ s.motivo }} }
                         </p>
                       </div>
@@ -274,8 +247,8 @@ type AjustesTab = 'semanas' | 'ausencias';
             @if (tab() === 'ausencias') {
 
               <div class="shrink-0 flex items-start gap-2.5 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200/70 dark:border-violet-500/25 px-3 py-2.5">
-                <svg class="w-4 h-4 shrink-0 mt-px text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                <p class="text-[0.7rem] leading-relaxed text-violet-800 dark:text-violet-200">
+                <svg class="w-4 h-4 shrink-0 mt-px text-brand-purple dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <p class="text-xs leading-relaxed text-violet-800 dark:text-violet-200">
                   No se le asignará ningún puesto en ese rango, aunque tenga el permiso.
                   Si ya estaba asignado, se avisa sin quitárselo.
                 </p>
@@ -345,9 +318,9 @@ type AjustesTab = 'semanas' | 'ausencias';
                       [disabled]="!puedeRegistrarAusencia() || guardandoAusencia()"
                       aria-label="Registrar ausencia"
                       title="Registrar ausencia"
-                      class="aj-submit shrink-0 flex items-center justify-center px-4 min-h-[44px] rounded-xl bg-brand-purple text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed">
+                      class="shrink-0 min-h-[44px] btn-primary btn-sm">
                       @if (guardandoAusencia()) {
-                        <div class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                        <div class="spinner-xs"></div>
                       } @else {
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                       }
@@ -368,7 +341,7 @@ type AjustesTab = 'semanas' | 'ausencias';
               @if (!loadingAusencias() && ausencias().length > 0) {
                 <div class="shrink-0 flex flex-col sm:flex-row sm:items-center gap-2.5">
                   <div class="flex items-center gap-2 flex-wrap min-w-0">
-                    <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Registradas</p>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Registradas</p>
                     <span class="aj-chip aj-chip-neutral">{{ ausencias().length }}</span>
                     @if (ausenciasEnCurso() > 0) {
                       <span class="aj-chip aj-chip-live"><span class="aj-dot"></span>{{ ausenciasEnCurso() }} en curso</span>
@@ -395,7 +368,7 @@ type AjustesTab = 'semanas' | 'ausencias';
 
               @if (loadingAusencias()) {
                 <div class="shrink-0 flex flex-col items-center justify-center gap-3 py-10">
-                  <div class="w-6 h-6 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-brand-purple animate-spin"></div>
+                  <div class="spinner text-brand-purple"></div>
                   <p class="text-xs font-medium text-slate-400 dark:text-slate-500">Cargando ausencias...</p>
                 </div>
 
@@ -405,7 +378,7 @@ type AjustesTab = 'semanas' | 'ausencias';
                     <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
                   <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Nadie tiene ausencias registradas</p>
-                  <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
+                  <p class="text-xs text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
                     Cuando alguien viaje o no pueda participar por un tiempo, regístralo arriba y dejará de asignarse en esas fechas.
                   </p>
                 </div>
@@ -414,7 +387,7 @@ type AjustesTab = 'semanas' | 'ausencias';
                 <div class="shrink-0 flex flex-col items-center justify-center gap-1.5 py-10 px-6 text-center">
                   <p class="text-sm font-bold text-slate-600 dark:text-slate-300">Sin coincidencias</p>
                   <p class="text-xs text-slate-400 dark:text-slate-500">Nadie coincide con "{{ ausFiltro() }}".</p>
-                  <button (click)="ausFiltro.set('')" class="mt-1 px-3 min-h-[36px] rounded-lg text-xs font-bold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">
+                  <button (click)="ausFiltro.set('')" class="mt-1 px-3 min-h-[36px] rounded-lg text-xs font-bold text-brand-purple dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">
                     Limpiar búsqueda
                   </button>
                 </div>
@@ -428,20 +401,20 @@ type AjustesTab = 'semanas' | 'ausencias';
                   @for (a of ausenciasOrdenadas(); track a.id_ausencia; let i = $index) {
                     <div class="aj-row flex items-center gap-3 px-3 sm:px-4 py-3" [style.--aj-i]="i">
                       <div
-                        class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-semibold text-[0.7rem] ring-1 ring-white dark:ring-slate-800 border border-white/50"
+                        class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-semibold text-xs ring-1 ring-white dark:ring-slate-800 border border-white/50"
                         [class]="avatarClass(a)"
                         aria-hidden="true">
                         {{ iniciales(a) }}
                       </div>
                       <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2 min-w-0">
-                          <p class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate">{{ a.nombre_completo }}</p>
+                          <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{{ a.nombre_completo }}</p>
                           <span class="aj-state shrink-0" [attr.data-estado]="estadoAusencia(a)">
                             @if (estadoAusencia(a) === 'en_curso') { <span class="aj-dot"></span> }
                             {{ estadoLabel(a) }}
                           </span>
                         </div>
-                        <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap leading-tight">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap leading-tight">
                           <span class="data-num">{{ formatRangoAusencia(a) }}</span>
                           <span class="text-slate-300 dark:text-slate-600" aria-hidden="true">&#183;</span>
                           <span>{{ duracion(a) }}</span>
@@ -451,7 +424,7 @@ type AjustesTab = 'semanas' | 'ausencias';
                           }
                         </p>
                         @if (a.motivo) {
-                          <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 mt-0.5 truncate italic">{{ a.motivo }}</p>
+                          <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate italic">{{ a.motivo }}</p>
                         }
                       </div>
                       <button
@@ -468,111 +441,55 @@ type AjustesTab = 'semanas' | 'ausencias';
             }
           </div>
 
-          <!-- ── PIE ──
-               El modal cubre lo que se necesita mientras se programa; lo demás
-               -privilegios, plantillas, parámetros- sigue viviendo en su
-               pantalla, y desde aquí se llega en un clic. -->
-          <div class="shrink-0 flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-t border-slate-100 dark:border-slate-800 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3">
-            <a
-              routerLink="/reuniones/configuracion"
-              [queryParams]="{ tab: tab() === 'semanas' ? 'sin-reunion' : 'ausencias' }"
-              (click)="pedirCierre()"
-              class="inline-flex items-center gap-1.5 min-h-[36px] px-2 -ml-2 rounded-lg text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">
-              Configuración completa
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>
-            </a>
-            <button
-              (click)="pedirCierre()"
-              class="shrink-0 px-4 min-h-[40px] rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">
-              Listo
-            </button>
-          </div>
         </div>
-      </div>
+
+        <!-- ── PIE ──
+             El modal cubre lo que se necesita mientras se programa; lo demás
+             -privilegios, plantillas, parámetros- sigue viviendo en su
+             pantalla, y desde aquí se llega en un clic. -->
+        <ng-container slot="footer">
+          <a
+            routerLink="/reuniones/configuracion"
+            [queryParams]="{ tab: tab() === 'semanas' ? 'sin-reunion' : 'ausencias' }"
+            (click)="pedirCierre()"
+            class="btn-link mr-auto">
+            Configuración completa
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>
+          </a>
+          <button type="button" (click)="pedirCierre()" class="btn-secondary">Listo</button>
+        </ng-container>
+      </app-modal>
 
       <!-- ═══ CONFIRMAR MARCAR SEMANA (destructivo) ═══ -->
       @if (semanaAConfirmar(); as previo) {
-        <div class="fixed inset-0 z-[70] flex items-center justify-center p-4" (click)="semanaAConfirmar.set(null)">
-          <div class="absolute inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-sm"></div>
-          <div role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()"
-               class="aj-panel relative w-full max-w-sm p-6 flex flex-col gap-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl">
-            <div class="flex flex-col items-center gap-3 text-center">
-              <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/25 flex items-center justify-center">
-                <svg class="w-6 h-6 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              </div>
-              <div>
-                <h3 class="text-sm font-black text-slate-900 dark:text-white">Marcar semana sin reunión</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                  {{ formatRangoSemana(previo) }} — {{ etiquetaAlcance(previo.alcance) }}.
-                </p>
-                @if ((previo.borradas ?? 0) > 0) {
-                  <p class="text-xs mt-2 leading-relaxed font-bold text-rose-600 dark:text-rose-400">
-                    Se borrarán {{ previo.borradas }} asignaciones ya hechas, incluidas las confirmadas. Esto no se puede deshacer.
-                  </p>
-                } @else {
-                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                    No hay nada programado en esa semana todavía.
-                  </p>
-                }
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button (click)="semanaAConfirmar.set(null)" class="flex-1 min-h-[40px] rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">Cancelar</button>
-              <button (click)="confirmarMarcarSemana()" [disabled]="guardandoSemana()" class="flex-1 min-h-[40px] rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-colors active:scale-[0.97] disabled:opacity-50">Sí, marcar</button>
-            </div>
-          </div>
-        </div>
+        <app-confirm-dialog
+          [open]="true"
+          title="Marcar semana sin reunión"
+          [message]="mensajeSemana(previo)"
+          confirmLabel="Sí, marcar"
+          severity="warning"
+          [busy]="guardandoSemana()"
+          (confirmed)="confirmarMarcarSemana()"
+          (openChange)="$event || semanaAConfirmar.set(null)" />
       }
 
       <!-- ═══ CONFIRMAR BORRADO ═══ -->
       <!-- Quitar una marca de semana y eliminar una ausencia se preguntan
-           igual: mismo panel, mismo icono, una frase y dos botones. Lo unico
-           que cambia es el texto y a quien se llama, asi que va un solo
-           dialogo parametrizado en vez de dos copias que se desincronizan. -->
+           igual; va un solo diálogo parametrizado. -->
       @if (confirmarBorrado(); as c) {
-        <div class="fixed inset-0 z-[70] flex items-center justify-center p-4" (click)="confirmarBorrado.set(null)">
-          <div class="absolute inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-sm"></div>
-          <div role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()"
-               class="aj-panel relative w-full max-w-sm p-6 flex flex-col gap-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl">
-            <div class="flex flex-col items-center gap-3 text-center">
-              <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/25 flex items-center justify-center">
-                <svg class="w-6 h-6 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </div>
-              <div>
-                <h3 class="text-sm font-black text-slate-900 dark:text-white">{{ c.titulo }}</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{{ c.mensaje }}</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button (click)="confirmarBorrado.set(null)" class="flex-1 min-h-[40px] rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">Cancelar</button>
-              <button (click)="ejecutarBorrado()" class="flex-1 min-h-[40px] rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-colors active:scale-[0.97]">{{ c.textoOk }}</button>
-            </div>
-          </div>
-        </div>
+        <app-confirm-dialog
+          [open]="true"
+          [title]="c.titulo"
+          [message]="c.mensaje"
+          [confirmLabel]="c.textoOk"
+          severity="danger"
+          (confirmed)="ejecutarBorrado()"
+          (openChange)="$event || confirmarBorrado.set(null)" />
       }
     }
   `,
   styles: [`
     :host { display: contents; }
-
-    /* Entrada: hoja desde abajo en movil, escala corta en escritorio. La
-       direccion dice de donde viene el panel y a donde vuelve al cerrar. */
-    .aj-panel {
-      animation: aj-sheet 260ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
-    }
-    @media (min-width: 640px) {
-      .aj-panel { animation-name: aj-pop; animation-duration: 200ms; }
-    }
-    @keyframes aj-sheet {
-      from { transform: translateY(16px); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
-    }
-    @keyframes aj-pop {
-      from { transform: scale(0.97); opacity: 0; }
-      to   { transform: scale(1);    opacity: 1; }
-    }
-    .animate-aj-fade { animation: aj-fade 200ms ease-out backwards; }
-    @keyframes aj-fade { from { opacity: 0; } to { opacity: 1; } }
 
     /* Cascada corta al listar: ordena la lectura sin hacerse notar. */
     .aj-row {
@@ -588,11 +505,11 @@ type AjustesTab = 'semanas' | 'ausencias';
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .aj-panel, .aj-row, .animate-aj-fade { animation: none; }
+      .aj-row { animation: none; }
     }
 
     .aj-label {
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -621,8 +538,6 @@ type AjustesTab = 'semanas' | 'ausencias';
     :host-context(.dark) .aj-del:hover { background: rgb(127 29 29 / 0.25); color: rgb(248 113 113); }
     .aj-del:active { transform: scale(0.92); }
 
-    .aj-seg { transition: background-color 150ms ease-out, color 150ms ease-out, box-shadow 150ms ease-out; }
-    .aj-seg:active { transform: scale(0.98); }
 
     .aj-error {
       display: flex;
@@ -646,7 +561,7 @@ type AjustesTab = 'semanas' | 'ausencias';
       gap: 0.25rem;
       padding: 0.0625rem 0.4rem;
       border-radius: 9999px;
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       font-weight: 800;
       line-height: 1.5;
       white-space: nowrap;
@@ -669,7 +584,7 @@ type AjustesTab = 'semanas' | 'ausencias';
       gap: 0.25rem;
       padding: 0.0625rem 0.4rem;
       border-radius: 9999px;
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       font-weight: 800;
       line-height: 1.5;
       white-space: nowrap;
@@ -798,14 +713,12 @@ export class ReunionesAjustesDialogComponent {
   /** Borrado pendiente de confirmar, sea de una semana o de una ausencia. */
   confirmarBorrado = signal<{ titulo: string; mensaje: string; textoOk: string; accion: () => void } | null>(null);
 
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (!this._abierto) return;
-    // Escape cierra de dentro hacia fuera: primero la confirmación abierta,
-    // y sólo si no hay ninguna, el modal entero.
-    if (this.semanaAConfirmar()) { this.semanaAConfirmar.set(null); return; }
-    if (this.confirmarBorrado()) { this.confirmarBorrado.set(null); return; }
-    this.pedirCierre();
+  mensajeSemana(previo: { alcance: any; borradas?: number | null } & Record<string, any>): string {
+    const base = `${this.formatRangoSemana(previo as any)} — ${this.etiquetaAlcance(previo.alcance)}.`;
+    if ((previo.borradas ?? 0) > 0) {
+      return `${base}\nSe borrarán ${previo.borradas} asignaciones ya hechas, incluidas las confirmadas. Esto no se puede deshacer.`;
+    }
+    return `${base}\nNo hay nada programado en esa semana todavía.`;
   }
 
   ejecutarBorrado(): void {

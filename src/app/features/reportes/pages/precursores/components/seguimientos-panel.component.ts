@@ -59,50 +59,16 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
     }
     .panel-titulo .contador {
       font-family: var(--font-mono);
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 500;
       color: var(--txt-3);
     }
     .panel-apostilla { font-size: 0.8125rem; line-height: 1.5; color: var(--txt-3); margin-top: 0.125rem; padding-left: 0.6875rem; }
 
-    /* Una sola acción primaria en el panel; el resto son secundarias. */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.375rem;
-      min-height: 2.25rem;
-      padding-inline: 0.875rem;
-      border-radius: 0.5rem;
-      border: 1px solid transparent;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      letter-spacing: 0.005em;
-      white-space: nowrap;
-      cursor: pointer;
-      transition: background-color 160ms var(--ease-out-quart),
-                  border-color 160ms var(--ease-out-quart),
-                  color 160ms var(--ease-out-quart),
-                  transform 160ms var(--ease-out-quart);
-    }
-    .btn svg { width: 0.875rem; height: 0.875rem; flex: none; }
-    .btn:active:not(:disabled) { transform: scale(0.97); }
-    .btn:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-    .btn-primario { background: var(--acento); color: #ffffff; }
-    :host-context(.dark) .btn-primario { color: #0f172a; }
-    .btn-secundario { border-color: var(--linea); color: var(--txt-2); background: var(--superficie); }
-    @media (hover: hover) and (pointer: fine) {
-      .btn-primario:hover:not(:disabled) { background: color-mix(in oklch, var(--acento) 88%, black); }
-      :host-context(.dark) .btn-primario:hover:not(:disabled) { background: color-mix(in oklch, var(--acento) 88%, white); }
-      .btn-secundario:hover:not(:disabled) { border-color: var(--txt-4); color: var(--txt-1); }
-    }
-
     /* ── Formulario (dentro del modal) ─────────────────────────────── */
     .campo-rotulo {
       display: block;
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -146,7 +112,7 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
     }
     .entrada-icono svg { width: 0.875rem; height: 0.875rem; }
     .tipo {
-      font-size: 0.625rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.07em;
       text-transform: uppercase;
@@ -155,25 +121,8 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
     .tipo-ayuda  { --tono: var(--aviso); }
     .tipo-comite { --tono: var(--acento); }
     .tipo-nota   { --tono: var(--txt-3); }
-    .meta-entrada { font-family: var(--font-mono); font-size: 0.6875rem; color: var(--txt-3); }
+    .meta-entrada { font-family: var(--font-mono); font-size: 0.75rem; color: var(--txt-3); }
     .descripcion { font-size: 0.8125rem; line-height: 1.6; color: var(--txt-2); margin-top: 0.25rem; white-space: pre-line; max-width: 68ch; overflow-wrap: anywhere; }
-
-    .eliminar {
-      width: 2.25rem;
-      height: 2.25rem;
-      flex: none;
-      display: grid;
-      place-items: center;
-      border-radius: 0.5rem;
-      color: var(--txt-3);
-      transition: color 160ms var(--ease-out-quart), background-color 160ms var(--ease-out-quart);
-      cursor: pointer;
-    }
-    .eliminar svg { width: 1rem; height: 1rem; }
-    @media (hover: hover) and (pointer: fine) {
-      .eliminar:hover { color: var(--neg); background: color-mix(in oklch, var(--neg) 8%, transparent); }
-    }
-    .eliminar:focus-visible { outline: 2px solid var(--acento); outline-offset: 1px; }
 
     /* El vacío enseña qué se registra aquí, no anuncia que no hay nada. */
     @keyframes aparecer {
@@ -182,18 +131,14 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
     }
 
     @media (pointer: coarse) {
-      .btn, .eliminar { min-height: 2.75rem; }
-      .eliminar { width: 2.75rem; }
       .campo { min-height: 2.75rem; }
     }
     @media (max-width: 479.98px) {
       .acciones-form { flex-direction: column-reverse; }
-      .acciones-form .btn { width: 100%; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .btn, .campo, .eliminar { transition: none; }
-      .btn:active:not(:disabled) { transform: none; }
+      .campo { transition: none; }
     }
   `],
   template: `
@@ -243,10 +188,10 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
               </div>
               <button type="button"
                       (click)="pedirEliminar(s)"
-                      class="eliminar"
+                      class="btn-icon-sm tone-danger"
                       title="Eliminar seguimiento"
                       [attr.aria-label]="'Eliminar ' + tipoLabel(s.tipo).toLowerCase() + ' del ' + (s.fecha | date:'d MMM y')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.87 12.14A2 2 0 0116.14 21H7.86a2 2 0 01-1.99-1.86L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-9 0h12"/>
                 </svg>
               </button>
@@ -294,8 +239,8 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
             <p class="error" role="alert">{{ errorForm() }} Revisa los datos y vuelve a intentarlo.</p>
           }
       </form>
-      <button slot="footer" type="button" (click)="cerrarFormulario()" class="btn btn-secundario">Cancelar</button>
-      <button slot="footer" type="submit" form="form-seguimiento" [disabled]="guardando() || descripcion.trim().length < 3" class="btn btn-primario">
+      <button slot="footer" type="button" (click)="cerrarFormulario()" class="btn-secondary">Cancelar</button>
+      <button slot="footer" type="submit" form="form-seguimiento" [disabled]="guardando() || descripcion.trim().length < 3" class="btn-primary">
         {{ guardando() ? 'Guardando…' : 'Guardar seguimiento' }}
       </button>
     </app-modal>

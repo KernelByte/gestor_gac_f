@@ -1,8 +1,10 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { roleGuard } from './core/auth/role.guard';
 import { permissionGuard } from './core/auth/permission.guard';
 import { rolOPermisoGuard } from './core/auth/rol-o-permiso.guard';
+import { administracionGuard, agendaGuard } from './core/auth/administracion.guard';
 
 export const routes: Routes = [
   { path: 'login', title: 'Iniciar Sesión', loadComponent: () => import('./features/auth/login.page').then(m => m.LoginPage) },
@@ -42,6 +44,8 @@ export const routes: Routes = [
         title: 'Permisos de Usuario',
         canActivate: [roleGuard],
         data: { roles: ['Administrador', 'Gestor Aplicación', 'Coordinador', 'Secretario'] },
+        // Avisa antes de salir con cambios sin guardar (menú lateral incluido).
+        canDeactivate: [(c: { puedeSalir?: () => boolean | Promise<boolean> }) => c.puedeSalir ? c.puedeSalir() : true],
         loadComponent: () => import('./features/basicas/usuarios/pages/usuario-permisos/usuario-permisos.page').then(m => m.UsuarioPermisosPage),
       },
       {
@@ -104,11 +108,29 @@ export const routes: Routes = [
         data: { roles: ['Administrador', 'Coordinador', 'Secretario', 'Superintendente de servicio', 'Publicador'] },
         loadChildren: () => import('./features/secretario/routes').then(m => m.SECRETARIO_ROUTES)
       },
+      // Direcciones viejas del grupo Administración: las notificaciones ya enviadas y los
+      // enlaces guardados las usan. Conservan el id y los parámetros (?fecha=, ?id=).
+      { path: 'secretario-tools/reuniones-ancianos/:id', redirectTo: 'administracion/reuniones-teocraticas/:id' },
+      { path: 'secretario-tools/reuniones-ancianos', redirectTo: 'administracion/reuniones-teocraticas' },
+      { path: 'secretario-tools/actas-reunion/:id', redirectTo: 'administracion/actas-reunion/:id' },
+      { path: 'secretario-tools/tareas/:id', redirectTo: 'administracion/tareas/:id' },
+      { path: 'secretario-tools/:seccion', redirectTo: 'administracion/:seccion' },
+      { path: 'secretario-tools', pathMatch: 'full', redirectTo: 'administracion' },
       {
-        path: 'secretario-tools',
-        canActivate: [roleGuard],
-        // Exclusivo de Secretario/Administrador — Coordinador no es dueño de este menú.
-        data: { roles: ['Administrador', 'Secretario'] },
+        // Mi Agenda: calendario y tareas de cada persona; lo que ve depende de modoAgenda().
+        // /administracion/agenda (avisos y enlaces viejos) redirige aquí desde features/secretario-tools/routes.ts.
+        path: 'agenda',
+        title: 'Mi Agenda',
+        canActivate: [agendaGuard],
+        loadComponent: () => import('./features/secretario-tools/agenda/pages/agenda.page').then(m => m.AgendaPage),
+      },
+      // Mis tareas es ya la pestaña Tareas de Mi Agenda.
+      { path: 'herramientas/mis-tareas', redirectTo: () => inject(Router).createUrlTree(['/agenda'], { queryParams: { vista: 'tareas' } }) },
+      {
+        // Grupo «Administración»: entra quien pueda abrir alguna de sus
+        // opciones; cada hija lleva su propio guard (features/secretario-tools/routes.ts).
+        path: 'administracion',
+        canActivate: [administracionGuard],
         loadChildren: () => import('./features/secretario-tools/routes').then(m => m.SECRETARIO_TOOLS_ROUTES)
       },
       {

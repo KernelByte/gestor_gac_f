@@ -9,6 +9,7 @@ import { CommonModule, NgStyle } from '@angular/common';
 import { Subscription, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ProximaReunion, ReunionesService } from '../services/reuniones.service';
 import { LogisticaService } from '../services/logistica.service';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { DiscursosService } from '../services/discursos.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
@@ -142,7 +143,8 @@ const SECCION_LABELS: Record<string, string> = {
 @Component({
   standalone: true,
   selector: 'app-reuniones-resumen',
-  imports: [CommonModule, NgStyle],
+  host: { class: 'tema-reuniones' },
+  imports: [CommonModule, NgStyle, EmptyStateComponent],
   template: `<div class="resumen-host">
   <div class="resumen-layout">
   <div class="resumen-container">
@@ -179,47 +181,47 @@ const SECCION_LABELS: Record<string, string> = {
         <!-- Header card -->
         <div class="skel-card">
           <div class="skel-row">
-            <div class="skel h-4 w-40 rounded-full"></div>
-            <div class="skel h-5 w-24 rounded-lg"></div>
+            <div class="skeleton h-4 w-40 rounded-full"></div>
+            <div class="skeleton h-5 w-24 rounded-lg"></div>
           </div>
-          <div class="skel h-8 w-3/4 rounded-lg mt-4"></div>
-          <div class="skel h-4 w-32 rounded mt-3"></div>
+          <div class="skeleton h-8 w-3/4 rounded-lg mt-4"></div>
+          <div class="skeleton h-4 w-32 rounded mt-3"></div>
         </div>
         <!-- Banner -->
         <div class="skel-card">
           <div class="skel-row">
-            <div class="skel h-9 w-9 rounded-xl shrink-0"></div>
+            <div class="skeleton h-9 w-9 rounded-xl shrink-0"></div>
             <div class="flex-1 space-y-2">
-              <div class="skel h-4 w-1/2 rounded"></div>
-              <div class="skel h-4 w-2/5 rounded-full"></div>
+              <div class="skeleton h-4 w-1/2 rounded"></div>
+              <div class="skeleton h-4 w-2/5 rounded-full"></div>
             </div>
           </div>
         </div>
         <!-- Secciones -->
         <div class="skel-card">
-          <div class="skel h-4 w-44 rounded"></div>
+          <div class="skeleton h-4 w-44 rounded"></div>
           <div class="skel-row mt-4">
-            <div class="skel h-7 w-7 rounded-full shrink-0"></div>
+            <div class="skeleton h-7 w-7 rounded-full shrink-0"></div>
             <div class="flex-1 space-y-2">
-              <div class="skel h-4 w-3/4 rounded"></div>
-              <div class="skel h-3 w-2/5 rounded"></div>
+              <div class="skeleton h-4 w-3/4 rounded"></div>
+              <div class="skeleton h-3 w-2/5 rounded"></div>
             </div>
           </div>
           <div class="skel-row mt-4">
-            <div class="skel h-7 w-7 rounded-full shrink-0"></div>
+            <div class="skeleton h-7 w-7 rounded-full shrink-0"></div>
             <div class="flex-1 space-y-2">
-              <div class="skel h-4 w-2/3 rounded"></div>
-              <div class="skel h-3 w-1/3 rounded"></div>
+              <div class="skeleton h-4 w-2/3 rounded"></div>
+              <div class="skeleton h-3 w-1/3 rounded"></div>
             </div>
           </div>
         </div>
         <div class="skel-card">
-          <div class="skel h-4 w-36 rounded"></div>
+          <div class="skeleton h-4 w-36 rounded"></div>
           <div class="skel-row mt-4">
-            <div class="skel h-7 w-7 rounded-full shrink-0"></div>
+            <div class="skeleton h-7 w-7 rounded-full shrink-0"></div>
             <div class="flex-1 space-y-2">
-              <div class="skel h-4 w-5/6 rounded"></div>
-              <div class="skel h-3 w-2/5 rounded"></div>
+              <div class="skeleton h-4 w-5/6 rounded"></div>
+              <div class="skeleton h-3 w-2/5 rounded"></div>
             </div>
           </div>
         </div>
@@ -227,17 +229,8 @@ const SECCION_LABELS: Record<string, string> = {
     </ng-container>
 
     <!-- ══════════ ERROR ══════════ -->
-    <div *ngIf="!loading() && error()" class="empty-state fade-in" role="alert">
-      <div class="empty-icon-wrap empty-icon-neg">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-        </svg>
-      </div>
-      <p class="empty-title">No pudimos cargar el resumen</p>
-      <p class="empty-body">{{ error() }}</p>
-      <button type="button" class="empty-action" (click)="reintentar()">Reintentar</button>
-    </div>
+    <app-empty-state *ngIf="!loading() && error()" variant="error" title="No pudimos cargar el resumen"
+      [description]="error() || ''" actionLabel="Reintentar" (action)="reintentar()"></app-empty-state>
 
     <!-- ══════════ NO PUBLICADO ══════════ -->
     <div *ngIf="!loading() && !error() && noPublicado()" class="empty-state fade-in">
@@ -260,6 +253,7 @@ const SECCION_LABELS: Record<string, string> = {
     <ng-container *ngIf="!loading() && !error() && !noPublicado() && programa()">
 
       <!-- ── Header: info de la reunión ── -->
+      <div class="resumen-rail">
       <header class="header-card fade-in">
         <!-- Row 1: tipo (eyebrow) + badge fecha -->
         <div class="header-top-row">
@@ -352,7 +346,10 @@ const SECCION_LABELS: Record<string, string> = {
         </div>
       </div>
 
+      </div><!-- /resumen-rail -->
+
       <!-- ── Secciones ── -->
+      <div class="resumen-programa">
       <ng-container *ngFor="let grupo of partesAgrupadas(); let gi = index">
         <section class="seccion-card"
                  [ngStyle]="{ '--sec': grupo.color }"
@@ -487,6 +484,8 @@ const SECCION_LABELS: Record<string, string> = {
         </section><!-- /seccion-card -->
       </ng-container>
 
+      </div><!-- /resumen-programa -->
+
       <!-- ── Logística de la reunión ── -->
       <section class="seccion-card logistica-card"
                [style.animation-delay]="(partesAgrupadas().length * 50 + 120) + 'ms'">
@@ -555,7 +554,7 @@ const SECCION_LABELS: Record<string, string> = {
       /* #8490a8 se quedaba en 3.2:1 sobre blanco y casi todo lo que lo usa es
          texto de 10-11px (duraciones, fuentes, etiquetas de sala). */
       --text-3: #6b7590;
-      --brand: #6D28D9;
+      --brand: var(--color-brand-purple);
       --brand-2: #7c3aed;
       --radius-card: 16px;
       --radius-soft: 10px;
@@ -631,6 +630,59 @@ const SECCION_LABELS: Record<string, string> = {
       .resumen-container { gap: 14px; }
     }
 
+    /* Por debajo de 2200px el panel lateral y el programa no existen como
+       cajas: sus hijos se apilan como siempre, y la logística va al final. */
+    .resumen-rail, .resumen-programa { display: contents; }
+    @media (min-width: 1700px) and (max-width: 2199px) {
+      .resumen-layout { max-width: 1320px; }
+    }
+    .logistica-card { order: 1; }
+
+    /* ≥ 2K / 4K — el ancho de 1120px dejaba más de la mitad de la pantalla
+       vacía. Panel lateral con lo que hay que saber de un vistazo (cuándo,
+       qué me toca, logística) y, a la derecha, el programa en columnas que se
+       leen de arriba abajo y de izquierda a derecha, en orden de reunión. */
+    @media (min-width: 2200px) {
+      .resumen-host { padding: 32px 56px 72px; }
+      .resumen-layout { max-width: min(94vw, 2000px); }
+      .resumen-container {
+        display: grid;
+        grid-template-columns: 380px minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        column-gap: 28px;
+        row-gap: 14px;
+        align-items: start;
+      }
+      .resumen-container > :not(.resumen-rail):not(.resumen-programa):not(.logistica-card) {
+        grid-column: 1 / -1;
+      }
+      .resumen-rail {
+        display: flex; flex-direction: column; gap: 14px;
+        grid-column: 1; grid-row: 2;
+      }
+      .logistica-card { order: 0; grid-column: 1; grid-row: 3; margin-top: 0; }
+      .resumen-programa {
+        display: block;
+        grid-column: 2; grid-row: 2 / span 2;
+        column-count: 2;
+        column-gap: 20px;
+      }
+      .resumen-programa > .seccion-card {
+        break-inside: avoid;
+        margin: 0 0 14px;
+      }
+      /* La cabecera cabe en 380px: fecha arriba, hora debajo. */
+      .header-card { padding: 20px 20px 18px; }
+      .header-main { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .header-date { font-size: 1.75rem; }
+    }
+    /* 4K sin escalar: más panel y más aire entre columnas. */
+    @media (min-width: 3000px) {
+      .resumen-layout { max-width: 2900px; }
+      .resumen-container { grid-template-columns: 440px minmax(0, 1fr); column-gap: 36px; }
+      .resumen-programa { column-gap: 28px; }
+    }
+
     /* Landscape phone — reducir padding vertical para ganar altura */
     @media (max-height: 500px) and (orientation: landscape) {
       .resumen-host { padding-top: 6px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
@@ -642,22 +694,6 @@ const SECCION_LABELS: Record<string, string> = {
        SHIMMER SKELETON
     ────────────────────────────────────────── */
     .skeleton-wrap { display: flex; flex-direction: column; gap: 10px; }
-
-    .skel {
-      display: block;
-      background: linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.6s ease-in-out infinite;
-      border-radius: 6px;
-    }
-    :host-context(.dark) .skel {
-      background: linear-gradient(90deg,#1e293b 25%,#273549 50%,#1e293b 75%);
-      background-size: 200% 100%;
-    }
-    @keyframes shimmer {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
 
     .skel-card {
       background: var(--surface);
@@ -702,16 +738,6 @@ const SECCION_LABELS: Record<string, string> = {
       background: rgba(167, 139, 250, 0.12);
       border-color: rgba(167, 139, 250, 0.2);
       color: #c4b5fd;
-    }
-    .empty-icon-neg {
-      background: rgba(220, 38, 38, 0.07);
-      border: 1px solid rgba(220, 38, 38, 0.16);
-      color: #dc2626;
-    }
-    :host-context(.dark) .empty-icon-neg {
-      background: rgba(248, 113, 113, 0.12);
-      border-color: rgba(248, 113, 113, 0.2);
-      color: #f87171;
     }
     .empty-title {
       font-size: 1.0625rem; font-weight: 800;
@@ -846,11 +872,11 @@ const SECCION_LABELS: Record<string, string> = {
     .tipo-eyebrow {
       display: inline-flex; align-items: center; gap: 7px;
       margin: 0;
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.07em;
-      color: #6d28d9;
+      color: var(--color-brand-purple);
       font-family: var(--font-display);
     }
     :host-context(.dark) .tipo-eyebrow { color: #c4b5fd; }
@@ -860,7 +886,7 @@ const SECCION_LABELS: Record<string, string> = {
       display: inline-flex; align-items: center;
       padding: 4px 10px;
       border-radius: 8px;
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 800;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -943,7 +969,7 @@ const SECCION_LABELS: Record<string, string> = {
     .discurso-eyebrow {
       display: flex; align-items: center; gap: 7px;
       margin: 0 0 8px;
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.07em;
@@ -1184,7 +1210,7 @@ const SECCION_LABELS: Record<string, string> = {
       color: color-mix(in oklab, var(--sec, var(--brand)) 68%, #ffffff);
     }
     .seccion-meta {
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-family: var(--font-mono);
       font-variant-numeric: tabular-nums;
       color: var(--text-3);
@@ -1283,7 +1309,7 @@ const SECCION_LABELS: Record<string, string> = {
       text-wrap: pretty;
     }
     .duracion-text {
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       color: var(--text-3);
       white-space: nowrap;
       font-family: var(--font-mono);
@@ -1302,13 +1328,13 @@ const SECCION_LABELS: Record<string, string> = {
       border-radius: var(--radius-pill);
       background: rgba(245, 158, 11, 0.12);
       color: #b45309;
-      font-size: 0.625rem;
+      font-size: 0.75rem;
       font-weight: 700;
     }
     :host-context(.dark) .badge-reemplazo { background: rgba(245, 158, 11, 0.16); color: #fbbf24; }
 
     .sala-tag {
-      font-size: 0.625rem;
+      font-size: 0.75rem;
       font-weight: 600;
       line-height: 1;
       padding: 3px 7px;
@@ -1326,7 +1352,7 @@ const SECCION_LABELS: Record<string, string> = {
     /* Cántico y fuente: metadatos de la parte, un peldaño por debajo */
     .fuente-info,
     .parte-cantico {
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: var(--text-3);
       margin: 5px 0 0;
       line-height: 1.45;
@@ -1368,14 +1394,14 @@ const SECCION_LABELS: Record<string, string> = {
       color: var(--text-3);
     }
     .asignado-mio {
-      color: #6d28d9;
+      color: var(--color-brand-purple);
       font-weight: 700;
     }
     :host-context(.dark) .asignado-mio { color: #c4b5fd; }
     .ayudante-sep {
       color: var(--text-3);
       margin: 0 5px;
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
     }
 
     /* Badge Tú */
@@ -1384,8 +1410,8 @@ const SECCION_LABELS: Record<string, string> = {
       padding: 1px 6px;
       border-radius: var(--radius-pill);
       background: rgba(109, 40, 217, 0.14);
-      color: #6d28d9;
-      font-size: 0.625rem;
+      color: var(--color-brand-purple);
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.02em;
       animation: popIn 280ms var(--ease-expo) both;
@@ -1408,7 +1434,7 @@ const SECCION_LABELS: Record<string, string> = {
       width: 18px; height: 18px;
       border-radius: 5px;
       display: inline-flex; align-items: center; justify-content: center;
-      font-size: 0.625rem;
+      font-size: 0.75rem;
       font-weight: 700;
       font-family: var(--font-mono);
       border: 1px solid;
@@ -1429,7 +1455,7 @@ const SECCION_LABELS: Record<string, string> = {
       min-width: 0;
     }
     .sala-block-label {
-      font-size: 0.625rem;
+      font-size: 0.75rem;
       color: var(--text-3);
       font-weight: 600;
       text-transform: uppercase;
@@ -1465,7 +1491,7 @@ const SECCION_LABELS: Record<string, string> = {
     }
     .logistica-group-title {
       margin: 0 0 10px;
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.09em;
@@ -1497,7 +1523,7 @@ const SECCION_LABELS: Record<string, string> = {
       min-width: 0;
     }
     .logistica-item-label {
-      font-size: 0.625rem;
+      font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.07em;
@@ -1561,7 +1587,6 @@ const SECCION_LABELS: Record<string, string> = {
       }
       .banner-icon-wrap { animation: none; }
       .orden-num { transition: none; }
-      .skel { animation: none; opacity: 0.5; }
     }
     @keyframes fadeOnly {
       from { opacity: 0; }

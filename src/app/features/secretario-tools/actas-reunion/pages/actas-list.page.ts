@@ -7,6 +7,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActaService } from '../../services/acta.service';
 import { Acta, TipoReunion } from '../../models/acta.model';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
+import { AuthStore } from '../../../../core/auth/auth.store';
+import { PageHeaderComponent, ModalComponent, ConfirmDialogComponent, EmptyStateComponent, ToastService } from '../../../../shared/components';
+import { puedeEditarActas } from '../../../../core/auth/acceso-modulos';
 
 const TIPO_LABEL: Record<TipoReunion, string> = {
   ancianos: 'Reunión de ancianos',
@@ -20,91 +23,36 @@ type ToastType = 'error' | 'success' | 'info';
 @Component({
   standalone: true,
   selector: 'app-actas-list',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ModalComponent, ConfirmDialogComponent, EmptyStateComponent],
   template: `
   <div class="h-full flex flex-col overflow-hidden">
 
-    <!-- ───────── TOAST ───────── -->
-    @if (toast()) {
-      <div class="toast-wrap" [class.toast-error]="toast()!.type === 'error'" [class.toast-success]="toast()!.type === 'success'" [class.toast-info]="toast()!.type === 'info'">
-        @if (toast()!.type === 'success') {
-          <span class="toast-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-          </span>
-        } @else if (toast()!.type === 'error') {
-          <span class="toast-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-          </span>
-        } @else {
-          <span class="toast-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 8h.01M12 12v4"/></svg>
-          </span>
-        }
-        <span class="toast-msg">{{ toast()!.msg }}</span>
-        <button class="toast-close" (click)="toast.set(null)" type="button" aria-label="Cerrar notificación">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
+    <app-page-header eyebrow="Administración" title="Actas de reunión"
+      [subtitle]="puedeEditar ? 'Crea o busca un acta — cada reunión queda registrada aquí.' : 'Actas de las reuniones de ancianos. Puede leerlas y descargarlas.'">
+      @if (puedeEditar) {
+        <button (click)="abrirNueva()" class="btn-primary max-md:hidden" type="button">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+          <span>Nueva acta</span>
         </button>
-      </div>
-    }
-
-    <!-- ───────── HERO + BODY WRAPPER ───────── -->
-    <div class="flex-1 flex flex-col m-1 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 min-h-0">
-
-    <!-- ───────── HERO ───────── -->
-    <header class="hero-grad text-white shrink-0">
-
-      <div class="px-4 sm:px-6 lg:px-10 py-4 sm:py-5">
-        <!-- Row 1: eyebrow + button (botón oculto en mobile — FAB lo reemplaza) -->
-        <div class="hero-row mb-2 sm:mb-3">
-          <div>
-            <div class="hero-eyebrow">
-              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-              <span>Módulo Secretario</span>
-            </div>
-            <h1 class="hero-title">Actas de reunión</h1>
-            <p class="hero-desc">Crea o busca un acta — cada reunión queda registrada aquí.</p>
-          </div>
-          <button (click)="abrirNueva()" class="btn-hero group hero-btn-desktop" type="button">
-            <svg class="w-4 h-4 transition-transform duration-200 group-hover:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
-            <span>Nueva acta</span>
-          </button>
-        </div>
-
-        <!-- Row 2: search -->
-        <div class="hero-bottom-row">
-          <div class="hero-search-wrap">
-            <svg class="hero-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"/></svg>
-            <input class="hero-search-input" placeholder="Buscar acta…"
-                   [ngModel]="busqueda()"
-                   (ngModelChange)="onBusqueda($event)" />
-          </div>
-        </div>
-      </div>
-    </header>
+      }
+    </app-page-header>
 
     <!-- ───────── BODY ───────── -->
-    <div class="flex-1 flex flex-col bg-white dark:bg-slate-900 px-4 pt-3 pb-4 gap-4 min-h-0 overflow-y-auto">
+    <div class="flex-1 flex flex-col gap-4 min-h-0 overflow-y-auto">
+
+      <label class="search-field max-w-sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"/></svg>
+        <input class="search-input" placeholder="Buscar acta…" aria-label="Buscar acta"
+               [ngModel]="busqueda()"
+               (ngModelChange)="onBusqueda($event)" />
+      </label>
 
       <!-- Formulario nueva acta -->
       @if (creando()) {
-        <!-- Overlay mobile — cierra al tocar fuera -->
-        <div class="sheet-overlay" (click)="creando.set(false)" aria-hidden="true"></div>
-
-        <section #formNueva class="form-nueva-section card-anim bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-          <!-- Handle pill — solo mobile -->
-          <div class="sheet-handle-wrap" aria-hidden="true">
-            <div class="sheet-handle"></div>
-          </div>
-
-          <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <h3 class="font-semibold text-slate-800 dark:text-slate-100 text-sm">Nueva acta</h3>
-            <button (click)="creando.set(false)" class="icon-btn" aria-label="Cerrar" type="button">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
-            </button>
-          </div>
-          <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <label class="form-label">
-              <span>Tipo <em class="text-rose-500 not-italic">*</em></span>
+        <app-modal [open]="true" title="Nueva acta" variant="sheet" size="xl" [hasFooter]="true" (openChange)="$event || creando.set(false)">
+          <div #formNueva class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <label class="block">
+              <span class="form-label">Tipo <em class="text-rose-500 not-italic">*</em></span>
               <div class="tipo-select" [class.is-open]="tipoOpen()">
                 @if (tipoOpen()) {
                   <div class="tipo-backdrop" (click)="tipoOpen.set(false)"></div>
@@ -148,12 +96,12 @@ type ToastType = 'error' | 'success' | 'info';
                 }
               </div>
             </label>
-            <label class="form-label">
-              <span>Título <em class="text-rose-500 not-italic">*</em></span>
-              <input class="field" [(ngModel)]="form.titulo" placeholder="Ej. Reunión semanal de ancianos" />
+            <label class="block">
+              <span class="form-label">Título <em class="text-rose-500 not-italic">*</em></span>
+              <input class="form-control" [(ngModel)]="form.titulo" placeholder="Ej. Reunión semanal de ancianos" />
             </label>
-            <div class="form-label">
-              <span>Fecha <em class="text-rose-500 not-italic">*</em></span>
+            <div>
+              <span class="form-label">Fecha <em class="text-rose-500 not-italic">*</em></span>
 
               <!-- Custom date picker -->
               <div class="fecha-wrap" [class.is-open]="fechaPickerOpen()">
@@ -223,19 +171,21 @@ type ToastType = 'error' | 'success' | 'info';
                 </span>
               }
             </div>
-            <div class="md:col-span-3 form-actions">
-              <button (click)="creando.set(false)" class="btn-ghost form-btn-cancel" type="button">Cancelar</button>
-              <button (click)="crear()" [disabled]="!form.titulo || !form.fecha_reunion || guardando()" class="btn-primary form-btn-submit" type="button">
+          </div>
+          <ng-container slot="footer">
+            
+              <button (click)="creando.set(false)" class="btn-ghost" type="button">Cancelar</button>
+              <button (click)="crear()" [disabled]="!form.titulo || !form.fecha_reunion || guardando()" class="btn-primary" type="button">
                 @if (guardando()) {
-                  <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                  <span class="spinner spinner-xs" aria-hidden="true"></span>
                   Creando…
                 } @else {
                   Crear y abrir
                 }
               </button>
-            </div>
-          </div>
-        </section>
+            
+          </ng-container>
+        </app-modal>
       }
 
       <!-- Filtros + Grid -->
@@ -246,11 +196,11 @@ type ToastType = 'error' | 'success' | 'info';
         @if (cargando()) {
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
             @for (_ of skeletons; track $index) {
-              <div class="skeleton-card">
-                <div class="skel skel-icon"></div>
-                <div class="skel skel-title mt-3"></div>
-                <div class="skel skel-sub mt-2"></div>
-                <div class="skel skel-footer mt-4"></div>
+              <div class="card card-padded">
+                <div class="skeleton h-9 w-9 rounded-xl"></div>
+                <div class="skeleton h-4 w-4/5 mt-3"></div>
+                <div class="skeleton h-3 w-1/2 mt-2"></div>
+                <div class="skeleton h-3 w-full mt-4"></div>
               </div>
             }
           </div>
@@ -258,17 +208,9 @@ type ToastType = 'error' | 'success' | 'info';
 
         <!-- Empty state — lista vacía sin búsqueda -->
         @else if (!actas().length) {
-          <div class="empty-state">
-            <div class="empty-icon">
-              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            </div>
-            <p class="text-slate-700 dark:text-slate-300 font-semibold text-sm mb-1">Aún no hay actas</p>
-            <p class="text-slate-400 dark:text-slate-600 text-xs mb-4">Crea tu primera acta para empezar a registrar reuniones.</p>
-            <button type="button" (click)="abrirNueva()" class="btn-primary">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
-              Nueva acta
-            </button>
-          </div>
+          <app-empty-state [compact]="true" icon="file-text" title="Aún no hay actas"
+            [description]="puedeEditar ? 'Crea tu primera acta para empezar a registrar reuniones.' : 'Cuando el secretario pase una reunión de ancianos a acta, aparecerá aquí.'"
+            [actionLabel]="puedeEditar ? 'Nueva acta' : ''" (action)="abrirNueva()"></app-empty-state>
         }
 
         <!-- Grid de actas -->
@@ -286,7 +228,7 @@ type ToastType = 'error' | 'success' | 'info';
                     <div class="acta-icon">
                       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     </div>
-                    <span class="badge" [class.badge-emerald]="a.estado === 'finalizada'" [class.badge-amber]="a.estado !== 'finalizada'">
+                    <span class="badge" [class.badge-active]="a.estado === 'finalizada'" [class.badge-warning]="a.estado !== 'finalizada'">
                       <span class="badge-dot"></span>
                       {{ a.estado === 'finalizada' ? 'Finalizada' : 'Borrador' }}
                     </span>
@@ -310,7 +252,7 @@ type ToastType = 'error' | 'success' | 'info';
                 </button>
 
                 <!-- Solo borradores: eliminar (por si se creó por error) -->
-                @if (a.estado !== 'finalizada') {
+                @if (puedeEditar && a.estado !== 'finalizada') {
                   <button type="button" class="card-delete-btn"
                           (click)="pedirEliminar(a, $event)"
                           aria-label="Eliminar borrador" title="Eliminar borrador">
@@ -321,7 +263,7 @@ type ToastType = 'error' | 'success' | 'info';
             }
 
             <!-- Tarjeta "nueva acta" — oculta cuando hay búsqueda activa -->
-            @if (!busqueda()) {
+            @if (puedeEditar && !busqueda()) {
               <button type="button" (click)="abrirNueva()" class="acta-card-new group"
                       [style.--stagger]="filtradas().length * 35 + 'ms'">
                 <div class="new-card-plus">
@@ -342,38 +284,22 @@ type ToastType = 'error' | 'success' | 'info';
 
       </div><!-- /filtros+grid wrapper -->
     </div><!-- /body -->
-    </div><!-- /hero+body wrapper -->
 
     <!-- Mobile FAB — Nueva acta (fijo en esquina inferior derecha) -->
+    @if (puedeEditar) {
     <button type="button" (click)="abrirNueva()" class="mobile-fab-nueva" aria-label="Nueva acta">
       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
       </svg>
     </button>
+    }
 
     <!-- ───────── MODAL: Eliminar borrador ───────── -->
     @if (actaAEliminar(); as aDel) {
-      <div class="confirm-overlay" (click)="actaAEliminar.set(null)">
-        <div class="confirm-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-          <div class="confirm-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-          </div>
-          <h3 class="confirm-title">Eliminar borrador</h3>
-          <p class="confirm-message">Se eliminará esta acta de forma permanente. Esta acción no se puede deshacer.</p>
-          <p class="confirm-target">{{ aDel.titulo }}</p>
-          <div class="confirm-actions">
-            <button class="confirm-btn confirm-btn-ghost" type="button" (click)="actaAEliminar.set(null)" [disabled]="eliminando()">Cancelar</button>
-            <button class="confirm-btn confirm-btn-danger" type="button" (click)="eliminarConfirmado()" [disabled]="eliminando()">
-              @if (eliminando()) {
-                <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
-                Eliminando…
-              } @else {
-                Eliminar
-              }
-            </button>
-          </div>
-        </div>
-      </div>
+      <app-confirm-dialog [open]="true" title="Eliminar borrador" severity="danger"
+        [message]="'Se eliminará esta acta de forma permanente. Esta acción no se puede deshacer. ' + aDel.titulo"
+        confirmLabel="Eliminar" [busy]="eliminando()"
+        (confirmed)="eliminarConfirmado()" (openChange)="$event || actaAEliminar.set(null)"></app-confirm-dialog>
     }
 
   </div>
@@ -382,160 +308,19 @@ type ToastType = 'error' | 'success' | 'info';
     :host {
       display: block; height: 100%;
       --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-      --brand-purple: #6D28D9;
+      --brand-purple: var(--color-brand-purple);
       --brand-purple-hover: #5B21B6;
       --brand-emerald: #10B981;
       --brand-amber: #F59E0B;
       --brand-rose: #F43F5E;
     }
 
-    /* ── Toast ── */
-    .toast-wrap {
-      position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999;
-      display: flex; align-items: center; gap: 0.625rem;
-      padding: 0.75rem 1rem; border-radius: 1rem; max-width: 22rem;
-      font-size: 0.8125rem; font-weight: 500;
-      box-shadow: 0 8px 28px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
-      animation: toastSlideIn 260ms var(--ease-out) both;
-    }
-    @keyframes toastSlideIn {
-      from { opacity: 0; transform: translateX(20px) scale(0.97); }
-      to   { opacity: 1; transform: translateX(0) scale(1); }
-    }
-    .toast-error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-    .toast-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-    .toast-info    { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-    :host-context(.dark) .toast-error   { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
-    :host-context(.dark) .toast-success { background: #052e16; color: #86efac; border-color: #14532d; }
-    :host-context(.dark) .toast-info    { background: #0c1a3a; color: #93c5fd; border-color: #1e3a5f; }
-
-    .toast-icon {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 1.375rem; height: 1.375rem; border-radius: 50%;
-      background: currentColor; color: #fff; flex-shrink: 0;
-      opacity: 0.15;
-    }
-    .toast-wrap .toast-icon { opacity: 1; }
-    .toast-error   .toast-icon { background: rgba(239,68,68,0.12);   color: #ef4444; }
-    .toast-success .toast-icon { background: rgba(34,197,94,0.12);   color: #16a34a; }
-    .toast-info    .toast-icon { background: rgba(59,130,246,0.12);  color: #2563eb; }
-    :host-context(.dark) .toast-error   .toast-icon { background: rgba(239,68,68,0.15);   color: #fca5a5; }
-    :host-context(.dark) .toast-success .toast-icon { background: rgba(34,197,94,0.15);   color: #86efac; }
-    :host-context(.dark) .toast-info    .toast-icon { background: rgba(59,130,246,0.15);  color: #93c5fd; }
-
-    .toast-msg { flex: 1; }
-    .toast-close {
-      flex-shrink: 0; width: 1.375rem; height: 1.375rem;
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0.5; cursor: pointer; border-radius: 0.375rem;
-      transition: opacity 150ms, background 150ms;
-    }
-    .toast-close:hover { opacity: 1; background: rgba(0,0,0,0.06); }
-    :host-context(.dark) .toast-close:hover { background: rgba(255,255,255,0.1); }
-
-    /* ── Inputs ── */
-    .field {
-      width: 100%; border: 1px solid #e2e8f0; background: #fff;
-      border-radius: 0.75rem; padding: 0.5625rem 0.75rem;
-      font-size: 0.8125rem; color: #1e293b;
-      min-height: 2.75rem;
-      transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
-    }
-    .field:focus { outline: none; border-color: #6D28D9; box-shadow: 0 0 0 3px rgba(109,40,217,0.12); }
-    .field::placeholder { color: #94a3b8; font-style: italic; }
-    :host-context(.dark) .field { background: #1e293b; border-color: #334155; color: #f1f5f9; }
-    :host-context(.dark) .field:focus { border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(167,139,250,0.18); }
-    :host-context(.dark) .field::placeholder { color: #475569; }
-
-    /* Anti-zoom iOS: ≥16px on mobile */
-    @media (max-width: 767px) {
-      .field { font-size: 1rem; }
-    }
-
-    .form-label { display: block; font-size: 0.75rem; }
-    .form-label > span:first-child { display: block; color: #475569; margin-bottom: 0.25rem; font-weight: 500; }
-    :host-context(.dark) .form-label > span:first-child { color: #cbd5e1; }
-
+    @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .field-hint-warn {
       display: inline-flex; align-items: center; gap: 0.25rem;
-      margin-top: 0.3rem; font-size: 0.7rem; color: #92400e; font-weight: 500;
+      margin-top: 0.3rem; font-size: 0.75rem; color: #92400e; font-weight: 500;
     }
     :host-context(.dark) .field-hint-warn { color: #fbbf24; }
-
-    /* ── Buttons ── */
-    .btn-primary, .btn-ghost, .btn-hero {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.5rem 0.875rem; font-size: 0.8125rem; font-weight: 600;
-      border-radius: 0.75rem; cursor: pointer; user-select: none;
-      min-height: 2.75rem;
-      transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), color 160ms var(--ease-out);
-    }
-    .btn-primary { background: var(--brand-purple); color: #fff; box-shadow: 0 1px 2px rgba(109,40,217,0.18); }
-    .btn-ghost { color: #64748b; }
-    .btn-hero {
-      background: rgba(255,255,255,0.16); color: #fff;
-      border: 1px solid rgba(255,255,255,0.24); padding: 0.625rem 1.125rem; font-weight: 600;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-    }
-    :host-context(.dark) .btn-ghost { color: #94a3b8; }
-    @media (hover: hover) and (pointer: fine) {
-      .btn-primary:hover:not(:disabled) { background: var(--brand-purple-hover); box-shadow: 0 4px 14px rgba(109,40,217,0.28); }
-      .btn-ghost:hover { background: rgba(100,116,139,0.08); color: #334155; }
-      .btn-hero:hover { background: rgba(255,255,255,0.22); }
-      :host-context(.dark) .btn-ghost:hover { background: rgba(148,163,184,0.12); color: #f1f5f9; }
-    }
-    .btn-primary:active, .btn-ghost:active, .btn-hero:active { transform: scale(0.97); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .icon-btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 2rem; height: 2rem; border-radius: 0.625rem; color: #94a3b8;
-      transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), color 160ms var(--ease-out);
-    }
-    @media (hover: hover) { .icon-btn:hover { background: #f1f5f9; color: #475569; } }
-    .icon-btn:active { transform: scale(0.92); }
-    :host-context(.dark) .icon-btn:hover { background: #1e293b; color: #cbd5e1; }
-
-    /* ── Stats ── */
-    .hero-bottom-row {
-      display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-    }
-    .stat-card {
-      display: flex; flex-direction: row; align-items: center; gap: 0.5rem;
-      padding: 0.5rem 0.875rem;
-      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.28);
-      border-radius: 0.75rem;
-    }
-    .stat-dot {
-      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
-    }
-    .stat-dot-total   { background: rgba(255,255,255,0.8); }
-    .stat-dot-borrador { background: #fb923c; box-shadow: 0 0 7px rgba(251,146,60,0.85); }
-    .stat-dot-final   { background: #4ade80; box-shadow: 0 0 7px rgba(74,222,128,0.85); }
-    .stat-num { font-size: 1.375rem; font-weight: 800; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-    .stat-label { font-size: 0.625rem; color: rgba(255,255,255,0.8); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
-
-    /* ── Hero search ── */
-    .hero-search-wrap {
-      position: relative; flex: 1; min-width: 0; max-width: 22rem;
-    }
-    .hero-search-icon {
-      position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
-      color: rgba(255,255,255,0.7); pointer-events: none; width: 0.9rem; height: 0.9rem;
-    }
-    .hero-search-input {
-      width: 100%; padding: 0.5rem 0.75rem 0.5rem 2.25rem;
-      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
-      border-radius: 0.75rem; font-size: 0.8125rem; color: #fff;
-      min-height: 2.25rem;
-      transition: background 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
-    }
-    .hero-search-input::placeholder { color: rgba(255,255,255,0.6); }
-    .hero-search-input:focus {
-      outline: none; background: rgba(255,255,255,0.22);
-      border-color: rgba(255,255,255,0.55); box-shadow: 0 0 0 3px rgba(255,255,255,0.12);
-    }
-    @media (max-width: 767px) { .hero-search-input { font-size: 1rem; } }
 
     /* ── Custom tipo select ── */
     .tipo-select { position: relative; }
@@ -548,14 +333,14 @@ type ToastType = 'error' | 'success' | 'info';
       font-size: 0.8125rem; color: #1e293b; text-align: left; cursor: pointer;
       transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
     }
-    .tipo-select.is-open .tipo-trigger { border-color: #6D28D9; box-shadow: 0 0 0 3px rgba(109,40,217,0.12); }
+    .tipo-select.is-open .tipo-trigger { border-color: var(--color-brand-purple); box-shadow: 0 0 0 3px rgba(109,40,217,0.12); }
     :host-context(.dark) .tipo-trigger { background: #1e293b; border-color: #334155; color: #f1f5f9; }
     :host-context(.dark) .tipo-select.is-open .tipo-trigger { border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(167,139,250,0.18); }
 
     .tipo-trigger-ico {
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
       width: 1.5rem; height: 1.5rem; border-radius: 0.4rem;
-      background: rgba(109,40,217,0.08); color: #6D28D9;
+      background: rgba(109,40,217,0.08); color: var(--color-brand-purple);
     }
     .tipo-trigger-ico svg { width: 0.875rem; height: 0.875rem; }
     :host-context(.dark) .tipo-trigger-ico { background: rgba(167,139,250,0.12); color: #a78bfa; }
@@ -590,7 +375,7 @@ type ToastType = 'error' | 'success' | 'info';
     .tipo-opt-ico {
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
       width: 2rem; height: 2rem; border-radius: 0.5rem;
-      background: rgba(109,40,217,0.07); color: #6D28D9;
+      background: rgba(109,40,217,0.07); color: var(--color-brand-purple);
       transition: background 120ms;
     }
     .tipo-opt-ico svg { width: 1rem; height: 1rem; }
@@ -599,20 +384,14 @@ type ToastType = 'error' | 'success' | 'info';
 
     .tipo-opt-text { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; }
     .tipo-opt-label { font-size: 0.8125rem; font-weight: 600; color: #1e293b; line-height: 1.3; }
-    .tipo-opt-desc  { font-size: 0.7rem; color: #94a3b8; line-height: 1.3; }
-    .tipo-option.is-selected .tipo-opt-label { color: #6D28D9; }
+    .tipo-opt-desc  { font-size: 0.75rem; color: #94a3b8; line-height: 1.3; }
+    .tipo-option.is-selected .tipo-opt-label { color: var(--color-brand-purple); }
     :host-context(.dark) .tipo-opt-label { color: #e2e8f0; }
     :host-context(.dark) .tipo-option.is-selected .tipo-opt-label { color: #c4b5fd; }
     :host-context(.dark) .tipo-opt-desc { color: #64748b; }
 
-    .tipo-check { width: 0.9rem; height: 0.9rem; color: #6D28D9; flex-shrink: 0; }
+    .tipo-check { width: 0.9rem; height: 0.9rem; color: var(--color-brand-purple); flex-shrink: 0; }
     :host-context(.dark) .tipo-check { color: #a78bfa; }
-
-    /* ── Card entrance ── */
-    .card-anim { animation: cardIn 280ms var(--ease-out) both; }
-    /* Los desplegables sobresalen del formulario: debe quedar por encima de las tarjetas que siguen */
-    .form-nueva-section { position: relative; z-index: 30; }
-    @keyframes cardIn { from { opacity: 0; transform: translateY(4px) scale(0.99); } to { opacity: 1; transform: none; } }
 
     /* ── Custom date picker ── */
     .fecha-wrap { position: relative; }
@@ -626,12 +405,12 @@ type ToastType = 'error' | 'success' | 'info';
       transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
     }
     .fecha-wrap.is-open .fecha-trigger,
-    .fecha-trigger:focus { outline: none; border-color: #6D28D9; box-shadow: 0 0 0 3px rgba(109,40,217,0.12); }
+    .fecha-trigger:focus { outline: none; border-color: var(--color-brand-purple); box-shadow: 0 0 0 3px rgba(109,40,217,0.12); }
     :host-context(.dark) .fecha-trigger { background: #1e293b; border-color: #334155; color: #f1f5f9; }
     :host-context(.dark) .fecha-wrap.is-open .fecha-trigger { border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(167,139,250,0.18); }
 
     .fecha-ico { width: 1rem; height: 1rem; color: #94a3b8; flex-shrink: 0; }
-    .fecha-wrap.is-open .fecha-ico, .fecha-trigger.has-value .fecha-ico { color: #6D28D9; }
+    .fecha-wrap.is-open .fecha-ico, .fecha-trigger.has-value .fecha-ico { color: var(--color-brand-purple); }
     :host-context(.dark) .fecha-ico { color: #64748b; }
     :host-context(.dark) .fecha-trigger.has-value .fecha-ico { color: #a78bfa; }
 
@@ -666,7 +445,7 @@ type ToastType = 'error' | 'success' | 'info';
     .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.875rem; }
     .cal-month-label { font-size: 0.875rem; font-weight: 700; color: #1e293b; text-transform: capitalize; }
     :host-context(.dark) .cal-month-label { color: #e2e8f0; }
-    .cal-year { color: #6D28D9; }
+    .cal-year { color: var(--color-brand-purple); }
     :host-context(.dark) .cal-year { color: #a78bfa; }
 
     .cal-nav {
@@ -675,7 +454,7 @@ type ToastType = 'error' | 'success' | 'info';
       color: #64748b; transition: background 120ms, color 120ms;
     }
     .cal-nav svg { width: 1rem; height: 1rem; }
-    .cal-nav:hover { background: #f3f0ff; color: #6D28D9; }
+    .cal-nav:hover { background: #f3f0ff; color: var(--color-brand-purple); }
     :host-context(.dark) .cal-nav { color: #94a3b8; }
     :host-context(.dark) .cal-nav:hover { background: rgba(109,40,217,0.15); color: #a78bfa; }
 
@@ -684,7 +463,7 @@ type ToastType = 'error' | 'success' | 'info';
       margin-bottom: 0.25rem;
     }
     .cal-weekdays span {
-      text-align: center; font-size: 0.625rem; font-weight: 700;
+      text-align: center; font-size: 0.75rem; font-weight: 700;
       color: #94a3b8; text-transform: uppercase; padding: 0.25rem 0;
     }
     :host-context(.dark) .cal-weekdays span { color: #475569; }
@@ -700,18 +479,18 @@ type ToastType = 'error' | 'success' | 'info';
     :host-context(.dark) .cal-day { color: #cbd5e1; }
     .cal-day.other-month { color: #cbd5e1; }
     :host-context(.dark) .cal-day.other-month { color: #334155; }
-    .cal-day.is-today { font-weight: 700; color: #6D28D9; }
+    .cal-day.is-today { font-weight: 700; color: var(--color-brand-purple); }
     :host-context(.dark) .cal-day.is-today { color: #a78bfa; }
     .cal-day.is-today:not(.is-selected)::after {
       content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
-      width: 3px; height: 3px; border-radius: 50%; background: #6D28D9;
+      width: 3px; height: 3px; border-radius: 50%; background: var(--color-brand-purple);
     }
     .cal-day { position: relative; }
     .cal-day.is-selected {
-      background: #6D28D9 !important; color: #fff !important;
+      background: var(--color-brand-purple) !important; color: #fff !important;
       font-weight: 700; border-radius: 50%;
     }
-    @media (hover: hover) { .cal-day:not(.is-selected):hover { background: #f3f0ff; color: #6D28D9; } }
+    @media (hover: hover) { .cal-day:not(.is-selected):hover { background: #f3f0ff; color: var(--color-brand-purple); } }
     :host-context(.dark) .cal-day:not(.is-selected):hover { background: rgba(109,40,217,0.15); color: #a78bfa; }
 
     .cal-footer {
@@ -720,7 +499,7 @@ type ToastType = 'error' | 'success' | 'info';
     }
     :host-context(.dark) .cal-footer { border-top-color: #2d3f5e; }
     .cal-today-btn {
-      font-size: 0.75rem; font-weight: 600; color: #6D28D9;
+      font-size: 0.75rem; font-weight: 600; color: var(--color-brand-purple);
       padding: 0.375rem 0.875rem; border-radius: 0.5rem;
       transition: background 120ms;
     }
@@ -740,70 +519,8 @@ type ToastType = 'error' | 'success' | 'info';
       }
       .cal-handle-row { display: flex; padding-top: 0.75rem; }
       .cal-day { min-height: 2.75rem; font-size: 0.9375rem; }
-      .cal-weekdays span { font-size: 0.6875rem; padding: 0.375rem 0; }
+      .cal-weekdays span { font-size: 0.75rem; padding: 0.375rem 0; }
     }
-
-    /* ── Bottom sheet (mobile) ── */
-    .sheet-handle-wrap { display: none; justify-content: center; padding: 0.625rem 0 0; }
-    .sheet-handle { width: 2.5rem; height: 4px; border-radius: 999px; background: #e2e8f0; }
-    :host-context(.dark) .sheet-handle { background: #334155; }
-
-    .sheet-overlay { display: none; }
-
-    /* ── Form action buttons ── */
-    .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.25rem; }
-
-    @media (max-width: 767px) {
-      .sheet-overlay {
-        display: block;
-        position: fixed; inset: 0; z-index: 39;
-        background: rgba(0,0,0,0.45);
-        animation: overlayIn 220ms ease both;
-      }
-      @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
-
-      .form-nueva-section {
-        position: fixed !important; bottom: 0; left: 0; right: 0; z-index: 40;
-        border-radius: 1.25rem 1.25rem 0 0 !important;
-        max-height: 92dvh; overflow-y: auto;
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-        animation: sheetUp 280ms cubic-bezier(0.32, 0.72, 0, 1) both !important;
-        box-shadow: 0 -8px 40px rgba(0,0,0,0.2);
-      }
-      @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-      .sheet-handle-wrap { display: flex; }
-
-      .form-actions {
-        flex-direction: column-reverse; gap: 0.625rem; padding-top: 0.5rem;
-      }
-      .form-btn-cancel, .form-btn-submit {
-        width: 100%; justify-content: center; min-height: 3rem;
-      }
-      .form-btn-submit { font-size: 0.9375rem; }
-    }
-
-    /* ── Skeleton loader ── */
-    .skeleton-card {
-      background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem;
-      padding: 1.25rem; min-height: 10rem;
-    }
-    :host-context(.dark) .skeleton-card { background: #131b2e; border-color: #1e293b; }
-    .skel {
-      border-radius: 0.5rem;
-      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.4s infinite;
-    }
-    :host-context(.dark) .skel {
-      background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
-      background-size: 200% 100%;
-    }
-    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-    .skel-icon  { width: 2.25rem; height: 2.25rem; border-radius: 0.625rem; }
-    .skel-title { height: 1rem; width: 80%; }
-    .skel-sub   { height: 0.75rem; width: 55%; }
-    .skel-footer{ height: 0.75rem; width: 100%; }
 
     /* ── Acta card ── */
     .acta-card {
@@ -825,7 +542,7 @@ type ToastType = 'error' | 'success' | 'info';
       .acta-card:hover { background: #fff; border-color: #c4b5fd; box-shadow: 0 8px 24px rgba(0,0,0,0.13); transform: translateY(-2px); }
       :host-context(.dark) .acta-card:hover { border-color: rgba(109,40,217,0.5); box-shadow: 0 8px 24px rgba(0,0,0,0.32); }
       .acta-card:hover .card-glow { opacity: 1; }
-      .acta-card:hover .card-title { color: #6D28D9; }
+      .acta-card:hover .card-title { color: var(--color-brand-purple); }
       :host-context(.dark) .acta-card:hover .card-title { color: #c4b5fd; }
     }
     .acta-card:active { transform: scale(0.99); }
@@ -860,7 +577,7 @@ type ToastType = 'error' | 'success' | 'info';
     :host-context(.dark) .card-date { color: #94a3b8; }
     .card-open-link {
       display: inline-flex; align-items: center; gap: 0.25rem;
-      font-size: 0.75rem; font-weight: 600; color: #6D28D9;
+      font-size: 0.75rem; font-weight: 600; color: var(--color-brand-purple);
       min-height: 2.75rem; padding: 0 0.25rem;
     }
     :host-context(.dark) .card-open-link { color: #c4b5fd; }
@@ -870,37 +587,13 @@ type ToastType = 'error' | 'success' | 'info';
     .acta-icon {
       width: 2.25rem; height: 2.25rem; border-radius: 0.625rem; flex-shrink: 0;
       background: linear-gradient(135deg, #ede9fe, #ddd6fe);
-      color: #6D28D9; display: flex; align-items: center; justify-content: center;
+      color: var(--color-brand-purple); display: flex; align-items: center; justify-content: center;
       transition: transform 200ms var(--ease-out);
     }
     :host-context(.dark) .acta-icon { background: linear-gradient(135deg, rgba(109,40,217,0.25), rgba(124,58,237,0.2)); color: #c4b5fd; }
     .acta-card:hover .acta-icon { transform: rotate(-4deg); }
 
-    /* ── Badges ── */
-    .badge {
-      display: inline-flex; align-items: center; gap: 0.375rem;
-      padding: 0.1875rem 0.5rem; font-size: 0.65rem; font-weight: 700;
-      border-radius: 999px;
-    }
     .badge-dot { width: 0.375rem; height: 0.375rem; border-radius: 999px; background: currentColor; }
-    .badge-emerald { background: #d1fae5; color: #047857; }
-    .badge-amber   { background: #fef3c7; color: #92400e; }
-    :host-context(.dark) .badge-emerald { background: rgba(16,185,129,0.16);  color: #6ee7b7; }
-    :host-context(.dark) .badge-amber   { background: rgba(245,158,11,0.16);  color: #fcd34d; }
-
-    /* ── Empty state ── */
-    .empty-state {
-      text-align: center; padding: 3.5rem 1rem;
-      background: #fff; border: 1px dashed #e2e8f0; border-radius: 1.25rem;
-    }
-    :host-context(.dark) .empty-state { background: #0f172a; border-color: #1e293b; }
-    .empty-icon {
-      width: 3.5rem; height: 3.5rem; border-radius: 1rem;
-      background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #6D28D9;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 0.875rem;
-    }
-    :host-context(.dark) .empty-icon { background: linear-gradient(135deg, rgba(109,40,217,0.25), rgba(124,58,237,0.2)); color: #c4b5fd; }
 
     /* ── New acta card ── */
     .acta-card-new {
@@ -917,9 +610,9 @@ type ToastType = 'error' | 'success' | 'info';
     }
     :host-context(.dark) .acta-card-new { border-color: rgba(255,255,255,0.1); color: #475569; background: rgba(11,19,38,0.4); }
     @media (hover: hover) and (pointer: fine) {
-      .acta-card-new:hover { opacity: 1; border-color: #7c3aed; border-style: solid; color: #6D28D9; background: #faf5ff; }
+      .acta-card-new:hover { opacity: 1; border-color: #7c3aed; border-style: solid; color: var(--color-brand-purple); background: #faf5ff; }
       :host-context(.dark) .acta-card-new:hover { opacity: 1; border-color: rgba(109,40,217,0.55); color: #c4b5fd; background: rgba(109,40,217,0.07); }
-      .acta-card-new:hover .new-card-plus { background: #ede9fe; color: #6D28D9; transform: scale(1.1); }
+      .acta-card-new:hover .new-card-plus { background: #ede9fe; color: var(--color-brand-purple); transform: scale(1.1); }
       :host-context(.dark) .acta-card-new:hover .new-card-plus { background: rgba(109,40,217,0.2); color: #c4b5fd; }
     }
     .acta-card-new:active { transform: scale(0.97); }
@@ -935,9 +628,6 @@ type ToastType = 'error' | 'success' | 'info';
 
     .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-    /* ── Spin ── */
-    .animate-spin { animation: spin 0.7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -945,54 +635,6 @@ type ToastType = 'error' | 'success' | 'info';
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
       }
-    }
-
-    /* ── Hero fondo: mismo degradado que visita-superintendente y transferencias ── */
-    .hero-grad {
-      position: relative; overflow: hidden;
-      background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 60%, #a855f7 100%);
-      box-shadow: 0 6px 20px -6px rgba(109,40,217,0.4);
-    }
-
-    /* ── Hero typography ── */
-    .hero-eyebrow {
-      display: flex; align-items: center; gap: 0.375rem;
-      color: rgba(196,181,253,0.9); font-size: 0.6rem; text-transform: uppercase;
-      letter-spacing: 0.18em; font-weight: 600; margin-bottom: 0.25rem;
-    }
-    .hero-title {
-      font-family: var(--font-display);
-      font-size: 1.375rem; font-weight: 800; line-height: 1.15; color: #fff; letter-spacing: -0.02em;
-    }
-    .hero-desc {
-      color: rgba(237,233,254,0.65); font-size: 0.75rem; margin-top: 0.125rem; line-height: 1.35;
-    }
-    @media (min-width: 1024px) { .hero-title { font-size: 1.5rem; } }
-
-    /* ── Hero row ── */
-    .hero-row {
-      display: flex; flex-direction: row; align-items: flex-start;
-      justify-content: space-between; gap: 1rem;
-    }
-
-    /* ── Botón desktop solamente — FAB reemplaza en mobile ── */
-    .hero-btn-desktop { display: none; }
-    @media (min-width: 768px) { .hero-btn-desktop { display: inline-flex; } }
-
-    /* ── Mobile: hero compacto ── */
-    @media (max-width: 767px) {
-      .hero-desc { display: none; }
-      .hero-bottom-row { flex-direction: row; align-items: center; gap: 0.75rem; flex-wrap: nowrap; }
-      .hero-search-wrap { flex: 1; min-width: 0; max-width: none; }
-    }
-
-    @media (max-width: 479px) {
-      .hero-eyebrow { display: none; }
-      .hero-title { font-size: 1.25rem; }
-      .stat-card { padding: 0.375rem 0.5rem; gap: 0.375rem; }
-      .stat-num { font-size: 1.125rem; }
-      .stat-label { font-size: 0.55rem; }
-      .stat-dot { width: 5px; height: 5px; }
     }
 
     /* ── Mobile FAB — Nueva acta ── */
@@ -1045,58 +687,6 @@ type ToastType = 'error' | 'success' | 'info';
       .card-delete-btn:active { background: rgba(244,63,94,0.14); color: var(--brand-rose); transform: scale(0.92); }
     }
 
-    /* ── Confirm modal (eliminar) ── */
-    .confirm-overlay {
-      position: fixed; inset: 0; z-index: 9998;
-      display: flex; align-items: center; justify-content: center; padding: 1rem;
-      background: rgba(8,10,14,0.55);
-      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-      animation: cfOverlayIn 160ms ease-out;
-    }
-    @keyframes cfOverlayIn { from { opacity: 0; } to { opacity: 1; } }
-    .confirm-dialog {
-      width: 100%; max-width: 360px;
-      background: #fff; border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 1rem; padding: 1.5rem 1.5rem 1.25rem;
-      box-shadow: 0 20px 50px -12px rgba(0,0,0,0.35);
-      text-align: center; animation: cfDialogIn 200ms var(--ease-out);
-    }
-    :host-context(.dark) .confirm-dialog { background: #0f172a; border-color: #1e293b; }
-    @keyframes cfDialogIn { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
-
-    .confirm-icon-wrap {
-      width: 44px; height: 44px; margin: 0 auto 0.875rem;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 50%; background: rgba(244,63,94,0.1); color: var(--brand-rose);
-    }
-    .confirm-title { font-size: 1.0625rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem; }
-    :host-context(.dark) .confirm-title { color: #f1f5f9; }
-    .confirm-message { font-size: 0.8125rem; color: #64748b; margin: 0 0 0.625rem; line-height: 1.5; }
-    :host-context(.dark) .confirm-message { color: #94a3b8; }
-    .confirm-target {
-      font-size: 0.8125rem; color: #1e293b; margin: 0 0 1.25rem; font-weight: 600;
-      padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.03); border-radius: 0.5rem;
-      word-break: break-word;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-    }
-    :host-context(.dark) .confirm-target { background: rgba(255,255,255,0.04); color: #e2e8f0; }
-
-    .confirm-actions { display: flex; gap: 0.5rem; }
-    .confirm-btn {
-      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
-      padding: 0.625rem 1rem; border-radius: 0.75rem; min-height: 2.75rem;
-      font-size: 0.8125rem; font-weight: 600; font-family: inherit;
-      border: 1px solid transparent; cursor: pointer;
-      transition: background 140ms var(--ease-out), transform 140ms var(--ease-out);
-    }
-    .confirm-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .confirm-btn:active:not(:disabled) { transform: scale(0.97); }
-    .confirm-btn-ghost { background: transparent; border-color: #e2e8f0; color: #475569; }
-    .confirm-btn-ghost:hover:not(:disabled) { background: rgba(0,0,0,0.04); }
-    :host-context(.dark) .confirm-btn-ghost { border-color: #334155; color: #cbd5e1; }
-    :host-context(.dark) .confirm-btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.05); }
-    .confirm-btn-danger { background: var(--brand-rose); color: #fff; box-shadow: 0 1px 2px rgba(244,63,94,0.3); }
-    .confirm-btn-danger:hover:not(:disabled) { background: #e11d48; }
   `]
 })
 export class ActasListPage implements OnInit {
@@ -1104,6 +694,10 @@ export class ActasListPage implements OnInit {
   private router = inject(Router);
   private ctx  = inject(CongregacionContextService);
   private destroyRef = inject(DestroyRef);
+  private toastSvc = inject(ToastService);
+
+  /** El Coordinador solo lee las actas de ancianos: sin crear ni eliminar. */
+  readonly puedeEditar = puedeEditarActas(inject(AuthStore));
 
   @ViewChild('formNueva') formNuevaEl?: ElementRef<HTMLElement>;
 
@@ -1112,8 +706,6 @@ export class ActasListPage implements OnInit {
   cargando = signal(true);
   guardando = signal(false);
   tipoLabel = TIPO_LABEL;
-
-  toast = signal<{ msg: string; type: ToastType } | null>(null);
 
   actaAEliminar = signal<Acta | null>(null);
   eliminando    = signal(false);
@@ -1218,7 +810,7 @@ export class ActasListPage implements OnInit {
   }
 
   selectToday() {
-    this.selectDay(new Date().toISOString().slice(0, 10));
+    this.selectDay(hoyLocal());
   }
 
   clearFecha(e: Event) {
@@ -1244,14 +836,15 @@ export class ActasListPage implements OnInit {
   });
 
   get fechaEsFutura(): boolean {
-    return !!this.form.fecha_reunion && this.form.fecha_reunion > new Date().toISOString().slice(0, 10);
+    return !!this.form.fecha_reunion && this.form.fecha_reunion > hoyLocal();
   }
 
   ngOnInit() {
     this.busquedaSubject.pipe(debounceTime(220), takeUntilDestroyed(this.destroyRef))
       .subscribe(v => this.busquedaDebounced.set(v));
 
-    this.svc.list().subscribe({
+    // El backend ya acota al Coordinador a las de ancianos; el filtro lo hace explícito.
+    this.svc.list(this.puedeEditar ? {} : { tipo_reunion: 'ancianos' }).subscribe({
       next: a => { this.actas.set(a); this.cargando.set(false); },
       error: () => { this.cargando.set(false); this.showToast('No se pudieron cargar las actas.', 'error'); },
     });
@@ -1272,13 +865,13 @@ export class ActasListPage implements OnInit {
     if (!idCong) { this.showToast('Selecciona una congregación en el contexto.', 'error'); return; }
     this.guardando.set(true);
     this.svc.create({ id_congregacion: idCong, ...this.form }).subscribe({
-      next:  (a) => { this.guardando.set(false); this.router.navigate(['/secretario-tools/actas-reunion', a.id_acta]); },
+      next:  (a) => { this.guardando.set(false); this.router.navigate(['/administracion/actas-reunion', a.id_acta]); },
       error: (e) => { this.guardando.set(false); this.showToast(e?.error?.detail || 'Error al crear el acta.', 'error'); },
     });
   }
 
   abrir(a: Acta) {
-    this.router.navigate(['/secretario-tools/actas-reunion', a.id_acta]);
+    this.router.navigate(['/administracion/actas-reunion', a.id_acta]);
   }
 
   pedirEliminar(a: Acta, e: Event) {
@@ -1312,7 +905,12 @@ export class ActasListPage implements OnInit {
   }
 
   private showToast(msg: string, type: ToastType = 'info') {
-    this.toast.set({ msg, type });
-    setTimeout(() => this.toast.set(null), 4000);
+    this.toastSvc[type](msg);
   }
+}
+
+/** Hoy en la hora local (AAAA-MM-DD). `toISOString` usa UTC: en Colombia, después de las 19:00 ya daba mañana. */
+function hoyLocal(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }

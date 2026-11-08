@@ -9,6 +9,7 @@ import { Privilegio } from '../../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../../privilegios/domain/models/publicador-privilegio';
 import { inicialesDe, nombreMostrado } from '../../../../core/utils/nombre.util';
 import { LucideAngularModule } from '../../../../shared/icons';
+import { ToastService } from '../../../../shared/components/toast/toast.service';
 
 interface Publicador {
    id_publicador: number;
@@ -72,6 +73,7 @@ export class FormularioAsignacionPage implements OnInit, OnDestroy {
    private route = inject(ActivatedRoute);
    private router = inject(Router);
    private http = inject(HttpClient);
+   private toast = inject(ToastService);
    private authStore = inject(AuthStore);
    private privilegiosService = inject(PrivilegiosService);
 
@@ -92,7 +94,6 @@ export class FormularioAsignacionPage implements OnInit, OnDestroy {
 
    estadoCarga = signal<EstadoCarga>('cargando');
    saving = signal(false);
-   showSuccess = signal(false);
    activeTab = signal<Panel>('available');
    liveAnnouncement = signal('');
 
@@ -407,7 +408,7 @@ export class FormularioAsignacionPage implements OnInit, OnDestroy {
 
          if (fallidos.length === 0) {
             this.confirmarSalida.set(false);
-            this.showSuccess.set(true);
+            this.toast.success('Asignación guardada', 'Volviendo a grupos…');
             this.liveAnnouncement.set('Asignación guardada.');
             this.temporizadores.push(setTimeout(() => this.goBack(), 1500));
             return;

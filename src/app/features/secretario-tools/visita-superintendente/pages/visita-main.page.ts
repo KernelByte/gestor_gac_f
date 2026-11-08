@@ -9,6 +9,9 @@ import { EntregaPortalComponent } from '../components/entrega-portal.component';
 import { EntregaPortalService } from '../services/entrega-portal.service';
 import { AgendaEditorComponent } from '../components/agenda-editor.component';
 import { EntregaMetodosComponent } from '../components/entrega-metodos.component';
+import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
+import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
+import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
 import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
@@ -16,41 +19,28 @@ import { ConfirmDialogComponent } from '../../../../shared/components/confirm-di
 
 type Tab = 'docs' | 'agenda' | 'entrega' | 'preview';
 type ToastType = 'success' | 'error' | 'info';
-interface Toast { id: number; type: ToastType; msg: string; }
 
 @Component({
   standalone: true,
   selector: 'app-visita-main',
-  imports: [CommonModule, FormsModule, EntregaPortalComponent, AgendaEditorComponent, EntregaMetodosComponent, DatePickerComponent, SelectPickerComponent, ModalComponent, ConfirmDialogComponent],
+  imports: [CommonModule, FormsModule, EntregaPortalComponent, AgendaEditorComponent, EntregaMetodosComponent, DatePickerComponent, SelectPickerComponent, ModalComponent, PageHeaderComponent, EmptyStateComponent, ConfirmDialogComponent],
   template: `
   <div class="h-full flex flex-col overflow-hidden">
 
-    <!-- ───────── HERO + BODY WRAPPER ───────── -->
-    <div class="page-shell flex-1 flex flex-col m-1 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 min-h-0">
-
-    <!-- ───────── HERO ───────── -->
-    <header class="hero-grad text-white shrink-0" [class.hero-compact]="seleccionada() !== null || nuevoVisita()">
-      <!-- Misma posición que "Nueva acta" en actas-reunion: CTA en el hero,
-           arriba a la derecha del título. Se oculta cuando hay una visita
-           seleccionada o el formulario ya está abierto (mismo criterio que
-           esconde eyebrow/desc en .hero-compact) — el FAB cubre móvil. -->
-      <div class="relative z-10 px-4 sm:px-6 lg:px-10 py-4 sm:py-5 hero-inner">
-        <div>
-          <div class="hero-eyebrow">
-            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9-4 9 4-9 4-9-4zm0 6l9 4 9-4M3 17l9 4 9-4"/></svg>
-            <span>Módulo Secretario</span>
-          </div>
-          <h1 class="hero-title">Visita del Superintendente</h1>
-          <p class="hero-desc">Organiza la documentación, agenda y entrega al superintendente de circuito.</p>
-        </div>
-        @if (!seleccionada() && !nuevoVisita()) {
-          <button (click)="abrirFormulario()" class="btn-hero group hero-btn-desktop" type="button">
-            <svg class="w-4 h-4 transition-transform duration-200 group-hover:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+    <!-- ───────── CABECERA (se oculta con una visita abierta: la barra de detalle ocupa su lugar) ───────── -->
+    @if (!seleccionada()) {
+      <app-page-header eyebrow="Administración" title="Visita del Superintendente"
+        subtitle="Organiza la documentación, agenda y entrega al superintendente de circuito.">
+        @if (!nuevoVisita()) {
+          <button (click)="abrirFormulario()" class="btn-primary max-md:hidden" type="button">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
             <span>Nueva visita</span>
           </button>
         }
-      </div>
-    </header>
+      </app-page-header>
+    }
+
+    <div class="page-shell flex-1 flex flex-col rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 min-h-0">
 
     <!-- ── Barra de detalle: FUERA del scroll container, siempre visible cuando hay visita ── -->
     @if (seleccionada(); as v) {
@@ -59,8 +49,8 @@ interface Toast { id: number; type: ToastType; msg: string; }
 
         <header class="px-4 sm:px-5 lg:px-7 py-2.5 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
           <div class="min-w-0">
-            <div class="detail-eyebrow hidden sm:flex items-center gap-2 text-[0.65rem] font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400 mb-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-violet-600 dark:bg-violet-400"></span>
+            <div class="detail-eyebrow hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-purple dark:text-violet-400 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-brand-purple dark:bg-violet-400"></span>
               <span>Detalle de la visita</span>
             </div>
             <h2 class="text-base sm:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-100 truncate leading-tight">
@@ -91,16 +81,17 @@ interface Toast { id: number; type: ToastType; msg: string; }
         </header>
 
         <div class="stepper-nav-wrap">
-        <nav #stepperNavRef class="stepper-nav" role="tablist" aria-label="Pasos de la visita">
-          @for (t of tabsConEstado(); track t.id; let last = $last) {
+        <nav #stepperNavRef class="tab-nav stepper-nav" role="tablist" aria-label="Pasos de la visita">
+          @for (t of tabsConEstado(); track t.id) {
             <button
               type="button"
               role="tab"
               [attr.aria-selected]="activeTab() === t.id"
               (click)="setActiveTab(t.id, $event.currentTarget)"
-              class="stepper-step"
+              class="tab-item stepper-step"
               [class.is-active]="activeTab() === t.id"
-              [class.is-done]="t.completado">
+              [class.is-done]="t.completado"
+              [attr.title]="t.desc">
 
               <div class="step-indicator">
                 @if (t.completado && activeTab() !== t.id) {
@@ -116,19 +107,16 @@ interface Toast { id: number; type: ToastType; msg: string; }
                 <span class="step-label">
                   {{ t.label }}
                   @if (t.id === 'docs' && archivos().length) {
-                    <span class="step-badge">{{ archivos().length }}</span>
+                    <span class="tab-count">{{ archivos().length }}</span>
                   }
                   @if (t.id === 'agenda' && agendaDirty()) {
                     <span class="step-dirty" title="Cambios sin guardar"></span>
                   }
                 </span>
-                <span class="step-desc">{{ t.desc }}</span>
+                <span class="sr-only">{{ t.desc }}</span>
               </div>
             </button>
 
-            @if (!last) {
-              <div class="step-connector" [class.done]="t.completado"></div>
-            }
           }
         </nav>
         </div><!-- /stepper-nav-wrap -->
@@ -243,7 +231,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
         <div class="space-y-2.5">
           @if (cargandoLista() && !visitas().length) {
             @for (s of [0,1,2]; track s) {
-              <div class="skeleton-card" [style.--stagger]="s * 60 + 'ms'"></div>
+              <div class="skeleton h-[5.25rem] rounded-2xl"></div>
             }
           } @else {
           @for (v of visitas(); track v.id_visita; let i = $index) {
@@ -274,8 +262,8 @@ interface Toast { id: number; type: ToastType; msg: string; }
                       }
                       @if (pendingDeleteVisitaId() !== v.id_visita) {
                         <button (click)="$event.stopPropagation(); pendingDeleteVisitaId.set(v.id_visita)"
-                                class="btn-danger-ghost" aria-label="Eliminar visita">
-                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22"/></svg>
+                                class="btn-icon-sm tone-danger" aria-label="Eliminar visita">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22"/></svg>
                         </button>
                       }
                     </div>
@@ -310,22 +298,9 @@ interface Toast { id: number; type: ToastType; msg: string; }
               </div>
             </div>
           } @empty {
-            <div class="empty-state">
-              <div class="empty-icon">
-                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-              </div>
-              <p class="text-sm font-medium text-slate-700 dark:text-slate-200">Aún no hay visitas</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[240px] mx-auto"
-                 [class.mb-4]="!nuevoVisita()">
-                Crea tu primera visita para empezar a organizar la documentación.
-              </p>
-              <!-- Con el formulario ya abierto justo encima, el CTA sobra -->
-              @if (!nuevoVisita()) {
-                <button (click)="abrirFormulario()" class="btn-primary">
-                  + Crear primera visita
-                </button>
-              }
-            </div>
+            <app-empty-state icon="file-text" title="Aún no hay visitas"
+              description="Crea tu primera visita para empezar a organizar la documentación."
+              [actionLabel]="nuevoVisita() ? '' : '+ Crear primera visita'" (action)="abrirFormulario()"></app-empty-state>
           }
           }
         </div>
@@ -335,13 +310,13 @@ interface Toast { id: number; type: ToastType; msg: string; }
       <main class="min-w-0 @5xl/page:!block" [class.hidden]="seleccionada() === null">
 
         <!-- Botón volver — sticky en móvil/tablet -->
-        <div class="@5xl/page:hidden sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm -mx-4 px-3 border-b border-slate-100 dark:border-slate-800"
+        <div class="@5xl/page:hidden sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 -mx-4 px-3 border-b border-slate-100 dark:border-slate-800"
              [class.py-1]="activeTab() === 'preview'"
              [class.py-2]="activeTab() !== 'preview'"
              [class.mb-2]="activeTab() !== 'preview'"
              [class.mb-0]="activeTab() === 'preview'">
           <button (click)="cerrarDetalle()"
-                  class="inline-flex items-center gap-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold text-slate-700 dark:text-slate-300 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                  class="inline-flex items-center gap-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold text-slate-700 dark:text-slate-300 hover:border-violet-400 hover:text-brand-purple dark:hover:text-violet-400 transition-colors"
                   [class.h-8]="activeTab() === 'preview'"
                   [class.text-xs]="activeTab() === 'preview'"
                   [class.h-11]="activeTab() !== 'preview'"
@@ -367,7 +342,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
                   (drop)="onDrop($event)">
                   <input #fi type="file" class="hidden" multiple (change)="onFile(fi)" />
                   <div class="text-center pointer-events-none">
-                    <div class="mx-auto w-12 h-12 rounded-full bg-violet-50 dark:bg-violet-900/30 text-violet-600 flex items-center justify-center mb-2 transition-transform duration-200 group-hover:-translate-y-0.5">
+                    <div class="mx-auto w-12 h-12 rounded-full bg-violet-50 dark:bg-violet-900/30 text-brand-purple flex items-center justify-center mb-2 transition-transform duration-200 group-hover:-translate-y-0.5">
                       @if (subiendo()) {
                         <span class="spinner spinner-brand"></span>
                       } @else {
@@ -403,8 +378,8 @@ interface Toast { id: number; type: ToastType; msg: string; }
                               <button (click)="pendingDeleteFile.set(null)" class="text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 px-1.5 py-1" style="min-height: 2rem">No</button>
                             </div>
                           } @else {
-                            <button (click)="pendingDeleteFile.set(a.nombre)" class="btn-danger-ghost" aria-label="Eliminar archivo">
-                              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22"/></svg>
+                            <button (click)="pendingDeleteFile.set(a.nombre)" class="btn-icon-sm tone-danger" aria-label="Eliminar archivo">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22"/></svg>
                             </button>
                           }
                         </div>
@@ -482,14 +457,9 @@ interface Toast { id: number; type: ToastType; msg: string; }
           </article>
         } @else {
           <!-- Placeholder -->
-          <div class="placeholder-detail">
-            <div class="placeholder-icon">
-              <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            </div>
-            <h3 class="text-base font-semibold text-slate-700 dark:text-slate-200">Selecciona una visita</h3>
-            <p class="text-sm text-slate-500 mt-1 max-w-sm text-center">
-              Elige una visita del listado para gestionar documentos, agenda y entrega al superintendente.
-            </p>
+          <div class="card flex items-center justify-center min-h-[320px]">
+            <app-empty-state icon="file-text" title="Selecciona una visita"
+              description="Elige una visita del listado para gestionar documentos, agenda y entrega al superintendente."></app-empty-state>
           </div>
         }
       </main>
@@ -584,8 +554,8 @@ interface Toast { id: number; type: ToastType; msg: string; }
                     <p class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{{ c.nombre }}</p>
                     @if (c.correo) { <p class="text-xs text-slate-400 truncate">{{ c.correo }}</p> }
                   </div>
-                  <button (click)="quitarColab(c)" class="btn-danger-ghost shrink-0" aria-label="Quitar colaborador">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
+                  <button (click)="quitarColab(c)" class="btn-icon-sm tone-danger shrink-0" aria-label="Quitar colaborador">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
                   </button>
                 </li>
               }
@@ -642,37 +612,6 @@ interface Toast { id: number; type: ToastType; msg: string; }
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
       </button>
     }
-
-    <!-- ───────── TOASTS ───────── -->
-    <!-- Con una visita abierta la .save-bar ocupa el borde inferior y contiene
-         el botón primario del flujo; los toasts se elevan para no taparlo. -->
-    <div
-      class="fixed left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-[100] flex flex-col gap-2 pointer-events-none"
-      [class.bottom-4]="!seleccionada()"
-      [class.bottom-20]="seleccionada() !== null"
-      aria-live="polite"
-      role="status">
-      @for (n of notifications(); track n.id) {
-        <div class="toast-item pointer-events-auto"
-             [class.toast-success]="n.type === 'success'"
-             [class.toast-error]="n.type === 'error'"
-             [class.toast-info]="n.type === 'info'">
-          <span class="toast-icon">
-            @if (n.type === 'success') {
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-            } @else if (n.type === 'error') {
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            } @else {
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            }
-          </span>
-          <span class="flex-1 text-sm font-medium">{{ n.msg }}</span>
-          <button (click)="dismissToast(n.id)" class="shrink-0 opacity-60 hover:opacity-100 transition-opacity p-0.5" aria-label="Cerrar notificación">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </div>
-      }
-    </div>
 
     <!-- Aviso al salir con cambios de agenda sin guardar -->
     <app-confirm-dialog [open]="confirmandoDescartar()" (openChange)="confirmandoDescartar.set($event)"
@@ -790,7 +729,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
     :host {
       --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
       --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-      --brand-purple: #6D28D9;
+      --brand-purple: var(--color-brand-purple);
       --brand-purple-hover: #5B21B6;
       --border-light: #e2e8f0;
       --border-dark: #334155;
@@ -835,7 +774,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
     :host-context(.dark) .form-label > span:first-child { color: #cbd5e1; }
 
     .field-optional {
-      font-size: 0.6875rem; font-weight: 400; font-style: normal;
+      font-size: 0.75rem; font-weight: 400; font-style: normal;
       color: #94a3b8; letter-spacing: 0.01em;
     }
     :host-context(.dark) .field-optional { color: #475569; }
@@ -846,7 +785,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
     }
 
     .field-hint {
-      margin-top: 0.25rem; font-size: 0.6875rem; color: #94a3b8; line-height: 1.4;
+      margin-top: 0.25rem; font-size: 0.75rem; color: #94a3b8; line-height: 1.4;
     }
     :host-context(.dark) .field-hint { color: #475569; }
 
@@ -858,38 +797,6 @@ interface Toast { id: number; type: ToastType; msg: string; }
     .form-section-divider { height: 1px; background: var(--border-light); }
     :host-context(.dark) .form-section-divider { background: var(--border-dark); }
 
-    /* ───── Botones ───── */
-    .btn-primary, .btn-secondary, .btn-ghost, .btn-danger-ghost {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.5rem 0.875rem; font-size: 0.8125rem; font-weight: 500;
-      border-radius: 0.625rem;
-      transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), color 160ms var(--ease-out);
-      cursor: pointer; user-select: none;
-    }
-    .btn-primary { background: var(--brand-purple); color: #fff; box-shadow: 0 1px 2px rgba(109, 40, 217, 0.18); }
-    .btn-secondary { border: 1px solid var(--border-light); color: #475569; background: var(--bg-light); }
-    .btn-ghost { color: #64748b; }
-    .btn-danger-ghost { color: #f43f5e; padding: 0.375rem 0.625rem; font-size: 0.75rem; }
-
-    :host-context(.dark) .btn-secondary { background: var(--bg-dark); border-color: var(--border-dark); color: #cbd5e1; }
-    :host-context(.dark) .btn-ghost { color: #94a3b8; }
-
-    @media (max-width: 767px) {
-      .btn-danger-ghost { min-height: 2.75rem; min-width: 2.75rem; justify-content: center; }
-      .btn-primary, .btn-secondary, .btn-ghost { min-height: 2.75rem; }
-    }
-
-    @media (hover: hover) and (pointer: fine) {
-      .btn-primary:hover:not(:disabled) { background: var(--brand-purple-hover); box-shadow: 0 4px 14px rgba(109,40,217,0.28); }
-      .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
-      .btn-ghost:hover { background: rgba(100,116,139,0.08); color: #334155; }
-      .btn-danger-ghost:hover { background: rgba(244,63,94,0.08); }
-      :host-context(.dark) .btn-secondary:hover { background: #334155; border-color: #475569; color: #f1f5f9; }
-      :host-context(.dark) .btn-ghost:hover { background: rgba(148,163,184,0.12); color: #f1f5f9; }
-    }
-    .btn-primary:active, .btn-secondary:active, .btn-ghost:active, .btn-danger-ghost:active { transform: scale(0.97); }
-    .btn-primary:disabled, .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
-
     .icon-btn {
       display: inline-flex; align-items: center; justify-content: center;
       width: 2.75rem; height: 2.75rem; border-radius: 0.5rem; color: #94a3b8;
@@ -899,53 +806,6 @@ interface Toast { id: number; type: ToastType; msg: string; }
     @media (hover: hover) { .icon-btn:hover { background: #f1f5f9; color: #475569; } }
     .icon-btn:active { transform: scale(0.92); }
     :host-context(.dark) .icon-btn:hover { background: #1e293b; color: #cbd5e1; }
-
-    /* ── Hero fondo: gradiente brand limpio ── */
-    .hero-grad {
-      position: relative; overflow: hidden;
-      background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 60%, #a855f7 100%);
-      box-shadow: 0 6px 20px -6px rgba(109,40,217,0.4);
-    }
-
-    /* ── Hero typography ── */
-    .hero-eyebrow {
-      display: flex; align-items: center; gap: 0.375rem;
-      color: rgba(196,181,253,0.9); font-size: 0.6rem; text-transform: uppercase;
-      letter-spacing: 0.18em; font-weight: 600; margin-bottom: 0.25rem;
-    }
-    .hero-title {
-      font-family: var(--font-display);
-      font-size: 1.375rem; font-weight: 800; line-height: 1.15; color: #fff; letter-spacing: -0.02em;
-    }
-    .hero-desc {
-      color: rgba(237,233,254,0.65); font-size: 0.75rem; margin-top: 0.125rem; line-height: 1.35;
-    }
-    @container page (min-width: 64rem) { .hero-title { font-size: 1.5rem; } }
-
-    /* ── Hero inner: flex row que centra el botón respecto a todo el contenido ── */
-    .hero-inner {
-      display: flex; flex-direction: row; align-items: center;
-      justify-content: space-between; gap: 1.5rem;
-    }
-
-    /* ── Botón "Nueva visita" en el hero — mismo patrón que "Nueva acta"
-         en actas-reunion (.btn-hero / .hero-btn-desktop) ── */
-    .btn-hero {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.625rem 1.125rem; font-size: 0.8125rem; font-weight: 600;
-      border-radius: 0.75rem; cursor: pointer; user-select: none;
-      min-height: 2.75rem; flex-shrink: 0;
-      background: rgba(255,255,255,0.16); color: #fff;
-      border: 1px solid rgba(255,255,255,0.24);
-      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-      transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
-    }
-    @media (hover: hover) and (pointer: fine) {
-      .btn-hero:hover { background: rgba(255,255,255,0.22); }
-    }
-    .btn-hero:active { transform: scale(0.97); }
-    .hero-btn-desktop { display: none; }
-    @media (min-width: 768px) { .hero-btn-desktop { display: inline-flex; } }
 
     /* ── FAB "Nueva visita" (solo móvil) ── */
     .fab-nueva-visita {
@@ -961,30 +821,6 @@ interface Toast { id: number; type: ToastType; msg: string; }
     .fab-nueva-visita:active { transform: scale(0.94); }
     @media (hover: hover) {
       .fab-nueva-visita:hover { background: var(--brand-purple-hover); box-shadow: 0 10px 24px -4px rgba(109,40,217,0.55), 0 2px 6px rgba(0,0,0,0.18); }
-    }
-
-    /* ── Mobile: hero compacto ── */
-    @media (max-width: 767px) { .hero-desc { display: none; } }
-
-    /* ── Hero compacto cuando hay visita seleccionada ──
-       Ligado al ancho de CONTENEDOR: es el mismo umbral (64rem) en el que el
-       body pasa a dos columnas y ambas quedan visibles a la vez. */
-    @container page (min-width: 64rem) {
-      .hero-compact { transition: padding 200ms var(--ease-out); }
-      .hero-compact .hero-inner { padding-top: 0.625rem; padding-bottom: 0.625rem; }
-      .hero-compact .hero-desc { display: none; }
-      .hero-compact .hero-eyebrow { display: none; }
-      .hero-compact .hero-title { font-size: 1rem; }
-    }
-    /* ── Una sola columna: ocultar hero cuando hay visita seleccionada ── */
-    @container page (max-width: 63.9375rem) {
-      .hero-compact {
-        display: none;
-      }
-    }
-    @media (max-width: 479px) {
-      .hero-eyebrow { display: none; }
-      .hero-title { font-size: 1.25rem; }
     }
 
     /* ───── Card entrada animada ───── */
@@ -1038,7 +874,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
 
     .chip-slate {
       display: inline-flex; align-items: center;
-      padding: 0.125rem 0.5rem; font-size: 0.65rem; font-weight: 600;
+      padding: 0.125rem 0.5rem; font-size: 0.75rem; font-weight: 600;
       border-radius: 9999px; background: #f1f5f9; color: #64748b;
       text-transform: uppercase; letter-spacing: 0.04em;
     }
@@ -1046,7 +882,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
 
     .chip-state {
       display: inline-flex; align-items: center;
-      padding: 0.125rem 0.5rem; font-size: 0.65rem; font-weight: 600;
+      padding: 0.125rem 0.5rem; font-size: 0.75rem; font-weight: 600;
       border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em;
     }
     .chip-upcoming { background: #ecfdf5; color: #059669; }
@@ -1061,78 +897,20 @@ interface Toast { id: number; type: ToastType; msg: string; }
     .stepper-nav-wrap {
       position: relative;
     }
-    .stepper-nav-wrap::before,
-    .stepper-nav-wrap::after {
-      content: '';
-      position: absolute;
-      top: 0; bottom: 1px; width: 1.25rem;
-      pointer-events: none; z-index: 2;
-    }
-    .stepper-nav-wrap::before {
-      left: 0;
-      background: linear-gradient(to right, #fff 30%, transparent);
-    }
-    .stepper-nav-wrap::after {
-      right: 0;
-      background: linear-gradient(to left, #fff 30%, transparent);
-    }
-    :host-context(.dark) .stepper-nav-wrap::before {
-      background: linear-gradient(to right, #0f172a 30%, transparent);
-    }
-    :host-context(.dark) .stepper-nav-wrap::after {
-      background: linear-gradient(to left, #0f172a 30%, transparent);
-    }
-    @media (min-width: 640px) {
-      .stepper-nav-wrap::before,
-      .stepper-nav-wrap::after { display: none; }
-    }
+    .stepper-nav-wrap { padding: 0.375rem 0.75rem; border-bottom: 1px solid #f1f5f9; }
+    :host-context(.dark) .stepper-nav-wrap { border-bottom-color: #1e293b; }
+    @media (min-width: 640px) { .stepper-nav-wrap { padding: 0.5rem 1.25rem; } }
+    @container page (min-width: 64rem) { .stepper-nav-wrap { display: flex; justify-content: flex-end; } }
+    .stepper-step { flex-shrink: 0; }
+    @media (max-width: 639px) { .stepper-step { font-size: 0.75rem; padding-inline: 0.625rem; } }
 
-    .stepper-nav {
-      display: flex; align-items: center;
-      padding: 0.25rem 0.75rem;
-      overflow-x: auto; scrollbar-width: none; gap: 0;
-      border-bottom: 1px solid #f1f5f9;
-    }
-    @media (min-width: 640px) {
-      .stepper-nav { padding: 0.625rem 1.25rem; }
-    }
-    @container page (min-width: 64rem) {
-      .stepper-nav { justify-content: flex-end; }
-    }
-    .stepper-nav::-webkit-scrollbar { display: none; }
-    :host-context(.dark) .stepper-nav { border-bottom-color: #1e293b; }
-
-    .stepper-step {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.625rem 0.5rem; flex-shrink: 0; min-height: 2.75rem;
-      border-radius: 0.5rem; border: none; background: transparent; cursor: pointer;
-      transition: background 140ms;
-    }
-    @media (min-width: 640px) {
-      .stepper-step { padding: 0.375rem 0.5rem; min-height: unset; }
-    }
-    .stepper-step:hover:not(.is-active) { background: rgba(109,40,217,0.05); }
-    :host-context(.dark) .stepper-step:hover:not(.is-active) { background: rgba(167,139,250,0.07); }
-    .stepper-step:active { transform: scale(0.97); }
-
-    /* Ocultar step-desc en móvil */
-    @media (max-width: 639px) {
-      .step-desc { display: none; }
-      .step-content { gap: 0; }
-      .step-label { font-size: 0.75rem; }
-    }
-
+    /* Número del paso; con el paso hecho pasa a marca de verificación */
     .step-indicator {
-      width: 1.375rem; height: 1.375rem; border-radius: 9999px; flex-shrink: 0;
+      width: 1.25rem; height: 1.25rem; border-radius: 9999px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
-      font-size: 0.6875rem; font-weight: 800;
-      border: 1.5px solid #cbd5e1; color: #94a3b8;
-      transition: background 220ms cubic-bezier(0.22,1,0.36,1),
-                  border-color 220ms cubic-bezier(0.22,1,0.36,1),
-                  color 220ms cubic-bezier(0.22,1,0.36,1),
-                  transform 220ms cubic-bezier(0.22,1,0.36,1);
+      font-size: 0.75rem; font-weight: 800;
+      border: 1.5px solid currentColor; opacity: 0.8;
     }
-    /* Checkmark entra con scale + rotación ligera */
     .step-indicator svg {
       width: 0.65rem; height: 0.65rem;
       animation: checkmarkIn 320ms cubic-bezier(0.22,1,0.36,1) both;
@@ -1141,66 +919,12 @@ interface Toast { id: number; type: ToastType; msg: string; }
       from { opacity: 0; transform: scale(0.3) rotate(-20deg); }
       to   { opacity: 1; transform: none; }
     }
-    /* Pulso sutil al activarse un paso */
-    .stepper-step.is-active .step-indicator {
-      transform: scale(1.1);
-    }
-    :host-context(.dark) .step-indicator { border-color: #334155; color: #64748b; }
-    .stepper-step.is-active .step-indicator { border-color: var(--brand-purple); background: var(--brand-purple); color: #fff; }
-    :host-context(.dark) .stepper-step.is-active .step-indicator { border-color: #a78bfa; background: #a78bfa; color: #1e293b; }
-    .stepper-step.is-done .step-indicator { border-color: #10b981; background: rgba(16,185,129,0.1); color: #059669; }
-    :host-context(.dark) .stepper-step.is-done .step-indicator { background: rgba(52,211,153,0.1); color: #34d399; border-color: #34d399; }
+    .stepper-step.is-done:not(.is-active) .step-indicator { border-color: #10b981; background: rgba(16,185,129,0.12); color: #059669; opacity: 1; }
+    :host-context(.dark) .stepper-step.is-done:not(.is-active) .step-indicator { color: #34d399; border-color: #34d399; }
+    .stepper-step.is-active .step-indicator { opacity: 1; }
 
-    .step-content { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
-
-    .step-label {
-      display: inline-flex; align-items: center; gap: 0.25rem;
-      font-size: 0.8rem; font-weight: 600; line-height: 1.2;
-      color: #94a3b8; white-space: nowrap; transition: color 140ms;
-    }
-    :host-context(.dark) .step-label { color: #64748b; }
-    .stepper-step.is-active .step-label { color: var(--brand-purple); }
-    :host-context(.dark) .stepper-step.is-active .step-label { color: #a78bfa; }
-    .stepper-step.is-done:not(.is-active) .step-label { color: #475569; }
-    :host-context(.dark) .stepper-step.is-done:not(.is-active) .step-label { color: #94a3b8; }
-
-    .step-desc {
-      font-size: 0.6rem; line-height: 1.2; white-space: nowrap;
-      color: #94a3b8;
-    }
-    :host-context(.dark) .step-desc { color: #475569; }
-    .stepper-step.is-active .step-desc { color: #8b5cf6; }
-    :host-context(.dark) .stepper-step.is-active .step-desc { color: #7c3aed; }
-    .stepper-step.is-done:not(.is-active) .step-desc { color: #059669; }
-    :host-context(.dark) .stepper-step.is-done:not(.is-active) .step-desc { color: #34d399; opacity: 0.75; }
-
-    .step-connector {
-      flex-shrink: 0; height: 1px; width: 1.5rem;
-      background: #e2e8f0;
-      position: relative; overflow: hidden;
-    }
-    :host-context(.dark) .step-connector { background: #1e293b; }
-
-    /* Fill progresivo de izquierda a derecha al completar el paso */
-    .step-connector::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: rgba(16,185,129,0.7);
-      transform: scaleX(0);
-      transform-origin: left center;
-      transition: transform 480ms cubic-bezier(0.22,1,0.36,1);
-    }
-    :host-context(.dark) .step-connector::after { background: rgba(52,211,153,0.55); }
-    .step-connector.done::after { transform: scaleX(1); }
-
-    .step-badge {
-      display: inline-flex; align-items: center; justify-content: center;
-      min-width: 1rem; height: 1rem; padding: 0 0.2rem;
-      font-size: 0.5625rem; font-weight: 700; border-radius: 9999px;
-      background: rgba(109,40,217,0.1); color: var(--brand-purple);
-    }
-    .stepper-step.is-active .step-badge { background: var(--brand-purple); color: #fff; }
-    .stepper-step.is-done .step-badge { background: rgba(16,185,129,0.12); color: #059669; }
+    .step-content { display: flex; align-items: center; }
+    .step-label { display: inline-flex; align-items: center; gap: 0.375rem; }
 
     .step-dirty {
       width: 0.375rem; height: 0.375rem; border-radius: 9999px;
@@ -1233,20 +957,6 @@ interface Toast { id: number; type: ToastType; msg: string; }
 
     /* Spinner en color de marca (para fondos claros) */
     .spinner-brand { width: 1.25rem; height: 1.25rem; border-width: 2.5px; border-color: var(--brand-purple); border-right-color: transparent; }
-
-    /* Skeleton de carga de la lista */
-    .skeleton-card {
-      height: 5.25rem; border-radius: 0.875rem;
-      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
-      background-size: 400% 100%;
-      animation: shimmer 1.4s ease-in-out infinite, visitaIn 320ms var(--ease-out) both;
-      animation-delay: 0ms, var(--stagger, 0ms);
-    }
-    :host-context(.dark) .skeleton-card {
-      background: linear-gradient(90deg, #1e293b 25%, #334155 37%, #1e293b 63%);
-      background-size: 400% 100%;
-    }
-    @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 
     /* ───── Tab panel transition ───── */
     /* backwards: con "both" el panel conserva un transform identidad que crea
@@ -1299,52 +1009,6 @@ interface Toast { id: number; type: ToastType; msg: string; }
     /* El section de agenda no debe cortar el popup del date picker */
     .tab-panel { overflow: visible; }
 
-    /* ───── Empty states ───── */
-    .empty-state, .placeholder-detail {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: 2.5rem 1.5rem;
-      background: linear-gradient(180deg, rgba(248,250,252,0.6), transparent);
-      border: 1px dashed var(--border-light); border-radius: 1rem;
-    }
-    :host-context(.dark) .empty-state, :host-context(.dark) .placeholder-detail {
-      background: linear-gradient(180deg, rgba(15,23,42,0.4), transparent);
-      border-color: var(--border-dark);
-    }
-    .empty-icon, .placeholder-icon {
-      width: 3.5rem; height: 3.5rem; border-radius: 1.25rem;
-      background: rgba(109,40,217,0.08);
-      color: var(--brand-purple);
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 0.875rem;
-    }
-    :host-context(.dark) .empty-icon, :host-context(.dark) .placeholder-icon { color: #a78bfa; }
-    .placeholder-detail { min-height: 320px; }
-    .placeholder-icon { animation: floaty 4s ease-in-out infinite; }
-    @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-
-    /* ───── Toast notifications ───── */
-    .toast-item {
-      display: flex; align-items: center; gap: 0.625rem;
-      padding: 0.75rem 0.875rem;
-      border-radius: 0.75rem;
-      box-shadow: 0 4px 16px -4px rgba(0,0,0,0.16), 0 1px 3px rgba(0,0,0,0.06);
-      animation: toastIn 260ms var(--ease-out) both;
-    }
-    @keyframes toastIn { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
-    .toast-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
-    .toast-error { background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; }
-    .toast-info { background: #f5f3ff; border: 1px solid #ddd6fe; color: #5b21b6; }
-    .toast-icon {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 1.375rem; height: 1.375rem; border-radius: 50%; flex-shrink: 0;
-    }
-    .toast-success .toast-icon { background: #dcfce7; }
-    .toast-error .toast-icon { background: #ffe4e6; }
-    .toast-info .toast-icon { background: #ede9fe; }
-    :host-context(.dark) .toast-success { background: #052e16; border-color: #166534; color: #86efac; }
-    :host-context(.dark) .toast-error { background: #4c0519; border-color: #9f1239; color: #fca5a5; }
-    :host-context(.dark) .toast-info { background: #2e1065; border-color: #6d28d9; color: #c4b5fd; }
-
     /* ── Banner de contexto "Vista previa" ── */
     @keyframes bannerSlide {
       from { opacity: 0; transform: translateX(-6px); }
@@ -1356,7 +1020,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
     .preview-context-banner {
       display: flex; align-items: center; gap: 0.5rem;
       padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 500;
-      background: rgba(109,40,217,0.06); color: #6d28d9;
+      background: rgba(109,40,217,0.06); color: var(--color-brand-purple);
       border-bottom: 1px solid rgba(109,40,217,0.12);
       animation: bannerSlide 300ms cubic-bezier(0.22,1,0.36,1) both;
     }
@@ -1445,7 +1109,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
       display: inline-flex; align-items: center; justify-content: center;
       min-width: 1.125rem; height: 1.125rem; padding: 0 0.3rem;
       border-radius: 9999px; background: var(--brand-purple); color: #fff;
-      font-size: 0.6rem; font-weight: 700;
+      font-size: 0.75rem; font-weight: 700;
     }
     :host-context(.dark) .colab-count { background: #a78bfa; color: #1e293b; }
 
@@ -1490,7 +1154,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
       font-size: 0.8125rem; font-weight: 700;
     }
     :host-context(.dark) .colab-avatar { background: rgba(167,139,250,0.15); color: #a78bfa; }
-    .colab-avatar-sm { width: 1.75rem; height: 1.75rem; font-size: 0.7rem; }
+    .colab-avatar-sm { width: 1.75rem; height: 1.75rem; font-size: 0.75rem; }
 
     .colab-result {
       display: flex; align-items: center; gap: 0.625rem;
@@ -1503,7 +1167,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
     .colab-result:disabled { opacity: 0.6; cursor: wait; }
 
     .colab-invite-tag {
-      font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
       color: var(--brand-purple); background: rgba(109,40,217,0.08);
       padding: 0.2rem 0.5rem; border-radius: 9999px;
     }
@@ -1545,13 +1209,9 @@ interface Toast { id: number; type: ToastType; msg: string; }
        normal. La altura sí es del viewport, no del contenedor, así que esto es
        correctamente un @media. */
     @media (max-height: 900px) and (min-width: 1024px) {
-      .hero-compact { display: none; }
 
       .detail-sticky-bar > header { padding-top: 0.5rem; padding-bottom: 0.5rem; }
       .detail-eyebrow { display: none !important; }
-
-      .stepper-nav { padding-top: 0.375rem; padding-bottom: 0.375rem; }
-      .step-desc { font-size: 0.55rem; }
 
       .save-bar {
         padding-top: 0.5rem;
@@ -1570,8 +1230,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
       .detail-sticky-bar,
       .detail-sticky-bar > header,
       .detail-sticky-bar .stepper-nav-wrap,
-      .preview-context-banner,
-      .step-connector::after { animation: none; transition: none; }
+      .preview-context-banner { animation: none; transition: none; }
     }
   `]
 })
@@ -1597,7 +1256,7 @@ export class VisitaMainPage implements OnInit {
   cargandoLista = signal(false);
   subiendo = signal(false);
   activeTab = signal<Tab>('agenda');
-  notifications = signal<Toast[]>([]);
+  private toastSvc = inject(ToastService);
   /** id de la visita cuya tarjeta en la lista muestra la confirmación inline de borrado. */
   pendingDeleteVisitaId = signal<number | null>(null);
   pendingDeleteFile = signal<string | null>(null);
@@ -1618,7 +1277,6 @@ export class VisitaMainPage implements OnInit {
   colabQuery = '';
   private colabSearchTimer?: ReturnType<typeof setTimeout>;
 
-  private _nId = 0;
 
   tabs: { id: Tab; label: string; paso: number; desc: string; icon: string }[] = [
     { id: 'agenda',  label: 'Agenda',       paso: 1, desc: 'Programa los puntos',  icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>' },
@@ -2204,6 +1862,7 @@ export class VisitaMainPage implements OnInit {
       titulo: `Agenda Visita del Superintendente — ${v.semestre || ''}`.trim(),
       items,
       secciones: this.seccionesLimpias(),
+      esperado_actualizado_en: v.actualizado_en,
     }).subscribe({
       next: (updated) => {
         this.seleccionada.set(updated);
@@ -2214,7 +1873,10 @@ export class VisitaMainPage implements OnInit {
         this.guardando.set(false);
       },
       error: (e) => {
-        this.toast('error', this.errMsg(e, 'Error al generar agenda'));
+        // 409: un colaborador la guardó mientras tanto; no se pisa su trabajo.
+        this.toast('error', e?.status === 409
+          ? 'Un colaborador cambió esta visita mientras usted la editaba. Copie sus cambios, vuelva a abrir la visita y guárdelos de nuevo.'
+          : this.errMsg(e, 'Error al generar agenda'), e?.status === 409 ? 8000 : undefined);
         this.guardando.set(false);
       },
     });
@@ -2232,14 +1894,21 @@ export class VisitaMainPage implements OnInit {
   descargarTarjetaPublicador(ev: { idPublicador: number; nombre: string }) {
     const v = this.seleccionada();
     if (!v) return;
+    // El año de servicio de la visita (no el de hoy): en una visita de septiembre o ya pasada,
+    // el año actual daba una tarjeta casi vacía.
     const now = new Date();
-    const anio = now.getMonth() + 1 >= 9 ? now.getFullYear() + 1 : now.getFullYear();
-    this.portalSvc.tarjetaPdfInterno(v.id_visita, anio, { publicadorId: ev.idPublicador }).subscribe({
-      next: (blob) => {
-        const slug = (ev.nombre || 'publicador').replace(/\s+/g, '_');
-        this.saveBlob(blob, `tarjeta_${slug}_ano${anio}.pdf`);
-      },
-      error: (e) => this.toast('error', this.errMsg(e, 'No se pudo abrir la tarjeta del publicador')),
+    const respaldo = now.getMonth() + 1 >= 9 ? now.getFullYear() + 1 : now.getFullYear();
+    const pedir = (anio: number) =>
+      this.portalSvc.tarjetaPdfInterno(v.id_visita, anio, { publicadorId: ev.idPublicador }).subscribe({
+        next: (blob) => {
+          const slug = (ev.nombre || 'publicador').replace(/\s+/g, '_');
+          this.saveBlob(blob, `tarjeta_${slug}_ano${anio}.pdf`);
+        },
+        error: (e) => this.toast('error', this.errMsg(e, 'No se pudo abrir la tarjeta del publicador')),
+      });
+    this.portalSvc.aniosInterno(v.id_visita).subscribe({
+      next: ({ anios }) => pedir(anios?.[0] ?? respaldo),
+      error: () => pedir(respaldo),
     });
   }
 
@@ -2269,13 +1938,7 @@ export class VisitaMainPage implements OnInit {
   }
 
   toast(type: ToastType, msg: string, duration = 4000) {
-    const id = ++this._nId;
-    this.notifications.update(n => [...n, { id, type, msg }]);
-    if (duration > 0) setTimeout(() => this.dismissToast(id), duration);
-  }
-
-  dismissToast(id: number) {
-    this.notifications.update(n => n.filter(x => x.id !== id));
+    this.toastSvc[type](msg, undefined, duration);
   }
 
   private saveBlob(blob: Blob, filename: string) {

@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { etiquetaRol } from '../../../../core/auth/rol-label';
 import { AuthStore } from '../../../../core/auth/auth.store';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 interface SesionActiva {
   user_id: string;
@@ -38,7 +39,7 @@ interface EstadoMapaPropio {
 @Component({
   selector: 'app-system-config',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmDialogComponent],
   template: `
     <!-- Una columna hasta xl; desde xl, ajustes a la izquierda y sesiones a la derecha -->
     <div class="h-full overflow-y-auto overscroll-contain">
@@ -51,7 +52,7 @@ interface EstadoMapaPropio {
         <p class="text-sm text-slate-500 dark:text-slate-400">Configuraciones globales que afectan a toda la aplicación.</p>
       </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-center xl:flex-col xl:items-stretch gap-3 p-4 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl bg-white dark:bg-slate-800/40 shadow-sm transition-colors duration-300">
+      <div class="flex flex-col sm:flex-row sm:items-center xl:flex-col xl:items-stretch gap-3 p-4 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl bg-white dark:bg-slate-900 shadow-sm transition-colors duration-300">
         <div class="flex items-center gap-2.5 sm:w-48 xl:w-auto shrink-0">
           <div class="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center shrink-0">
              <svg class="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -67,21 +68,21 @@ interface EstadoMapaPropio {
           <select
             [(ngModel)]="tileProvider"
             [disabled]="loading() || saving()"
-            class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:border-teal-400 focus:ring-2 focus:ring-teal-400/15 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
+            class="form-select flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="osm">OpenStreetMap (OSM)</option>
             <option value="google">Google Maps</option>
             <option value="propio">Mapa propio (Colombia)</option>
           </select>
           <button (click)="saveSettings()" [disabled]="saving() || loading()" class="shrink-0 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50 touch-manipulation">
-             <span *ngIf="saving()" class="w-4 h-4 inline-block border-2 border-white/30 border-t-white rounded-full animate-spin align-middle mr-1"></span>
+             <span *ngIf="saving()" class="spinner-sm text-white inline-block mr-1"></span>
              {{ saving() ? 'Guardando...' : 'Guardar' }}
           </button>
         </div>
       </div>
 
       <!-- Sugerencia de límites con IA -->
-      <div class="mt-4 flex items-center justify-between gap-4 p-4 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl bg-white dark:bg-slate-800/40 shadow-sm">
+      <div class="mt-4 flex items-center justify-between gap-4 p-4 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl bg-white dark:bg-slate-900 shadow-sm">
         <div class="min-w-0">
           <span id="etiquetaIaLimites" class="block text-sm font-bold text-slate-700 dark:text-slate-300">Sugerir límites con IA</span>
           <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -98,7 +99,7 @@ interface EstadoMapaPropio {
       </div>
 
       <!-- Mapa propio de Colombia -->
-      <div class="mt-4 p-4 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl bg-white dark:bg-slate-800/40 shadow-sm space-y-3">
+      <div class="mt-4 p-4 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl bg-white dark:bg-slate-900 shadow-sm space-y-3">
         <div>
           <span class="block text-sm font-bold text-slate-700 dark:text-slate-300">Mapa propio de Colombia</span>
           <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -137,7 +138,7 @@ interface EstadoMapaPropio {
         <button type="button" (click)="actualizarMapa()" [disabled]="mapa()?.estado === 'descargando' || iniciandoMapa()"
           class="h-11 px-4 inline-flex items-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold shadow-md transition-all active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed">
           @if (mapa()?.estado === 'descargando' || iniciandoMapa()) {
-            <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true"></span>
+            <span class="spinner-sm text-white" aria-hidden="true"></span>
             Descargando…
           } @else {
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
@@ -170,7 +171,7 @@ interface EstadoMapaPropio {
         <div class="flex items-center justify-between gap-3 mb-4">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
-              <svg class="w-5 h-5 text-violet-600 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg class="w-5 h-5 text-brand-purple dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
               </svg>
             </div>
@@ -209,7 +210,7 @@ interface EstadoMapaPropio {
 
         <!-- Loading state -->
         <div *ngIf="sessionsLoading() && sesiones().length === 0" class="flex items-center justify-center py-12">
-          <div class="w-8 h-8 border-[3px] border-violet-200 dark:border-violet-800 border-t-violet-600 dark:border-t-violet-400 rounded-full animate-spin"></div>
+          <div class="spinner-lg text-brand-purple dark:text-violet-400"></div>
         </div>
 
         <!-- Sessions list -->
@@ -225,7 +226,7 @@ interface EstadoMapaPropio {
                 <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm border-2"
                   [ngClass]="s.tipo === 'publicador_simple'
                     ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-700'
-                    : 'bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-700'">
+                    : 'bg-violet-50 dark:bg-violet-900/30 text-brand-purple dark:text-violet-400 border-violet-200 dark:border-brand-purple'">
                   {{ (s.nombre || '?').charAt(0).toUpperCase() }}
                 </div>
                 <!-- Status dot -->
@@ -264,11 +265,11 @@ interface EstadoMapaPropio {
               <!-- Botón Kick -->
               <button *ngIf="!esMiSesion(s)" (click)="kickUser(s.user_id)" [disabled]="isKicking(s.user_id)" title="Cerrar sesión forzosamente"
                 [attr.aria-label]="'Cerrar sesión de ' + s.nombre"
-                class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50">
-                <svg *ngIf="!isKicking(s.user_id)" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                class="btn-icon-sm tone-danger">
+                <svg *ngIf="!isKicking(s.user_id)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                <span *ngIf="isKicking(s.user_id)" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
+                <span *ngIf="isKicking(s.user_id)" class="spinner-xs text-slate-600"></span>
               </button>
             </div>
           </div>
@@ -306,33 +307,19 @@ interface EstadoMapaPropio {
       </section>
     </div>
 
-      <!-- Modal de Confirmación para Cerrar Sesión -->
-      <div *ngIf="userToKick()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
-        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all border border-slate-200 dark:border-slate-800">
-          <div class="p-6 sm:p-7">
-            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/30 mb-5">
-              <svg class="w-6 h-6 text-rose-600 dark:text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2 text-center">¿Cerrar sesión remotamente?</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 text-center">
-              Esta acción eliminará la sesión activa del usuario. El próximo intento de renovar el token fallará y será forzado a iniciar sesión de nuevo.
-            </p>
-          </div>
-          <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 border-t border-slate-200 dark:border-slate-800">
-            <button (click)="cancelKick()" [disabled]="isKicking(userToKick()!)"
-              class="px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700/50 rounded-xl transition-colors w-full sm:w-auto disabled:opacity-50 touch-manipulation">
-              Cancelar
-            </button>
-            <button (click)="confirmKickUser()" [disabled]="isKicking(userToKick()!)"
-              class="flex items-center justify-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl shadow-md transition-all w-full sm:w-auto disabled:opacity-50 touch-manipulation">
-              <span *ngIf="isKicking(userToKick()!)" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              {{ isKicking(userToKick()!) ? 'Cerrando...' : 'Sí, cerrar sesión' }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- Confirmación para cerrar la sesión de otra persona -->
+      @if (userToKick()) {
+        <app-confirm-dialog
+          [open]="true"
+          title="¿Cerrar sesión remotamente?"
+          message="Esta acción eliminará la sesión activa del usuario. El próximo intento de renovar el token fallará y será forzado a iniciar sesión de nuevo."
+          confirmLabel="Sí, cerrar sesión"
+          severity="danger"
+          [busy]="isKicking(userToKick()!)"
+          (confirmed)="confirmKickUser()"
+          (openChange)="$event || cancelKick()"
+        ></app-confirm-dialog>
+      }
     </div>
   `
 })

@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, output, signal } from '@angular/core';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { RenumeracionManzana, TerritoriosService } from '../services/territorios.service';
 
 interface Tramo { id: number; codigo: string; manzanas: number; desde: number; hasta: number; cambian: number }
@@ -10,16 +11,12 @@ interface Tramo { id: number; codigo: string; manzanas: number; desde: number; h
 @Component({
   standalone: true,
   selector: 'app-renumerar-manzanas-dialog',
+  imports: [ModalComponent],
   template: `
-  <div class="fixed inset-0 z-[110] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="renum-titulo">
-    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="cerrar.emit(false)"></div>
-    <div class="relative z-10 w-full max-w-lg max-h-[90dvh] rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden">
-      <div class="p-5 border-b border-slate-100 dark:border-slate-700/50">
-        <h3 id="renum-titulo" class="text-lg font-black text-slate-900 dark:text-white">Numerar las manzanas en secuencia</h3>
-        <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">Cada tarjeta sigue donde terminó la anterior. Dentro de cada una se numera de arriba a la izquierda, fila por fila.</p>
-      </div>
-
-      <div class="p-5 space-y-4 overflow-y-auto">
+  <app-modal [open]="true" size="lg" title="Numerar las manzanas en secuencia"
+             subtitle="Cada tarjeta sigue donde terminó la anterior. Dentro de cada una se numera de arriba a la izquierda, fila por fila."
+             [hasFooter]="true" [dismissible]="!guardando()" (openChange)="$event || cerrar.emit(false)">
+      <div class="space-y-4">
         @if (cargando()) {
           <p class="text-base text-slate-600 dark:text-slate-300">Calculando…</p>
         } @else if (error()) {
@@ -33,7 +30,7 @@ interface Tramo { id: number; codigo: string; manzanas: number; desde: number; h
           <ul class="divide-y divide-slate-100 dark:divide-slate-700/60 rounded-xl border border-slate-200 dark:border-slate-700">
             @for (t of tramos(); track t.id) {
               <li class="flex items-center gap-3 px-3 py-2 text-sm">
-                <span class="min-w-14 font-black text-slate-800 dark:text-slate-100">{{ t.codigo }}</span>
+                <span class="min-w-14 font-bold text-slate-800 dark:text-slate-100">{{ t.codigo }}</span>
                 <span class="flex-1 text-slate-700 dark:text-slate-200 tabular-nums">
                   {{ t.desde === t.hasta ? 'Manzana ' + t.desde : 'Del ' + t.desde + ' al ' + t.hasta }}
                   <span class="text-slate-500 dark:text-slate-400">· {{ t.manzanas }} {{ t.manzanas === 1 ? 'manzana' : 'manzanas' }}</span>
@@ -47,18 +44,17 @@ interface Tramo { id: number; codigo: string; manzanas: number; desde: number; h
         }
       </div>
 
-      <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+      <ng-container slot="footer">
         @if (!cargando() && !error() && cambian() > 0) {
-          <button type="button" (click)="cerrar.emit(false)" class="btn-secondary focus-ring-green justify-center">No cambiar nada</button>
-          <button type="button" (click)="aplicar()" [disabled]="guardando()" class="btn-primary-green focus-ring-green justify-center disabled:opacity-60">
+          <button type="button" (click)="cerrar.emit(false)" class="btn-secondary">No cambiar nada</button>
+          <button type="button" (click)="aplicar()" [disabled]="guardando()" class="btn-primary">
             {{ guardando() ? 'Guardando…' : 'Sí, cambiar los números' }}
           </button>
         } @else {
-          <button type="button" (click)="cerrar.emit(false)" class="btn-primary-green focus-ring-green justify-center">Cerrar</button>
+          <button type="button" (click)="cerrar.emit(false)" class="btn-primary">Cerrar</button>
         }
-      </div>
-    </div>
-  </div>
+      </ng-container>
+  </app-modal>
   `,
 })
 export class RenumerarManzanasDialogComponent implements OnInit {

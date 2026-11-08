@@ -122,7 +122,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       .explicacion-cuerpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 2.5rem; }
     }
     .explicacion-cuerpo h3 {
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -245,7 +245,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
     .chip-estado .contador {
       font-family: var(--font-mono);
       font-variant-numeric: tabular-nums;
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 500;
       color: var(--txt-3);
     }
@@ -278,7 +278,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       align-items: center;
       column-gap: 1rem;
       row-gap: 0.25rem;
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       color: var(--txt-3);
     }
     .leyenda dt {
@@ -290,7 +290,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
     }
     .leyenda dd { display: inline; }
     .leyenda .item { white-space: nowrap; }
-    .leyenda .sim-credito { color: var(--credito); font-size: 0.625rem; vertical-align: super; }
+    .leyenda .sim-credito { color: var(--credito); font-size: 0.75rem; vertical-align: super; }
     /* Muestras del tinte de cada mes: la leyenda enseña el código de color
        con las mismas celdas que la matriz, y con la cifra escrita. */
     .leyenda .muestra {
@@ -300,7 +300,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       height: 1.375rem;
       padding-inline: 0.25rem;
       border-radius: 0.3125rem;
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 500;
       color: var(--txt-1);
     }
@@ -406,10 +406,6 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
     }
     @media (min-width: 640px) { .kpis-grid { gap: 1rem; } }
 
-    .esqueleto {
-      border-radius: 0.75rem;
-      background: color-mix(in oklch, var(--linea) 55%, transparent);
-    }
 
     /* ── Movimiento ────────────────────────────────────────────────────
        Una sola entrada al cargar (opacidad + 4 px), para que el cambio de
@@ -671,15 +667,15 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
           </div>
         </div>
       } @else {
-        <div class="space-y-5 animate-pulse motion-reduce:animate-none" aria-busy="true">
+        <div class="space-y-5" aria-busy="true">
           <p class="sr-only" role="status">Cargando el análisis de precursores…</p>
           <div class="kpis-grid">
             @for (i of [1, 2, 3, 4]; track i) {
-              <div class="h-[4.75rem] esqueleto"></div>
+              <div class="h-[4.75rem] skeleton"></div>
             }
           </div>
-          <div class="h-[22rem] esqueleto"></div>
-          <div class="h-64 esqueleto"></div>
+          <div class="h-[22rem] skeleton"></div>
+          <div class="h-64 skeleton"></div>
         </div>
       }
     </div>

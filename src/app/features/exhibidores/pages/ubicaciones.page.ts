@@ -59,6 +59,7 @@ interface SacadaForm {
 
 @Component({
   selector: 'app-ubicaciones-exhibidores-page',
+  host: { class: 'tema-exhibidores' },
   standalone: true,
   imports: [
     CommonModule, FormsModule, PageHeaderComponent, ModalComponent,
@@ -162,16 +163,16 @@ interface SacadaForm {
             <!-- 44px: mínimo táctil recomendado (Apple HIG / Material). Con p-1.5
                  y un ícono de 16px el botón quedaba en ~28px, difícil de acertar
                  para alguien con menos precisión motriz o poca práctica con pantallas. -->
-            <div class="flex gap-1 shrink-0">
-              <button class="btn-icon-edit !w-11 !h-11 flex items-center justify-center"
+            <div class="row-actions shrink-0">
+              <button class="btn-icon-sm"
                       (click)="editarUbicacion(u); $event.stopPropagation()" aria-label="Editar ubicación">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487Z"/>
                 </svg>
               </button>
-              <button class="btn-icon-delete !w-11 !h-11 flex items-center justify-center"
+              <button class="btn-icon-sm tone-danger"
                       (click)="pedirEliminar(u); $event.stopPropagation()" aria-label="Eliminar ubicación">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673A2.25 2.25 0 0 1 15.916 21.75H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397M4.75 5.75c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916"/>
                 </svg>
               </button>
@@ -225,7 +226,7 @@ interface SacadaForm {
               <span class="text-xs font-medium" role="status" aria-live="polite">
                 <span *ngIf="direccionEstado() === 'buscando'"
                       class="inline-flex items-center gap-1.5 text-exh-600 dark:text-exh-400 animate-fadeIn">
-                  <span class="w-3 h-3 rounded-full border-2 border-exh-200 dark:border-exh-800 border-t-exh-600 dark:border-t-exh-400 animate-spin"></span>
+                  <span class="spinner-xs text-exh-600 dark:text-exh-400"></span>
                   Buscando dirección…
                 </span>
                 <span *ngIf="direccionEstado() === 'auto'"
@@ -479,14 +480,14 @@ interface SacadaForm {
               </p>
               <p *ngIf="p.referencia" class="text-xs text-slate-400 dark:text-slate-500 truncate">{{ p.referencia }}</p>
             </div>
-            <div class="flex gap-1 shrink-0">
-              <button class="btn-icon-edit !w-9 !h-9" (click)="editarSacada(p)" aria-label="Editar punto">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <div class="row-actions shrink-0">
+              <button class="btn-icon-sm" (click)="editarSacada(p)" aria-label="Editar punto">
+                <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487Z"/>
                 </svg>
               </button>
-              <button class="btn-icon-delete !w-9 !h-9" (click)="pedirEliminarSacada(p)" aria-label="Eliminar punto">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <button class="btn-icon-sm tone-danger" (click)="pedirEliminarSacada(p)" aria-label="Eliminar punto">
+                <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
                 </svg>
               </button>

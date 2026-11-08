@@ -10,13 +10,15 @@ import { GruposService } from '../services/grupos.service';
 import { Grupo } from '../models/grupo.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
+import { ConfirmService } from '../../../../shared/components/confirm-dialog/confirm.service';
 import { ModalBackdropService } from '../../../../core/services/modal-backdrop.service';
 import { inicialesDe, nombreMostrado } from '../../../../core/utils/nombre.util';
 
 @Component({
    standalone: true,
    selector: 'app-grupos-list',
-   imports: [CommonModule, ReactiveFormsModule],
+   imports: [CommonModule, ReactiveFormsModule, ModalComponent],
    templateUrl: './grupos.page.html',
    styles: [`
     :host {
@@ -69,50 +71,9 @@ import { inicialesDe, nombreMostrado } from '../../../../core/utils/nombre.util'
       from { opacity: 0; transform: scale(0.95) translateY(8px); }
       to   { opacity: 1; transform: scale(1) translateY(0); }
     }
-    /* ── Panel: bottom sheet en mobile, slide-over en desktop ── */
-
-    /* Mobile (< 768px): sube desde el fondo */
-    .panel-slide {
-      transition: transform 380ms cubic-bezier(0.32, 0.72, 0, 1),
-                  opacity   380ms cubic-bezier(0.32, 0.72, 0, 1);
-    }
-    /* Desktop: transición de ancho */
-    @media (min-width: 768px) {
-      .panel-slide {
-        transform: none !important;
-        transition: width   350ms cubic-bezier(0.32, 0.72, 0, 1),
-                    opacity 350ms cubic-bezier(0.32, 0.72, 0, 1),
-                    margin  350ms cubic-bezier(0.32, 0.72, 0, 1);
-      }
-    }
-    /* Mobile: inner container → bottom sheet con esquinas redondeadas arriba */
-    @media (max-width: 767px) {
-      .panel-inner {
-        border-radius: 20px 20px 0 0 !important;
-        border-left: none !important;
-      }
-      .panel-mobile-safe-bottom {
-        padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
-      }
-    }
-    /* ── Stagger animations for panel content ── */
-    @keyframes sheetItemIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes dragHandleIn {
-      from { opacity: 0; transform: scaleX(0.25); }
-      to   { opacity: 1; transform: scaleX(1); }
-    }
-    .sheet-drag   { animation: dragHandleIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 80ms; }
-    .sheet-item-0 { animation: sheetItemIn  320ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 100ms; }
-    .sheet-item-1 { animation: sheetItemIn  320ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 160ms; }
-    .sheet-item-2 { animation: sheetItemIn  320ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 210ms; }
     @media (prefers-reduced-motion: reduce) {
       tbody tr { animation: none !important; opacity: 1; }
       .kpi-card  { animation: none !important; opacity: 1; }
-      .panel-slide { transition: opacity 200ms ease !important; transform: none !important; }
-      .sheet-drag, .sheet-item-0, .sheet-item-1, .sheet-item-2 { animation: none !important; opacity: 1; }
     }
   `]
 })
@@ -122,6 +83,7 @@ export class GruposListComponent implements OnInit, OnDestroy {
    trackByGrupo = (_: number, g: any) => g.id_grupo;
 
    private gruposService = inject(GruposService);
+   private confirm = inject(ConfirmService);
    private authStore = inject(AuthStore);
    private congregacionContext = inject(CongregacionContextService);
    private fb = inject(FormBuilder);
@@ -237,7 +199,7 @@ export class GruposListComponent implements OnInit, OnDestroy {
       // Para el admin: si no hay congregaci?n seleccionada no podemos generar el reporte
       const idCongregacion = this.congregacionContext.effectiveCongregacionId();
       if (this.congregacionContext.isAdmin() && !idCongregacion) {
-         alert('Selecciona una congregaci?n en el encabezado para exportar el reporte.');
+         void this.confirm.notify({ title: 'Selecciona una congregaci?n en el encabezado para exportar el reporte.' });
          return;
       }
 
@@ -293,7 +255,7 @@ export class GruposListComponent implements OnInit, OnDestroy {
 
       } catch (err) {
          console.error(`Error exportando ${format.toUpperCase()}`, err);
-         alert(format === 'pdf' ? 'Error al generar el reporte PDF.' : 'Error al generar el reporte Excel.');
+         void this.confirm.notify({ title: format === 'pdf' ? 'Error al generar el reporte PDF.' : 'Error al generar el reporte Excel.' });
       } finally {
          this.exporting.set(false);
       }
@@ -382,7 +344,7 @@ export class GruposListComponent implements OnInit, OnDestroy {
       } catch (err: any) {
          console.error('Error cargando grupos', err);
          // Optional: show toast or alert if needed for debugging
-         // alert(err?.error?.detail || 'Error al cargar grupos');
+         // (error de carga: se muestra en la lista vacía)
       } finally {
          this.loading.set(false);
       }
@@ -504,7 +466,7 @@ export class GruposListComponent implements OnInit, OnDestroy {
       const isAdministrador = this.authStore.isAdministrador();
 
       if (!effectiveId && !isAdministrador) {
-         alert('Error: No se ha detectado tu congregaci?n.');
+         void this.confirm.notify({ title: 'Error: No se ha detectado tu congregaci?n.' });
          return;
       }
 

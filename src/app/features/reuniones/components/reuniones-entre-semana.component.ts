@@ -56,11 +56,13 @@ import {
 import { whatsappUrl } from '../../../shared/whatsapp';
 import { hoyIso } from '../../../core/utils/fecha.util';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../../shared/components';
 
 @Component({
   selector: 'app-reuniones-programacion',
+  host: { class: 'tema-reuniones' },
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ReunionesLogisticaComponent, ReunionesDiscursosComponent, ReunionesAjustesDialogComponent, RevisionPublicacionDialogComponent, SeguimientoReunionesComponent, SeguimientoAsignacionPanelComponent],
+  imports: [ModalComponent, ConfirmDialogComponent, AvisoComponent, CommonModule, FormsModule, RouterLink, ReunionesLogisticaComponent, ReunionesDiscursosComponent, ReunionesAjustesDialogComponent, RevisionPublicacionDialogComponent, SeguimientoReunionesComponent, SeguimientoAsignacionPanelComponent],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -77,68 +79,48 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
         @if (showTipoTabs()) {
           <!-- Se ciñe a su contenido: comparte fila con los controles del mes
                y cada pixel de más es ancho que le falta al detalle. -->
-          <div class="flex items-center gap-1.5 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800 w-full md:w-auto shrink-0">
+          <div class="tab-nav shrink-0" role="tablist" aria-label="Tipo de reunión">
             @if (canViewEntreSemana()) {
               <!-- Sólo la activa lleva rótulo: con el título fuera, es la
                    píldora encendida la que dice en qué pantalla estás; las
                    demás se quedan en icono para no gastar ancho. -->
-              <button
+              <button type="button" role="tab"
                 (click)="onTipoChange('entre_semana')"
                 aria-label="Entre semana"
-                class="tab-pill min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold flex items-center justify-center"
-                [class.tab-pill--active]="tipoReunionActivo() === 'entre_semana'"
-                [ngClass]="tipoReunionActivo() === 'entre_semana'
-                  ? 'flex-none px-3 bg-brand-purple text-white shadow-md shadow-purple-500/20'
-                  : 'flex-1 md:flex-none px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-                <svg class="tab-pill__icon w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                <span class="tab-pill__label" [class.tab-pill__label--active]="tipoReunionActivo() === 'entre_semana'">
-                  <span class="tab-pill__label-text">Entre semana</span>
-                </span>
+                [attr.aria-selected]="tipoReunionActivo() === 'entre_semana'"
+                class="tab-item">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                <span>Entre semana</span>
               </button>
             }
             @if (canViewFinSemana()) {
-              <button
+              <button type="button" role="tab"
                 (click)="onTipoChange('fin_semana')"
                 aria-label="Fin de semana"
-                class="tab-pill min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold flex items-center justify-center"
-                [class.tab-pill--active]="tipoReunionActivo() === 'fin_semana'"
-                [ngClass]="tipoReunionActivo() === 'fin_semana'
-                  ? 'flex-none px-3 bg-brand-purple text-white shadow-md shadow-purple-500/20'
-                  : 'flex-1 md:flex-none px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-                <svg class="tab-pill__icon w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-                <span class="tab-pill__label" [class.tab-pill__label--active]="tipoReunionActivo() === 'fin_semana'">
-                  <span class="tab-pill__label-text">Fin de semana</span>
-                </span>
+                [attr.aria-selected]="tipoReunionActivo() === 'fin_semana'"
+                class="tab-item">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                <span>Fin de semana</span>
               </button>
             }
             @if (canViewLogistica()) {
-              <button
+              <button type="button" role="tab"
                 (click)="onTipoChange('logistica')"
                 aria-label="Logística"
-                class="tab-pill min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold flex items-center justify-center"
-                [class.tab-pill--active]="tipoReunionActivo() === 'logistica'"
-                [ngClass]="tipoReunionActivo() === 'logistica'
-                  ? 'flex-none px-3 bg-brand-purple text-white shadow-md shadow-purple-500/20'
-                  : 'flex-1 md:flex-none px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-                <svg class="tab-pill__icon w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                <span class="tab-pill__label" [class.tab-pill__label--active]="tipoReunionActivo() === 'logistica'">
-                  <span class="tab-pill__label-text">Logistica</span>
-                </span>
+                [attr.aria-selected]="tipoReunionActivo() === 'logistica'"
+                class="tab-item">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span>Logistica</span>
               </button>
             }
             @if (canViewDiscursos()) {
-              <button
+              <button type="button" role="tab"
                 (click)="onTipoChange('discursos')"
                 aria-label="Discursos públicos"
-                class="tab-pill min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold flex items-center justify-center"
-                [class.tab-pill--active]="tipoReunionActivo() === 'discursos'"
-                [ngClass]="tipoReunionActivo() === 'discursos'
-                  ? 'flex-none px-3 bg-brand-purple text-white shadow-md shadow-purple-500/20'
-                  : 'flex-1 md:flex-none px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-                <svg class="tab-pill__icon w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                <span class="tab-pill__label" [class.tab-pill__label--active]="tipoReunionActivo() === 'discursos'">
-                  <span class="tab-pill__label-text">Discursos</span>
-                </span>
+                [attr.aria-selected]="tipoReunionActivo() === 'discursos'"
+                class="tab-item">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <span>Discursos</span>
               </button>
             }
           </div>
@@ -160,7 +142,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           title="Excepciones: semanas sin reunión y ausencias"
           aria-label="Excepciones: semanas sin reunión y ausencias"
           [attr.aria-expanded]="ajustesAbierto()"
-          class="flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 shrink-0 rounded-xl bg-white dark:bg-[#1a1b26] border border-slate-200/60 dark:border-slate-800 shadow-sm text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-violet-600 dark:hover:text-violet-400 transition-all active:scale-95">
+          class="flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 shrink-0 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-brand-purple dark:hover:text-violet-400 transition-all active:scale-95">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
       </ng-template>
@@ -168,11 +150,16 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       <!-- El diálogo vive en el padre y no dentro de cada pestaña: así lo
            comparten las cuatro sin montarse cuatro veces, y sigue abierto
            aunque se cambie de pestaña por debajo. -->
-      <app-reuniones-ajustes-dialog
-        [abierto]="ajustesAbierto()"
-        (cerrado)="ajustesAbierto.set(false)"
-        (cambios)="onAjustesCambiaron()">
-      </app-reuniones-ajustes-dialog>
+      <!-- Diferido: su código solo se descarga cuando el navegador queda
+           libre o al abrirlo, lo que ocurra antes. Pide sus datos al abrirse
+           (setter de abierto), así que montarlo tarde no cambia nada. -->
+      @defer (on idle; when ajustesAbierto()) {
+        <app-reuniones-ajustes-dialog
+          [abierto]="ajustesAbierto()"
+          (cerrado)="ajustesAbierto.set(false)"
+          (cambios)="onAjustesCambiaron()">
+        </app-reuniones-ajustes-dialog>
+      }
 
       @if (ayudaParte(); as ayuda) {
         <!-- Fuera de las tarjetas de sección, que recortan (overflow-hidden):
@@ -182,99 +169,83 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           [style.top.px]="ayuda.top"
           [style.left.px]="ayuda.left"
           [style.transform]="ayuda.arriba ? 'translateY(-100%)' : 'none'">
-          <p class="text-[0.8rem] font-semibold text-slate-800 dark:text-slate-100 leading-snug mb-1">{{ ayuda.titulo }}</p>
-          <p class="text-[0.8rem] text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">{{ ayuda.texto }}</p>
+          <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug mb-1">{{ ayuda.titulo }}</p>
+          <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">{{ ayuda.texto }}</p>
         </div>
       }
 
       <!-- ===== ERROR ===== -->
       @if (estado() === 'error') {
-        <div class="shrink-0 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 px-4 py-3 mb-3 flex items-start gap-3">
-          <svg class="w-4 h-4 mt-0.5 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <!-- Sin truncate: estos mensajes enumeran las semanas que no se
-               guardaron o las congregaciones que bloquean una guía, y cortarlos
-               deja al usuario sin el dato por el que existe el aviso. -->
-          <p class="flex-1 min-w-0 text-red-600 dark:text-red-400 text-xs font-medium">{{ errorMsg() }}</p>
-          <button
-            (click)="estado.set('idle')"
-            class="shrink-0 px-3 h-7 rounded-lg bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-900/60 text-xs text-red-600 dark:text-red-400 font-bold transition-all">
-            Cerrar
-          </button>
-        </div>
+        <!-- Sin truncate: estos mensajes enumeran las semanas que no se
+             guardaron o las congregaciones que bloquean una guía, y cortarlos
+             deja al usuario sin el dato por el que existe el aviso. -->
+        <app-aviso class="block shrink-0 mb-3" tone="danger" [dismissible]="true" (dismissed)="estado.set('idle')">{{ errorMsg() }}</app-aviso>
       }
 
       <!-- ===== AVISO — se conservó algo ya confirmado ===== -->
       @if (avisoConservados(); as aviso) {
-        <div class="shrink-0 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 px-4 py-3 mb-3 flex items-start gap-3">
-          <svg class="w-4 h-4 mt-0.5 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <p class="flex-1 min-w-0 text-amber-700 dark:text-amber-400 text-xs font-medium">{{ aviso }}</p>
-          <button
-            (click)="avisoConservados.set(null)"
-            class="shrink-0 px-3 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-900/60 text-xs text-amber-700 dark:text-amber-400 font-bold transition-all">
-            Cerrar
-          </button>
-        </div>
+        <app-aviso class="block shrink-0 mb-3" tone="warning" [dismissible]="true" (dismissed)="avisoConservados.set(null)">{{ aviso }}</app-aviso>
       }
 
       <!-- ===== PUBLICADO — banner ===== -->
       @if (estado() === 'publicado' && recienPublicado()) {
-        <div class="shrink-0 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-800/50 px-4 py-3 mb-3 flex items-center gap-3">
-          <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-          <p class="text-emerald-700 dark:text-emerald-300 text-xs font-bold">Programación publicada. Ya es visible para la congregación.</p>
-        </div>
+        <app-aviso class="block shrink-0 mb-3" tone="success">Programación publicada. Ya es visible para la congregación.</app-aviso>
       }
 
       <!-- ===== LOGÍSTICA ===== -->
+      <!-- Logística y Discursos van en su propio chunk: la pantalla se abre
+           casi siempre en Entre semana y no tiene por qué descargarlas. Se
+           precargan cuando el navegador queda libre (precargarPestanas), así
+           que al cambiar de pestaña ya están en caché. -->
       @if (tipoReunionActivo() === 'logistica') {
-        <app-reuniones-logistica class="flex-1 min-h-0 block overflow-hidden">
-          <div cabecera class="flex items-center gap-3 min-w-0 shrink">
-            <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
-          </div>
-          <div accion-derecha class="shrink-0">
-            <ng-container [ngTemplateOutlet]="botonAjustes"></ng-container>
-          </div>
-        </app-reuniones-logistica>
+        @defer (on immediate) {
+          <app-reuniones-logistica class="flex-1 min-h-0 block overflow-hidden">
+            <div cabecera class="flex items-center gap-3 min-w-0 shrink">
+              <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
+            </div>
+            <div accion-derecha class="shrink-0">
+              <ng-container [ngTemplateOutlet]="botonAjustes"></ng-container>
+            </div>
+          </app-reuniones-logistica>
+        } @placeholder {
+          <div class="flex-1 min-h-0" aria-busy="true"></div>
+        }
       }
 
       <!-- ===== DISCURSOS PÚBLICOS ===== -->
       @if (tipoReunionActivo() === 'discursos') {
-        <app-reuniones-discursos class="flex-1 md:min-h-0 block md:overflow-hidden">
-          <div cabecera class="flex items-center gap-3 min-w-0 shrink">
-            <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
-          </div>
-          <div accion-derecha class="shrink-0">
-            <ng-container [ngTemplateOutlet]="botonAjustes"></ng-container>
-          </div>
-        </app-reuniones-discursos>
+        @defer (on immediate) {
+          <app-reuniones-discursos class="flex-1 md:min-h-0 block md:overflow-hidden">
+            <div cabecera class="flex items-center gap-3 min-w-0 shrink">
+              <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
+            </div>
+            <div accion-derecha class="shrink-0">
+              <ng-container [ngTemplateOutlet]="botonAjustes"></ng-container>
+            </div>
+          </app-reuniones-discursos>
+        } @placeholder {
+          <div class="flex-1 md:min-h-0" aria-busy="true"></div>
+        }
       }
 
       <!-- ===== ALERTA: NO HAY GUÍAS DE ACTIVIDADES ===== -->
       @if (tipoReunionActivo() === 'entre_semana' && tieneGuias() === false) {
-        <div data-testid="aviso-sin-guias" class="shrink-0 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/70 dark:border-amber-800/50 px-4 py-3 mb-3 flex items-start gap-3">
-          <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-          <div class="flex-1 min-w-0">
-            <p class="text-amber-800 dark:text-amber-300 text-xs font-bold">No hay ninguna guía de actividades cargada en el sistema.</p>
-            @if (puedeCargarGuia()) {
-              <p class="text-amber-700/90 dark:text-amber-400/90 text-[0.7rem] mt-0.5">
-                Para poder crear una programación de la reunión entre semana debes cargar primero una guía de actividades (por ejemplo, "Vida y Ministerio Cristiano") desde la sección de Configuración de Reuniones.
-              </p>
-              <a routerLink="/reuniones/configuracion"
-                [queryParams]="{ tab: 'plantillas' }"
-                class="inline-flex items-center gap-1.5 mt-2 px-3 h-10 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[0.7rem] font-bold transition-all shadow-sm active:scale-95">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                Ir a cargar guía
-              </a>
-            } @else {
-              <p class="text-amber-700/90 dark:text-amber-400/90 text-[0.7rem] mt-0.5">
-                No puedes crear una programación porque aún no hay una guía de actividades cargada. Contacta al administrador del sistema para que cargue la guía correspondiente.
-              </p>
-            }
-          </div>
-        </div>
+        <app-aviso data-testid="aviso-sin-guias" class="block shrink-0 mb-3" tone="warning" title="No hay ninguna guía de actividades cargada en el sistema.">
+          @if (puedeCargarGuia()) {
+            <p>
+              Para poder crear una programación de la reunión entre semana debes cargar primero una guía de actividades (por ejemplo, "Vida y Ministerio Cristiano") desde la sección de Configuración de Reuniones.
+            </p>
+            <a routerLink="/reuniones/configuracion"
+              [queryParams]="{ tab: 'plantillas' }"
+              class="btn-primary btn-sm mt-2">
+              Ir a cargar guía
+            </a>
+          } @else {
+            <p>
+              No puedes crear una programación porque aún no hay una guía de actividades cargada. Contacta al administrador del sistema para que cargue la guía correspondiente.
+            </p>
+          }
+        </app-aviso>
       }
 
       <!-- ===== ÁREA PRINCIPAL: sin sidebar, controles arriba ===== -->
@@ -314,7 +285,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 [attr.aria-label]="navegacionPorGuia() ? 'Cambiar de guía' : 'Cambiar de mes'"
                 class="flex items-center gap-1.5 h-8 px-2.5 rounded-xl transition-colors"
                 [class]="menuMesesAbierto()
-                  ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                  ? 'bg-violet-50 dark:bg-violet-900/30 text-brand-purple dark:text-violet-300'
                   : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800'">
                 <svg class="w-3.5 h-3.5 shrink-0 text-violet-500/80 dark:text-violet-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 3v3M16 3v3"/></svg>
                 <span class="text-sm font-bold whitespace-nowrap">{{ periodoActivoLabel() }}</span>
@@ -327,7 +298,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                     @for (grupo of periodosPorAno(); track grupo.ano) {
                       <!-- Año como divisor del grupo, no repetido por fila. -->
                       <p class="flex items-center gap-2 px-1.5 pt-2.5 pb-1 first:pt-0.5">
-                        <span class="text-[0.65rem] font-bold text-slate-400 dark:text-slate-500 data-num">{{ grupo.ano }}</span>
+                        <span class="text-xs font-bold text-slate-400 dark:text-slate-500 data-num">{{ grupo.ano }}</span>
                         <span class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></span>
                       </p>
                       @for (p of grupo.periodos; track p.clave) {
@@ -344,7 +315,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                             [disabled]="loadingHistorial()"
                             class="flex-1 min-w-0 flex items-center gap-2 px-2 h-9 rounded-lg text-xs transition-colors disabled:opacity-40"
                             [class]="esPeriodoActivo(p)
-                              ? 'bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 font-bold'
+                              ? 'bg-violet-50 dark:bg-violet-900/25 text-brand-purple dark:text-violet-300 font-bold'
                               : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'">
                             <span class="flex-1 min-w-0 truncate text-left">{{ mesSoloLabel(p) }}</span>
                             <!-- Punto de estado, no la píldora con texto: aquí
@@ -356,7 +327,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                                  lo dice aquí: antes el hueco solo se descubría
                                  abriendo el mes y notando que faltaba un día. -->
                             @if (p.incompleta) {
-                              <span class="shrink-0 text-[0.6rem] font-bold text-amber-600 dark:text-amber-400" title="Faltan semanas por generar">incompleta</span>
+                              <span class="shrink-0 text-xs font-bold text-amber-600 dark:text-amber-400" title="Faltan semanas por generar">incompleta</span>
                             }
                             @if (esPeriodoActivo(p)) {
                               <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -395,7 +366,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                         data-testid="btn-generar-mes"
                         (click)="menuMesesAbierto.set(false); openModal()"
                         [disabled]="estado() === 'loading' || (tipoReunionActivo() === 'entre_semana' && tieneGuias() === false)"
-                        class="w-full flex items-center justify-center gap-2 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-[0.98]">
+                        class="btn-primary btn-sm w-full">
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         Generar Mes
                       </button>
@@ -409,7 +380,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
             <!-- Estado del mes abierto: el texto siempre está, el color sólo
                  refuerza. -->
-            <span class="shrink-0 px-2 text-[0.6rem] font-bold uppercase tracking-wider"
+            <span class="shrink-0 px-2 text-xs font-bold uppercase tracking-wider"
               [class]="estado() === 'publicado'
                 ? 'text-emerald-600 dark:text-emerald-400'
                 : 'text-amber-600 dark:text-amber-400'">
@@ -452,7 +423,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                     [disabled]="descargandoPapeletas()"
                     title="Formulario S-89-S de {{ mesActivo.label }} (4 por hoja)"
                     aria-label="Formulario S-89-S de {{ mesActivo.label }} (4 por hoja)"
-                    class="flex items-center justify-center w-8 h-8 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-violet-600 dark:hover:text-violet-400 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
+                    class="flex items-center justify-center w-8 h-8 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-brand-purple dark:hover:text-violet-400 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M8 13h8M8 17h8"/></svg>
                   </button>
                 }
@@ -523,7 +494,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                           [disabled]="borrandoSalaB()"
                           class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-40">
                           @if (borrandoSalaB()) {
-                            <div class="w-4 h-4 shrink-0 mt-px rounded-full border-2 border-slate-300 border-t-red-500 animate-spin"></div>
+                            <div class="spinner-sm text-red-500 shrink-0 mt-px"></div>
                           } @else {
                             <!-- Dos salas, no una papelera: lo que se quita es
                                  el segundo salón, no el mes. -->
@@ -531,7 +502,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                           }
                           <span class="min-w-0 flex-1">
                             <span class="block text-xs font-bold leading-tight">Quitar la Sala B</span>
-                            <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Sólo el segundo salón. La Sala Principal se queda.</span>
+                            <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Sólo el segundo salón. La Sala Principal se queda.</span>
                           </span>
                         </button>
                       }
@@ -553,7 +524,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                             <!-- Decir que se va TAMBIÉN la semana del mes
                                  siguiente: es la que sorprende, y es justo la
                                  que antes se perdía sin poder recuperarla. -->
-                            <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 leading-snug mt-0.5">
+                            <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">
                               {{ mesActivo.tipo === 'guia'
                                  ? 'La guía entera, con todas sus semanas y asignaciones.'
                                  : 'El mes entero, con todas sus asignaciones.' }}
@@ -578,7 +549,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 (click)="semanas.set([]); estado.set('idle'); periodoActivo.set(null)"
                 title="Volver a la lista"
                 aria-label="Volver a la lista"
-                class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">
+                class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                 Volver
               </button>
@@ -590,7 +561,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 [disabled]="!canPublicar()"
                 title="Publicar programación"
                 aria-label="Publicar programación"
-                class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]">
+                class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 Publicar
               </button>
@@ -600,8 +571,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 [disabled]="!canBorrarBorrador()"
                 title="Borrar borrador"
                 aria-label="Borrar borrador"
-                class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]">
-                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]">
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 Borrar
               </button>
             }
@@ -623,9 +594,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
              qué elegir. -->
         @if (semanas().length > 0 && estado() !== 'loading') {
           <div
-            class="shrink-0 flex items-center gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar border-b border-slate-100 dark:border-slate-800 snap-x snap-mandatory"
-            role="tablist"
-            aria-label="Semanas del mes">
+            class="shrink-0 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+           <div class="tab-nav" role="tablist" aria-label="Semanas del mes">
             @for (item of semanasAgrupadas(); track item.sem.semana_iso; let i = $index) {
               @if (item.esNuevoMes) {
                 <!-- Marca dónde empieza cada mes en vez de repetirlo en cada
@@ -636,7 +606,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   @if (i > 0) {
                     <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0"></span>
                   }
-                  <span class="pl-0.5 text-[0.625rem] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ item.sem.fecha | date:'MMMM' }}</span>
+                  <span class="pl-0.5 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ item.sem.fecha | date:'MMMM' }}</span>
                 </span>
               }
               <button
@@ -646,8 +616,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 role="tab"
                 [attr.aria-selected]="selectedWeekIdx() === i"
                 [attr.aria-label]="(item.sem.fecha | date:'d MMMM') + (item.sinReunion ? ', sin reunión' : '')"
-                class="snap-start shrink-0 flex items-center gap-1 px-3 h-8 rounded-full text-[0.7rem] font-bold whitespace-nowrap transition-[transform,background-color,border-color,color] duration-150 ease-out border active:scale-[0.97]"
-                [class]="weekTabClass(i)"
+                type="button"
+                class="tab-item !px-3 !py-1.5 !gap-1 !text-xs"
                 [attr.title]="item.sinReunion ? ('Sin reunión' + (item.sinReunion.motivo ? ' — ' + item.sinReunion.motivo : '')) : null">
                 @if (item.sinReunion) {
                   <svg class="w-3 h-3 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -655,17 +625,18 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 <span [class.line-through]="!!item.sinReunion" [class.opacity-60]="!!item.sinReunion">{{ item.sem.fecha | date:'d' }}</span>
               </button>
             }
+           </div>
           </div>
         }
 
           <!-- Loading overlay -->
           @if (estado() === 'loading') {
-            <div class="absolute inset-0 z-20 bg-white/85 dark:bg-slate-900/85 backdrop-blur-[2px] flex items-center justify-center rounded-2xl">
+            <div class="absolute inset-0 z-20 bg-white/85 dark:bg-slate-900/85 flex items-center justify-center rounded-2xl">
               <div class="flex flex-col items-center gap-3 px-6 text-center">
-                <div class="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-[#6D28D9] animate-spin"></div>
+                <div class="spinner-lg text-brand-purple"></div>
                 <div>
                   <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Generando programa...</p>
-                  <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 mt-0.5">Asignando partes y calculando disponibilidad</p>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Asignando partes y calculando disponibilidad</p>
                 </div>
               </div>
             </div>
@@ -716,7 +687,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                                Aquí van el rango, cuántas semanas hay y, si
                                faltan respecto a las que la guía define,
                                cuántas: es lo que hace visible el hueco. -->
-                          <span class="block truncate text-[0.65rem] font-normal mt-0.5"
+                          <span class="block truncate text-xs font-normal mt-0.5"
                                 [class]="p.incompleta
                                   ? 'text-amber-600 dark:text-amber-400 font-semibold'
                                   : 'text-slate-400 dark:text-slate-500'">
@@ -726,7 +697,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                         <!-- Publicado/Borrador, misma píldora y misma paleta
                              que Logística: el estado de una programación se
                              lee igual en toda la sección de Reuniones. -->
-                        <span class="shrink-0 px-2 h-5 flex items-center rounded-full text-[0.6rem] font-bold" [class]="badgeEstadoPeriodoClass(p)">{{ etiquetaEstadoPeriodo(p) }}</span>
+                        <span class="shrink-0 px-2 h-5 flex items-center rounded-full text-xs font-bold" [class]="badgeEstadoPeriodoClass(p)">{{ etiquetaEstadoPeriodo(p) }}</span>
                         <svg class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
                       </button>
                     }
@@ -739,7 +710,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                     (click)="openModal()"
                     [disabled]="estado() === 'loading' || (tipoReunionActivo() === 'entre_semana' && tieneGuias() === false)"
                     [title]="(tipoReunionActivo() === 'entre_semana' && tieneGuias() === false) ? 'Carga una guía de actividades' : 'Generar nuevo mes'"
-                    class="w-full mt-4 flex items-center justify-center gap-2 px-4 h-11 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm active:scale-[0.98]">
+                    class="btn-primary w-full mt-4">
                     <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     Generar mes
                   </button>
@@ -753,16 +724,10 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           @if ((estado() === 'borrador' || estado() === 'publicado') && currentSemana(); as semana) {
 
             @if (semanaSinReunion(semana); as sinReunion) {
-              <div class="mx-3 mt-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/70 dark:border-amber-800/50 px-4 py-3 flex items-start gap-2.5">
-                <svg class="w-4 h-4 shrink-0 text-amber-500 mt-px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <div class="min-w-0">
-                  <p class="text-xs font-bold text-amber-800 dark:text-amber-300">Esta semana está marcada como sin reunión</p>
-                  <p class="text-[0.7rem] text-amber-700/80 dark:text-amber-400/80 mt-0.5 leading-relaxed">
-                    @if (sinReunion.motivo) { {{ sinReunion.motivo }}. }
-                    No se programa a nadie. Puedes quitar la marca con el engranaje «Excepciones» de esta pantalla.
-                  </p>
-                </div>
-              </div>
+              <app-aviso class="block mx-3 mt-3" tone="warning" title="Esta semana está marcada como sin reunión">
+                @if (sinReunion.motivo) { {{ sinReunion.motivo }}. }
+                No se programa a nadie. Puedes quitar la marca con el engranaje «Excepciones» de esta pantalla.
+              </app-aviso>
             }
 
             <!-- Lista de partes por sección -->
@@ -773,7 +738,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                  tono de identidad ahora cabe en un punto y un velo tenue de la
                  cabecera; el resto vive en neutros para que lo que se lea sean
                  los nombres. -->
-            <div class="flex-1 overflow-y-auto simple-scrollbar bg-slate-50 dark:bg-slate-950 p-2 sm:p-3 flex flex-col gap-3">
+            <div class="flex-1 overflow-y-auto simple-scrollbar bg-slate-50 dark:bg-slate-950 p-2 sm:p-3 flex flex-col gap-3"
+              [class.semana-sin-reunion]="!!semanaSinReunion(semana)">
               @for (seccion of seccionesActuales(); track seccion.id) {
 
                 <section
@@ -785,24 +751,24 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <!-- Cabecera de sección -->
                   <header class="sec-surface sec-bg flex items-center gap-2.5 px-3 sm:px-4 py-2.5 border-b">
                     <span class="w-2 h-2 rounded-full shrink-0" [style.background]="seccion.color" aria-hidden="true"></span>
-                    <h3 class="sec-ink flex-1 min-w-0 font-display text-[0.8rem] font-bold tracking-tight truncate">{{ seccion.titulo }}</h3>
+                    <h3 class="sec-ink flex-1 min-w-0 font-display text-sm font-bold tracking-tight truncate">{{ seccion.titulo }}</h3>
 
                     @if (salaCountsPorSeccion()[seccion.id] > 0) {
                       <!-- Segmentado: la sala activa va rellena con el tono de
                            la sección; la otra en tinta apagada. -->
-                      <div class="sec-seg flex items-center rounded-lg p-0.5 gap-0.5 shrink-0 border">
+                      <div class="segmented shrink-0" role="group" aria-label="Sala">
                         <button
                           (click)="selectedSala.set('Principal'); $event.stopPropagation()"
                           [attr.aria-pressed]="selectedSala() === 'Principal'"
-                          class="sec-seg-btn flex items-center justify-center px-2 h-7 md:h-6 min-w-[48px] rounded-md text-[0.62rem] font-bold whitespace-nowrap transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.97]"
-                          [class.is-on]="selectedSala() === 'Principal'">
+                          class="segmented-item !text-xs !py-1"
+                          [class.is-active]="selectedSala() === 'Principal'">
                           Principal
                         </button>
                         <button
                           (click)="selectedSala.set('Auxiliar'); $event.stopPropagation()"
                           [attr.aria-pressed]="selectedSala() === 'Auxiliar'"
-                          class="sec-seg-btn flex items-center justify-center px-2 h-7 md:h-6 min-w-[48px] rounded-md text-[0.62rem] font-bold whitespace-nowrap transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.97]"
-                          [class.is-on]="selectedSala() === 'Auxiliar'">
+                          class="segmented-item !text-xs !py-1"
+                          [class.is-active]="selectedSala() === 'Auxiliar'">
                           Sala B
                         </button>
                       </div>
@@ -818,14 +784,14 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                       <div class="parte-row"
                         data-testid="fila-parte"
                         [attr.data-parte]="grupo.partes[0].id_programa_parte"
-                        [class.has-conflict]="grupoHasConflict(grupo.partes)"
+                        [class.has-conflict]="!semanaSinReunion(semana) && grupoHasConflict(grupo.partes)"
                         [class.has-swapped]="grupoHasSwapped(grupo.partes)"
                         [class.is-open]="isGroupOpen(grupo)"
                         [class.dropdown-active]="grupoDropdownActivo(grupo.partes)">
                       <div class="px-3 pt-2 pb-2 flex flex-col gap-1.5 lg:flex-row lg:items-center lg:gap-3 lg:px-4 lg:py-2.5">
                         <!-- Fila 1: dot + título + duración + badges de estado -->
                         <div class="flex items-center gap-3 flex-1 min-w-0">
-                          <div class="w-1.5 h-1.5 rounded-full shrink-0" [style.background-color]="grupoDotColor(grupo.partes, seccion.color)"></div>
+                          <div class="w-1.5 h-1.5 rounded-full shrink-0" [style.background-color]="semanaSinReunion(semana) ? '#94a3b8' : grupoDotColor(grupo.partes, seccion.color)"></div>
                           <div class="flex-1 min-w-0">
                             <div class="flex items-baseline gap-2 min-w-0">
                               <p class="text-sm font-medium text-slate-800 dark:text-slate-100 line-clamp-2 lg:truncate leading-snug flex-1 min-w-0">
@@ -835,7 +801,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                                 <!-- La duración es un dato, no un adorno: en
                                      mono tabular se lee de un vistazo en la
                                      columna aunque cambie de 4 a 30. -->
-                                <span class="sec-badge shrink-0 px-1.5 py-[2px] rounded font-mono tabular-nums text-[0.65rem] font-bold leading-none">
+                                <span class="sec-badge shrink-0 px-1.5 py-[2px] rounded font-mono tabular-nums text-xs font-bold leading-none">
                                   {{ grupo.partes[0].duracion_minutos }}&nbsp;min
                                 </span>
                               }
@@ -851,7 +817,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                                   (blur)="ocultarAyuda()"
                                   (click)="alternarAyuda($event, grupo.partes[0])"
                                   aria-label="Ver el detalle de esta parte"
-                                  class="shrink-0 w-5 h-5 inline-flex items-center justify-center rounded-full border border-slate-300 dark:border-slate-600 text-[0.7rem] font-bold leading-none text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-150">?</button>
+                                  class="shrink-0 w-5 h-5 inline-flex items-center justify-center rounded-full border border-slate-300 dark:border-slate-600 text-xs font-bold leading-none text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-150">?</button>
                               }
                             </div>
                             @if (grupo.partes[0].fuente_informacion) {
@@ -859,11 +825,11 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                                    guía ("Tema: ...", "lmd lección 4"): es lo
                                    que se va a tratar, y sin esto había que
                                    abrir el PDF para saberlo. -->
-                              <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 leading-snug mt-0.5 line-clamp-2">
+                              <p class="text-xs text-slate-500 dark:text-slate-400 leading-snug mt-0.5 line-clamp-2">
                                 {{ grupo.partes[0].fuente_informacion }}
                               </p>
                             }
-                            @if (grupoHasConflict(grupo.partes) || grupoHasReemplazo(grupo.partes) || grupoHasSwapped(grupo.partes)) {
+                            @if (!semanaSinReunion(semana) && (grupoHasConflict(grupo.partes) || grupoHasReemplazo(grupo.partes) || grupoHasSwapped(grupo.partes))) {
                               <!-- Estados con punto + texto, no sólo color:
                                    quien no distingue rojo de ámbar sigue
                                    leyendo qué pasa. -->
@@ -886,8 +852,10 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                             <!-- Las canciones y las partes fijas de la guía no
                                  esperan a nadie: salen en la lista y en el PDF,
                                  pero sin casilla que invite a rellenarlas. -->
-                            @if (asig.asignable === false) {
-                              <span class="text-[0.65rem] text-slate-400 dark:text-slate-500 italic px-1">Sin asignación</span>
+                            @if (semanaSinReunion(semana)) {
+                              <span class="text-xs text-slate-400 dark:text-slate-500 italic px-1">No aplica</span>
+                            } @else if (asig.asignable === false) {
+                              <span class="text-xs text-slate-400 dark:text-slate-500 italic px-1">Sin asignación</span>
                             } @else {
                             <div class="relative">
                               <button
@@ -899,8 +867,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                                 [class]="assigneeButtonClass(asig)"
                                 [class.pill-highlight]="highlightPublicadorId() === asig.id_publicador">
                                 @if (grupo.partes.length > 1) {
-                                  <span class="text-[0.48rem] font-black uppercase tracking-wide leading-none shrink-0 opacity-60">{{ grupoRoleLabel(grupo, pi) }}</span>
-                                  <span class="opacity-30 text-[0.6rem] leading-none shrink-0">·</span>
+                                  <span class="text-xs font-bold uppercase tracking-wide leading-none shrink-0 opacity-60">{{ grupoRoleLabel(grupo, pi) }}</span>
+                                  <span class="opacity-30 text-xs leading-none shrink-0">·</span>
                                 }
                                 <span class="truncate max-w-[9rem]" [attr.title]="vacanteTituloParte(asig)">{{ asig.nombre_completo || textoParteVacia(asig) }}</span>
                                 @if (hasEditPermission()) {
@@ -964,7 +932,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                                       aria-label="Enviar su asignación por WhatsApp"
                                       class="flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500 text-white shadow ring-2 ring-white dark:ring-slate-900 hover:bg-emerald-600 transition-all active:scale-90 disabled:opacity-50">
                                       @if (enviandoEstaPapeleta(asig)) {
-                                        <svg class="w-2.5 h-2.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                                        <span class="spinner-xs" aria-hidden="true"></span>
                                       } @else {
                                         <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.44 1.32 4.94L2.05 22l5.29-1.39a9.85 9.85 0 0 0 4.7 1.2h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.86 9.86 0 0 0 12.04 2m0 1.67c2.2 0 4.27.86 5.82 2.42a8.2 8.2 0 0 1 2.42 5.82c0 4.54-3.7 8.24-8.25 8.24a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.14.82.84-3.06-.2-.31a8.18 8.18 0 0 1-1.26-4.38c0-4.55 3.7-8.22 8.26-8.22M8.53 6.7c-.17 0-.45.06-.68.32-.24.25-.9.88-.9 2.15s.92 2.5 1.05 2.67c.13.17 1.8 2.87 4.43 3.91 2.19.87 2.64.7 3.11.65.48-.04 1.53-.62 1.75-1.22.22-.6.22-1.11.15-1.22-.06-.1-.24-.16-.5-.29-.26-.13-1.53-.75-1.77-.84-.24-.09-.41-.13-.58.13-.17.26-.67.84-.82 1.01-.15.17-.3.19-.56.06-.26-.13-1.09-.4-2.07-1.28-.77-.68-1.28-1.53-1.44-1.79-.15-.26-.02-.4.11-.53.12-.11.26-.3.4-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45C9.44 8.4 8.94 7.14 8.72 6.63c-.18-.42-.36-.4-.5-.4"/></svg>
                                       }
@@ -992,13 +960,13 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                           <!-- + Ayudante: acción secundaria, así que va en
                                contorno y no rellena. Sólo toma el tono de la
                                sección al pasar por encima. -->
-                          @if (puedeAgregarAyudante(grupo, seccion) && hasEditPermission()) {
+                          @if (!semanaSinReunion(semana) && puedeAgregarAyudante(grupo, seccion) && hasEditPermission()) {
                             <button
                               (click)="onAgregarAyudante(grupo, selectedWeekIdx())"
                               [disabled]="loadingAyudante() === grupo.partes[0].id_programa_parte"
-                              class="sec-ghost-btn flex items-center gap-1 px-2.5 h-7 rounded-full text-[0.6rem] font-bold border transition-[background-color,border-color,color,transform] duration-150 active:scale-95 disabled:opacity-40">
+                              class="sec-ghost-btn flex items-center gap-1 px-2.5 h-7 rounded-full text-xs font-bold border transition-[background-color,border-color,color,transform] duration-150 active:scale-95 disabled:opacity-40">
                               @if (loadingAyudante() === grupo.partes[0].id_programa_parte) {
-                                <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                                <span class="spinner-xs" aria-hidden="true"></span>
                               } @else {
                                 <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                               }
@@ -1045,13 +1013,13 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             [style.transform]="pos.openUp ? 'translateY(-100%)' : 'none'">
             <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
               <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
-              <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Cambiar asignado</span>
+              <span class="dropdown-label text-xs font-bold uppercase tracking-widest flex-1">Cambiar asignado</span>
               @if (asig.es_ayudante && asig.alternativos?.length) {
                 <div class="flex items-center gap-0.5">
                   @for (opt of sexoOpts; track opt.v) {
                     <button
                       (click)="setSexoFilter(asig, opt.v); $event.stopPropagation()"
-                      class="px-1.5 h-5 rounded text-[0.55rem] font-black transition-all active:scale-95"
+                      class="px-1.5 h-5 rounded text-xs font-bold transition-all active:scale-95"
                       [style]="getSexoFilter(asig) === opt.v
                         ? 'background:' + seccion.color + '; color:white'
                         : 'opacity:0.4'">
@@ -1072,10 +1040,10 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   placeholder="Buscar persona..."
                   [value]="busquedaCandidato()"
                   (input)="onBusquedaCandidatoChange($any($event.target).value)"
-                  class="flex-1 bg-transparent text-[0.72rem] text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none min-w-0"
+                  class="flex-1 bg-transparent text-xs text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none min-w-0"
                 />
                 @if (loadingBusqueda()) {
-                  <div class="w-3 h-3 rounded-full border-2 border-slate-300 border-t-[#6D28D9] animate-spin shrink-0"></div>
+                  <div class="spinner-xs shrink-0"></div>
                 }
               </div>
             </div>
@@ -1083,15 +1051,15 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               @if (busquedaCandidato().trim()) {
                 <!-- Resultados de búsqueda libre -->
                 @if (busquedaResultados().length === 0 && !loadingBusqueda()) {
-                  <p class="text-[0.65rem] text-slate-400 text-center py-3">Sin resultados</p>
+                  <p class="text-xs text-slate-400 text-center py-3">Sin resultados</p>
                 }
                 @for (pub of busquedaResultados(); track pub.id_publicador) {
                   <button
                     (click)="selectHistorialCandidato(selectedWeekIdx(), asig, { id_publicador: pub.id_publicador, nombre_completo: pub.nombre_completo, score: 0, notas_score: [], sexo: pub.sexo })"
                     class="dropdown-alt-row w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-[8px]">
-                    <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
+                    <span class="dropdown-alt-name text-xs font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
                     @if (pub.ausente) {
-                      <span class="shrink-0 px-1.5 py-0.5 rounded text-[0.6rem] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+                      <span class="shrink-0 px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
                             [title]="pub.ausencia_motivo || 'Ausente esta fecha'">Ausente</span>
                     }
                   </button>
@@ -1100,13 +1068,13 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 <!-- Sugeridos por algoritmo -->
                 @if (loadingCandidatos()) {
                   <div class="flex items-center justify-center py-3">
-                    <div class="w-4 h-4 rounded-full border-2 border-slate-200 border-t-[#6D28D9] animate-spin"></div>
+                    <div class="spinner-sm"></div>
                   </div>
                 } @else if (candidatosPanel(asig).length === 0 && otrosPanel(asig).length === 0) {
-                  <p class="text-[0.65rem] text-slate-400 text-center py-3">Sin candidatos disponibles</p>
+                  <p class="text-xs text-slate-400 text-center py-3">Sin candidatos disponibles</p>
                 } @else {
                   @if (candidatosPanel(asig).length > 0) {
-                  <p class="text-[0.58rem] text-slate-400 uppercase tracking-widest px-2 pb-0.5">Sugeridos</p>
+                  <p class="text-xs text-slate-400 uppercase tracking-widest px-2 pb-0.5">Sugeridos</p>
                   }
                   @for (alt of candidatosPanel(asig); track alt.id_publicador) {
                     <button
@@ -1115,7 +1083,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                       (click)="selectHistorialCandidato(selectedWeekIdx(), asig, alt)"
                       class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left rounded-[8px]">
                       <span class="min-w-0 flex-1 flex flex-col gap-0.5">
-                        <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
+                        <span class="dropdown-alt-name text-xs font-semibold truncate">{{ alt.nombre_completo }}</span>
                         @if (yaOcupadoEsteDia(alt)) {
                           <!-- El motor lo sigue ofreciendo -doblar es normal en
                                congregaciones pequeñas- pero quien elige tiene
@@ -1125,21 +1093,21 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                           </span>
                         }
                       </span>
-                      <span class="score-chip text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
+                      <span class="score-chip text-xs font-bold font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
                         [style.--sec]="seccion.color">
                         {{ alt.score | number:'1.2-2' }}
                       </span>
                     </button>
                   }
                   @if (otrosPanel(asig).length > 0) {
-                    <p class="text-[0.58rem] text-slate-400 uppercase tracking-widest px-2 pb-0.5 pt-2">Otros con permiso</p>
+                    <p class="text-xs text-slate-400 uppercase tracking-widest px-2 pb-0.5 pt-2">Otros con permiso</p>
                     @for (pub of otrosPanel(asig); track pub.id_publicador) {
                       <button
                         (click)="selectHistorialCandidato(selectedWeekIdx(), asig, { id_publicador: pub.id_publicador, nombre_completo: pub.nombre_completo, score: 0, notas_score: [], sexo: pub.sexo })"
                         class="dropdown-alt-row w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-[8px]">
-                        <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
+                        <span class="dropdown-alt-name text-xs font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
                         @if (pub.ausente) {
-                          <span class="shrink-0 px-1.5 py-0.5 rounded text-[0.6rem] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+                          <span class="shrink-0 px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
                                 [title]="pub.ausencia_motivo || 'Ausente esta fecha'">Ausente</span>
                         }
                       </button>
@@ -1156,7 +1124,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     <!-- ── SHEET DE CANDIDATOS (móvil) ── -->
     @if (mobileSheetAsig() !== null) {
       <div
-        class="md:hidden fixed inset-0 z-[62] bg-black/40 backdrop-blur-sm"
+        class="md:hidden fixed inset-0 z-[62] bg-black/40"
         (click)="closeMobileSheet()"
         aria-hidden="true">
       </div>
@@ -1178,7 +1146,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               @for (opt of sexoOpts; track opt.v) {
                 <button
                   (click)="setSexoFilter(mobileSheetAsig()!, opt.v); $event.stopPropagation()"
-                  class="px-1.5 h-5 rounded text-[0.55rem] font-black transition-all active:scale-95"
+                  class="px-1.5 h-5 rounded text-xs font-bold transition-all active:scale-95"
                   [style]="getSexoFilter(mobileSheetAsig()!) === opt.v
                     ? 'background:' + mobileSheetSeccion()?.color + '; color:white'
                     : 'opacity:0.4'">{{ opt.l }}</button>
@@ -1205,7 +1173,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               (input)="onBusquedaCandidatoChange($any($event.target).value)"
               class="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none min-w-0" />
             @if (loadingBusqueda()) {
-              <div class="w-3.5 h-3.5 rounded-full border-2 border-slate-300 border-t-[#6D28D9] animate-spin shrink-0"></div>
+              <div class="spinner-xs shrink-0"></div>
             }
           </div>
         </div>
@@ -1222,7 +1190,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 class="dropdown-alt-row w-full flex items-center gap-3 px-3 py-3 text-left rounded-xl">
                 <span class="dropdown-alt-name text-sm font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
                 @if (pub.ausente) {
-                  <span class="shrink-0 px-1.5 py-0.5 rounded text-[0.6rem] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+                  <span class="shrink-0 px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
                         [title]="pub.ausencia_motivo || 'Ausente esta fecha'">Ausente</span>
                 }
               </button>
@@ -1230,12 +1198,12 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           } @else {
             @if (loadingCandidatos()) {
               <div class="flex items-center justify-center py-5">
-                <div class="w-5 h-5 rounded-full border-2 border-slate-200 border-t-[#6D28D9] animate-spin"></div>
+                <div class="spinner"></div>
               </div>
             } @else if (candidatosPanel(mobileSheetAsig()!).length === 0 && otrosPanel(mobileSheetAsig()!).length === 0) {
               <p class="text-xs text-slate-400 text-center py-5">Sin candidatos disponibles</p>
             } @else {
-              <p class="text-[0.58rem] text-slate-400 uppercase tracking-widest px-2 pb-0.5 pt-1">Sugeridos</p>
+              <p class="text-xs text-slate-400 uppercase tracking-widest px-2 pb-0.5 pt-1">Sugeridos</p>
               @for (alt of candidatosPanel(mobileSheetAsig()!); track alt.id_publicador) {
                 <button
                   (click)="selectHistorialCandidato(selectedWeekIdx(), mobileSheetAsig()!, alt); closeMobileSheet()"
@@ -1248,21 +1216,21 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                       </span>
                     }
                   </span>
-                  <span class="score-chip text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
+                  <span class="score-chip text-xs font-bold font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
                     [style.--sec]="mobileSheetSeccion()?.color">
                     {{ alt.score | number:'1.2-2' }}
                   </span>
                 </button>
               }
               @if (otrosPanel(mobileSheetAsig()!).length > 0) {
-              <p class="text-[0.58rem] text-slate-400 uppercase tracking-widest px-2 pb-0.5 pt-2">Otros con permiso</p>
+              <p class="text-xs text-slate-400 uppercase tracking-widest px-2 pb-0.5 pt-2">Otros con permiso</p>
               @for (pub of otrosPanel(mobileSheetAsig()!); track pub.id_publicador) {
                 <button
                   (click)="selectHistorialCandidato(selectedWeekIdx(), mobileSheetAsig()!, { id_publicador: pub.id_publicador, nombre_completo: pub.nombre_completo, score: 0, notas_score: [], sexo: pub.sexo }); closeMobileSheet()"
                   class="dropdown-alt-row w-full flex items-center gap-3 px-3 py-3 text-left rounded-xl">
                   <span class="dropdown-alt-name text-sm font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
                   @if (pub.ausente) {
-                    <span class="shrink-0 px-1.5 py-0.5 rounded text-[0.6rem] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+                    <span class="shrink-0 px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
                           [title]="pub.ausencia_motivo || 'Ausente esta fecha'">Ausente</span>
                   }
                 </button>
@@ -1276,40 +1244,27 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
     <!-- ===== MODAL GENERAR MES ===== -->
     @if (showModal()) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="showModal.set(false)">
-        <div
-          data-testid="modal-generar-mes"
-          class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-5"
-          (click)="$event.stopPropagation()">
-
-          <h2 class="text-base font-black text-slate-800 dark:text-white">Generar Programa del Mes</h2>
+      <app-modal [open]="true" size="sm" title="Generar Programa del Mes" [hasFooter]="true" (closed)="showModal.set(false)">
+        <div data-testid="modal-generar-mes" class="flex flex-col gap-5">
 
           @if (diaReunionSinConfigurar()) {
-            <div data-testid="aviso-dia-sin-configurar" class="flex items-start gap-3 px-3.5 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50">
-              <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-              <div class="min-w-0">
-                <p class="text-xs font-bold text-amber-700 dark:text-amber-300">Día de reunión no configurado</p>
-                <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5 leading-relaxed">
-                  Esta congregación no tiene configurado el día de
-                  {{ tipoReunionActivo() === 'entre_semana' ? 'reunión entre semana' : 'la reunión pública' }},
-                  por lo que no es posible generar el programa.
-                  Configúralo en <span class="font-semibold">Configuración → Congregación</span> y vuelve a intentarlo.
-                </p>
-              </div>
-            </div>
+            <app-aviso data-testid="aviso-dia-sin-configurar" tone="warning" title="Día de reunión no configurado">
+              Esta congregación no tiene configurado el día de
+              {{ tipoReunionActivo() === 'entre_semana' ? 'reunión entre semana' : 'la reunión pública' }},
+              por lo que no es posible generar el programa.
+              Configúralo en <span class="font-semibold">Configuración → Congregación</span> y vuelve a intentarlo.
+            </app-aviso>
           }
 
           <div class="flex flex-col gap-1">
-            <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Plantilla</label>
+            <label class="form-label">Plantilla</label>
             @if (loadingPlantillas()) {
-              <div class="flex items-center gap-2 h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-slate-400">
-                <div class="w-3.5 h-3.5 border-2 border-slate-300 dark:border-slate-600 border-t-violet-500 rounded-full animate-spin"></div>
+              <div class="flex items-center gap-2 h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs text-slate-400">
+                <div class="spinner-xs"></div>
                 Cargando plantillas...
               </div>
             } @else if (plantillas().length === 0) {
-              <div class="h-9 flex items-center px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-slate-400">
+              <div class="h-9 flex items-center px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs text-slate-400">
                 No hay plantillas disponibles.
               </div>
             } @else {
@@ -1321,10 +1276,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   type="button"
                   data-testid="selector-plantilla"
                   (click)="showPlantillaDropdown.set(!showPlantillaDropdown())"
-                  class="h-9 w-full px-3 rounded-xl border bg-white dark:bg-slate-800 text-sm text-left flex items-center justify-between gap-2 outline-none transition-[border-color,background-color] duration-150 ease-out"
-                  [class]="showPlantillaDropdown()
-                    ? 'border-violet-500 ring-2 ring-violet-400/30'
-                    : 'border-slate-200 dark:border-slate-600 hover:border-violet-300 dark:hover:border-violet-700'">
+                  class="form-control text-left flex items-center justify-between gap-2">
                   <span class="flex-1 min-w-0">
                     @if (plantillaSeleccionada; as sel) {
                       <span class="block truncate text-slate-800 dark:text-slate-100">{{ sel.nombre }}</span>
@@ -1335,7 +1287,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="showPlantillaDropdown()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 @if (showPlantillaDropdown()) {
-                  <div class="absolute left-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1.5">
+                  <div class="mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-1.5">
                     @for (p of plantillasOrdenadas(); track p.id_plantilla) {
                       <button
                         type="button"
@@ -1344,7 +1296,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                         (click)="updateModal('id_plantilla', p.id_plantilla); showPlantillaDropdown.set(false)"
                         class="w-full px-3.5 py-2 text-sm font-semibold text-left transition-colors duration-100"
                         [class]="modalForm().id_plantilla === p.id_plantilla
-                          ? 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-300'
+                          ? 'bg-violet-50 text-brand-purple dark:bg-violet-900/20 dark:text-violet-300'
                           : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
                         {{ p.nombre }}
                       </button>
@@ -1357,7 +1309,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
           @if (plantillaSeleccionada && plantillaSeleccionada.mes_inicio == null) {
             <div class="flex flex-col gap-1">
-              <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Mes y año</label>
+              <label class="form-label">Mes y año</label>
               <div class="relative">
                 @if (showMesAnoDropdown()) {
                   <div class="fixed inset-0 z-[59]" (click)="showMesAnoDropdown.set(false)"></div>
@@ -1366,17 +1318,14 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   type="button"
                   data-testid="selector-mes-ano"
                   (click)="showMesAnoDropdown.set(!showMesAnoDropdown())"
-                  class="h-9 w-full px-3 rounded-xl border bg-white dark:bg-slate-800 text-sm text-left flex items-center justify-between gap-2 outline-none transition-[border-color,background-color] duration-150 ease-out"
-                  [class]="showMesAnoDropdown()
-                    ? 'border-violet-500 ring-2 ring-violet-400/30'
-                    : 'border-slate-200 dark:border-slate-600 hover:border-violet-300 dark:hover:border-violet-700'">
+                  class="form-control text-left flex items-center justify-between gap-2">
                   <span class="flex-1 min-w-0 truncate text-slate-800 dark:text-slate-100">
                     {{ mesLabel(modalForm().mes) }} {{ modalForm().ano }}
                   </span>
                   <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="showMesAnoDropdown()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 @if (showMesAnoDropdown()) {
-                  <div class="absolute left-0 top-full mt-1.5 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] overflow-hidden">
+                  <div class="mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
                     <div class="p-1.5 border-b border-slate-100 dark:border-slate-700">
                       <input
                         type="text"
@@ -1385,7 +1334,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                         (ngModelChange)="mesAnoBusqueda.set($event)"
                         (click)="$event.stopPropagation()"
                         placeholder="Buscar mes o año..."
-                        class="h-8 w-full px-2.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-400/30 transition-[border-color] duration-150 ease-out">
+                        class="form-control !h-8 !text-xs">
                     </div>
                     <div class="max-h-56 overflow-y-auto simple-scrollbar py-1.5">
                       @for (p of periodosMesAnoFiltrados(); track p.ano + '-' + p.mes) {
@@ -1397,7 +1346,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                           (click)="updateModalMesAno(p.ano + '-' + p.mes); showMesAnoDropdown.set(false)"
                           class="w-full px-3.5 py-2 text-sm font-semibold text-left transition-colors duration-100"
                           [class]="modalForm().mes === p.mes && modalForm().ano === p.ano
-                            ? 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-300'
+                            ? 'bg-violet-50 text-brand-purple dark:bg-violet-900/20 dark:text-violet-300'
                             : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
                           {{ p.label }}
                         </button>
@@ -1412,99 +1361,70 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           }
 
           <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-            <p class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ fechasPreview().length }} semanas a crear</p>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ fechasPreview().length }} semanas a crear</p>
             <div class="flex flex-wrap justify-center gap-1.5">
               @for (fecha of fechasPreview(); track fecha) {
-                <span class="flex items-center justify-center py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[0.65rem] font-mono font-medium text-slate-600 dark:text-slate-500 shadow-sm w-[calc(33.3%-0.25rem)]">
+                <span class="flex items-center justify-center py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono font-medium text-slate-600 dark:text-slate-500 shadow-sm w-[calc(33.3%-0.25rem)]">
                   {{ fecha }}
                 </span>
               }
             </div>
           </div>
 
-          <div class="flex gap-2 justify-end">
-            <button
-              (click)="showModal.set(false)"
-              class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-              Cancelar
-            </button>
-            <button
-              data-testid="btn-generar-programa"
-              (click)="onModalSubmit()"
-              [disabled]="loadingPlantillas() || plantillas().length === 0 || modalForm().id_plantilla === 0 || diaReunionSinConfigurar() || cargandoFechas() || fechasPreview().length === 0 || (tipoReunionActivo() === 'entre_semana' && plantillaSeleccionada?.mes_inicio == null)"
-              class="px-4 h-9 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all active:scale-95">
-              Generar Programa
-            </button>
-          </div>
-
         </div>
-      </div>
+        <ng-container slot="footer">
+          <button (click)="showModal.set(false)" class="btn-ghost btn-sm">Cancelar</button>
+          <button
+            data-testid="btn-generar-programa"
+            (click)="onModalSubmit()"
+            [disabled]="loadingPlantillas() || plantillas().length === 0 || modalForm().id_plantilla === 0 || diaReunionSinConfigurar() || cargandoFechas() || fechasPreview().length === 0 || (tipoReunionActivo() === 'entre_semana' && plantillaSeleccionada?.mes_inicio == null)"
+            class="btn-primary btn-sm">
+            Generar Programa
+          </button>
+        </ng-container>
+      </app-modal>
     }
 
     <!-- ===== MODAL CONFLICTOS DE REGENERACIÓN ===== -->
     @if (showConflictoModal()) {
-      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-fadeIn" (click)="cancelarConflictoModal()"></div>
-      <div class="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
-        <div class="pointer-events-auto w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 animate-slideUp">
-          <div class="flex items-start gap-3 mb-4">
-            <div class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-              </svg>
-            </div>
-            <div>
-              <h3 class="text-sm font-bold text-slate-900 dark:text-white">Meses ya generados</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Los siguientes meses ya tienen programa:</p>
-            </div>
-          </div>
+      <app-modal [open]="true" size="sm" title="Meses ya generados" subtitle="Los siguientes meses ya tienen programa:" (closed)="cancelarConflictoModal()">
           <div class="flex flex-wrap gap-1.5 mb-4">
             @for (c of conflictosDetectados(); track c.ano + '-' + c.mes) {
-              <span class="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                {{ c.label }}
-              </span>
+              <span class="badge-warning">{{ c.label }}</span>
             }
           </div>
           @if (mesesFaltantes().length > 0) {
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Se pueden generar los meses faltantes:</p>
+            <p class="text-xs text-slate-600 dark:text-slate-400 mb-2">Se pueden generar los meses faltantes:</p>
             <!-- Una guía cubre semanas de lunes a domingo, y la última suele
                  cruzar al mes siguiente ("31 de agosto a 6 de septiembre" es
                  del cuaderno de julio-agosto). Por eso aquí puede aparecer un
                  mes que no está en el nombre de la guía: es esa semana. -->
-            <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 mb-2 leading-relaxed">
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2 leading-relaxed">
               La última semana de una guía puede caer en el mes siguiente; si aparece aquí un mes
               de más, es esa semana.
             </p>
             <div class="flex flex-wrap gap-1.5 mb-5">
               @for (m of mesesFaltantes(); track m.ano + '-' + m.mes) {
-                <span class="px-2.5 py-1 rounded-full bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700 text-xs font-semibold text-violet-700 dark:text-violet-400">
-                  {{ m.label }}
-                </span>
+                <span class="badge-role">{{ m.label }}</span>
               }
             </div>
             <div class="flex gap-2">
-              <button
-                (click)="cancelarConflictoModal()"
-                class="flex-1 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-500 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
+              <button (click)="cancelarConflictoModal()" class="flex-1 btn-secondary btn-sm">
                 Cancelar
               </button>
-              <button
-                (click)="confirmarGenerarFaltantes()"
-                class="flex-1 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-xs text-white font-bold transition-all shadow-sm shadow-purple-900/20 active:scale-95">
+              <button (click)="confirmarGenerarFaltantes()" class="flex-1 btn-primary btn-sm">
                 Generar faltantes
               </button>
             </div>
           } @else {
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+            <p class="text-xs text-slate-600 dark:text-slate-400 mb-4">
               Todos los meses de esta guía ya están generados. Para regenerar un mes, elimínalo primero con la papelera del selector de mes.
             </p>
-            <button
-              (click)="cancelarConflictoModal()"
-              class="w-full h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-500 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
+            <button (click)="cancelarConflictoModal()" class="w-full btn-secondary btn-sm">
               Entendido
             </button>
           }
-        </div>
-      </div>
+      </app-modal>
     }
 
     <!-- Cerrar dropdown al hacer clic fuera. Cubre las dos variantes -edición
@@ -1520,13 +1440,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
          se descarga a mano. Esto se muestra ANTES de abrir el chat: después
          el foco ya está en la otra pestaña y nadie lee el aviso. -->
     @if (papeletaPreview(); as prev) {
-      <div class="confirm-overlay" (click)="cerrarPapeletaPreview()">
-        <div class="papeleta-dialog" (click)="$event.stopPropagation()">
-          <div class="papeleta-head">
-            <p class="confirm-title">Asignación de {{ prev.nombre }}</p>
-            <button class="papeleta-close" (click)="cerrarPapeletaPreview()" aria-label="Cerrar">✕</button>
-          </div>
-
+      <app-modal [open]="true" size="sm" [title]="'Asignación de ' + prev.nombre" (closed)="cerrarPapeletaPreview()">
+        <div class="flex flex-col gap-3.5">
           <img [src]="prev.url" alt="Papeleta de asignación de {{ prev.nombre }}" class="papeleta-img" />
 
           <!-- El aviso dice qué hacer AHORA, no qué se puede hacer: copiada ya
@@ -1555,81 +1470,75 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                Antes "Descargar imagen" usaba el estilo de cancelar y se leía
                como la salida del diálogo. -->
           <div class="papeleta-acciones">
-            <button class="papeleta-btn-sec" (click)="copiarPapeletaPreview()">
+            <button class="btn-secondary btn-sm" (click)="copiarPapeletaPreview()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               Copiar
             </button>
             @if (prev.compartible) {
-              <button class="papeleta-btn-sec" (click)="compartirPapeletaPreview()">
+              <button class="btn-secondary btn-sm" (click)="compartirPapeletaPreview()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
                 Compartir
               </button>
             }
-            <button class="papeleta-btn-sec" (click)="descargarPapeletaPreview()">
+            <button class="btn-secondary btn-sm" (click)="descargarPapeletaPreview()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
               Descargar
             </button>
           </div>
 
-          <button class="papeleta-btn-wa papeleta-btn-wa-full" (click)="abrirChatPapeleta()">Abrir WhatsApp</button>
+          <button class="btn-primary w-full" (click)="abrirChatPapeleta()">Abrir WhatsApp</button>
         </div>
-      </div>
+      </app-modal>
     }
 
     <!-- ===== DIÁLOGO DE CONFIRMACIÓN ===== -->
     @if (confirmDialog(); as dlg) {
-      <div class="confirm-overlay" (click)="onConfirmDialogAction(false)">
-        <div class="confirm-dialog" (click)="$event.stopPropagation()">
-          <!-- Icono -->
-          <div class="confirm-icon-wrap">
-            <svg class="confirm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-          </div>
-          <!-- Texto -->
-          <div class="confirm-text">
-            <p class="confirm-title">{{ dlg.title }}</p>
-            <p class="confirm-body">{{ dlg.body }}</p>
-          </div>
-          <!-- Acciones -->
-          <div class="confirm-actions">
-            <button class="confirm-btn-cancel" (click)="onConfirmDialogAction(false)">Cancelar</button>
-            <button class="confirm-btn-delete" (click)="onConfirmDialogAction(true)">{{ dlg.confirmLabel || 'Eliminar' }}</button>
-          </div>
-        </div>
-      </div>
+      <app-confirm-dialog
+        [open]="true"
+        severity="danger"
+        [title]="dlg.title"
+        [message]="dlg.body"
+        [confirmLabel]="dlg.confirmLabel || 'Eliminar'"
+        (confirmed)="onConfirmDialogAction(true)"
+        (cancelled)="onConfirmDialogAction(false)"
+      ></app-confirm-dialog>
     }
 
     <!-- ===== REVISIÓN PREVIA A PUBLICAR ===== -->
     @if (revisionPublicacion(); as reuniones) {
-      <app-revision-publicacion-dialog
-        [reuniones]="reuniones"
-        (resolved)="onRevisionPublicacionAction($event)"
-        (irASemana)="onIrASemanaDesdeRevision($event)">
-      </app-revision-publicacion-dialog>
+      @defer (on immediate) {
+        <app-revision-publicacion-dialog
+          [reuniones]="reuniones"
+          (resolved)="onRevisionPublicacionAction($event)"
+          (irASemana)="onIrASemanaDesdeRevision($event)">
+        </app-revision-publicacion-dialog>
+      }
     }
 
     <!-- ===== SEGUIMIENTO DEL CONSEJERO ===== -->
     @if (seguimientoAbierto()) {
-      <app-seguimiento-reuniones
-        [idCong]="congregacionCtx.effectiveCongregacionId()"
-        [tipoReunion]="tipoReunionActivo()"
-        (cambiado)="onSeguimientoCambiadoDesdeModal()"
-        (cerrar)="cerrarSeguimiento()">
-      </app-seguimiento-reuniones>
+      @defer (on immediate) {
+        <app-seguimiento-reuniones
+          [idCong]="congregacionCtx.effectiveCongregacionId()"
+          [tipoReunion]="tipoReunionActivo()"
+          (cambiado)="onSeguimientoCambiadoDesdeModal()"
+          (cerrar)="cerrarSeguimiento()">
+        </app-seguimiento-reuniones>
+      }
     }
 
     <!-- El panel de una sola asignación, abierto desde su pastilla. El modal
          de arriba abre el suyo por su cuenta: cada uno sabe a qué fila
          devolver el resultado. -->
     @if (seguimientoPill(); as obj) {
-      <app-seguimiento-asignacion-panel
-        [objetivo]="obj"
-        [idCong]="congregacionCtx.effectiveCongregacionId()!"
-        (guardado)="onSeguimientoPillGuardado(obj.id_asignacion, $event)"
-        (cerrar)="seguimientoPill.set(null)">
-      </app-seguimiento-asignacion-panel>
+      @defer (on immediate) {
+        <app-seguimiento-asignacion-panel
+          [objetivo]="obj"
+          [idCong]="congregacionCtx.effectiveCongregacionId()!"
+          (guardado)="onSeguimientoPillGuardado(obj.id_asignacion, $event)"
+          (cerrar)="seguimientoPill.set(null)">
+        </app-seguimiento-asignacion-panel>
+      }
     }
   `,
   styles: [`
@@ -1639,65 +1548,6 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     :host {
       --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
       --ease-in-out-expo: cubic-bezier(0.77, 0, 0.175, 1);
-    }
-
-    /* ── Píldora de pestañas (Entre semana / Fin de semana / Logística /
-       Discursos) ──
-       El estado activo/inactivo antes se resolvía con un swap de clases de
-       Tailwind: el fondo violeta y la sombra aparecían de golpe y el rótulo
-       entraba/salía con un @if, así que el ancho de la píldora saltaba en
-       vez de crecer. Aquí background-color/box-shadow/padding quedan bajo
-       una sola transición coordinada, y el rótulo se revela con la técnica
-       de grid-template-columns 0fr→1fr -la única forma de animar un ancho
-       "auto" sin saltos, ver reference/motion-design- en lugar de montar y
-       desmontar el <span>. */
-    .tab-pill {
-      position: relative;
-      transition: background-color 260ms var(--ease-out-expo),
-                  color 200ms var(--ease-out-expo),
-                  box-shadow 260ms var(--ease-out-expo),
-                  padding 260ms var(--ease-out-expo),
-                  transform 140ms var(--ease-out-expo);
-    }
-    .tab-pill:active { transform: scale(0.97); }
-
-    .tab-pill__icon {
-      transition: transform 220ms var(--ease-out-expo);
-    }
-    /* Un pequeño "asentamiento" del icono al activarse -no un rebote: sólo
-       decelera hacia su tamaño final- para que el cambio de pestaña se
-       sienta confirmado, no sólo repintado. */
-    .tab-pill--active .tab-pill__icon {
-      animation: tabIconSettle 260ms var(--ease-out-expo);
-    }
-    @keyframes tabIconSettle {
-      from { transform: scale(0.8); opacity: 0.6; }
-      to   { transform: scale(1);   opacity: 1; }
-    }
-
-    .tab-pill__label {
-      display: grid;
-      grid-template-columns: 0fr;
-      min-width: 0;
-      margin-left: 0;
-      transition: grid-template-columns 260ms var(--ease-out-expo),
-                  margin-left 260ms var(--ease-out-expo);
-    }
-    .tab-pill__label--active {
-      grid-template-columns: 1fr;
-      margin-left: 0.375rem;
-    }
-    .tab-pill__label-text {
-      overflow: hidden;
-      white-space: nowrap;
-      min-width: 0;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .tab-pill, .tab-pill__icon, .tab-pill__label {
-        transition: none !important;
-      }
-      .tab-pill--active .tab-pill__icon { animation: none !important; }
     }
 
     /* ── Identidad de color por sección ──
@@ -1771,16 +1621,23 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
         color-mix(in oklch, var(--sec) 26%, transparent));
     }
 
-    /* Segmentado de sala dentro de la cabecera */
-    .sec-seg { border-color: var(--sec-edge); }
-    .sec-seg-btn { color: var(--sec-ink); opacity: 0.6; }
-    .sec-seg-btn:hover { opacity: 0.85; }
-    .sec-seg-btn.is-on {
-      background: var(--sec);
-      color: #fff;
-      opacity: 1;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+    /* Selector Principal / Sala B de la cabecera: la sala activa se rellena con
+       el color de SU sección (no el violeta global). Se oscurece un poco para
+       que el texto blanco conserve contraste también sobre el ámbar. */
+    .sec-card .segmented {
+      /* Todo lo que el estilo global toma del acento (relleno, hover, anillo
+         de foco, sombra) pasa a salir del color de la sección. */
+      --accent: color-mix(in oklch, var(--sec) 80%, black 20%);
+      --accent-hover: color-mix(in oklch, var(--sec) 70%, black 30%);
+      --accent-focus: var(--sec);
+      --accent-shadow: 0 1px 3px color-mix(in oklch, var(--sec) 45%, transparent);
     }
+    :host-context(.dark) .sec-card .segmented {
+      --accent: color-mix(in oklch, var(--sec) 85%, black 15%);
+      --accent-hover: color-mix(in oklch, var(--sec) 75%, black 25%);
+      --accent-focus: color-mix(in oklch, var(--sec) 60%, white 40%);
+    }
+    .sec-card .segmented-item:focus-visible { outline-color: var(--sec); }
 
     /* Acción secundaria en contorno: sólo se tiñe al pasar por encima. */
     .sec-ghost-btn {
@@ -1825,11 +1682,13 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     .parte-row:nth-child(n+7){ animation-delay: 160ms; }
 
     /* ── Etiquetas de estado ── */
+    .semana-sin-reunion .sec-card { opacity: 0.6; }
+
     .estado-tag {
       display: inline-flex;
       align-items: center;
       gap: 0.3rem;
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       font-weight: 700;
       line-height: 1;
       white-space: nowrap;
@@ -1859,7 +1718,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       padding: 0 14px;
       height: 30px;
       border-radius: 999px;
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.01em;
       border: 1px solid transparent;
@@ -2058,46 +1917,6 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       background: rgba(248,113,113,0.16);
     }
 
-    /* ── Diálogo de confirmación ── */
-    @keyframes overlayIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-    @keyframes dialogIn {
-      from { opacity: 0; transform: scale(0.95) translateY(4px); }
-      to   { opacity: 1; transform: scale(1)    translateY(0); }
-    }
-    /* Vista previa de la papeleta antes de mandarla por WhatsApp. El
-       fill-mode de la animación es backwards y no both a propósito: con both
-       queda un transform en matriz identidad que crea stacking context y
-       atrapa los popups que van por encima. */
-    .papeleta-dialog {
-      width: 100%;
-      max-width: 340px;
-      border-radius: 18px;
-      padding: 1.15rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.85rem;
-      animation: dialogIn 200ms var(--ease-out-expo) backwards;
-      background: white;
-      border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 24px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
-    }
-    :host-context(.dark) .papeleta-dialog {
-      background: #1e293b;
-      border-color: rgba(255,255,255,0.1);
-      box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
-    }
-    .papeleta-head { display: flex; align-items: center; gap: 0.75rem; }
-    .papeleta-head .confirm-title { flex: 1; min-width: 0; }
-    .papeleta-close {
-      width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
-      font-size: 0.75rem; color: #94a3b8;
-      transition: background-color 140ms, color 140ms;
-    }
-    .papeleta-close:hover { background: rgba(100,116,139,0.12); color: #475569; }
-    :host-context(.dark) .papeleta-close:hover { color: #e2e8f0; }
     /* La papeleta es vertical: sin tope de alto, el diálogo no cabe en
        pantallas de portátil y los botones quedan fuera de vista. */
     .papeleta-img {
@@ -2113,7 +1932,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       display: flex; align-items: flex-start; gap: 0.55rem;
       padding: 0.6rem 0.7rem;
       border-radius: 10px;
-      font-size: 0.72rem; line-height: 1.45;
+      font-size: 0.75rem; line-height: 1.45;
       color: #64748b;
       background: rgba(100,116,139,0.08);
     }
@@ -2122,125 +1941,15 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     :host-context(.dark) .papeleta-hint { color: #94a3b8; background: rgba(148,163,184,0.1); }
     :host-context(.dark) .papeleta-hint.ok { color: #6ee7b7; background: rgba(16,185,129,0.14); }
     .papeleta-sin-tel {
-      font-size: 0.68rem; line-height: 1.4; color: #94a3b8; margin-top: -0.3rem;
+      font-size: 0.75rem; line-height: 1.4; color: #64748b; margin-top: -0.3rem;
     }
-    /* Copiar / Compartir / Descargar: mismo peso entre ellas, porque cuál
-       sirve depende del navegador y del SO, no de una preferencia nuestra. */
     .papeleta-acciones {
       display: grid;
       grid-auto-columns: 1fr;
       grid-auto-flow: column;
       gap: 0.4rem;
     }
-    .papeleta-btn-sec {
-      display: flex; align-items: center; justify-content: center; gap: 0.35rem;
-      height: 34px; padding: 0 0.5rem;
-      border-radius: 10px;
-      font-size: 0.72rem; font-weight: 600;
-      color: #475569;
-      background: rgba(100,116,139,0.09);
-      transition: background-color 140ms, color 140ms, transform 140ms;
-    }
-    .papeleta-btn-sec svg { width: 14px; height: 14px; flex-shrink: 0; }
-    .papeleta-btn-sec:hover { background: rgba(100,116,139,0.17); color: #1e293b; }
-    .papeleta-btn-sec:active { transform: scale(0.97); }
-    :host-context(.dark) .papeleta-btn-sec { color: #cbd5e1; background: rgba(148,163,184,0.14); }
-    :host-context(.dark) .papeleta-btn-sec:hover { background: rgba(148,163,184,0.24); color: #f1f5f9; }
-    .papeleta-btn-wa {
-      height: 36px; padding: 0 1.1rem;
-      border-radius: 10px;
-      font-size: 0.78rem; font-weight: 700;
-      color: white; background: #059669;
-      transition: background-color 140ms, transform 140ms;
-    }
-    .papeleta-btn-wa-full { width: 100%; }
-    .papeleta-btn-wa:hover { background: #047857; }
-    .papeleta-btn-wa:active { transform: scale(0.97); }
-
-    .confirm-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 200;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      background: rgba(0,0,0,0.45);
-      backdrop-filter: blur(4px);
-      animation: overlayIn 140ms ease-out;
-    }
-    .confirm-dialog {
-      width: 100%;
-      max-width: 380px;
-      border-radius: 18px;
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      animation: dialogIn 200ms var(--ease-out-expo);
-      background: white;
-      border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 24px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
-    }
-    :host-context(.dark) .confirm-dialog {
-      background: #1e293b;
-      border-color: rgba(255,255,255,0.1);
-      box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
-    }
-    .confirm-icon-wrap {
-      width: 44px; height: 44px;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(220,38,38,0.08);
-      border: 1px solid rgba(220,38,38,0.18);
-      flex-shrink: 0;
-    }
-    :host-context(.dark) .confirm-icon-wrap {
-      background: rgba(239,68,68,0.12);
-      border-color: rgba(239,68,68,0.25);
-    }
-    .confirm-icon { width: 22px; height: 22px; stroke: #dc2626; }
-    :host-context(.dark) .confirm-icon { stroke: #f87171; }
-    .confirm-text { display: flex; flex-direction: column; gap: 0.3rem; }
-    .confirm-title {
-      font-size: 0.95rem; font-weight: 800;
-      color: #0f172a; line-height: 1.3;
-    }
-    :host-context(.dark) .confirm-title { color: #f1f5f9; }
-    .confirm-body {
-      font-size: 0.8rem; line-height: 1.55;
-      color: #64748b;
-    }
-    :host-context(.dark) .confirm-body { color: #94a3b8; }
-    .confirm-actions {
-      display: flex; gap: 0.5rem; justify-content: flex-end; padding-top: 0.25rem;
-    }
-    .confirm-btn-cancel, .confirm-btn-delete {
-      height: 36px; padding: 0 1.1rem;
-      border-radius: 10px;
-      font-size: 0.78rem; font-weight: 700;
-      cursor: pointer; transition: all 120ms ease;
-      border: 1px solid transparent;
-    }
-    .confirm-btn-cancel:active, .confirm-btn-delete:active { transform: scale(0.97); }
-    .confirm-btn-cancel {
-      background: rgba(0,0,0,0.04);
-      border-color: rgba(0,0,0,0.1);
-      color: #475569;
-    }
-    .confirm-btn-cancel:hover { background: rgba(0,0,0,0.08); }
-    :host-context(.dark) .confirm-btn-cancel {
-      background: rgba(255,255,255,0.06);
-      border-color: rgba(255,255,255,0.12);
-      color: #94a3b8;
-    }
-    :host-context(.dark) .confirm-btn-cancel:hover { background: rgba(255,255,255,0.1); }
-    .confirm-btn-delete {
-      background: #dc2626;
-      color: white;
-      box-shadow: 0 2px 8px rgba(220,38,38,0.3);
-    }
-    .confirm-btn-delete:hover { background: #b91c1c; box-shadow: 0 4px 12px rgba(220,38,38,0.4); }
+    .papeleta-acciones svg { width: 14px; height: 14px; flex-shrink: 0; }
   `]
 })
 export class ReunionesProgramacionComponent implements OnInit {
@@ -2747,7 +2456,6 @@ export class ReunionesProgramacionComponent implements OnInit {
     if (this.ayudaParte()) { this.ayudaFija = false; this.ayudaParte.set(null); }
     if (this.menuMesesAbierto()) this.menuMesesAbierto.set(false);
     if (this.menuAccionesAbierto()) this.menuAccionesAbierto.set(false);
-    if (this.papeletaPreview()) this.cerrarPapeletaPreview();
   }
 
   // ──────────────────────────────────────────────────
@@ -3266,7 +2974,23 @@ export class ReunionesProgramacionComponent implements OnInit {
     this.vigilarScrollParaCerrarDropdown();
   }
 
+  /**
+   * Con el navegador libre, trae a caché las pestañas diferidas a las que el
+   * usuario tiene acceso: cambiar a ellas no espera a la red. Son los mismos
+   * módulos que importan los @defer de la plantilla.
+   */
+  private precargarPestanas(): void {
+    const precargar = () => {
+      if (this.authStore.hasPermission('reuniones.logistica')) void import('./reuniones-logistica.component');
+      if (this.authStore.hasPermission('reuniones.discursos')) void import('./reuniones-discursos.component');
+    };
+    const ric = (globalThis as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    if (ric) ric(precargar, { timeout: 4000 });
+    else setTimeout(precargar, 1500);
+  }
+
   ngOnInit(): void {
+    this.precargarPestanas();
     // La pestaña activa vive en la URL (?tab=...): si el enlace con el que
     // se llegó (o un refresco de la propia página) ya trae una válida, se
     // respeta esa; si no, se cae al primer tab al que el usuario tiene
@@ -3867,14 +3591,8 @@ export class ReunionesProgramacionComponent implements OnInit {
     return map[this.estado()] ?? '';
   });
 
-  weekTabClass(i: number): string {
-    return i === this.selectedWeekIdx()
-      ? 'bg-[#6D28D9] text-white border-[#6D28D9] shadow-sm shadow-purple-900/20'
-      : 'text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-[#6D28D9]/40 hover:text-[#6D28D9] dark:hover:border-[#6D28D9]/30 dark:hover:text-[#a78bfa] bg-white dark:bg-slate-800';
-  }
-
   salaTabClass(sala: 'Principal' | 'Auxiliar'): string {
-    const base = 'flex items-center gap-1 px-2 h-6 rounded text-[0.65rem] font-bold whitespace-nowrap transition-all shrink-0 disabled:opacity-40 disabled:cursor-not-allowed ';
+    const base = 'flex items-center gap-1 px-2 h-6 rounded text-xs font-bold whitespace-nowrap transition-all shrink-0 disabled:opacity-40 disabled:cursor-not-allowed ';
     return sala === this.selectedSala()
       ? base + 'bg-white/80 shadow-sm'
       : base + 'opacity-60 hover:opacity-90';
@@ -4904,7 +4622,7 @@ export class ReunionesProgramacionComponent implements OnInit {
     this.loadingBusqueda.set(true);
     this._busquedaTimer = setTimeout(() => {
       const idCong = this.congregacionCtx.effectiveCongregacionId();
-      if (!idCong) return;
+      if (!idCong) { this.loadingBusqueda.set(false); return; }
       // Va la fecha de la semana abierta para que el servidor marque a quien
       // esté ausente ese día. Esta búsqueda se salta el reparto del motor a
       // propósito, así que el ausente sigue en la lista: se avisa, no se
@@ -5058,8 +4776,13 @@ export class ReunionesProgramacionComponent implements OnInit {
    * otra semana.
    */
   private isoKey(dateStr: string): { ano: number; semana: number } {
-    const d = new Date(dateStr);
-    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    // Se leen año/mes/día del texto: `new Date('2026-01-05')` se interpreta en
+    // UTC y, con getFullYear/getMonth/getDate locales (Colombia, UTC-5), daba
+    // el día anterior; para un lunes eso es el domingo, o sea OTRA semana ISO.
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
+    const date = m
+      ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))
+      : (() => { const d = new Date(dateStr); return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); })();
     // Jueves de esa semana: su año natural ES el año ISO de la semana.
     date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
     const ano = date.getUTCFullYear();

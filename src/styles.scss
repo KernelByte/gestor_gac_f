@@ -59,6 +59,8 @@
   --color-app-bg: #f3f4f6;
 
   --color-brand-purple: #6d28d9;
+  /* Naranja principal del sistema: #f97316. Es el acento de Publicadores y el
+     único naranja de marca; no usar otros tonos como primario. */
   --color-brand-orange: #f97316;
   --color-brand-green: #059669;
   --color-brand-blue: #165cfc;
@@ -108,7 +110,6 @@
   --animate-blob: blob 8s ease-in-out infinite;
   --animate-fadeIn: fadeIn 0.2s ease-out forwards;
   --animate-shine: shine 1.5s infinite;
-  --animate-shimmer: shimmer 1.8s linear infinite;
   --animate-stagger-in: staggerIn 0.4s var(--ease-out-strong) forwards;
 
   /* ─── Design System v2 · Tokens semánticos ───────────── */
@@ -136,6 +137,7 @@
   --z-dropdown:        30;
   --z-sticky:          40;
   --z-modal-backdrop:  50;
+  --z-drawer:          55;
   --z-modal:           60;
   --z-popover:         70;
   --z-command-palette: 90;
@@ -153,9 +155,9 @@
   --ease-out-quart:   cubic-bezier(0.25, 1, 0.5, 1);
   --ease-spring:      cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Focus ring */
-  --focus-ring-width:  2px;
-  --focus-ring-offset: 2px;
+  /* Radios: controles 12 px, superficies 16 px */
+  --radius-control: 0.75rem;
+  --radius-card:    1rem;
 
   /* ─── Breakpoints de portátil ───────────────────────────────────
      Los breakpoints por defecto de Tailwind parten justo en medio de
@@ -165,37 +167,25 @@
      `mbp:` cubre ambos; `mbp16:` sólo el 16" y monitores mayores. */
   --breakpoint-mbp:   1440px;
   --breakpoint-mbp16: 1680px;
-
-  /* ─── OKLCH parallel palette (paralela a Tailwind, para uso fino) ── */
-  /* Superficies neutrales tintadas hacia violet (cohesión sutil de marca) */
-  --surface-0:  oklch(99.5% 0.003 295);   /* casi blanco */
-  --surface-1:  oklch(98% 0.004 295);
-  --surface-2:  oklch(96.5% 0.005 295);
-  --surface-3:  oklch(93% 0.006 295);
-  --border-1:   oklch(91% 0.007 295);
-  --border-2:   oklch(85% 0.008 295);
-
-  /* Texto */
-  --text-1:     oklch(20% 0.012 295);    /* títulos */
-  --text-2:     oklch(35% 0.010 295);    /* body */
-  --text-3:     oklch(55% 0.008 295);    /* secundario */
-  --text-4:     oklch(72% 0.006 295);    /* deshabilitado */
-
-  /* Brand OKLCH (equivalentes perceptuales a los hex actuales) */
-  --brand-violet:      oklch(44% 0.22 290);
-  --brand-violet-soft: oklch(96% 0.03 290);
-  --brand-orange:      oklch(70% 0.18 50);
-  --brand-orange-soft: oklch(96% 0.04 60);
-  --brand-green:       oklch(58% 0.14 160);
-  --brand-green-soft:  oklch(95% 0.04 160);
-  --brand-blue:        oklch(55% 0.20 255);
-  --brand-blue-soft:   oklch(96% 0.03 255);
 }
 
 @layer base {
   :root {
     --background: 255 255 255;
     --foreground: 15 23 42;
+
+    /* Acento del módulo: RELLENO de botones, interruptores y pestañas activas.
+       Es el mismo en claro y oscuro (texto blanco encima). Cada módulo lo
+       cambia con una clase .tema-* en su contenedor raíz; hay que redeclarar
+       los derivados porque se resuelven donde se declaran. */
+    --accent:        var(--color-brand-purple);
+    --accent-hover:  #5b21b6;
+    --accent-focus:  var(--color-brand-purple);
+    --accent-ring:   color-mix(in oklab, var(--color-brand-purple) 18%, transparent);
+    --accent-shadow: var(--shadow-violet);
+
+    /* Velo bajo modales, hojas y cajones: oscuro en ambos temas. */
+    --velo: oklch(22% 0.02 295 / 0.45);
   }
 
   /* Rescalado fluido para pantallas de alta resolución */
@@ -203,19 +193,11 @@
     font-size: 16px; /* Base por defecto (1rem = 16px) - Laptops y móviles (hasta 1080p) */
   }
 
-  /* Para pantallas 2K y ultrawide (mayores a 1080p pero no 4K) */
-  @media (min-width: 2560px) {
-    html {
-      font-size: 18px; /* Aumento sutil (~12.5%) para que no se vea minúsculo */
-    }
-  }
-
-  /* Para pantallas 4K */
-  @media (min-width: 3840px) {
-    html {
-      font-size: 24px; /* Aumento moderado (50%) en lugar del doble como antes */
-    }
-  }
+  /* Base de 16 px (la del navegador y la de quien la ajusta por accesibilidad).
+     Solo se sube en 2K y 4K a 100 % de escala del sistema; el espacio extra se
+     aprovecha con más columnas y ancho máximo, no agrandando la interfaz. */
+  @media (min-width: 2560px) { html { font-size: 18px; } }
+  @media (min-width: 3840px) { html { font-size: 24px; } }
 
   body {
     @apply tracking-wide font-sans text-slate-700 antialiased;
@@ -231,6 +213,9 @@
   .dark {
     --background: 15 23 42;
     --foreground: 255 255 255;
+    --accent-focus: #a78bfa;
+    --accent-ring:  color-mix(in oklab, var(--color-brand-purple) 35%, transparent);
+    --velo: oklch(8% 0.02 265 / 0.62);
   }
 
   /* Override Chrome Autofill Background */
@@ -289,19 +274,31 @@
   /* === Premium Form Inputs === */
 
   .form-label {
-    @apply block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5 ml-1;
+    @apply block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5;
   }
 
+  /* Campo de texto. 44 px de alto mínimo (objetivo táctil), radio de control,
+     foco con el acento del módulo. El foco se escribe en CSS plano porque el
+     color sale de una variable. */
   .form-control {
-    @apply w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-medium outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-950 focus:border-brand-purple dark:focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 dark:focus:ring-brand-purple/20;
+    @apply w-full min-h-11 px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 font-medium outline-none placeholder:text-slate-500 dark:placeholder:text-slate-500 hover:bg-white dark:hover:bg-slate-900 hover:border-slate-400 dark:hover:border-slate-600 disabled:opacity-60 disabled:cursor-not-allowed;
     transition-property: border-color, background-color, box-shadow;
     transition-duration: 150ms;
     transition-timing-function: ease-out;
   }
+  textarea.form-control { @apply py-2.5 leading-relaxed; }
+  .form-control:focus,
+  .form-select:focus {
+    background-color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-ring);
+  }
+  .dark .form-control:focus,
+  .dark .form-select:focus { background-color: var(--color-slate-950); }
 
   /* === Custom Select with Brand Chevron === */
   .form-select {
-    @apply w-full appearance-none px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-medium outline-none hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-950 focus:border-brand-purple dark:focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 dark:focus:ring-brand-purple/20 cursor-pointer;
+    @apply w-full min-h-11 appearance-none px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 font-medium outline-none hover:bg-white dark:hover:bg-slate-900 hover:border-slate-400 dark:hover:border-slate-600 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed;
     transition-property: border-color, background-color, box-shadow;
     transition-duration: 150ms;
     transition-timing-function: ease-out;
@@ -314,7 +311,7 @@
   }
 
   .form-select:focus {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236d28d9' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
   }
 
   /* Select option styling fix for some browsers */
@@ -342,7 +339,7 @@
   }
 
   .priv-select:focus {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236d28d9' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
   }
 
   /* Options: color-coded by level (works in Chrome/Firefox on Windows/Linux) */
@@ -372,61 +369,171 @@
   /* ═══════════════════════════════════════════════════════ */
 
   /* --- Botones --- */
-
-  /* Acción primaria de creación (color según módulo, ver cada módulo) */
-  .btn-primary {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-semibold transition shadow-sm active:scale-95;
+  /* Receta única. Todo botón comparte forma (radio de control 12 px), peso
+     (semibold), 40 px de alto por padding, presión 0.97 en 120 ms y foco
+     visible con el acento del módulo. Lo único que cambia entre módulos es
+     el color: lo da --accent (ver .tema-*), no cada pantalla. El alto sale
+     de padding y no de h-*, así un `py-1` explícito en una tabla densa sigue
+     mandando. */
+  .btn, .btn-primary, .btn-primary-violet, .btn-primary-orange, .btn-primary-green, .btn-primary-blue,
+  .btn-secondary, .btn-save, .btn-ghost, .btn-danger, .btn-ghost-danger, .btn-link {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-[9px] rounded-xl border border-transparent text-sm font-semibold leading-5 cursor-pointer select-none whitespace-nowrap
+           disabled:opacity-50 disabled:pointer-events-none;
+    transition: background-color 150ms var(--ease-out-strong), border-color 150ms var(--ease-out-strong),
+                color 150ms var(--ease-out-strong), box-shadow 150ms var(--ease-out-strong),
+                transform 120ms var(--ease-out-strong);
+  }
+  .btn:active, .btn-primary:active, .btn-primary-violet:active, .btn-primary-orange:active,
+  .btn-primary-green:active, .btn-primary-blue:active, .btn-secondary:active, .btn-save:active,
+  .btn-ghost:active, .btn-danger:active, .btn-ghost-danger:active, .btn-link:active { transform: scale(0.97); }
+  .btn:focus-visible, .btn-primary:focus-visible, .btn-primary-violet:focus-visible, .btn-primary-orange:focus-visible,
+  .btn-primary-green:focus-visible, .btn-primary-blue:focus-visible, .btn-secondary:focus-visible, .btn-save:focus-visible,
+  .btn-ghost:focus-visible, .btn-danger:focus-visible, .btn-ghost-danger:focus-visible, .btn-link:focus-visible,
+  .btn-icon:focus-visible, .btn-icon-sm:focus-visible, .btn-icon-lg:focus-visible,
+  .btn-icon-edit:focus-visible, .btn-icon-delete:focus-visible {
+    outline: 2px solid var(--accent-focus); outline-offset: 2px;
   }
 
-  /* Acción secundaria / ghost */
+  /* Primario: relleno del acento. Las variantes por color solo fijan el acento. */
+  .btn-primary, .btn-primary-violet, .btn-primary-orange, .btn-primary-green, .btn-primary-blue, .btn-save {
+    background-color: var(--accent); color: #fff; box-shadow: var(--accent-shadow);
+  }
+  .btn-primary:hover, .btn-primary-violet:hover, .btn-primary-orange:hover,
+  .btn-primary-green:hover, .btn-primary-blue:hover, .btn-save:hover { background-color: var(--accent-hover); }
+  .btn-primary-violet, .btn-save { --accent: var(--color-brand-purple); --accent-hover: #5b21b6; --accent-focus: var(--color-brand-purple); --accent-shadow: var(--shadow-violet); }
+  .btn-primary-orange { --accent: var(--color-brand-orange); --accent-hover: var(--color-orange-600); --accent-focus: var(--color-brand-orange); --accent-shadow: var(--shadow-orange); }
+  .btn-primary-green  { --accent: var(--color-green-600); --accent-hover: var(--color-green-700); --accent-focus: var(--color-green-600); --accent-shadow: var(--shadow-green); }
+  .btn-primary-blue   { --accent: var(--color-exh-600); --accent-hover: var(--color-exh-700); --accent-focus: var(--color-exh-600); --accent-shadow: var(--shadow-blue); }
+
+  /* Secundario: contorno neutro. */
   .btn-secondary {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-gray-400 dark:hover:border-slate-500 hover:shadow-sm transition active:scale-95;
+    @apply border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200
+           hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 dark:hover:border-slate-600;
+  }
+  /* Fantasma: sin contorno, para acciones terciarias. */
+  .btn-ghost { @apply text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100; }
+  /* Peligro: acción destructiva confirmada. */
+  .btn-danger { @apply bg-red-600 hover:bg-red-700 text-white; --accent-focus: var(--color-red-600); }
+  .btn-ghost-danger { @apply text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40; --accent-focus: var(--color-red-600); }
+  /* Enlace: texto con el acento, sin caja. */
+  .btn-link { @apply px-1.5 py-1 rounded-lg font-medium hover:underline underline-offset-2; color: var(--accent); }
+
+  /* Tamaños (van después de las variantes para ganar el padding). */
+  /* Doble clase: gana a la receta base sin depender del orden. Alturas: 32 / 40 / 48 px. */
+  .btn-sm.btn-sm { @apply px-3 py-[7px] text-xs leading-4; }
+  .btn-lg.btn-lg { @apply px-5 py-[11px] text-base leading-6; }
+
+  /* Botón de ícono solo. Siempre con aria-label. 40 px por defecto, 36 en
+     filas de listado (.btn-icon-sm), 44 en barras de móvil. Trazo fino de 1.75 y
+     18 px; neutro en reposo, el color aparece al apuntar. En pantallas táctiles
+     (sin hover) los de fila crecen a 44 px.
+     Tonos para acciones de fila: .tone-success (WhatsApp, confirmar),
+     .tone-warning (permisos, candado), .tone-danger (eliminar). Sin tono, el
+     hover usa el acento del módulo. */
+  .btn-icon, .btn-icon-sm, .btn-icon-lg, .btn-icon-edit, .btn-icon-delete {
+    @apply inline-flex items-center justify-center shrink-0 rounded-xl border border-transparent cursor-pointer
+           text-slate-600 dark:text-slate-300 disabled:opacity-50 disabled:pointer-events-none;
+    transition: background-color 150ms var(--ease-out-strong), color 150ms var(--ease-out-strong),
+                border-color 150ms var(--ease-out-strong), box-shadow 150ms var(--ease-out-strong), transform 120ms var(--ease-out-strong);
+  }
+  .btn-icon:active, .btn-icon-sm:active, .btn-icon-lg:active, .btn-icon-edit:active, .btn-icon-delete:active { transform: scale(0.94); }
+  .btn-icon    { @apply w-10 h-10; }
+  .btn-icon-sm, .btn-icon-edit, .btn-icon-delete { @apply w-9 h-9; }
+  .btn-icon-lg { @apply w-11 h-11; }
+  .btn-icon :is(svg, lucide-icon), .btn-icon-sm :is(svg, lucide-icon), .btn-icon-lg :is(svg, lucide-icon),
+  .btn-icon-edit :is(svg, lucide-icon), .btn-icon-delete :is(svg, lucide-icon) { width: 1.125rem; height: 1.125rem; stroke-width: 1.75; }
+  @media (pointer: coarse) { .btn-icon-sm, .btn-icon-edit, .btn-icon-delete { @apply w-11 h-11; } }
+  @media (hover: hover) {
+    .btn-icon:hover, .btn-icon-sm:hover, .btn-icon-lg:hover, .btn-icon-edit:hover {
+      color: var(--accent-focus); background-color: color-mix(in oklab, var(--accent) 10%, transparent);
+    }
+    .btn-icon.tone-success:hover, .btn-icon-sm.tone-success:hover { @apply text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40; }
+    .btn-icon.tone-warning:hover, .btn-icon-sm.tone-warning:hover { @apply text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40; }
+    .btn-icon.tone-danger:hover, .btn-icon-sm.tone-danger:hover, .btn-icon-delete:hover { @apply text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40; }
+    .btn-icon.tone-info:hover, .btn-icon-sm.tone-info:hover { @apply text-sky-700 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40; }
+    .btn-icon.tone-edit:hover, .btn-icon-sm.tone-edit:hover { @apply text-violet-700 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/40; }
+    /* Halo fino del mismo color que el tono: da relieve al hover sin mover nada. */
+    .btn-icon-sm:is(.tone-success, .tone-warning, .tone-danger, .tone-info, .tone-edit):hover {
+      border-color: color-mix(in oklab, currentColor 28%, transparent);
+      box-shadow: 0 2px 8px -2px color-mix(in oklab, currentColor 35%, transparent);
+    }
+    .btn-icon-sm:is(.tone-success, .tone-warning, .tone-danger, .tone-info, .tone-edit) :is(svg, lucide-icon) {
+      transition: transform 150ms var(--ease-out-strong);
+    }
+    .btn-icon-sm:is(.tone-success, .tone-warning, .tone-danger, .tone-info, .tone-edit):hover :is(svg, lucide-icon) { transform: scale(1.1); }
   }
 
-  /* Guardar formulario — usa el color primario de marca */
-  .btn-save {
-    @apply inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 transition active:scale-95;
+  /* Acciones de una fila de listado: iconos pegados + acción principal tintada. */
+  .row-actions { @apply inline-flex items-center justify-end gap-0.5 whitespace-nowrap; }
+  .row-actions > .btn-tonal { @apply ml-1.5; }
+
+  /* Botón tonal: acción principal de una fila («Editar», «Ver»). Fondo suave del
+     acento y texto del acento; no compite con el primario sólido de la página. */
+  .btn-tonal {
+    @apply inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-xl text-sm font-semibold whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none;
+    color: var(--accent-focus); background-color: color-mix(in oklab, var(--accent) 10%, transparent);
+    transition: background-color 150ms var(--ease-out-strong), transform 120ms var(--ease-out-strong);
   }
-
-  /* Botón de ícono solo (acciones en tabla: editar, eliminar) */
-  .btn-icon-edit  { @apply p-1.5 rounded-lg text-gray-500 dark:text-slate-400 border border-transparent hover:text-orange-600 hover:bg-orange-50 hover:border-orange-200 dark:hover:bg-orange-950/40 dark:hover:border-orange-900/50 transition; }
-  .btn-icon-delete { @apply p-1.5 rounded-lg text-gray-500 dark:text-slate-400 border border-transparent hover:text-red-600 hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-950/40 dark:hover:border-red-900/50 transition; }
-
-  /* --- Colores de CTA por módulo (aplicar via clase de color Tailwind en btn-primary) ---
-     Publicadores/Secretario : bg-orange-500 hover:bg-orange-600
-     Territorios             : bg-green-600  hover:bg-green-700
-     Exhibidores             : bg-blue-600   hover:bg-blue-700
-  */
+  .btn-tonal:hover { background-color: color-mix(in oklab, var(--accent) 18%, transparent); }
+  .btn-tonal:active { transform: scale(0.97); }
+  .btn-tonal:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 2px; }
 
   /* --- Cards / Paneles --- */
-  .card         { @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700; box-shadow: var(--shadow-soft); }
-  .card-padded  { @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6; box-shadow: var(--shadow-soft); }
-  .card-section { @apply bg-gray-50 dark:bg-slate-900/60 rounded-xl border border-gray-200 dark:border-slate-700 p-4; }
+  /* Superficie: 16 px de radio. En oscuro slate-900 con borde slate-800 (las
+     tarjetas se separan del fondo por el borde, no por el tono). */
+  .card         { @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800; box-shadow: var(--shadow-soft); }
+  .card-padded  { @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6; box-shadow: var(--shadow-soft); }
+  .card-section { @apply bg-slate-50 dark:bg-slate-950/40 rounded-2xl border border-slate-200 dark:border-slate-800 p-4; }
 
-  /* --- Badges de estado --- */
-  .badge-role     { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50; }
-  .badge-active   { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/50; }
-  .badge-inactive { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50; }
-  .badge-neutral  { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-600; }
-  .badge-warning  { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50; }
-
-  /* --- Buscador estándar (wrapper + input) --- */
-  .search-input {
-    @apply w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-slate-200
-           placeholder:text-gray-500 dark:placeholder:text-slate-500 outline-none
-           focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition;
+  /* --- Insignias --- */
+  /* Un solo tamaño (12 px semibold): por debajo de 12 px no se lee con holgura. */
+  .badge, .badge-role, .badge-active, .badge-inactive, .badge-neutral, .badge-warning, .badge-info, .badge-live {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap;
   }
+  .badge-role     { @apply bg-violet-100 dark:bg-violet-950/60 text-violet-800 dark:text-violet-300 border-violet-200 dark:border-violet-800/50; }
+  .badge-info     { @apply bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800/50; }
+  .badge-active   { @apply bg-green-100 dark:bg-green-950/60 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800/50; }
+  .badge-inactive { @apply bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800/50; }
+  .badge-neutral, .badge { @apply bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700; }
+  .badge-warning  { @apply bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800/50; }
+
+  /* --- Buscador estándar (icono + campo) --- */
+  .search-field { @apply relative block; }
+  .search-field > svg, .search-field > lucide-icon, .search-field > .search-icon {
+    @apply absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none;
+  }
+  .search-input {
+    @apply w-full min-h-10 pl-10 pr-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100
+           placeholder:text-slate-500 dark:placeholder:text-slate-500 outline-none hover:border-slate-400 dark:hover:border-slate-600;
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+  }
+  .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+
+  /* --- Interruptor --- */
+  /* <button role="switch" class="switch" [attr.aria-checked]="on"><span class="toggle-thumb"></span></button>
+     44×24, relleno del acento al activarse. */
+  .switch {
+    @apply relative inline-flex items-center shrink-0 w-11 h-6 rounded-full cursor-pointer bg-slate-300 dark:bg-slate-700 disabled:opacity-50 disabled:pointer-events-none;
+    transition: background-color 200ms var(--ease-out-strong);
+  }
+  .switch[aria-checked="true"] { background-color: var(--accent); }
+  .switch > .toggle-thumb { @apply absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow-sm; }
+  .switch[aria-checked="true"] > .toggle-thumb { transform: translateX(1.25rem); }
+  .switch:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 2px; }
+
+  /* Casillas y radios nativos con el acento del módulo. */
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
 
   /* --- Tabla de datos --- */
-  .table-wrapper { @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden; box-shadow: var(--shadow-soft); }
+  .table-wrapper { @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden; box-shadow: var(--shadow-soft); }
   .table-header-cell {
-    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700;
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800;
   }
   .table-row {
-    @apply border-b border-gray-200 dark:border-slate-700 hover:bg-violet-50/40 dark:hover:bg-slate-700/40 transition last:border-0;
+    @apply border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors last:border-0;
   }
-  .table-row-alt { @apply bg-gray-50 dark:bg-slate-800/50; }
-  .table-cell   { @apply px-4 py-3 text-sm text-gray-700 dark:text-slate-300; }
+  .table-row-alt { @apply bg-slate-50/60 dark:bg-slate-900; }
+  .table-cell   { @apply px-4 py-3 text-sm text-slate-700 dark:text-slate-300; }
 
   /* --- Avatares de iniciales --- */
   .avatar-initials {
@@ -434,71 +541,125 @@
   }
 
   /* --- Page Header --- */
-  /* Responsive a propósito: a 30px fijos, títulos largos como "Seguimiento de
-     Predicación" se parten feo en móvil. 24px abajo, 30px desde sm. */
-  .page-title    { @apply font-display font-bold text-2xl sm:text-3xl text-gray-900 dark:text-slate-100; }
+  /* 24 px fijos: legible en móvil sin partir títulos largos y sobrio en escritorio. */
+  .page-title    { @apply font-display font-bold text-2xl tracking-tight leading-tight text-slate-900 dark:text-slate-100; }
   /* leading-relaxed a propósito: el subtítulo a veces es un párrafo de varias
      líneas y con el interlineado por defecto (1.43) se lee apelmazado. */
-  .page-subtitle { @apply text-sm leading-relaxed text-gray-600 dark:text-slate-400 mt-1.5; }
+  .page-subtitle { @apply text-sm leading-relaxed text-slate-600 dark:text-slate-400 mt-1.5; }
 
-  /* --- Tabs pill container --- */
-  .tab-nav        { @apply flex gap-1 bg-gray-100 dark:bg-slate-900/70 rounded-xl p-1 w-fit; }
-  .tab-item       { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-slate-200 transition; }
-  .tab-item-active { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-sm; }
+  /* --- Pestañas (UN solo diseño en toda la app) ---
+     Pista gris, pestaña activa rellena con el acento del módulo y texto blanco.
+     `.tab-nav` / `.tab-item` para secciones de una página o de un modal;
+     `.segmented` / `.segmented-item` es EL MISMO diseño en tamaño compacto, para
+     cambiar de vista o filtrar dentro de una barra de herramientas.
+     Cada pestaña es un <button role="tab" aria-selected>. La activa se marca con
+     aria-selected="true" o con la clase .tab-item-active / .is-active.
+     Con contador o icono dentro, usar <span class="tab-count"> para el número. */
+  /* La pista es un canal HUNDIDO (borde + sombra interior): las pestañas viven
+     dentro de ella, no flotan sobre la página. */
+  .tab-nav, .segmented { @apply flex gap-1 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-1.5 w-fit max-w-full overflow-x-auto; scrollbar-width: none; box-shadow: inset 0 1px 3px rgb(15 23 42 / 0.07); }
+  .dark .tab-nav, .dark .segmented { box-shadow: inset 0 1px 4px rgb(0 0 0 / 0.45); }
+  .tab-nav::-webkit-scrollbar, .segmented::-webkit-scrollbar { display: none; }
+  .segmented { @apply inline-flex rounded-xl p-1; }
+  .tab-nav.w-full, .segmented.w-full { @apply grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+
+  .tab-item, .tab-item-active, .segmented-item {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl text-sm font-medium whitespace-nowrap cursor-pointer select-none
+           text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-100;
+    transition: background-color 150ms var(--ease-out-strong), color 150ms var(--ease-out-strong), transform 120ms var(--ease-out-strong);
+  }
+  .tab-item, .tab-item-active { @apply px-4 py-2.5; }
+  .segmented-item { @apply px-3 py-1.5 rounded-lg; }
+  /* Variante compacta de .tab-nav (dimensiones del módulo Publicadores en
+     producción): pista p-1.5, pestañas de 36 px, texto de 12 px en negrita.
+     Para barras de módulo con 4 o más pestañas. */
+  .tab-nav.tab-compact { @apply p-1.5 gap-1.5 rounded-2xl; }
+  .tab-nav.tab-compact > :is(.tab-item, .tab-item-active) { @apply h-9 px-4 py-0 gap-1.5 rounded-lg text-xs font-bold; }
+  .tab-nav.tab-compact > .tab-indicator { border-radius: 0.5rem; }
+  .tab-item:active, .tab-item-active:active, .segmented-item:active { transform: scale(0.97); }
+  .tab-item:focus-visible, .tab-item-active:focus-visible, .segmented-item:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 2px; }
+  .tab-item:disabled, .tab-item-active:disabled, .segmented-item:disabled { @apply opacity-50 pointer-events-none; }
+
+  .tab-item-active,
+  .tab-item[aria-selected="true"], .tab-item.is-active,
+  .segmented-item[aria-selected="true"], .segmented-item[aria-checked="true"], .segmented-item.is-active {
+    @apply font-semibold text-white;
+    background-color: var(--accent);
+    box-shadow: var(--accent-shadow);
+  }
+  .tab-item-active:hover, .tab-item[aria-selected="true"]:hover, .tab-item.is-active:hover,
+  .segmented-item[aria-selected="true"]:hover, .segmented-item[aria-checked="true"]:hover, .segmented-item.is-active:hover {
+    background-color: var(--accent-hover); color: #fff;
+  }
+  /* Indicador deslizante (lo crea shared/utils/tab-indicator.ts). Con él, el
+     relleno vive en un solo elemento que se desplaza entre pestañas; los botones
+     activos quedan transparentes y solo cambian el color del texto. */
+  .tab-nav, .segmented { position: relative; }
+  .tab-indicator {
+    position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none;
+    border-radius: 0.75rem; background-color: var(--accent); box-shadow: var(--accent-shadow);
+    transition: transform 280ms var(--ease-out-strong), width 280ms var(--ease-out-strong), height 280ms var(--ease-out-strong), background-color 200ms, opacity 150ms;
+  }
+  .segmented > .tab-indicator { border-radius: 0.5rem; }
+  .con-indicador > .tab-item, .con-indicador > .tab-item-active, .con-indicador > .segmented-item { position: relative; z-index: 1; }
+  .con-indicador > .tab-item-active,
+  .con-indicador > .tab-item[aria-selected="true"], .con-indicador > .tab-item.is-active,
+  .con-indicador > .segmented-item[aria-selected="true"], .con-indicador > .segmented-item[aria-checked="true"], .con-indicador > .segmented-item.is-active,
+  .con-indicador > .tab-item-active:hover, .con-indicador > .tab-item[aria-selected="true"]:hover, .con-indicador > .tab-item.is-active:hover,
+  .con-indicador > .segmented-item[aria-selected="true"]:hover, .con-indicador > .segmented-item[aria-checked="true"]:hover, .con-indicador > .segmented-item.is-active:hover {
+    background-color: transparent; box-shadow: none;
+  }
+  @media (prefers-reduced-motion: reduce) { .tab-indicator { transition: none !important; } }
+
+  /* Número dentro de una pestaña (pendientes, total…) */
+  .tab-count { @apply inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200; }
+  .tab-item-active .tab-count, .tab-item[aria-selected="true"] .tab-count, .tab-item.is-active .tab-count,
+  .segmented-item[aria-selected="true"] .tab-count, .segmented-item[aria-checked="true"] .tab-count, .segmented-item.is-active .tab-count { background-color: rgb(255 255 255 / 0.22); color: #fff; }
 
   /* ─── DESIGN SYSTEM v2 — Mejoras profesionales ────────── */
 
-  /* --- Tipografía expresiva --- */
-  .display-hero       { @apply font-display font-extrabold text-5xl tracking-tighter text-gray-900 dark:text-slate-50 leading-[1.05]; }
-  .display-title      { @apply font-display font-bold text-4xl tracking-tight text-gray-900 dark:text-slate-50 leading-tight; }
-  .display-section    { @apply font-display font-bold text-2xl tracking-tight text-gray-900 dark:text-slate-100; }
-  .section-title      { @apply font-semibold text-lg text-gray-900 dark:text-slate-100; }
-  .section-subtitle   { @apply text-sm text-gray-600 dark:text-slate-400; }
-  .eyebrow            { @apply text-xs font-semibold uppercase tracking-[0.18em] text-gray-600 dark:text-slate-500; }
-  .data-num           { font-family: var(--font-mono); font-feature-settings: 'tnum' 1, 'zero' 1; @apply text-gray-700 dark:text-slate-300; }
+  /* --- Tipografía: UNA escala para todo el portal ---
+     Familias: Urbanist (font-display) solo en títulos y cifras grandes; Manrope
+     (font-sans) en todo lo demás; JetBrains Mono (.data-num) en cifras tabulares.
+     Escala (rem fijos, sin fluidez: es una app, no una página de marketing):
+       .display-hero    48  portada y pantallas de acceso      (font-extrabold)
+       .page-title      24  título de CADA pantalla (h1)       (font-bold)
+       .section-title   18  bloque de una pantalla (h2)        (font-bold)
+       .card-title      16  título de tarjeta, panel o diálogo (h3, font-bold)
+       .body-lg         16  texto destacado y lectura larga
+       texto base       14  text-sm: todo lo demás
+       .caption         12  text-xs: ayudas, fechas, insignias (mínimo absoluto)
+       .eyebrow         12  rótulo en mayúsculas sobre un título
+     Pesos: títulos bold (700); énfasis semibold (600); texto medium/normal.
+     Nunca font-black en títulos ni text-[13px]/[15px]: usar la escala. */
+  .display-hero       { @apply font-display font-extrabold text-5xl tracking-tighter leading-[1.05] text-slate-900 dark:text-slate-50; }
+  .display-title      { @apply font-display font-bold text-4xl tracking-tight leading-tight text-slate-900 dark:text-slate-50; }
+  .section-title      { @apply font-display font-bold text-lg tracking-tight leading-snug text-slate-900 dark:text-slate-100; }
+  .display-section    { @apply font-display font-bold text-lg tracking-tight leading-snug text-slate-900 dark:text-slate-100; }
+  .card-title         { @apply font-display font-bold text-base leading-snug text-slate-900 dark:text-slate-100; }
+  .section-subtitle   { @apply text-sm text-slate-600 dark:text-slate-400; }
+  .body-lg            { @apply text-base leading-relaxed text-slate-700 dark:text-slate-300; }
+  .caption            { @apply text-xs leading-snug text-slate-600 dark:text-slate-400; }
+  .eyebrow            { @apply text-xs font-semibold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-400; }
+  .data-num           { font-family: var(--font-mono); font-feature-settings: 'tnum' 1, 'zero' 1; @apply text-slate-700 dark:text-slate-300; }
 
   /* --- Cards con profundidad real --- */
-  .card-elevated   { @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700; box-shadow: var(--shadow-card); }
-  .card-interactive { @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 cursor-pointer transition-all duration-200 hover:border-gray-300 dark:hover:border-slate-600; box-shadow: var(--shadow-card); }
-  .card-interactive:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
-  .card-selected   { @apply bg-white dark:bg-slate-800 rounded-xl border-2 border-violet-500; box-shadow: var(--shadow-violet); }
-
-  /* --- Botones potenciados (microinteracción + sombra tintada) --- */
-  .btn-primary-orange { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-orange); }
-  .btn-primary-green  { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-green); }
-  .btn-primary-blue   { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-exh-600 hover:bg-exh-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-blue); }
-  .btn-primary-violet { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-violet); }
+  .card-elevated   { @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800; box-shadow: var(--shadow-card); }
+  /* Tarjeta pulsable: el hover cambia borde y sombra; no se desplaza (el
+     movimiento se reserva para la presión). */
+  .card-interactive { @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:border-slate-300 dark:hover:border-slate-700; box-shadow: var(--shadow-soft); transition: border-color 150ms var(--ease-out-strong), box-shadow 200ms var(--ease-out-strong), transform 120ms var(--ease-out-strong); }
+  .card-interactive:hover { box-shadow: var(--shadow-card-hover); }
+  .card-interactive:active { transform: scale(0.99); }
+  .card-interactive:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 2px; }
+  .card-selected   { @apply bg-white dark:bg-slate-900 rounded-2xl border-2; border-color: var(--accent); box-shadow: var(--accent-shadow); }
 
   /* Chip de filtro rápido (listados que se acotan por categoría/día) */
   .chip-filtro {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold
-           transition-colors duration-150 active:scale-[0.97] cursor-pointer
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-exh-600 focus-visible:ring-offset-2;
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer;
+    transition: background-color 150ms var(--ease-out-strong), border-color 150ms var(--ease-out-strong), color 150ms var(--ease-out-strong), transform 120ms var(--ease-out-strong);
   }
-
-  /* Botón glassmorphism — para usar SOBRE hero-card (fondo gradiente violeta) */
-  .btn-hero-glass {
-    @apply inline-flex items-center gap-2 font-semibold text-white rounded-xl
-           transition-all duration-200 active:scale-95 cursor-pointer;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.30);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
-  }
-  .btn-hero-glass:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.45);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3);
-    transform: translateY(-1px);
-  }
-  .btn-hero-glass:active {
-    background: rgba(255, 255, 255, 0.12);
-    transform: scale(0.95);
-  }
-
-  .btn-ghost-danger { @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition; }
+  .chip-filtro:active { transform: scale(0.97); }
+  .chip-filtro:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 2px; }
 
   /* --- Gradientes utilitarios --- */
   .gradient-brand   { background: var(--gradient-brand); }
@@ -520,14 +681,17 @@
   }
 
   /* --- Focus rings consistentes --- */
-  .focus-ring { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
-  .focus-ring-orange { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
-  .focus-ring-green  { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
-  .focus-ring-blue   { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-exh-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
+  /* Una receta: contorno de 2 px con desfase de 2 px. El color sale del acento;
+     los sufijos solo lo fuerzan cuando la pantalla no tiene tema de módulo. */
+  .focus-ring, .focus-ring-orange, .focus-ring-green, .focus-ring-blue { outline: none; }
+  .focus-ring:focus-visible        { outline: 2px solid var(--accent-focus); outline-offset: 2px; }
+  .focus-ring-orange:focus-visible { outline: 2px solid var(--color-orange-500); outline-offset: 2px; }
+  .focus-ring-green:focus-visible  { outline: 2px solid var(--color-green-600); outline-offset: 2px; }
+  .focus-ring-blue:focus-visible   { outline: 2px solid var(--color-exh-600); outline-offset: 2px; }
 
   /* --- Skeleton con shimmer real --- */
   .skeleton {
-    @apply relative overflow-hidden bg-gray-100 dark:bg-slate-700 rounded;
+    @apply relative overflow-hidden bg-slate-100 dark:bg-slate-800 rounded-lg;
   }
   .skeleton::after {
     content: '';
@@ -574,7 +738,7 @@
 
   /* --- Badge con dot pulsante (en línea, activo en vivo) --- */
   .badge-live {
-    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/50;
+    @apply gap-1.5 bg-green-100 dark:bg-green-950/60 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800/50;
   }
   .badge-live::before {
     content: ''; width: 6px; height: 6px; border-radius: 50%; background: #10b981;
@@ -639,15 +803,6 @@
 @keyframes aiGlowPulse {
   from { text-shadow: 0 0 4px rgba(139,92,246,0.3), 0 0 10px rgba(139,92,246,0.1); }
   to   { text-shadow: 0 0 10px rgba(167,139,250,0.6), 0 0 20px rgba(99,102,241,0.3); }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: none; }
 }
 
 /* Scan beam that sweeps across the branding */
@@ -979,6 +1134,34 @@
   }
 }
 
+/* Aviso de notificación: la campana tiembla y el punto late unas pocas veces
+   al aparecer y luego quedan quietos; el número basta como señal. */
+.notif-bell-shake {
+  animation: bellShake 0.6s ease-in-out 1s 3;
+}
+
+.notif-badge-ping {
+  animation: notifBadgePing 1s cubic-bezier(0, 0, 0.2, 1) 3 forwards;
+}
+
+@keyframes notifBadgePing {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notif-bell-shake {
+    animation: none;
+  }
+
+  .notif-badge-ping {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 @layer utilities {
   .numeric-tabular {
     font-variant-numeric: tabular-nums;
@@ -1051,21 +1234,6 @@
 }
 
 
-/* KPI cards stagger (resumen-sucursal, first 4 children) */
-.kpi-grid > *:nth-child(1) { animation: cardEnter 0.3s var(--ease-out-strong) 0ms both; }
-.kpi-grid > *:nth-child(2) { animation: cardEnter 0.3s var(--ease-out-strong) 50ms both; }
-.kpi-grid > *:nth-child(3) { animation: cardEnter 0.3s var(--ease-out-strong) 100ms both; }
-.kpi-grid > *:nth-child(4) { animation: cardEnter 0.3s var(--ease-out-strong) 150ms both; }
-
-/* Month cards stagger (historial grid) */
-.month-grid > *:nth-child(1)  { animation: cardEnter 0.25s var(--ease-out-strong) 0ms both; }
-.month-grid > *:nth-child(2)  { animation: cardEnter 0.25s var(--ease-out-strong) 40ms both; }
-.month-grid > *:nth-child(3)  { animation: cardEnter 0.25s var(--ease-out-strong) 80ms both; }
-.month-grid > *:nth-child(4)  { animation: cardEnter 0.25s var(--ease-out-strong) 120ms both; }
-.month-grid > *:nth-child(5)  { animation: cardEnter 0.25s var(--ease-out-strong) 160ms both; }
-.month-grid > *:nth-child(6)  { animation: cardEnter 0.25s var(--ease-out-strong) 200ms both; }
-.month-grid > *:nth-child(n+7) { animation: cardEnter 0.25s var(--ease-out-strong) 240ms both; }
-
 /* Deslizamiento del círculo del interruptor. Antes usaba --ease-spring
    (rebote elástico, cubic-bezier con overshoot a 1.56): en un control tan
    pequeño el rebote se lee como un tirón, no como resorte. Con
@@ -1077,9 +1245,7 @@
 /* Reduce motion: keep opacity/color, remove movement */
 @media (prefers-reduced-motion: reduce) {
   .animate-fadeInUp,
-  .animate-progress-fast,
-  .kpi-grid > *,
-  .month-grid > * {
+  .animate-progress-fast {
     animation: none;
     opacity: 1;
     transform: none;
@@ -1125,7 +1291,6 @@
 
 .animate-scale-in     { animation: scaleFadeIn 0.22s var(--ease-out-strong, ease-out) forwards; }
 .animate-slide-up     { animation: slideUpFadeIn 0.28s var(--ease-out-strong, ease-out) forwards; }
-.animate-shimmer      { animation: shimmer 1.8s linear infinite; }
 
 /* Stagger genérico para listas (usa --i como custom property) */
 .stagger-item {
@@ -1143,7 +1308,6 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-scale-in,
   .animate-slide-up,
-  .animate-shimmer,
   .stagger-item {
     animation: none !important;
     opacity: 1 !important;
@@ -1154,15 +1318,6 @@
 /* ═══════════════════════════════════════════════════════ */
 /* === Informes — Entrada tab animations               === */
 /* ═══════════════════════════════════════════════════════ */
-
-/* Fila de tabla: entrada desde la izquierda (sutil) */
-@keyframes rowEnter {
-  from { opacity: 0; transform: translateX(-6px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-.row-enter {
-  animation: rowEnter 0.22s var(--ease-out-strong, cubic-bezier(0.16, 1, 0.3, 1)) both;
-}
 
 /* Confirmación de toggle — pulse corto al marcar "Sí" */
 @keyframes toggleConfirm {
@@ -1175,15 +1330,6 @@
   animation: toggleConfirm 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Float suave para íconos de empty state */
-@keyframes iconFloat {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-5px); }
-}
-.icon-float {
-  animation: iconFloat 3.2s ease-in-out infinite;
-}
-
 /* Flash de entrada para filas resaltadas por validación */
 @keyframes highlightFlash {
   0%   { background-color: rgba(251, 191, 36, 0); }
@@ -1194,21 +1340,9 @@
   animation: highlightFlash 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Entrada del footer sticky al aparecer */
-@keyframes footerSlideUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.footer-enter {
-  animation: footerSlideUp 0.22s var(--ease-out-strong, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .row-enter,
   .toggle-confirm,
-  .icon-float,
-  .highlight-flash,
-  .footer-enter {
+  .highlight-flash {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
@@ -1223,17 +1357,20 @@
   to { transform: rotate(360deg); }
 }
 
-.spinner {
+/* Cada variante funciona sola (<span class="spinner-sm">); `.spinner` a secas
+   es la de 20 px. Hereda el color del texto (currentColor). */
+.spinner, .spinner-xs, .spinner-sm, .spinner-lg {
   display: inline-block;
-  width: var(--icon-md);
-  height: var(--icon-md);
+  flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid currentColor;
   border-top-color: transparent;
   animation: spin 0.7s linear infinite;
 }
+.spinner { width: var(--icon-md); height: var(--icon-md); }
 .spinner-sm { width: var(--icon-sm); height: var(--icon-sm); border-width: 2px; }
 .spinner-xs { width: var(--icon-xs); height: var(--icon-xs); border-width: 1.5px; }
+.spinner-lg { width: var(--icon-xl); height: var(--icon-xl); border-width: 3px; }
 
 /* Botón en estado loading: texto invisible, spinner centrado */
 .btn-loading {
@@ -1256,10 +1393,10 @@
 
 /* Helper / Error text para forms */
 .form-helper {
-  @apply text-xs text-gray-500 mt-1.5 ml-1;
+  @apply text-xs text-slate-600 dark:text-slate-400 mt-1.5 ml-1;
 }
 .form-error {
-  @apply text-xs text-red-600 mt-1.5 ml-1 inline-flex items-center gap-1;
+  @apply text-xs text-red-700 dark:text-red-400 mt-1.5 ml-1 inline-flex items-center gap-1;
 }
 
 /* Form control en estado error */
@@ -1276,7 +1413,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spinner, .btn-loading::after { animation: none; }
+  .spinner, .spinner-xs, .spinner-sm, .spinner-lg, .btn-loading::after { animation: none; }
 }
 
 /* ═══════════════════════════════════════════════════════ */
@@ -1501,3 +1638,62 @@
   --color-green-950: oklch(22.5% 0.048 154);
   --shadow-green: 0 8px 24px -8px oklch(52.5% 0.125 154 / 0.35), 0 2px 6px -2px oklch(52.5% 0.125 154 / 0.15);
 }
+
+/* ─── Temas de módulo ──────────────────────────────────────────────────────
+   Se aplican en el contenedor raíz de cada módulo. Botón primario, pestaña
+   activa, interruptor, foco y casillas leen --accent: la pantalla ya no elige
+   su color a mano. El violeta (--color-brand-purple) es el valor por defecto
+   y el de Reuniones, Herramientas y Administración. */
+.tema-reuniones {
+  --accent: var(--color-brand-purple); --accent-hover: #5b21b6; --accent-focus: var(--color-brand-purple);
+  --accent-ring: color-mix(in oklab, var(--color-brand-purple) 18%, transparent); --accent-shadow: var(--shadow-violet);
+}
+.tema-publicadores {
+  --accent: var(--color-brand-orange); --accent-hover: var(--color-orange-600); --accent-focus: var(--color-brand-orange);
+  --accent-ring: color-mix(in oklab, var(--color-brand-orange) 20%, transparent); --accent-shadow: var(--shadow-orange);
+}
+.tema-territorios {
+  --accent: var(--color-green-600); --accent-hover: var(--color-green-700); --accent-focus: var(--color-green-600);
+  --accent-ring: color-mix(in oklab, var(--color-green-600) 20%, transparent); --accent-shadow: var(--shadow-green);
+}
+.tema-exhibidores {
+  --accent: var(--color-exh-600); --accent-hover: var(--color-exh-700); --accent-focus: var(--color-exh-600);
+  --accent-ring: color-mix(in oklab, var(--color-exh-600) 20%, transparent); --accent-shadow: var(--shadow-blue);
+}
+/* Agenda: rosa propio (el módulo que une calendario y tareas personales). */
+.tema-agenda {
+  --accent: #e11d48; --accent-hover: #be123c; --accent-focus: #e11d48;
+  --accent-ring: rgb(225 29 72 / 0.18); --accent-shadow: 0 8px 24px -8px rgb(225 29 72 / 0.35), 0 2px 6px -2px rgb(225 29 72 / 0.15);
+}
+/* En oscuro el violeta necesita un foco más claro; los demás ya contrastan. */
+.dark .tema-reuniones { --accent-focus: #a78bfa; --accent-ring: color-mix(in oklab, var(--color-brand-purple) 35%, transparent); }
+.dark .tema-exhibidores { --accent-focus: var(--color-exh-400); }
+.dark .tema-publicadores, .dark .tema-territorios, .dark .tema-exhibidores { --accent-ring: color-mix(in oklab, var(--accent) 35%, transparent); }
+
+/* ═══════════════════════════════════════════════════════ */
+/* Tokens de estado del Dashboard: un valor por tema, los componentes solo los leen. */
+/* Contrastes verificados ≥ 4.5:1 (texto sobre su fondo).                           */
+/* ═══════════════════════════════════════════════════════ */
+:root {
+  --estado-ok-bg: #dcfce7;      --estado-ok-fg: #15803d;      --estado-ok-punto: #16a34a;
+  --estado-aviso-bg: #fef3c7;   --estado-aviso-fg: #92400e;   --estado-aviso-punto: #d97706;
+  --estado-alerta-bg: #fee2e2;  --estado-alerta-fg: #b91c1c;  --estado-alerta-punto: #dc2626;
+  --estado-info-bg: #ede9fe;    --estado-info-fg: #5b21b6;    --estado-info-punto: #7c3aed;
+  --estado-neutro-bg: #f1f5f9;  --estado-neutro-fg: #475569;
+  --dash-texto-suave: #6b7280;  /* gray-500 sobre blanco: 4.8:1 */
+  --dash-tesela: #f3f4f6;       --dash-tesela-fg: #111827;
+  --dash-tesela-info: #ede9fe;  --dash-tesela-info-fg: #5b21b6;
+  --dash-hover: #f9fafb;        --dash-borde: #e5e7eb;
+}
+.dark {
+  --estado-ok-bg: rgb(34 197 94 / 0.16);     --estado-ok-fg: #86efac;     --estado-ok-punto: #4ade80;
+  --estado-aviso-bg: rgb(245 158 11 / 0.16); --estado-aviso-fg: #fcd34d;  --estado-aviso-punto: #fbbf24;
+  --estado-alerta-bg: rgb(239 68 68 / 0.16); --estado-alerta-fg: #fca5a5; --estado-alerta-punto: #f87171;
+  --estado-info-bg: rgb(139 92 246 / 0.2);   --estado-info-fg: #ddd6fe;   --estado-info-punto: #a78bfa;
+  --estado-neutro-bg: rgb(71 85 105 / 0.4);  --estado-neutro-fg: #cbd5e1;
+  --dash-texto-suave: #94a3b8;  /* slate-400 sobre slate-900: 6.9:1 */
+  --dash-tesela: rgb(30 41 59 / 0.9);        --dash-tesela-fg: #f1f5f9;
+  --dash-tesela-info: rgb(139 92 246 / 0.22); --dash-tesela-info-fg: #ddd6fe;
+  --dash-hover: rgb(30 41 59 / 0.7);         --dash-borde: rgb(51 65 85);
+}
+

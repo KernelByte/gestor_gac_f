@@ -3,6 +3,8 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TerritoriosService } from '../services/territorios.service';
 import { RegistroS13 } from '../models/territorio.model';
+import { AvisoComponent } from '../../../shared/components/aviso/aviso.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 
@@ -14,7 +16,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
   standalone: true,
   selector: 'app-registro-s13-page',
   host: { class: 'tema-territorios' },
-  imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent, SelectPickerComponent],
+  imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent, SelectPickerComponent, AvisoComponent, EmptyStateComponent],
   encapsulation: ViewEncapsulation.None,
   styles: [`
     #registro-s13 .s13-solo-impresion { display: none; }
@@ -69,7 +71,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
             Imprimir
           </button>
           <button type="button" (click)="descargarPdf()" [disabled]="!data() || descargando()"
-            class="btn-primary-green focus-ring-green whitespace-nowrap disabled:opacity-50">
+            class="btn-primary whitespace-nowrap disabled:opacity-50">
             {{ descargando() ? 'Generando…' : 'Descargar PDF (S-13)' }}
           </button>
         </app-page-header>
@@ -79,16 +81,16 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
           <app-select-picker class="w-60" colorScheme="emerald" ariaLabel="Año de servicio" [ngModel]="anio()"
             (ngModelChange)="cambiarAnio($event)" [options]="opcionesAnio" [clearable]="false" [searchable]="false" />
           @if (errorPdf()) {
-            <p class="text-sm text-red-600 dark:text-red-400" role="alert">No se pudo generar el PDF. Intenta de nuevo.</p>
+            <app-aviso tone="danger" [dense]="true">No se pudo generar el PDF. Intenta de nuevo.</app-aviso>
           }
         </div>
       </div>
 
-      <div id="registro-s13" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+      <div id="registro-s13" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
         @if (loading()) {
-          <p class="text-sm text-slate-500">Cargando...</p>
+          <div class="flex items-center gap-2 text-sm text-slate-500" role="status"><span class="spinner-sm"></span>Cargando...</div>
         } @else if (error()) {
-          <p class="text-sm text-red-600">No se pudo cargar el registro. Intenta de nuevo.</p>
+          <app-aviso tone="danger">No se pudo cargar el registro. Intenta de nuevo.</app-aviso>
         } @else if (data(); as d) {
           <div class="s13-solo-impresion s13-cab">
             <div>
@@ -110,7 +112,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
           </div>
 
           @if (d.territorios.length === 0) {
-            <p class="text-sm text-slate-500">Aún no hay territorios registrados.</p>
+            <app-empty-state [compact]="true" accent="green" title="Aún no hay territorios registrados." />
           } @else {
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse text-sm">

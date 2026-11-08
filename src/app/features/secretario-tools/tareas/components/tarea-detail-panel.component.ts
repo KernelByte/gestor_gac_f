@@ -1,3 +1,4 @@
+import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 import { Component, ElementRef, Input, Output, EventEmitter, inject, signal, computed, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +10,8 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
 import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ChipListComponent, ChipItem } from '../../../../shared/components/chip-list/chip-list.component';
+import { mensajeError } from '../../../../shared/mensaje-error';
+import { puedeVerActas } from '../../../../core/auth/acceso-modulos';
 
 type Guardado = 'idle' | 'guardando' | 'guardado' | 'error';
 
@@ -25,7 +28,7 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
 @Component({
   selector: 'app-tarea-detail-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, SelectPickerComponent, DatePickerComponent, ConfirmDialogComponent, ChipListComponent],
+  imports: [CommonModule, FormsModule, EmptyStateComponent, SelectPickerComponent, DatePickerComponent, ConfirmDialogComponent, ChipListComponent],
   template: `
   <div class="panel" [class.panel--drawer]="modoDrawer">
 
@@ -34,7 +37,7 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
         <div class="cab-izq">
           <span class="cab-etiqueta">Tarea</span>
           @if (tarea(); as t) {
-            @if (t.origen_tipo === 'acta_reunion' && t.origen_id) {
+            @if (t.origen_tipo === 'acta_reunion' && t.origen_id && verActas) {
               <span class="cab-sep" aria-hidden="true">·</span>
               <button type="button" class="enlace" (click)="irAActa(t.origen_id!)">Acta #{{ t.origen_id }}</button>
             }
@@ -55,17 +58,16 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
 
     @if (loading()) {
       <div class="cuerpo" aria-busy="true">
-        <div class="skel h-7 w-4/5 rounded-lg"></div>
-        <div class="skel h-4 w-1/2 rounded mt-3"></div>
+        <div class="skeleton h-7 w-4/5 rounded-lg"></div>
+        <div class="skeleton h-4 w-1/2 rounded mt-3"></div>
         <div class="mt-8 space-y-4">
-          @for (i of [1,2,3,4]; track i) { <div class="skel h-10 rounded-lg"></div> }
+          @for (i of [1,2,3,4]; track i) { <div class="skeleton h-10 rounded-lg"></div> }
         </div>
       </div>
     } @else if (error()) {
-      <div class="cuerpo vacio">
-        <p class="vacio-titulo">No se pudo abrir la tarea</p>
-        <p class="vacio-texto">{{ error() }}</p>
-        <button type="button" class="btn-sec mt-4" (click)="cerrar.emit()">Volver</button>
+      <div class="cuerpo">
+        <app-empty-state variant="error" title="No se pudo abrir la tarea" [description]="error() ?? ''"
+          actionLabel="Volver" (action)="cerrar.emit()"></app-empty-state>
       </div>
     } @else if (tarea(); as t) {
 
@@ -104,7 +106,7 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
             </dd>
           </div>
 
-          <div class="prop prop--arriba">
+          <div class="prop" [class.prop--arriba]="puedeEditar()">
             <dt>Asignada a</dt>
             <dd class="asignados">
               @if (puedeEditar()) {
@@ -117,7 +119,17 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
                   [ariaLabel]="asignadosDe(t).length ? 'Añadir otra persona' : 'Asignada a'"
                   (click)="cargarAsignables()"/>
               } @else {
-                <span class="valor" [class.valor--vacio]="!asignadosDe(t).length">{{ nombresAsignados(t) }}</span>
+                @if (asignadosDe(t).length) {
+                  <ul class="fichas">
+                    @for (a of asignadosDe(t); track a.id_usuario) {
+                      <li class="ficha" [class.ficha--yo]="a.id_usuario === miId">
+                        <span class="ficha-av" aria-hidden="true">{{ inicial(a.nombre) }}</span>{{ a.id_usuario === miId ? 'Tú' : a.nombre }}
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <span class="valor valor--vacio">Sin asignar</span>
+                }
               }
             </dd>
           </div>
@@ -131,6 +143,9 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
               } @else {
                 <span class="valor" [class.valor--vacio]="!t.fecha_limite">{{ t.fecha_limite ? fechaLarga(t.fecha_limite + 'T00:00:00') : 'Sin fecha' }}</span>
               }
+              @if (vencimiento(t); as v) {
+                <span class="vence" [attr.data-tono]="v.tono">{{ v.texto }}</span>
+              }
             </dd>
           </div>
 
@@ -138,10 +153,10 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
             <dt>Prioridad</dt>
             <dd>
               @if (puedeEditar()) {
-                <div class="segmentos" role="radiogroup" aria-label="Prioridad">
+                <div class="segmented w-full" role="radiogroup" aria-label="Prioridad">
                   @for (p of prioridades; track p.value) {
-                    <button type="button" role="radio" class="segmento" [attr.aria-checked]="t.prioridad === p.value"
-                      [attr.data-prio]="p.value" [class.segmento--on]="t.prioridad === p.value"
+                    <button type="button" role="radio" class="segmented-item flex-1" [attr.aria-checked]="t.prioridad === p.value"
+                      [attr.data-prio]="p.value"
                       (click)="t.prioridad !== p.value && guardarCampo({ prioridad: p.value })">
                       <span class="punto"></span>{{ p.label }}
                     </button>
@@ -162,14 +177,16 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
               [ngModel]="borradorDesc" (ngModelChange)="borradorDesc = $event; autoAltura($event, descEl)" #descEl
               (focus)="autoAltura(null, descEl)" (blur)="guardarDescripcion()"></textarea>
           } @else if (t.descripcion) {
-            <p class="desc-texto">{{ t.descripcion }}</p>
+            <div class="desc-texto">
+              @for (p of parrafos(t.descripcion); track $index) { <p>{{ p }}</p> }
+            </div>
           } @else {
             <p class="valor--vacio text-sm">Sin descripción.</p>
           }
         </section>
 
         <!-- Pasos -->
-        @if ((t.subtareas?.length ?? 0) > 0 || puedeEditar()) {
+        @if ((t.subtareas?.length ?? 0) > 0 || puedeAnadirPasos()) {
           <section class="seccion">
             <div class="flex items-center gap-3">
               <h3 class="seccion-titulo">Pasos</h3>
@@ -191,7 +208,7 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
                     </span>
                     <span class="paso-titulo">{{ s.titulo }}</span>
                   </label>
-                  @if (puedeEditar()) {
+                  @if (puedeQuitarPaso(s)) {
                     <button type="button" class="paso-quitar" (click)="eliminarSubtarea(s)" [disabled]="subOcupadas().has(s.id_subtarea)"
                       [attr.aria-label]="'Quitar paso: ' + s.titulo">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-width="2.2" d="M6 6l12 12M18 6L6 18"/></svg>
@@ -200,7 +217,7 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
                 </li>
               }
             </ul>
-            @if (puedeEditar()) {
+            @if (puedeAnadirPasos()) {
               <form class="paso-nuevo" (submit)="$event.preventDefault(); agregarSubtarea(pasoEl)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-width="2.2" d="M12 5v14m-7-7h14"/></svg>
                 <input #pasoEl type="text" maxlength="255" name="nuevoPaso" [(ngModel)]="nuevaSubtarea" placeholder="Añadir un paso"
@@ -214,7 +231,10 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
         }
 
         @if (!puedeEditar()) {
-          <p class="nota">Solo quien creó la tarea puede cambiar sus datos. Tú puedes actualizar el estado y marcar los pasos.</p>
+          <p class="nota">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Solo quien creó la tarea puede cambiar sus datos. Tú puedes actualizar el estado y marcar los pasos.</span>
+          </p>
         }
       </div>
 
@@ -225,11 +245,14 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M4 7h16M10 3h4a1 1 0 011 1v3H9V4a1 1 0 011-1z"/></svg>
           </button>
         }
-        @if (t.estado === 'completada' || t.estado === 'cancelada') {
-          <button type="button" class="btn-sec flex-1" [disabled]="guardado() === 'guardando'" (click)="cambiarEstado('pendiente')">Reabrir tarea</button>
+        @if (t.estado === 'cancelada' && !puedeEditar()) {
+          <!-- Solo quien la creó puede reabrir una tarea que canceló (el servidor también lo exige). -->
+          <p class="flex-1 text-sm text-slate-500 dark:text-slate-400">La canceló quien la creó.</p>
+        } @else if (t.estado === 'completada' || t.estado === 'cancelada') {
+          <button type="button" class="btn-secondary flex-1" [disabled]="guardado() === 'guardando'" (click)="cambiarEstado('pendiente')">Reabrir tarea</button>
         } @else {
           @if (t.estado === 'pendiente') {
-            <button type="button" class="btn-sec" [disabled]="guardado() === 'guardando'" (click)="cambiarEstado('en_progreso')">Empezar</button>
+            <button type="button" class="btn-secondary" [disabled]="guardado() === 'guardando'" (click)="cambiarEstado('en_progreso')">Empezar</button>
           }
           <button type="button" class="btn-hecho flex-1" [disabled]="guardado() === 'guardando'" (click)="cambiarEstado('completada')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
@@ -247,7 +270,7 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
   `,
   styles: [`
     :host { display: block; height: 100%; --ease: cubic-bezier(0.23, 1, 0.32, 1); }
-    .panel { display: flex; flex-direction: column; min-height: 100%; background: #fff; color: rgb(17 24 39); }
+    .panel { display: flex; flex-direction: column; min-height: 100%; flex: 1; background: #fff; color: rgb(17 24 39); }
     .panel--drawer { height: 100%; }
     :host-context(.dark) .panel { background: rgb(15 23 42); color: rgb(241 245 249); }
 
@@ -268,7 +291,7 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
     .btn-icono svg { width: 18px; height: 18px; }
     .btn-icono:hover { background: rgb(243 244 246); color: rgb(17 24 39); }
     .btn-icono:active { transform: scale(0.94); }
-    :host-context(.dark) .btn-icono:hover { background: rgb(30 41 59); color: #fff; }
+    :host-context(.dark) .btn-icono:hover { background: rgb(15 23 42); color: #fff; }
 
     /* Cuerpo */
     .cuerpo { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 20px 28px; overscroll-behavior: contain; }
@@ -284,43 +307,52 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
     }
     .titulo--editable:hover { background: rgb(249 250 251); }
     .titulo--editable:focus { outline: none; background: #fff; border-color: rgb(253 164 175); box-shadow: 0 0 0 4px rgb(244 63 94 / 0.1); }
-    :host-context(.dark) .titulo--editable:hover { background: rgb(30 41 59); }
-    :host-context(.dark) .titulo--editable:focus { background: rgb(30 41 59); border-color: rgb(159 18 57); }
+    :host-context(.dark) .titulo--editable:hover { background: rgb(15 23 42); }
+    :host-context(.dark) .titulo--editable:focus { background: rgb(15 23 42); border-color: rgb(159 18 57); }
     .linea-meta { margin-top: 6px; font-size: 13px; color: rgb(107 114 128); }
     .hecha { color: rgb(5 150 105); }
     :host-context(.dark) .linea-meta { color: rgb(148 163 184); }
 
     /* Propiedades */
-    .props { margin: 24px 0 0; display: flex; flex-direction: column; gap: 4px; }
-    .prop { display: grid; grid-template-columns: 112px 1fr; align-items: center; gap: 12px; min-height: 44px; }
+    .props { margin: 18px 0 0; padding: 2px 16px; display: flex; flex-direction: column; border: 1px solid rgb(229 231 235); border-radius: 14px; background: rgb(249 250 251 / 0.6); }
+    :host-context(.dark) .props { border-color: rgb(30 41 59); background: rgb(30 41 59 / 0.35); }
+    .prop { display: grid; grid-template-columns: 112px 1fr; align-items: center; gap: 12px; min-height: 52px; padding: 6px 0; }
+    .prop + .prop { border-top: 1px solid rgb(229 231 235); }
+    :host-context(.dark) .prop + .prop { border-color: rgb(30 41 59 / 0.7); }
+    .prop dd > app-select-picker, .prop dd > app-date-picker { display: block; max-width: 260px; }
     .prop dt { font-size: 13px; font-weight: 500; color: rgb(107 114 128); }
     .prop dd { margin: 0; min-width: 0; }
     :host-context(.dark) .prop dt { color: rgb(148 163 184); }
     @media (max-width: 380px) { .prop { grid-template-columns: 1fr; gap: 4px; padding: 6px 0; } }
     .valor { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
     .valor--vacio { color: rgb(156 163 175); font-weight: 500; }
+    .vence { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: rgb(243 244 246); color: rgb(75 85 99); }
+    .vence[data-tono="mal"] { background: rgb(254 226 226); color: rgb(185 28 28); }
+    .vence[data-tono="aviso"] { background: rgb(254 243 199); color: rgb(146 64 14); }
+    :host-context(.dark) .vence { background: rgb(51 65 85); color: rgb(203 213 225); }
+    :host-context(.dark) .vence[data-tono="mal"] { background: rgb(127 29 29 / 0.4); color: rgb(252 165 165); }
+    :host-context(.dark) .vence[data-tono="aviso"] { background: rgb(120 53 15 / 0.45); color: rgb(252 211 77); }
+
+    .fichas { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .ficha { display: inline-flex; align-items: center; gap: 8px; padding: 3px 12px 3px 3px; border-radius: 999px; font-size: 13px; font-weight: 600; background: #fff; border: 1px solid rgb(229 231 235); }
+    .ficha-av { width: 24px; height: 24px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; background: rgb(226 232 240); color: rgb(51 65 85); }
+    .ficha--yo .ficha-av { background: rgb(255 228 230); color: rgb(190 18 60); }
+    :host-context(.dark) .ficha { background: rgb(15 23 42); border-color: rgb(30 41 59); }
+    :host-context(.dark) .ficha-av { background: rgb(51 65 85); color: rgb(226 232 240); }
+    :host-context(.dark) .ficha--yo .ficha-av { background: rgb(136 19 55 / 0.5); color: rgb(253 164 175); }
 
     /* Asignados: una ficha por persona y el selector para añadir otra */
     .prop--arriba { align-items: start; }
-    .prop--arriba dt { padding-top: 12px; }
+    .prop--arriba dt { padding-top: 10px; }
     .asignados { display: flex; flex-direction: column; gap: 8px; }
     .asignados app-chip-list { padding-top: 4px; }
 
-    .segmentos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 3px; border-radius: 10px; background: rgb(243 244 246); }
-    :host-context(.dark) .segmentos { background: rgb(30 41 59); }
-    .segmento { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; border-radius: 8px; font-size: 13px; font-weight: 600; color: rgb(107 114 128); transition: background-color 160ms var(--ease), color 160ms ease, transform 160ms var(--ease); }
-    .segmento:hover { color: rgb(17 24 39); }
-    .segmento:active { transform: scale(0.97); }
-    .segmento--on { background: #fff; color: rgb(17 24 39); box-shadow: 0 1px 2px rgb(15 23 42 / 0.08); }
-    :host-context(.dark) .segmento { color: rgb(148 163 184); }
-    :host-context(.dark) .segmento:hover, :host-context(.dark) .segmento--on { color: #fff; }
-    :host-context(.dark) .segmento--on { background: rgb(51 65 85); box-shadow: none; }
     .punto { width: 8px; height: 8px; border-radius: 999px; background: rgb(156 163 175); flex-shrink: 0; }
     [data-prio="alta"] .punto, .punto[data-prio="alta"] { background: rgb(239 68 68); }
     [data-prio="media"] .punto, .punto[data-prio="media"] { background: rgb(245 158 11); }
 
     /* Secciones */
-    .seccion { margin-top: 28px; }
+    .seccion { margin-top: 20px; }
     .seccion-titulo { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: rgb(55 65 81); margin: 0 0 8px; }
     :host-context(.dark) .seccion-titulo { color: rgb(203 213 225); }
     .desc {
@@ -329,10 +361,12 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
       transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
     }
     .desc:focus { outline: none; background: #fff; border-color: rgb(253 164 175); box-shadow: 0 0 0 4px rgb(244 63 94 / 0.1); }
-    :host-context(.dark) .desc { background: rgb(30 41 59); border-color: rgb(51 65 85); }
+    :host-context(.dark) .desc { background: rgb(15 23 42); border-color: rgb(30 41 59); }
     :host-context(.dark) .desc:focus { border-color: rgb(159 18 57); }
     .desc::placeholder { color: rgb(156 163 175); }
-    .desc-texto { font-size: 14px; line-height: 1.6; color: rgb(55 65 81); white-space: pre-line; max-width: 65ch; }
+    .desc-texto { font-size: 14px; line-height: 1.6; color: rgb(55 65 81); max-width: 65ch; }
+    .desc-texto p { margin: 0 0 10px; white-space: pre-line; overflow-wrap: anywhere; }
+    .desc-texto p:last-child { margin-bottom: 0; }
     :host-context(.dark) .desc-texto { color: rgb(203 213 225); }
 
     /* Pasos */
@@ -342,7 +376,7 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
     .barra-relleno { display: block; height: 100%; background: rgb(16 185 129); border-radius: 999px; transform-origin: left; transition: transform 320ms var(--ease); }
     .pasos { list-style: none; margin: 0; padding: 0; }
     .paso { display: flex; align-items: center; gap: 4px; border-radius: 10px; margin: 0 -8px; padding: 0 8px; }
-    @media (hover: hover) { .paso:hover { background: rgb(249 250 251); } :host-context(.dark) .paso:hover { background: rgb(30 41 59); } }
+    @media (hover: hover) { .paso:hover { background: rgb(249 250 251); } :host-context(.dark) .paso:hover { background: rgb(15 23 42); } }
     .paso-check { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
     .paso-check input { position: absolute; opacity: 0; pointer-events: none; }
     .caja { width: 18px; height: 18px; flex-shrink: 0; border-radius: 6px; border: 1.75px solid rgb(209 213 219); display: flex; align-items: center; justify-content: center; color: transparent; transition: background-color 160ms var(--ease), border-color 160ms var(--ease), transform 160ms var(--ease); }
@@ -364,52 +398,44 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
     .paso-nuevo input:focus { outline: none; }
     .paso-nuevo:focus-within { background: rgb(249 250 251); color: rgb(225 29 72); }
     :host-context(.dark) .paso-nuevo input { color: rgb(241 245 249); }
-    :host-context(.dark) .paso-nuevo:focus-within { background: rgb(30 41 59); }
+    :host-context(.dark) .paso-nuevo:focus-within { background: rgb(15 23 42); }
     .paso-nuevo-ok { font-size: 13px; font-weight: 700; color: rgb(225 29 72); padding: 6px 8px; border-radius: 6px; }
 
-    .nota { margin-top: 28px; font-size: 13px; line-height: 1.5; color: rgb(107 114 128); max-width: 52ch; }
-    :host-context(.dark) .nota { color: rgb(148 163 184); }
+    .nota { display: flex; gap: 10px; align-items: flex-start; margin-top: 20px; padding: 12px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; color: rgb(75 85 99); background: rgb(243 244 246 / 0.7); }
+    .nota svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; color: rgb(156 163 175); }
+    :host-context(.dark) .nota { color: rgb(148 163 184); background: rgb(30 41 59 / 0.6); }
 
     /* Pie */
     .pie {
       display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+      position: sticky; bottom: 0; z-index: 2;
       padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(243 244 246); background: inherit;
     }
     @media (min-width: 640px) { .pie { padding: 14px 28px; } }
     :host-context(.dark) .pie { border-color: rgb(30 41 59); }
-    .btn-hecho, .btn-sec {
+    .btn-hecho {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px;
       border-radius: 12px; font-size: 14px; font-weight: 600;
       transition: background-color 160ms ease, border-color 160ms ease, transform 160ms var(--ease);
     }
-    .btn-hecho:active:not(:disabled), .btn-sec:active:not(:disabled), .btn-borrar:active { transform: scale(0.97); }
-    .btn-hecho:disabled, .btn-sec:disabled { opacity: 0.6; }
+    .btn-hecho:active:not(:disabled), .btn-borrar:active { transform: scale(0.97); }
+    .btn-hecho:disabled { opacity: 0.6; }
     .btn-hecho { background: rgb(5 150 105); color: #fff; }
     .btn-hecho:hover:not(:disabled) { background: rgb(4 120 87); }
     .btn-hecho svg { width: 16px; height: 16px; }
-    .btn-sec { border: 1px solid rgb(229 231 235); background: #fff; color: rgb(55 65 81); }
-    .btn-sec:hover:not(:disabled) { background: rgb(249 250 251); }
-    :host-context(.dark) .btn-sec { background: rgb(30 41 59); border-color: rgb(51 65 85); color: rgb(226 232 240); }
     .btn-borrar { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: rgb(156 163 175); transition: color 150ms ease, background-color 150ms ease, transform 160ms var(--ease); }
     .btn-borrar svg { width: 18px; height: 18px; }
     .btn-borrar:hover { color: rgb(220 38 38); background: rgb(254 242 242); }
     :host-context(.dark) .btn-borrar:hover { background: rgb(127 29 29 / 0.3); color: rgb(252 165 165); }
 
-    .btn-hecho:focus-visible, .btn-sec:focus-visible, .btn-borrar:focus-visible, .btn-icono:focus-visible, .segmento:focus-visible, .paso-quitar:focus-visible, .enlace:focus-visible {
+    .btn-hecho:focus-visible, .btn-borrar:focus-visible, .btn-icono:focus-visible, .paso-quitar:focus-visible, .enlace:focus-visible {
       outline: 2px solid rgb(244 63 94); outline-offset: 2px;
     }
 
     /* Vacío / esqueleto */
-    .vacio { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-    .vacio-titulo { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
-    .vacio-texto { margin-top: 4px; font-size: 14px; color: rgb(107 114 128); max-width: 40ch; }
-    .skel { background: linear-gradient(90deg, rgb(243 244 246) 0%, rgb(249 250 251) 50%, rgb(243 244 246) 100%); background-size: 200% 100%; animation: brillo 1.4s linear infinite; }
-    :host-context(.dark) .skel { background: linear-gradient(90deg, rgb(30 41 59) 0%, rgb(51 65 85) 50%, rgb(30 41 59) 100%); background-size: 200% 100%; }
-    @keyframes brillo { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
     @media (prefers-reduced-motion: reduce) {
-      .skel { animation: none; }
-      .barra-relleno, .caja, .segmento { transition: none; }
+      .barra-relleno, .caja { transition: none; }
     }
   `],
 })
@@ -423,6 +449,8 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
   private router = inject(Router);
   private svc = inject(ActaService);
   private store = inject(AuthStore);
+  /** El enlace al acta solo a quien puede abrirla (si no, actasGuard lo devuelve al inicio). */
+  readonly verActas = puedeVerActas(this.store);
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   tarea = signal<Tarea | null>(null);
@@ -465,6 +493,18 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
     return t.origen_tipo === 'acta_reunion' && ROLES_ACTAS.includes(rol);
   });
 
+  /** El asignado también añade pasos (los suyos); el resto de la tarea sigue siendo de quien la creó. */
+  puedeAnadirPasos = computed(() => {
+    const t = this.tarea();
+    if (!t) return false;
+    return this.puedeEditar() || this.asignadosDe(t).some(a => a.id_usuario === this.miId);
+  });
+
+  /** Quitar un paso: quien edita la tarea, o el asignado si ese paso lo añadió él. */
+  puedeQuitarPaso(s: { creado_por?: number | null }): boolean {
+    return this.puedeEditar() || (s.creado_por != null && s.creado_por === this.miId && this.puedeAnadirPasos());
+  }
+
   opcionesEstado = computed<PickerOption[]>(() => {
     const base: PickerOption[] = [
       { value: 'pendiente', label: 'Pendiente' },
@@ -483,14 +523,14 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
     const ya = new Set(t ? this.asignadosDe(t).map(a => a.id_usuario) : []);
     const lista = this.usuarios();
     const ops: PickerOption[] = [];
-    if (yo != null && !ya.has(yo)) ops.push({ value: yo, label: 'Yo', hint: lista.find(u => u.id_usuario === yo)?.nombre });
+    if (yo != null && !ya.has(yo)) ops.push({ value: yo, label: 'Mí', hint: lista.find(u => u.id_usuario === yo)?.nombre });
     for (const u of lista) if (u.id_usuario !== yo && !ya.has(u.id_usuario)) ops.push({ value: u.id_usuario, label: u.nombre });
     return ops;
   });
 
   chipsAsignados = computed<ChipItem[]>(() => {
     const t = this.tarea();
-    return t ? this.asignadosDe(t).map(a => ({ id: a.id_usuario, label: a.id_usuario === this.miId ? 'Yo' : a.nombre })) : [];
+    return t ? this.asignadosDe(t).map(a => ({ id: a.id_usuario, label: a.id_usuario === this.miId ? 'Mí' : a.nombre })) : [];
   });
 
   /** Asignados de la tarea; las respuestas sin la lista (caché antigua) traen solo `asignado_a`. */
@@ -499,10 +539,25 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
     return t.asignado_a ? [{ id_usuario: t.asignado_a, nombre: t.asignado_a_nombre ?? 'Asignado' }] : [];
   }
 
-  nombresAsignados(t: Tarea): string {
-    const lista = this.asignadosDe(t).map(a => a.id_usuario === this.miId ? 'Ti' : a.nombre);
-    if (!lista.length) return 'Sin asignar';
-    return lista.length === 1 ? lista[0] : lista.slice(0, -1).join(', ') + ' y ' + lista[lista.length - 1];
+  inicial(nombre: string): string {
+    return (nombre.trim()[0] ?? '?').toUpperCase();
+  }
+
+  /** La descripción en párrafos: un salto simple queda como salto de línea, una línea en blanco separa párrafos. */
+  parrafos(texto: string): string[] {
+    return texto.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  }
+
+  /** Aviso de plazo solo cuando importa: vencida o a una semana; nada si la tarea ya terminó. */
+  vencimiento(t: Tarea): { texto: string; tono: 'mal' | 'aviso' | 'neutro' } | null {
+    if (!t.fecha_limite || t.estado === 'completada' || t.estado === 'cancelada') return null;
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const dias = Math.round((new Date(t.fecha_limite + 'T00:00:00').getTime() - hoy.getTime()) / 86400000);
+    if (dias < 0) return { texto: dias === -1 ? 'Venció ayer' : `Venció hace ${-dias} días`, tono: 'mal' };
+    if (dias === 0) return { texto: 'Vence hoy', tono: 'aviso' };
+    if (dias === 1) return { texto: 'Vence mañana', tono: 'aviso' };
+    if (dias <= 7) return { texto: `Vence en ${dias} días`, tono: 'neutro' };
+    return null;
   }
 
   mensajeEliminar(t: Tarea): string {
@@ -567,20 +622,37 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
   }
 
   /** `local` se pinta al instante pero no se envía (p. ej. los nombres de los asignados). */
+  /** Guardados en curso: van en fila, uno detrás de otro, para que lleguen en orden. */
+  private colaGuardado: Promise<void> = Promise.resolve();
+  private guardadosPendientes = 0;
+
   guardarCampo(patch: Partial<Tarea>, local: Partial<Tarea> = {}) {
     const t = this.tarea();
     if (!t) return;
-    const previo = t;
+    // Solo los campos que cambia este guardado: si falla, se devuelven esos y no se pisa
+    // otro cambio que sí se guardó (antes se restauraba la tarea entera).
+    const claves = [...new Set([...Object.keys(patch), ...Object.keys(local)])] as (keyof Tarea)[];
+    const antes = Object.fromEntries(claves.map(k => [k, t[k]])) as Partial<Tarea>;
     this.tarea.set({ ...t, ...patch, ...local });
     this.marcarGuardado('guardando');
-    this.svc.updateTarea(t.id_tarea, patch).subscribe({
-      next: (u) => { this.aplicar(u); this.marcarGuardado('guardado'); },
-      error: (err) => {
-        this.aplicar(previo, false);
-        this.marcarGuardado('error');
-        this.mostrarError(err?.error?.detail ?? 'No se pudo guardar el cambio. Inténtalo de nuevo.');
-      },
-    });
+    this.guardadosPendientes++;
+    this.colaGuardado = this.colaGuardado.then(() => new Promise<void>(listo => {
+      this.svc.updateTarea(t.id_tarea, patch).subscribe({
+        next: (u) => {
+          // Con otro guardado detrás, lo local ya va por delante de esta respuesta.
+          if (--this.guardadosPendientes === 0) { this.aplicar(u); this.marcarGuardado('guardado'); }
+          listo();
+        },
+        error: (err) => {
+          this.guardadosPendientes--;
+          const actual = this.tarea();
+          if (actual) this.aplicar({ ...actual, ...antes } as Tarea, false);
+          this.marcarGuardado('error');
+          this.mostrarError(mensajeError(err, 'No se pudo guardar el cambio. Inténtalo de nuevo.'));
+          listo();
+        },
+      });
+    }));
   }
 
   guardarTitulo() {
@@ -631,7 +703,7 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
       error: (err) => {
         this.aplicar(previo, false);
         this.marcarGuardado('error');
-        this.mostrarError(err?.error?.detail ?? 'No se pudo cambiar el estado.');
+        this.mostrarError(mensajeError(err, 'No se pudo cambiar el estado.'));
       },
     });
   }
@@ -709,12 +781,12 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
     if (!t) return;
     this.svc.eliminarTarea(t.id_tarea).subscribe({
       next: () => { this.tareaEliminada.emit(t.id_tarea); this.cerrar.emit(); },
-      error: (err) => this.mostrarError(err?.error?.detail ?? 'No se pudo eliminar la tarea.'),
+      error: (err) => this.mostrarError(mensajeError(err, 'No se pudo eliminar la tarea.')),
     });
   }
 
   irAActa(actaId: number) {
-    this.router.navigate(['/secretario-tools/actas-reunion', actaId]);
+    this.router.navigate(['/administracion/actas-reunion', actaId]);
   }
 
   private mostrarError(msg: string) {

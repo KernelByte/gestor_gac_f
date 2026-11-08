@@ -11,6 +11,7 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { whatsappUrl } from '../../../shared/whatsapp';
 import { SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
+import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../../shared/components';
 import { LogisticaService } from '../services/logistica.service';
 import { LogisticaImpresionEstudioComponent } from './logistica-impresion-estudio.component';
 import { ConflictosService } from '../services/conflictos.service';
@@ -93,8 +94,9 @@ function normalizarTexto(s: string): string {
 
 @Component({
   selector: 'app-reuniones-logistica',
+  host: { class: 'tema-reuniones' },
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SelectPickerComponent, LogisticaImpresionEstudioComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SelectPickerComponent, LogisticaImpresionEstudioComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -148,7 +150,7 @@ function normalizarTexto(s: string): string {
                 aria-label="Cambiar de mes"
                 class="flex items-center gap-1.5 h-8 px-2.5 rounded-xl transition-colors"
                 [class]="menuMesesAbierto()
-                  ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                  ? 'bg-violet-50 dark:bg-violet-900/30 text-brand-purple dark:text-violet-300'
                   : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800'">
                 <svg class="w-3.5 h-3.5 shrink-0 text-violet-500/80 dark:text-violet-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 3v3M16 3v3"/></svg>
                 <span class="text-sm font-bold whitespace-nowrap">
@@ -171,7 +173,7 @@ function normalizarTexto(s: string): string {
                            cada fila: doce "2026" seguidos no distinguen
                            nada. -->
                       <p class="flex items-center gap-2 px-1.5 pt-2.5 pb-1 first:pt-0.5">
-                        <span class="text-[0.65rem] font-bold text-slate-400 dark:text-slate-500 data-num">{{ grupo.ano }}</span>
+                        <span class="text-xs font-bold text-slate-400 dark:text-slate-500 data-num">{{ grupo.ano }}</span>
                         <span class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></span>
                       </p>
                       @for (m of grupo.meses; track m.ano + '-' + m.mes) {
@@ -186,7 +188,7 @@ function normalizarTexto(s: string): string {
                           [disabled]="estado() === 'loading'"
                           class="w-full flex items-center gap-2 px-2 h-9 rounded-lg text-xs transition-colors disabled:opacity-40"
                           [class]="esMesActivo(m)
-                            ? 'bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 font-bold'
+                            ? 'bg-violet-50 dark:bg-violet-900/25 text-brand-purple dark:text-violet-300 font-bold'
                             : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'">
                           <!-- Punto de estado: el texto va en el title,
                                el color sólo refuerza. -->
@@ -208,7 +210,7 @@ function normalizarTexto(s: string): string {
                         data-testid="log-btn-generar-mes"
                         (click)="menuMesesAbierto.set(false); abrirModalGenerar()"
                         [disabled]="estado() === 'loading'"
-                        class="w-full flex items-center justify-center gap-2 h-9 rounded-lg bg-brand-purple hover:brightness-110 disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-[0.98]">
+                        class="w-full btn-primary btn-sm">
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         Generar mes
                       </button>
@@ -227,7 +229,7 @@ function normalizarTexto(s: string): string {
                    ni depender del color, y es el mismo lenguaje que ya usa el
                    punto de cada fila en la lista de meses. -->
               <span
-                class="shrink-0 flex items-center gap-1 pl-1.5 pr-2 py-0.5 rounded-full text-[0.6rem] font-bold"
+                class="shrink-0 flex items-center gap-1 pl-1.5 pr-2 py-0.5 rounded-full text-xs font-bold"
                 [class]="estadoBadgeClass()">
                 @switch (estadoMes()) {
                   @case ('publicado') {
@@ -247,7 +249,7 @@ function normalizarTexto(s: string): string {
               </span>
               <!-- Cobertura — el dato que dice si el mes está listo -->
               @if (coberturaLabel()) {
-                <span class="hidden md:inline shrink-0 text-[0.65rem] text-slate-500 dark:text-slate-500 data-num">
+                <span class="hidden md:inline shrink-0 text-xs text-slate-500 dark:text-slate-500 data-num">
                   {{ coberturaLabel() }}
                 </span>
               }
@@ -267,14 +269,14 @@ function normalizarTexto(s: string): string {
               (click)="alternarPanelBalance()"
               [attr.aria-expanded]="panelBalanceAbierto()"
               [title]="balanceResumen()"
-              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold transition-colors"
+              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold transition-colors"
               [class]="panelBalanceAbierto()
-                ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                ? 'bg-violet-50 dark:bg-violet-900/30 text-brand-purple dark:text-violet-300'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'">
               <svg class="w-3.5 h-3.5 shrink-0 text-amber-500/80 dark:text-amber-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx="1"/><rect x="12.5" y="8" width="3" height="10" rx="1"/><rect x="18" y="14" width="3" height="4" rx="1"/></svg>
               Carga
               @if (balanceConteos().alta > 0) {
-                <span class="px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[0.6rem] font-bold data-num">{{ balanceConteos().alta }}</span>
+                <span class="px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs font-bold data-num">{{ balanceConteos().alta }}</span>
               }
             </button>
           }
@@ -300,13 +302,13 @@ function normalizarTexto(s: string): string {
                 [attr.aria-label]="conflictosLabel()
                   ? 'Publicar. ' + conflictosLabel()
                   : 'Publicar'"
-                class="relative shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]">
+                class="relative shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 Publicar
                 <!-- Los puestos sin cubrir siguen contándose encima del botón:
                      es la única señal de que publicar todavía no toca. -->
                 @if (conflictosLabel()) {
-                  <span class="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[0.6rem] font-bold data-num ring-2 ring-white dark:ring-slate-900">{{ mesDatos()!.conflictos }}</span>
+                  <span class="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold data-num ring-2 ring-white dark:ring-slate-900">{{ mesDatos()!.conflictos }}</span>
                 }
               </button>
             }
@@ -321,7 +323,7 @@ function normalizarTexto(s: string): string {
                 [disabled]="estado() === 'loading'"
                 title="Descartar: deshacer los cambios y volver a la versión que ve la congregación"
                 aria-label="Descartar cambios"
-                class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]">
+                class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>
                 Descartar
               </button>
@@ -337,7 +339,7 @@ function normalizarTexto(s: string): string {
               [disabled]="!puedeImprimir()"
               [title]="motivoNoImprimir() || 'Imprimir o guardar como PDF'"
               [attr.aria-label]="motivoNoImprimir() ? 'Imprimir. ' + motivoNoImprimir() : 'Imprimir'"
-              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-700 dark:hover:text-violet-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-600 transition-colors active:scale-[0.97]">
+              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-brand-purple dark:hover:text-violet-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-600 transition-colors active:scale-[0.97]">
               <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
               Imprimir
             </button>
@@ -373,18 +375,15 @@ function normalizarTexto(s: string): string {
                          no tiene ancho de sobra. No cierra el menú al
                          elegir -es un ajuste, no una acción de una vez-. -->
                     <div class="px-1 pt-0.5 pb-1">
-                      <p class="px-1 pb-1 text-[0.6rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Vista</p>
-                      <div role="radiogroup" aria-label="Cuánto mostrar del mes" class="flex items-center gap-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5">
+                      <p class="px-1 pb-1 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Vista</p>
+                      <div role="radiogroup" aria-label="Cuánto mostrar del mes" class="segmented w-full">
                         @for (v of vistasPeriodo; track v.id) {
                           <button
                             type="button"
                             role="menuitemradio"
                             [attr.aria-checked]="vistaPeriodo() === v.id"
                             (click)="cambiarVista(v.id)"
-                            class="flex-1 h-7 rounded-md text-xs font-semibold transition-colors"
-                            [class]="vistaPeriodo() === v.id
-                              ? 'bg-white dark:bg-slate-900 text-violet-700 dark:text-violet-300 shadow-sm'
-                              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                            class="segmented-item !text-xs !py-1">
                             {{ v.full }}
                           </button>
                         }
@@ -401,11 +400,11 @@ function normalizarTexto(s: string): string {
                       data-testid="log-menu-imprimir"
                       (click)="menuAccionesAbierto.set(false); abrirEstudioImpresion()"
                       [disabled]="!puedeImprimir()"
-                      class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-600 dark:hover:text-violet-400 transition-colors disabled:opacity-40">
+                      class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-brand-purple dark:hover:text-violet-400 transition-colors disabled:opacity-40">
                       <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
                       <span class="min-w-0 flex-1">
                         <span class="block text-xs font-bold leading-tight">Imprimir o guardar PDF</span>
-                        <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 leading-snug mt-0.5">
+                        <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">
                           {{ motivoNoImprimir() || 'Vista previa con el estilo de tu congregación.' }}
                         </span>
                       </span>
@@ -420,11 +419,11 @@ function normalizarTexto(s: string): string {
                         type="button"
                         role="menuitem"
                         (click)="menuAccionesAbierto.set(false); abrirPanelCompartir()"
-                        class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
+                        class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-brand-purple dark:hover:text-violet-400 transition-colors">
                         <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51L8.59 10.49"/></svg>
                         <span class="min-w-0 flex-1">
                           <span class="block text-xs font-bold leading-tight">Compartir</span>
-                          <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Enlace público, WhatsApp o impresión.</span>
+                          <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Enlace público, WhatsApp o impresión.</span>
                         </span>
                       </button>
                     }
@@ -441,7 +440,7 @@ function normalizarTexto(s: string): string {
                         <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         <span class="min-w-0 flex-1">
                           <span class="block text-xs font-bold leading-tight">Eliminar el mes</span>
-                          <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Borra toda la programación de logística.</span>
+                          <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Borra toda la programación de logística.</span>
                         </span>
                       </button>
                     }
@@ -462,7 +461,7 @@ function normalizarTexto(s: string): string {
             (click)="volverAListado()"
             title="Volver al listado de programaciones"
             aria-label="Volver al listado de programaciones"
-            class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">
+            class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">
             <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
             Volver
           </button>
@@ -478,38 +477,21 @@ function normalizarTexto(s: string): string {
 
       <!-- ===== ERROR ===== -->
       @if (estado() === 'error') {
-        <div class="shrink-0 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 px-4 py-3 mb-3 flex items-center gap-3">
-          <svg class="w-4 h-4 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <p class="flex-1 min-w-0 text-red-600 dark:text-red-400 text-xs font-medium truncate">{{ errorMsg() }}</p>
-          <button (click)="estado.set('idle')" class="shrink-0 px-3 h-7 rounded-lg bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-xs text-red-600 font-bold transition-all">Cerrar</button>
-        </div>
+        <app-aviso class="block shrink-0 mb-3" tone="danger" [dismissible]="true" (dismissed)="estado.set('idle')">{{ errorMsg() }}</app-aviso>
       }
 
       <!-- ===== PUBLICADO banner ===== -->
       <!-- aria-live: publicar es la acción con más consecuencias de la pantalla
            y su único acuse es este cartel, que aparece lejos del botón. -->
       @if (confirmadoBanner()) {
-        <div
-          role="status" aria-live="polite"
-          class="shrink-0 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-800/50 px-4 py-3 mb-3 flex items-center gap-3">
-          <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-          <p class="text-emerald-700 dark:text-emerald-300 text-xs font-bold">
-            Publicado. La congregación ya ve esta versión.
-          </p>
-        </div>
+        <app-aviso class="block shrink-0 mb-3" tone="success"><span class="font-semibold">Publicado.</span> La congregación ya ve esta versión.</app-aviso>
       }
 
       <!-- ===== CAMBIOS SIN PUBLICAR ===== -->
       <!-- Sin este aviso, editar un mes publicado no tendría ninguna señal de
            que lo visible sigue siendo lo anterior. -->
       @if (estadoMes() === 'cambios_sin_publicar') {
-        <div class="shrink-0 rounded-xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200/60 dark:border-violet-800/50 px-4 py-3 mb-3 flex items-center gap-3">
-          <svg class="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
-          <p class="text-violet-700 dark:text-violet-300 text-xs">
-            <span class="font-bold">Hay cambios sin publicar.</span>
-            La congregación sigue viendo la versión anterior hasta que publiques.
-          </p>
-        </div>
+        <app-aviso class="block shrink-0 mb-3" tone="info"><span class="font-semibold">Hay cambios sin publicar.</span> La congregación sigue viendo la versión anterior hasta que publiques.</app-aviso>
       }
 
       <!-- ===== PUESTOS POR CUBRIR ===== -->
@@ -527,7 +509,7 @@ function normalizarTexto(s: string): string {
                 type="button"
                 (click)="irAConflicto(c)"
                 [title]="'Ir a ' + conflictoEtiqueta(c)"
-                class="shrink-0 inline-flex items-center gap-1.5 px-3 h-9 sm:h-7 rounded-full bg-white dark:bg-slate-900 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-[0.7rem] font-semibold transition-all hover:-translate-y-px hover:border-red-400 active:scale-95">
+                class="shrink-0 inline-flex items-center gap-1.5 px-3 h-9 sm:h-7 rounded-full bg-white dark:bg-slate-900 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-semibold transition-all hover:-translate-y-px hover:border-red-400 active:scale-95">
                 <span class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
                 {{ conflictoEtiqueta(c) }}
               </button>
@@ -543,11 +525,11 @@ function normalizarTexto(s: string): string {
         <div class="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative">
 
           @if (estado() === 'loading') {
-            <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm z-10 rounded-2xl">
-              <div class="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-[#6D28D9] animate-spin"></div>
+            <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/70 dark:bg-slate-900/70 z-10 rounded-2xl">
+              <div class="spinner-lg text-brand-purple"></div>
               <div class="text-center">
                 <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Cargando logística...</p>
-                <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 mt-0.5">Cargando asignaciones del mes</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Cargando asignaciones del mes</p>
               </div>
             </div>
           }
@@ -593,7 +575,7 @@ function normalizarTexto(s: string): string {
                         [disabled]="estado() === 'loading'"
                         class="w-full flex items-center gap-2.5 px-3.5 h-11 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
                         <span class="min-w-0 truncate text-left flex-1">{{ mesLabel(m) }}</span>
-                        <span class="shrink-0 px-2 h-5 flex items-center rounded-full text-[0.6rem] font-bold" [class]="badgeEstadoMesClass(m)">{{ etiquetaEstadoMes(m) }}</span>
+                        <span class="shrink-0 px-2 h-5 flex items-center rounded-full text-xs font-bold" [class]="badgeEstadoMesClass(m)">{{ etiquetaEstadoMes(m) }}</span>
                         <svg class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
                       </button>
                     }
@@ -605,7 +587,7 @@ function normalizarTexto(s: string): string {
                     data-testid="log-btn-generar-mes"
                     (click)="abrirModalGenerar()"
                     [disabled]="estado() === 'loading'"
-                    class="w-full mt-4 flex items-center justify-center gap-2 px-4 h-11 rounded-xl bg-brand-purple hover:brightness-110 disabled:opacity-50 text-xs font-bold text-white transition-all shadow-sm active:scale-[0.98]">
+                    class="w-full mt-4 btn-primary btn-sm">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     Generar mes
                   </button>
@@ -619,41 +601,35 @@ function normalizarTexto(s: string): string {
             <!-- Navegador del periodo. Solo aparece si hay algo entre lo que
                  elegir: en vista de mes completo no hace falta. -->
             @if (vistaPeriodo() === 'semana' && semanasDelMes().length > 0) {
-              <div
-                class="shrink-0 flex items-center gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar border-b border-slate-100 dark:border-slate-800"
-                role="tablist" aria-label="Semanas del mes">
+              <div class="shrink-0 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+              <div class="segmented overflow-x-auto no-scrollbar" role="tablist" aria-label="Semanas del mes">
                 @for (g of semanasDelMes(); track g.iso; let i = $index) {
                   <button
                     type="button"
                     role="tab"
                     [attr.aria-selected]="semanaSel() === i"
                     (click)="semanaSel.set(i)"
-                    class="shrink-0 px-3 h-8 rounded-full text-[0.7rem] font-bold whitespace-nowrap border transition-all active:scale-[0.97]"
-                    [class]="semanaSel() === i
-                      ? 'bg-brand-purple text-white border-brand-purple shadow-sm'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-violet-300 hover:text-violet-600'">
+                    class="segmented-item shrink-0 !text-xs !py-1">
                     {{ etiquetaSemana(g) }}
                   </button>
                 }
               </div>
+              </div>
             }
             @if (vistaPeriodo() === 'dia' && (mesDatos()!.fechas.length > 0)) {
-              <div
-                class="shrink-0 flex items-center gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar border-b border-slate-100 dark:border-slate-800"
-                role="tablist" aria-label="Fechas del mes">
+              <div class="shrink-0 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+              <div class="segmented overflow-x-auto no-scrollbar" role="tablist" aria-label="Fechas del mes">
                 @for (f of mesDatos()!.fechas; track f.fecha; let i = $index) {
                   <button
                     type="button"
                     role="tab"
                     [attr.aria-selected]="diaSel() === i"
                     (click)="diaSel.set(i)"
-                    class="shrink-0 px-3 h-8 rounded-full text-[0.7rem] font-bold whitespace-nowrap border transition-all active:scale-[0.97]"
-                    [class]="diaSel() === i
-                      ? 'bg-brand-purple text-white border-brand-purple shadow-sm'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-violet-300 hover:text-violet-600'">
+                    class="segmented-item shrink-0 !text-xs !py-1">
                     {{ formatFecha(f.fecha) }}
                   </button>
                 }
+              </div>
               </div>
             }
 
@@ -680,7 +656,7 @@ function normalizarTexto(s: string): string {
                       <div class="sec-card px-4 py-3 border-b border-slate-100 dark:border-slate-800" [style.--sec]="seccionHeaderColor(seccion)">
                         <div class="flex items-center gap-2 mb-2">
                           <span class="w-1.5 h-1.5 rounded-full shrink-0" [style.background]="seccionHeaderColor(seccion)"></span>
-                          <span class="sec-ink text-[0.6rem] font-black uppercase tracking-widest">{{ seccion }}</span>
+                          <span class="sec-ink text-xs font-bold uppercase tracking-widest">{{ seccion }}</span>
                         </div>
                         <div class="flex flex-col gap-1.5">
                           @for (puesto of seccionPuestos(seccion); track puesto) {
@@ -689,13 +665,13 @@ function normalizarTexto(s: string): string {
                               (click)="puedeEditar() && abrirCombobox(fecha.fecha, puesto)"
                               [attr.data-cell]="fecha.fecha + '::' + puesto"
                               [disabled]="!puedeEditar()"
-                              class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-white dark:bg-slate-800/40 transition-[transform,border-color] duration-150 ease-out active:scale-[0.98] enabled:hover:border-violet-300 dark:enabled:hover:border-violet-600 disabled:opacity-90"
+                              class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-white dark:bg-slate-800/40 transition-[transform,border-color] duration-150 ease-out active:scale-[0.98] enabled:hover:border-violet-300 dark:enabled:hover:border-brand-purple disabled:opacity-90"
                               [class]="esConflicto(fecha.fecha, puesto)
                                 ? 'border-red-400 dark:border-red-500'
                                 : esAusente(fecha.fecha, puesto)
                                   ? 'border-amber-400 dark:border-amber-500'
                                   : 'border-slate-200 dark:border-slate-700'">
-                              <span class="text-[0.65rem] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide shrink-0">{{ puestoLabel(puesto) }}</span>
+                              <span class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide shrink-0">{{ puestoLabel(puesto) }}</span>
                               @if (getAsignacion(fecha.fecha, puesto)?.publicador) {
                                 <span class="flex items-center gap-1 min-w-0 justify-end">
                                   @if (esAusente(fecha.fecha, puesto)) {
@@ -725,10 +701,10 @@ function normalizarTexto(s: string): string {
                     <div class="sec-card px-4 py-3" [style.--sec]="seccionHeaderColor('Aseo')">
                       <div class="flex items-center gap-2 mb-2">
                         <span class="w-1.5 h-1.5 rounded-full shrink-0" [style.background]="seccionHeaderColor('Aseo')"></span>
-                        <span class="sec-ink text-[0.6rem] font-black uppercase tracking-widest">Aseo del salón</span>
+                        <span class="sec-ink text-xs font-bold uppercase tracking-widest">Aseo del salón</span>
                       </div>
                       @if (alcanceBloque(bloque)) {
-                        <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 mb-2">{{ alcanceBloque(bloque) }}</p>
+                        <p class="text-xs text-slate-400 dark:text-slate-500 mb-2">{{ alcanceBloque(bloque) }}</p>
                       }
                       @if (puedeEditar()) {
                         <div class="flex flex-wrap gap-1.5">
@@ -737,8 +713,8 @@ function normalizarTexto(s: string): string {
                               type="button"
                               (click)="onToggleGrupo(bloque, g.id_grupo, !isGrupoAsignado(bloque, g.id_grupo))"
                               [class]="isGrupoAsignado(bloque, g.id_grupo)
-                                ? 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.7rem] font-bold bg-[#059669] text-white shadow-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]'
-                                : 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.7rem] font-medium border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-500 transition-[transform,border-color,color] duration-150 ease-out active:scale-[0.97]'">
+                                ? 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-[#059669] text-white shadow-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]'
+                                : 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-500 transition-[transform,border-color,color] duration-150 ease-out active:scale-[0.97]'">
                               @if (isGrupoAsignado(bloque, g.id_grupo)) {
                                 <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                               }
@@ -750,7 +726,7 @@ function normalizarTexto(s: string): string {
                         @if (gruposAsignadosBloque(bloque).length > 0) {
                           <div class="flex flex-wrap gap-1.5">
                             @for (g of gruposAsignadosBloque(bloque); track g) {
-                              <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.7rem] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                              <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
                                 <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                 {{ g }}
                               </span>
@@ -784,16 +760,16 @@ function normalizarTexto(s: string): string {
                 <section class="sec-card sec-bg sec-frame rounded-2xl border shadow-[var(--shadow-soft)] overflow-hidden" [style.--sec]="seccionHeaderColor(seccion)">
                   <header class="sec-surface sec-bg flex items-center gap-2.5 px-4 py-3 border-b">
                     <span class="w-2 h-2 rounded-full shrink-0" [style.background]="seccionHeaderColor(seccion)" aria-hidden="true"></span>
-                    <h3 class="sec-ink font-display text-[0.85rem] font-bold tracking-tight">{{ seccion }}</h3>
+                    <h3 class="sec-ink font-display text-sm font-bold tracking-tight">{{ seccion }}</h3>
                   </header>
 
                   <div class="overflow-x-auto">
                     <table class="w-full text-xs">
                       <thead class="sec-head sec-bg sticky top-0 z-10">
                         <tr class="text-slate-500 dark:text-slate-400">
-                          <th class="sec-head sec-bg sticky left-0 z-10 px-4 py-2 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap">Fecha</th>
+                          <th class="sec-head sec-bg sticky left-0 z-10 px-4 py-2 text-left text-xs font-bold uppercase tracking-widest whitespace-nowrap">Fecha</th>
                           @for (puesto of seccionPuestos(seccion); track puesto) {
-                            <th class="px-3 py-2 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap min-w-[140px]">{{ puestoLabel(puesto) }}</th>
+                            <th class="px-3 py-2 text-left text-xs font-bold uppercase tracking-widest whitespace-nowrap min-w-[140px]">{{ puestoLabel(puesto) }}</th>
                           }
                         </tr>
                       </thead>
@@ -806,8 +782,8 @@ function normalizarTexto(s: string): string {
                                  añadir nada. -->
                             <td class="sec-bg sec-bg-hover sticky left-0 z-10 transition-colors px-4 py-2 whitespace-nowrap">
                               <span class="flex items-baseline gap-1.5">
-                                <span class="font-mono tabular-nums text-[0.9rem] font-bold text-slate-900 dark:text-white">{{ diaNumero(fecha.fecha) }}</span>
-                                <span class="text-[0.65rem] font-medium text-slate-500 dark:text-slate-400">{{ fecha.dia_semana }}</span>
+                                <span class="font-mono tabular-nums text-sm font-bold text-slate-900 dark:text-white">{{ diaNumero(fecha.fecha) }}</span>
+                                <span class="text-xs font-medium text-slate-500 dark:text-slate-400">{{ fecha.dia_semana }}</span>
                               </span>
                             </td>
                             @for (puesto of seccionPuestos(seccion); track puesto) {
@@ -824,7 +800,7 @@ function normalizarTexto(s: string): string {
                                          conflicto si se marca siempre, sin esperar hover. -->
                                     <div class="flex items-center w-full rounded-lg border transition-colors"
                                          [class]="activeCellKey() === (fecha.fecha + '::' + puesto)
-                                           ? 'border-violet-400 dark:border-violet-500 ring-1 ring-violet-300 dark:ring-violet-700 bg-white dark:bg-slate-800'
+                                           ? 'border-violet-400 dark:border-violet-500 ring-1 ring-violet-300 dark:ring-brand-purple bg-white dark:bg-slate-800'
                                            : esConflicto(fecha.fecha, puesto)
                                              ? 'border-red-400 dark:border-red-500 ring-1 ring-red-200 dark:ring-red-800/60 bg-white dark:bg-slate-800'
                                              : esAusente(fecha.fecha, puesto)
@@ -844,7 +820,7 @@ function normalizarTexto(s: string): string {
                                           spellcheck="false"
                                         />
                                         @if (buscandoPublicador()) {
-                                          <div class="w-3 h-3 rounded-full border-2 border-violet-200 border-t-violet-500 animate-spin shrink-0 mr-2"></div>
+                                          <div class="spinner-xs text-violet-500 shrink-0 mr-2"></div>
                                         }
                                       } @else {
                                         <!-- Nombre asignado o placeholder — clic abre búsqueda -->
@@ -856,7 +832,7 @@ function normalizarTexto(s: string): string {
                                             @if (esAusente(fecha.fecha, puesto)) {
                                               <svg class="w-3 h-3 shrink-0 text-amber-500" [attr.title]="ausenciaMotivo(fecha.fecha, puesto)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                                             }
-                                            <span class="flex-1 min-w-0 text-[0.8rem] text-slate-800 dark:text-slate-100 truncate">
+                                            <span class="flex-1 min-w-0 text-sm text-slate-800 dark:text-slate-100 truncate">
                                               {{ getAsignacion(fecha.fecha, puesto)!.publicador!.nombre_completo }}
                                             </span>
                                           } @else {
@@ -907,21 +883,21 @@ function normalizarTexto(s: string): string {
               <section class="sec-card sec-bg sec-frame rounded-2xl border shadow-[var(--shadow-soft)] overflow-hidden" [style.--sec]="seccionHeaderColor('Aseo')">
                 <header class="sec-surface sec-bg flex items-center gap-2.5 px-4 py-3 border-b">
                   <span class="w-2 h-2 rounded-full shrink-0" [style.background]="seccionHeaderColor('Aseo')" aria-hidden="true"></span>
-                  <h3 class="sec-ink font-display text-[0.85rem] font-bold tracking-tight">Aseo del Salón</h3>
+                  <h3 class="sec-ink font-display text-sm font-bold tracking-tight">Aseo del Salón</h3>
                 </header>
                 <div class="overflow-x-auto">
                   <table class="w-full text-xs">
                     <thead class="sec-head sec-bg">
                       <tr class="text-slate-500 dark:text-slate-400">
-                        <th class="px-4 py-2 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap w-20">{{ aseoCabeceras()[0] }}</th>
-                        <th class="px-3 py-2 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap hidden lg:table-cell w-24">{{ aseoCabeceras()[1] }}</th>
-                        <th class="px-3 py-2 text-left text-[0.6rem] font-bold uppercase tracking-widest">Grupo asignado</th>
+                        <th class="px-4 py-2 text-left text-xs font-bold uppercase tracking-widest whitespace-nowrap w-20">{{ aseoCabeceras()[0] }}</th>
+                        <th class="px-3 py-2 text-left text-xs font-bold uppercase tracking-widest whitespace-nowrap hidden lg:table-cell w-24">{{ aseoCabeceras()[1] }}</th>
+                        <th class="px-3 py-2 text-left text-xs font-bold uppercase tracking-widest">Grupo asignado</th>
                       </tr>
                     </thead>
                     <tbody class="sec-line divide-y [&>tr]:border-[color:var(--card-line)]">
                       @for (bloque of aseoBloquesVisibles(); track bloque.clave) {
                         <tr class="group transition-colors hover:bg-[color:var(--card-bg-hover)]">
-                          <td class="px-4 py-2 whitespace-nowrap font-semibold text-[0.8rem] text-slate-900 dark:text-white">{{ bloque.etiqueta }}</td>
+                          <td class="px-4 py-2 whitespace-nowrap font-semibold text-sm text-slate-900 dark:text-white">{{ bloque.etiqueta }}</td>
                           <td class="px-3 py-2 whitespace-nowrap text-slate-500 dark:text-slate-400 hidden lg:table-cell">{{ bloque.detalle }}</td>
                           <td class="px-3 py-2">
                             @if (puedeEditar()) {
@@ -932,8 +908,8 @@ function normalizarTexto(s: string): string {
                                     type="button"
                                     (click)="onToggleGrupo(bloque, g.id_grupo, !isGrupoAsignado(bloque, g.id_grupo))"
                                     [class]="isGrupoAsignado(bloque, g.id_grupo)
-                                      ? 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.65rem] font-bold bg-[#059669] text-white shadow-sm shadow-emerald-200 dark:shadow-emerald-900/30 transition-all active:scale-95'
-                                      : 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.65rem] font-medium border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:border-emerald-500 dark:hover:text-emerald-400 transition-all active:scale-95'">
+                                      ? 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#059669] text-white shadow-sm shadow-emerald-200 dark:shadow-emerald-900/30 transition-all active:scale-95'
+                                      : 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:border-emerald-500 dark:hover:text-emerald-400 transition-all active:scale-95'">
                                     @if (isGrupoAsignado(bloque, g.id_grupo)) {
                                       <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                     }
@@ -946,7 +922,7 @@ function normalizarTexto(s: string): string {
                               @if (getAseoLabel(bloque) !== '—') {
                                 <div class="flex flex-wrap gap-1.5">
                                   @for (g of gruposAsignadosBloque(bloque); track g) {
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.65rem] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
                                       <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                       {{ g }}
                                     </span>
@@ -992,13 +968,10 @@ function normalizarTexto(s: string): string {
     <!-- La propuesta se enseña entera antes de tocar nada: son muchas casillas
          a la vez y aceptar a ciegas un cambio así no es razonable. -->
     @if (rebalanceoAbierto()) {
-      <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarRebalanceo()">
-        <div
-          class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col border border-slate-200 dark:border-slate-700"
-          (click)="$event.stopPropagation()">
+      <app-modal [open]="true" size="lg" title="Reequilibrar el mes" [hasFooter]="true" [padding]="false" (closed)="cerrarRebalanceo()">
+        <div class="flex flex-col">
 
-          <div class="shrink-0 px-5 pt-5 pb-3">
-            <p class="text-sm font-bold text-slate-900 dark:text-white">Reequilibrar el mes</p>
+          <div class="shrink-0 px-5 pt-4 pb-3">
             @if (rebalanceando() && !rebalanceoPropuesta()) {
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Calculando el reparto…</p>
             } @else if (rebalanceoPropuesta(); as p) {
@@ -1019,10 +992,10 @@ function normalizarTexto(s: string): string {
               <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar px-3 pb-2">
                 @for (c of p.cambios; track c.id_logistica) {
                   <div class="flex items-center gap-2 px-2 py-2 rounded-lg border-b border-slate-100 dark:border-slate-800 last:border-0">
-                    <span class="shrink-0 w-24 text-[0.65rem] text-slate-500 dark:text-slate-400">
+                    <span class="shrink-0 w-24 text-xs text-slate-500 dark:text-slate-400">
                       {{ formatFecha(c.fecha) }}
                     </span>
-                    <span class="shrink-0 w-24 truncate text-[0.65rem] font-semibold text-slate-600 dark:text-slate-300">
+                    <span class="shrink-0 w-24 truncate text-xs font-semibold text-slate-600 dark:text-slate-300">
                       {{ puestoLabel(c.puesto) }}
                     </span>
                     <span class="flex-1 min-w-0 flex items-center gap-1.5 text-xs">
@@ -1041,7 +1014,7 @@ function normalizarTexto(s: string): string {
                   El mes ya está todo lo repartido que se puede sin crear choques.
                 </p>
                 @if (p.protegidas_manual > 0) {
-                  <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 mt-2 leading-relaxed">
+                  <p class="text-xs text-slate-400 dark:text-slate-500 mt-2 leading-relaxed">
                     {{ p.protegidas_manual }} {{ p.protegidas_manual === 1 ? 'casilla asignada' : 'casillas asignadas' }} a mano
                     {{ p.protegidas_manual === 1 ? 'quedó' : 'quedaron' }} sin tocar.
                   </p>
@@ -1050,65 +1023,40 @@ function normalizarTexto(s: string): string {
             }
           }
 
-          <div class="shrink-0 flex items-center gap-2 justify-end px-5 py-3 border-t border-slate-100 dark:border-slate-800">
+        </div>
+        <ng-container slot="footer">
             @if (rebalanceoPropuesta()?.protegidas_manual && rebalanceoPropuesta()!.cambios.length > 0) {
-              <p class="flex-1 min-w-0 text-[0.65rem] text-slate-400 dark:text-slate-500 leading-tight">
+              <p class="flex-1 min-w-0 text-xs text-slate-500 dark:text-slate-400 leading-tight">
                 No se toca lo que asignaste a mano.
               </p>
             }
-            <button (click)="cerrarRebalanceo()"
-              class="shrink-0 px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+            <button (click)="cerrarRebalanceo()" class="btn-ghost btn-sm shrink-0">
               {{ rebalanceoPropuesta()?.cambios?.length ? 'Cancelar' : 'Cerrar' }}
             </button>
             @if (rebalanceoPropuesta()?.cambios?.length) {
               <button (click)="aplicarRebalanceo()"
                 [disabled]="rebalanceando()"
                 data-testid="log-btn-aplicar-rebalanceo"
-                class="shrink-0 px-4 h-9 rounded-xl text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 transition-all active:scale-95 disabled:opacity-40">
+                class="btn-primary btn-sm shrink-0">
                 Aplicar
               </button>
             }
-          </div>
-        </div>
-      </div>
+        </ng-container>
+      </app-modal>
     }
 
     <!-- ===== MODAL CONFIRMACIÓN ===== -->
-    @if (confirmPendiente()) {
-      <div data-testid="log-modal-confirm" class="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 border border-slate-200 dark:border-slate-700">
-          <div class="flex items-start gap-3">
-            <div
-              class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center"
-              [class]="confirmPendiente()!.tono === 'accion'
-                ? 'bg-violet-100 dark:bg-violet-900/30'
-                : 'bg-red-100 dark:bg-red-900/30'">
-              @if (confirmPendiente()!.tono === 'accion') {
-                <svg class="w-4 h-4 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-              } @else {
-                <svg class="w-4 h-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-              }
-            </div>
-            <div>
-              <p class="text-sm font-bold text-slate-900 dark:text-white">{{ confirmPendiente()!.titulo }}</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ confirmPendiente()!.mensaje }}</p>
-            </div>
-          </div>
-          <div class="flex gap-2 justify-end">
-            <button (click)="cancelarConfirm()"
-              class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-              Cancelar
-            </button>
-            <button (click)="aceptarConfirm()"
-              class="px-4 h-9 rounded-xl text-xs font-bold text-white transition-all active:scale-95"
-              [class]="confirmPendiente()!.tono === 'accion'
-                ? 'bg-violet-600 hover:bg-violet-700'
-                : 'bg-red-600 hover:bg-red-700'">
-              {{ confirmPendiente()!.accionLabel }}
-            </button>
-          </div>
-        </div>
-      </div>
+    @if (confirmPendiente(); as cp) {
+      <app-confirm-dialog
+        data-testid="log-modal-confirm"
+        [open]="true"
+        [severity]="cp.tono === 'accion' ? 'info' : 'danger'"
+        [title]="cp.titulo"
+        [message]="cp.mensaje"
+        [confirmLabel]="cp.accionLabel"
+        (confirmed)="aceptarConfirm()"
+        (cancelled)="cancelarConfirm()"
+      ></app-confirm-dialog>
     }
 
     <!-- ===== PANEL COMPARTIR Y PUBLICAR ===== -->
@@ -1117,28 +1065,16 @@ function normalizarTexto(s: string): string {
          gerencia ("Reúne, en un solo panel..."). Solo lectura/difusión: nada
          de lo que hay aquí reasigna ni cambia el programa. -->
     @if (panelCompartirAbierto()) {
-      <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarPanelCompartir()">
-        <div class="w-full max-w-lg max-h-[90dvh] overflow-y-auto simple-scrollbar bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col" (click)="$event.stopPropagation()">
-
-          <div class="shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800">
-            <div class="min-w-0">
-              <h2 class="text-sm font-black text-slate-800 dark:text-white">Compartir y publicar</h2>
-              @if (mesDatos()) {
-                <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 mt-0.5">{{ mesLabel({ ano: mesDatos()!.ano, mes: mesDatos()!.mes }) }}</p>
-              }
-            </div>
-            <button (click)="cerrarPanelCompartir()" aria-label="Cerrar" class="shrink-0 w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-            </button>
-          </div>
-
-          <div class="p-5 space-y-4">
+      <app-modal [open]="true" size="lg" title="Compartir y publicar"
+        [subtitle]="mesDatos() ? mesLabel({ ano: mesDatos()!.ano, mes: mesDatos()!.mes }) : ''"
+        (closed)="cerrarPanelCompartir()">
+          <div class="space-y-4">
 
             <!-- Card: enlace público -->
             <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
               <div class="flex items-center gap-1.5 mb-1">
                 <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 007.07 0l1.93-1.93a5 5 0 00-7.07-7.07L10.5 5.5"/><path d="M14 11a5 5 0 00-7.07 0l-1.93 1.93a5 5 0 007.07 7.07L13.5 18.5"/></svg>
-                <span class="text-[0.65rem] font-black uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Enlace público</span>
+                <span class="text-xs font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Enlace público</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Compártelo con el ayudante de cartelera: desde ahí puede enviar las asignaciones por WhatsApp antes de cada reunión, sin iniciar sesión. Expira solo.</p>
 
@@ -1148,32 +1084,32 @@ function normalizarTexto(s: string): string {
                 <button
                   (click)="generarEnlacePublico()"
                   [disabled]="generandoEnlace()"
-                  class="w-full h-9 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-50">
+                  class="btn-secondary btn-sm w-full">
                   {{ generandoEnlace() ? 'Generando…' : 'Generar enlace' }}
                 </button>
               } @else {
-                <a [href]="enlaceActivo()!.url_publica" target="_blank" rel="noopener" class="block text-xs text-violet-600 dark:text-violet-400 font-medium truncate hover:underline">
+                <a [href]="enlaceActivo()!.url_publica" target="_blank" rel="noopener" class="block text-xs text-brand-purple dark:text-violet-400 font-medium truncate hover:underline">
                   {{ enlaceActivo()!.url_publica }}
                 </a>
 
                 @if (!editandoFechaEnlace()) {
-                  <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5 flex-wrap">
+                  <p class="text-xs text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5 flex-wrap">
                     <span>Expira el {{ enlaceActivo()!.fecha_expiracion | date:'d MMM y':'':'es' }}</span>
-                    <button (click)="abrirEdicionFechaEnlace()" type="button" class="font-semibold text-violet-600 dark:text-violet-400 hover:underline">Cambiar fecha</button>
+                    <button (click)="abrirEdicionFechaEnlace()" type="button" class="font-semibold text-brand-purple dark:text-violet-400 hover:underline">Cambiar fecha</button>
                   </p>
                 } @else {
                   <div class="mt-2 flex items-center gap-2 flex-wrap">
-                    <input type="date" [(ngModel)]="fechaEnlaceInput" class="h-8 px-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200" />
-                    <button (click)="guardarFechaEnlace()" [disabled]="!fechaEnlaceInput" class="h-8 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold disabled:opacity-50">Guardar</button>
-                    <button (click)="editandoFechaEnlace.set(false)" class="h-8 px-3 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">Cancelar</button>
+                    <input type="date" [(ngModel)]="fechaEnlaceInput" class="form-control !h-8 !w-auto !px-2 !text-xs" />
+                    <button (click)="guardarFechaEnlace()" [disabled]="!fechaEnlaceInput" class="btn-primary btn-sm">Guardar</button>
+                    <button (click)="editandoFechaEnlace.set(false)" class="btn-ghost btn-sm">Cancelar</button>
                   </div>
                 }
 
                 <div class="flex gap-2 mt-3">
-                  <button (click)="copiarEnlace()" class="flex-1 h-9 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                  <button (click)="copiarEnlace()" class="btn-secondary btn-sm flex-1">
                     {{ copiadoEnlace() ? 'Copiado ✓' : 'Copiar enlace' }}
                   </button>
-                  <button (click)="revocarEnlacePublico()" class="h-9 px-3 rounded-lg border border-red-300 dark:border-red-700 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">
+                  <button (click)="revocarEnlacePublico()" class="btn-ghost-danger btn-sm">
                     Revocar
                   </button>
                 </div>
@@ -1184,13 +1120,13 @@ function normalizarTexto(s: string): string {
             <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
               <div class="flex items-center gap-1.5 mb-1">
                 <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A8.86 8.86 0 0011.94 4a8.94 8.94 0 00-7.74 13.4L3 21l3.7-1.17a8.9 8.9 0 004.24 1.08h.01a8.94 8.94 0 006.65-14.6zm-5.66 13.7a7.4 7.4 0 01-3.78-1.04l-.27-.16-2.8.88.9-2.73-.18-.28a7.44 7.44 0 1113.86-3.9 7.43 7.43 0 01-7.73 7.23zm4.08-5.56c-.22-.11-1.31-.65-1.51-.72s-.35-.11-.5.11-.58.72-.71.87-.26.17-.48.06a6.1 6.1 0 01-1.8-1.11 6.75 6.75 0 01-1.24-1.55c-.13-.22 0-.34.1-.45s.22-.26.33-.39a1.5 1.5 0 00.22-.37.4.4 0 000-.39c-.06-.11-.5-1.2-.68-1.65s-.36-.37-.5-.38h-.43a.82.82 0 00-.6.28 2.5 2.5 0 00-.78 1.86 4.36 4.36 0 00.91 2.3 9.99 9.99 0 003.82 3.37 4.3 4.3 0 002.69.56 2.3 2.3 0 001.51-1.06 1.87 1.87 0 00.13-1.06c-.05-.1-.2-.15-.42-.26z"/></svg>
-                <span class="text-[0.65rem] font-black uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Compartir por WhatsApp</span>
+                <span class="text-xs font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Compartir por WhatsApp</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Resumen de una reunión: tema, apoyo en auditorio y grupos.</p>
 
               @if (mesDatos()?.fechas?.length) {
                 <label class="block mb-2">
-                  <span class="block text-[0.6rem] font-bold uppercase tracking-wide text-slate-400 mb-1">Fecha</span>
+                  <span class="block text-xs font-bold uppercase tracking-wide text-slate-400 mb-1">Fecha</span>
                   <app-select-picker
                     [(ngModel)]="whatsappFechaSeleccionada"
                     [options]="whatsappFechaOptions()"
@@ -1202,7 +1138,7 @@ function normalizarTexto(s: string): string {
                 <button
                   (click)="abrirWhatsapp()"
                   [disabled]="cargandoWhatsapp() || !whatsappFechaSeleccionada"
-                  class="w-full h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all disabled:opacity-50">
+                  class="btn-primary btn-sm w-full">
                   {{ cargandoWhatsapp() ? 'Preparando…' : 'Redactar mensaje' }}
                 </button>
               } @else {
@@ -1214,71 +1150,63 @@ function normalizarTexto(s: string): string {
             <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
               <div class="flex items-center gap-1.5 mb-1">
                 <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
-                <span class="text-[0.65rem] font-black uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Imprimir</span>
+                <span class="text-xs font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Imprimir</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">{{ motivoNoImprimir() || 'Vista previa, estilo y PDF en un solo lugar.' }}</p>
               <button
                 (click)="cerrarPanelCompartir(); abrirEstudioImpresion()"
                 [disabled]="!puedeImprimir()"
-                class="w-full h-9 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-all">
+                class="btn-secondary btn-sm w-full">
                 Abrir vista de impresión
               </button>
             </div>
 
           </div>
-        </div>
-      </div>
+      </app-modal>
     }
 
     <!-- ===== MODAL WHATSAPP: revisar antes de enviar ===== -->
     @if (whatsappAbierto()) {
-      <div class="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarWhatsapp()">
-        <div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col" (click)="$event.stopPropagation()">
-          <div class="shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800">
-            <h2 class="text-sm font-black text-slate-800 dark:text-white">Revisar mensaje</h2>
-            <button (click)="cerrarWhatsapp()" aria-label="Cerrar" class="shrink-0 w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-            </button>
-          </div>
-          <div class="p-5">
-            <textarea
-              [ngModel]="whatsappMensaje()"
-              (ngModelChange)="whatsappMensaje.set($event)"
-              rows="12"
-              class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-xs leading-relaxed text-slate-700 dark:text-slate-200 font-mono"></textarea>
-          </div>
-          <div class="shrink-0 flex gap-2 justify-end px-5 py-4 border-t border-slate-100 dark:border-slate-800">
-            <button (click)="cerrarWhatsapp()" class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Cancelar</button>
-            <button (click)="enviarWhatsapp()" class="px-4 h-9 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all active:scale-95">Enviar por WhatsApp</button>
-          </div>
-        </div>
-      </div>
+      <app-modal [open]="true" size="md" title="Revisar mensaje" [hasFooter]="true" (closed)="cerrarWhatsapp()">
+        <textarea
+          [ngModel]="whatsappMensaje()"
+          (ngModelChange)="whatsappMensaje.set($event)"
+          rows="12"
+          class="form-control !h-auto !text-xs leading-relaxed font-mono"></textarea>
+        <ng-container slot="footer">
+          <button (click)="cerrarWhatsapp()" class="btn-ghost btn-sm">Cancelar</button>
+          <button (click)="enviarWhatsapp()" class="btn-primary btn-sm">Enviar por WhatsApp</button>
+        </ng-container>
+      </app-modal>
     }
 
     <!-- ===== ESTUDIO DE IMPRESIÓN ===== -->
     @if (estudioImpresion(); as m) {
-      <app-logistica-impresion-estudio
-        [ano]="m.ano"
-        [mes]="m.mes"
-        [meses]="mesesDisponibles()"
-        (cerrado)="cerrarEstudioImpresion()" />
+      <!-- Diferido: el estudio y su render de impresión solo se descargan al
+           abrirlo. -->
+      @defer (on immediate) {
+        <app-logistica-impresion-estudio
+          [ano]="m.ano"
+          [mes]="m.mes"
+          [meses]="mesesDisponibles()"
+          (cerrado)="cerrarEstudioImpresion()" />
+      }
     }
 
     <!-- ===== MODAL GENERAR MES ===== -->
     @if (modalGenerarAbierto()) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarModal()">
-        <div data-testid="log-modal-generar" class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-5" (click)="$event.stopPropagation()">
-          <div class="flex items-center justify-between gap-2">
-            <h2 class="text-base font-black text-slate-800 dark:text-white">Generar programación</h2>
-            <!-- Cómo se arma la programación de esta congregación. Vive detrás de
-                 un botón y no en este modal porque no es una decisión de este mes:
-                 se configura una vez y vale para todos los meses siguientes. -->
+      <app-modal [open]="true" size="sm" title="Generar programación" [hasFooter]="true" (closed)="cerrarModal()">
+        <div data-testid="log-modal-generar" class="flex flex-col gap-5">
+          <!-- Cómo se arma la programación de esta congregación. Vive detrás de
+               un botón y no en este modal porque no es una decisión de este mes:
+               se configura una vez y vale para todos los meses siguientes. -->
+          <div class="flex justify-end -mt-1">
             <button
               type="button"
               data-testid="log-btn-config"
               (click)="abrirModalConfig()"
               title="Configurar cómo se genera la programación"
-              class="shrink-0 -mr-2 flex items-center gap-1.5 px-2 h-8 rounded-lg text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 hover:text-violet-700 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors focus-ring">
+              class="btn-ghost btn-sm">
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>
               </svg>
@@ -1287,24 +1215,23 @@ function normalizarTexto(s: string): string {
           </div>
           <div class="flex gap-3">
             <div class="flex-1 flex flex-col gap-1">
-              <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Mes</label>
+              <label class="form-label">Mes</label>
               <div class="relative">
                 @if (mesModalDropdownAbierto()) {
                   <div class="fixed inset-0 z-[59]" (click)="mesModalDropdownAbierto.set(false)"></div>
                 }
                 <button type="button" data-testid="log-generar-mes" (click)="mesModalDropdownAbierto.set(!mesModalDropdownAbierto())"
-                  class="h-9 w-full px-3 rounded-xl border bg-white dark:bg-slate-800 text-sm text-left flex items-center justify-between gap-2 outline-none transition-[border-color,background-color] duration-150 ease-out"
-                  [class]="mesModalDropdownAbierto() ? 'border-violet-500 ring-2 ring-violet-400/30' : 'border-slate-200 dark:border-slate-600 hover:border-violet-300 dark:hover:border-violet-700'">
+                  class="form-control text-left flex items-center justify-between gap-2">
                   <span class="text-slate-800 dark:text-slate-100">{{ mesesOpciones[modalMes - 1].label }}</span>
                   <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="mesModalDropdownAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 @if (mesModalDropdownAbierto()) {
-                  <div class="absolute left-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1.5">
+                  <div class="mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-1.5">
                     @for (m of mesesOpcionesDesc; track m.value) {
                       <button type="button" data-testid="log-opcion-mes" [attr.data-mes]="m.value"
                         (click)="modalMes = m.value; mesModalDropdownAbierto.set(false)"
                         class="w-full px-3.5 py-2 text-sm font-semibold text-left transition-colors duration-100"
-                        [class]="modalMes === m.value ? 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-300' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
+                        [class]="modalMes === m.value ? 'bg-violet-50 text-brand-purple dark:bg-violet-900/20 dark:text-violet-300' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
                         {{ m.label }}
                       </button>
                     }
@@ -1313,12 +1240,12 @@ function normalizarTexto(s: string): string {
               </div>
             </div>
             <div class="w-24 flex flex-col gap-1">
-              <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Año</label>
+              <label class="form-label">Año</label>
               <input
                 type="number"
                 [(ngModel)]="modalAno"
                 min="2024" max="2030"
-                class="w-full text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-400">
+                class="form-control">
             </div>
           </div>
 
@@ -1326,66 +1253,41 @@ function normalizarTexto(s: string): string {
                congregación viven en "Configuración" (botón de arriba): son
                permanentes, no una elección de este mes puntual. -->
 
-          <div class="flex gap-2 justify-end pt-1">
-            <button (click)="cerrarModal()" class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
-              Cancelar
-            </button>
-            <button
-              data-testid="log-btn-generar"
-              (click)="generarMes()"
-              [disabled]="estado() === 'loading'"
-              class="px-5 h-9 rounded-xl text-xs font-bold text-white bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 transition-all active:scale-95">
-              Generar
-            </button>
-          </div>
         </div>
-      </div>
+        <ng-container slot="footer">
+          <button (click)="cerrarModal()" class="btn-secondary btn-sm">Cancelar</button>
+          <button
+            data-testid="log-btn-generar"
+            (click)="generarMes()"
+            [disabled]="estado() === 'loading'"
+            class="btn-primary btn-sm">
+            Generar
+          </button>
+        </ng-container>
+      </app-modal>
     }
 
     <!-- ===== MODAL CONFIGURACIÓN DE GENERACIÓN ===== -->
     <!-- z-[70]: se abre encima del modal de generar y de su desplegable de mes. -->
     @if (modalConfigAbierto()) {
-      <div class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarModalConfig()">
-        <div
-          data-testid="log-modal-config"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="log-config-titulo"
-          class="w-full max-w-md max-h-[85vh] flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
-          (click)="$event.stopPropagation()">
-
-          <div class="shrink-0 flex items-start gap-3 px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div class="min-w-0 flex-1">
-              <h2 id="log-config-titulo" class="text-base font-black text-slate-800 dark:text-white">Cómo se genera</h2>
-              <p class="text-[0.7rem] leading-snug text-slate-500 dark:text-slate-400 mt-0.5">
-                La forma de trabajar de esta congregación. Se guarda al momento y
-                vale para todos los meses que se generen a partir de ahora.
-              </p>
-            </div>
-            <button
-              type="button"
-              (click)="cerrarModalConfig()"
-              aria-label="Cerrar configuración"
-              class="shrink-0 -mr-2 -mt-1 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-ring">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-            </button>
-          </div>
-
-          <div class="flex-1 overflow-y-auto simple-scrollbar px-6 py-4">
+      <app-modal [open]="true" size="md" title="Cómo se genera" [hasFooter]="true" (closed)="cerrarModalConfig()"
+        subtitle="La forma de trabajar de esta congregación. Se guarda al momento y vale para todos los meses que se generen a partir de ahora.">
+        <div data-testid="log-modal-config">
+          <div>
             @if (configCargando()) {
               <div class="flex flex-col gap-2.5" aria-hidden="true">
                 @for (fila of filasEsqueletoConfig; track fila) {
                   <div class="flex items-center gap-3">
-                    <div class="flex-1 h-3 rounded bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
-                    <div class="w-28 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
+                    <div class="skeleton flex-1 h-3"></div>
+                    <div class="skeleton w-28 h-6"></div>
                   </div>
                 }
               </div>
             } @else {
-              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Rotación
               </p>
-              <p class="text-[0.7rem] leading-snug text-slate-500 dark:text-slate-400 mt-1 mb-2">
+              <p class="text-xs leading-snug text-slate-500 dark:text-slate-400 mt-1 mb-2">
                 Por reunión rota siempre; por semana repite entre semana y fin de
                 semana; por mes deja a la misma persona todo el mes.
               </p>
@@ -1398,13 +1300,13 @@ function normalizarTexto(s: string): string {
                     </p>
                     <!-- Ancho reservado siempre: el spinner se desvanece en su
                          sitio en vez de empujar el selector al aparecer. -->
-                    <div class="w-3 h-3 shrink-0 border-2 border-violet-400 border-t-transparent rounded-full animate-spin transition-opacity duration-150"
+                    <div class="spinner-xs shrink-0"
                          [class.opacity-0]="configGuardando() !== f.clave"
                          aria-hidden="true"></div>
                     <div
                       role="radiogroup"
                       [attr.aria-label]="f.label + ': rotación'"
-                      class="inline-flex shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 gap-0.5">
+                      class="segmented shrink-0 !p-0.5 !gap-0.5">
                       @for (op of opcionesPref(f.clave); track op.id) {
                         <button
                           type="button"
@@ -1414,10 +1316,7 @@ function normalizarTexto(s: string): string {
                           [attr.title]="op.description"
                           [disabled]="configGuardando() !== null"
                           (click)="guardarPreferencia(f.clave, op.id)"
-                          class="px-2.5 h-6 rounded-md text-[0.65rem] font-bold transition-colors duration-150 disabled:cursor-not-allowed"
-                          [class]="valorPref(f.clave) === op.id
-                            ? 'bg-[#6D28D9] text-white'
-                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:hover:text-slate-500'">
+                          class="segmented-item !px-2.5 !py-0 !h-7 !text-xs disabled:cursor-not-allowed">
                           {{ op.label }}
                         </button>
                       }
@@ -1427,10 +1326,10 @@ function normalizarTexto(s: string): string {
               </div>
 
               <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Cantidad de puestos
                 </p>
-                <p class="text-[0.7rem] leading-snug text-slate-500 dark:text-slate-400 mt-1 mb-2">
+                <p class="text-xs leading-snug text-slate-500 dark:text-slate-400 mt-1 mb-2">
                   Algunas congregaciones solo tienen una persona habilitada para
                   vigilancia o micrófono.
                 </p>
@@ -1441,13 +1340,13 @@ function normalizarTexto(s: string): string {
                       <p class="min-w-0 flex-1 text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
                         {{ f.label }}
                       </p>
-                      <div class="w-3 h-3 shrink-0 border-2 border-violet-400 border-t-transparent rounded-full animate-spin transition-opacity duration-150"
+                      <div class="spinner-xs shrink-0"
                            [class.opacity-0]="configGuardando() !== f.clave"
                            aria-hidden="true"></div>
                       <div
                         role="radiogroup"
                         [attr.aria-label]="f.label + ': cantidad de puestos'"
-                        class="inline-flex shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 gap-0.5">
+                        class="segmented shrink-0 !p-0.5 !gap-0.5">
                         @for (op of opcionesPref(f.clave); track op.id) {
                           <button
                             type="button"
@@ -1457,10 +1356,7 @@ function normalizarTexto(s: string): string {
                             [attr.title]="op.description"
                             [disabled]="configGuardando() !== null"
                             (click)="guardarPreferencia(f.clave, op.id)"
-                            class="px-2.5 h-6 rounded-md text-[0.65rem] font-bold transition-colors duration-150 disabled:cursor-not-allowed"
-                            [class]="valorPref(f.clave) === op.id
-                              ? 'bg-[#6D28D9] text-white'
-                              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:hover:text-slate-500'">
+                            class="segmented-item !px-2.5 !py-0 !h-7 !text-xs disabled:cursor-not-allowed">
                             {{ op.label }}
                           </button>
                         }
@@ -1475,13 +1371,13 @@ function normalizarTexto(s: string): string {
                   <p class="min-w-0 flex-1 text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
                     Que otra persona revise antes de publicar
                   </p>
-                  <div class="w-3 h-3 shrink-0 border-2 border-violet-400 border-t-transparent rounded-full animate-spin transition-opacity duration-150"
+                  <div class="spinner-xs shrink-0"
                        [class.opacity-0]="configGuardando() !== claveRequiereRevision"
                        aria-hidden="true"></div>
                   <div
                     role="radiogroup"
                     aria-label="Exigir revisión antes de publicar"
-                    class="inline-flex shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 gap-0.5">
+                    class="segmented shrink-0 !p-0.5 !gap-0.5">
                     @for (op of opcionesPref(claveRequiereRevision); track op.id) {
                       <button
                         type="button"
@@ -1491,10 +1387,7 @@ function normalizarTexto(s: string): string {
                         [attr.title]="op.description"
                         [disabled]="configGuardando() !== null"
                         (click)="guardarPreferencia(claveRequiereRevision, op.id)"
-                        class="px-2.5 h-6 rounded-md text-[0.65rem] font-bold transition-colors duration-150 disabled:cursor-not-allowed"
-                        [class]="valorPref(claveRequiereRevision) === op.id
-                          ? 'bg-[#6D28D9] text-white'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:hover:text-slate-500'">
+                        class="segmented-item !px-2.5 !py-0 !h-7 !text-xs disabled:cursor-not-allowed">
                         {{ op.label }}
                       </button>
                     }
@@ -1504,22 +1397,19 @@ function normalizarTexto(s: string): string {
             }
           </div>
 
-          <div class="shrink-0 flex items-center gap-3 px-6 py-3 border-t border-slate-100 dark:border-slate-800">
-            <p class="min-w-0 flex-1 text-[0.65rem] leading-snug"
+        </div>
+        <ng-container slot="footer">
+            <p class="min-w-0 flex-1 text-xs leading-snug"
                [class]="configError()
                  ? 'text-red-600 dark:text-red-400 font-bold'
-                 : 'text-slate-400 dark:text-slate-500'">
+                 : 'text-slate-500 dark:text-slate-400'">
               {{ configError() ?? 'Los cambios se guardan solos.' }}
             </p>
-            <button
-              type="button"
-              (click)="cerrarModalConfig()"
-              class="shrink-0 px-4 h-9 rounded-xl text-xs font-bold text-white bg-[#6D28D9] hover:bg-[#5b21b6] transition-all active:scale-95 focus-ring">
+            <button type="button" (click)="cerrarModalConfig()" class="btn-primary btn-sm shrink-0">
               Listo
             </button>
-          </div>
-        </div>
-      </div>
+        </ng-container>
+      </app-modal>
     }
 
     <!-- ===== BALANCE DE CARGA: cuerpo compartido ===== -->
@@ -1532,10 +1422,10 @@ function normalizarTexto(s: string): string {
            con la que se mide esa respuesta. -->
       <div class="shrink-0 flex items-start gap-3 px-4 pt-3.5 pb-3">
         <div class="min-w-0 flex-1">
-          <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Balance de carga</p>
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Balance de carga</p>
           <p class="flex items-baseline gap-1.5 mt-1">
-            <span class="text-xl font-black leading-none text-slate-900 dark:text-white data-num">{{ promedioCargaLabel() }}</span>
-            <span class="text-[0.7rem] text-slate-500 dark:text-slate-400">tareas de media · {{ balanceCarga().length }} personas</span>
+            <span class="text-xl font-bold leading-none text-slate-900 dark:text-white data-num">{{ promedioCargaLabel() }}</span>
+            <span class="text-xs text-slate-500 dark:text-slate-400">tareas de media · {{ balanceCarga().length }} personas</span>
           </p>
         </div>
         <button
@@ -1580,7 +1470,7 @@ function normalizarTexto(s: string): string {
               type="button"
               (click)="balanceFiltro.set(f.id)"
               [attr.aria-pressed]="balanceFiltro() === f.id"
-              class="flex-1 flex items-center justify-center gap-1.5 h-7 px-2 rounded-lg border text-[0.65rem] font-bold transition-colors"
+              class="flex-1 flex items-center justify-center gap-1.5 h-7 px-2 rounded-lg border text-xs font-bold transition-colors"
               [class]="balanceFiltro() === f.id
                 ? 'bg-slate-900 dark:bg-slate-100 border-slate-900 dark:border-slate-100 text-white dark:text-slate-900'
                 : 'bg-transparent border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'">
@@ -1599,7 +1489,7 @@ function normalizarTexto(s: string): string {
                etiqueta por fila: treinta pastillas diciendo lo mismo son ruido,
                y agrupar deja el desequilibrio visible de un vistazo. -->
           <p
-            class="sticky top-0 z-10 flex items-center gap-2 px-2 py-1.5 bg-white dark:bg-slate-900 text-[0.6rem] font-black uppercase tracking-wider"
+            class="sticky top-0 z-10 flex items-center gap-2 px-2 py-1.5 bg-white dark:bg-slate-900 text-xs font-bold uppercase tracking-wider"
             [class]="nivelTextoClass(grupo.nivel)">
             <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="nivelBarraClass(grupo.nivel)"></span>
             {{ grupo.label }}
@@ -1634,7 +1524,7 @@ function normalizarTexto(s: string): string {
                       <button
                         type="button"
                         (click)="irACeldaBalance(a)"
-                        class="flex-1 min-w-0 truncate text-left inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[0.65rem] font-medium transition-all hover:border-violet-300 dark:hover:border-violet-700 hover:text-violet-700 dark:hover:text-violet-300 active:scale-95">
+                        class="flex-1 min-w-0 truncate text-left inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium transition-all hover:border-violet-300 dark:hover:border-brand-purple hover:text-brand-purple dark:hover:text-violet-300 active:scale-95">
                         {{ formatFecha(a.fecha) }} · {{ a.puestoLabel }}
                       </button>
                       <!-- Pasarle esta parte a alguien menos cargado. Sólo con
@@ -1649,8 +1539,8 @@ function normalizarTexto(s: string): string {
                           aria-label="Pasar esta parte a otra persona"
                           class="shrink-0 w-7 h-7 flex items-center justify-center rounded-full border transition-colors active:scale-95"
                           [class]="reemplazoAbierto()?.fecha === a.fecha && reemplazoAbierto()?.puesto === a.puesto
-                            ? 'border-violet-400 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300'
-                            : 'border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-violet-300 hover:text-violet-600 dark:hover:text-violet-400'">
+                            ? 'border-violet-400 dark:border-brand-purple bg-violet-50 dark:bg-violet-900/30 text-brand-purple dark:text-violet-300'
+                            : 'border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-violet-300 hover:text-brand-purple dark:hover:text-violet-400'">
                           <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
                         </button>
                       }
@@ -1659,7 +1549,7 @@ function normalizarTexto(s: string): string {
                     @if (reemplazoAbierto()?.fecha === a.fecha && reemplazoAbierto()?.puesto === a.puesto) {
                       <div class="rounded-xl border border-violet-200 dark:border-violet-800/70 bg-violet-50/40 dark:bg-violet-900/10 p-1.5 mb-1">
                         @if (candidatosParaAliviar(a).length > 0) {
-                          <p class="text-[0.55rem] font-black uppercase tracking-wider text-violet-600 dark:text-violet-400 px-1.5 pb-1">
+                          <p class="text-xs font-bold uppercase tracking-wider text-brand-purple dark:text-violet-400 px-1.5 pb-1">
                             Pasar a quien va con menos
                           </p>
                           @for (c of candidatosParaAliviar(a); track c.id_publicador) {
@@ -1667,14 +1557,14 @@ function normalizarTexto(s: string): string {
                               type="button"
                               (click)="reemplazarDesdeBalance(a, c.id_publicador)"
                               class="w-full flex items-center gap-2 px-2 h-8 rounded-lg text-left transition-colors hover:bg-white dark:hover:bg-slate-800 active:scale-[0.98]">
-                              <span class="flex-1 min-w-0 truncate text-[0.7rem] text-slate-700 dark:text-slate-200">{{ c.nombre_completo }}</span>
+                              <span class="flex-1 min-w-0 truncate text-xs text-slate-700 dark:text-slate-200">{{ c.nombre_completo }}</span>
                               <!-- Su carga actual: es el dato por el que se
                                    elige, así que va al lado del nombre. -->
-                              <span class="shrink-0 font-mono tabular-nums text-[0.65rem] font-bold text-emerald-600 dark:text-emerald-400">{{ cargaDe(c.id_publicador) }}</span>
+                              <span class="shrink-0 font-mono tabular-nums text-xs font-bold text-emerald-600 dark:text-emerald-400">{{ cargaDe(c.id_publicador) }}</span>
                             </button>
                           }
                         } @else {
-                          <p class="text-[0.65rem] text-slate-500 dark:text-slate-400 px-2 py-2 leading-relaxed">
+                          <p class="text-xs text-slate-500 dark:text-slate-400 px-2 py-2 leading-relaxed">
                             Nadie con este permiso está libre ese día y va con menos carga.
                           </p>
                         }
@@ -1694,10 +1584,10 @@ function normalizarTexto(s: string): string {
 
       <!-- Fuera del area con scroll: la pista y el enlace deben verse siempre,
            sin bajar hasta el final de treinta nombres. -->
-      <p class="shrink-0 px-4 py-2.5 border-t border-slate-100 dark:border-slate-800/70 text-[0.65rem] leading-relaxed text-slate-500 dark:text-slate-400">
+      <p class="shrink-0 px-4 py-2.5 border-t border-slate-100 dark:border-slate-800/70 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
         Alta o baja es respecto a la media de este mes, no a un numero fijo. No incluye el aseo, que se asigna por grupo.
         @if (puedeVerReporteCarga()) {
-          <a routerLink="/reportes/logistica" class="font-semibold text-violet-600 dark:text-violet-400 hover:underline">Ver varios meses</a>
+          <a routerLink="/reportes/logistica" class="font-semibold text-brand-purple dark:text-violet-400 hover:underline">Ver varios meses</a>
         }
       </p>
 
@@ -1710,9 +1600,9 @@ function normalizarTexto(s: string): string {
             data-testid="log-btn-rebalancear"
             (click)="pedirRebalanceo()"
             [disabled]="rebalanceando()"
-            class="w-full flex items-center justify-center gap-2 h-9 rounded-xl border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 text-xs font-bold hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-[0.98] disabled:opacity-40">
+            class="w-full flex items-center justify-center gap-2 h-9 rounded-xl border border-violet-200 dark:border-violet-800 text-brand-purple dark:text-violet-300 text-xs font-bold hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-[0.98] disabled:opacity-40">
             @if (rebalanceando()) {
-              <div class="w-3.5 h-3.5 rounded-full border-2 border-violet-200 border-t-violet-500 animate-spin"></div>
+              <div class="spinner-xs"></div>
               Calculando…
             } @else {
               <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
@@ -1726,13 +1616,13 @@ function normalizarTexto(s: string): string {
     <!-- ===== BALANCE DE CARGA: hoja (por debajo de xl) ===== -->
     @if (balancePanelVisible()) {
       <div
-        class="xl:hidden fixed inset-0 z-[58] bg-slate-900/40 backdrop-blur-sm sheet-overlay"
+        class="xl:hidden fixed inset-0 z-[58] bg-slate-900/40 sheet-overlay"
         (click)="cerrarPanelBalance()">
         <!-- Movil: hoja inferior, el gesto que ya usan los otros paneles.
              Tablet: hoja lateral, que deja la tabla a la vista mientras se
              salta de una asignacion a otra. -->
         <div
-          class="absolute inset-x-0 bottom-0 max-h-[85dvh] rounded-tl-3xl rounded-tr-3xl border-t
+          class="absolute inset-x-0 bottom-0 max-h-[85dvh] rounded-tl-2xl rounded-tr-2xl border-t
                  sm:inset-y-0 sm:left-auto sm:right-0 sm:w-[21rem] sm:max-h-none sm:rounded-tl-2xl sm:rounded-tr-none sm:rounded-bl-2xl sm:border-t-0 sm:border-l
                  bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col balance-sheet"
           (click)="$event.stopPropagation()">
@@ -1777,17 +1667,17 @@ function normalizarTexto(s: string): string {
              en otra reunión, así que elegir al primero de la lista era jugar
              a la lotería y el choque sólo se descubría al guardar. -->
         @if (candidatosLibres(activeCellPuesto()).length > 0) {
-          <p class="text-[0.55rem] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 px-3 pt-2.5 pb-1">
+          <p class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 px-3 pt-2.5 pb-1">
             Libres ese día
           </p>
           @for (c of candidatosLibres(activeCellPuesto()); track c.id_publicador) {
             <button
               type="button"
               (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
-              [class]="'w-full text-left text-xs px-3 py-2 transition-colors ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800')">
+              [class]="'w-full text-left text-xs px-3 py-2 transition-colors ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-brand-purple dark:text-violet-300' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800')">
               <span class="block">{{ c.nombre_completo }}</span>
               @if (c.ultima_vez) {
-                <span class="block text-[0.6rem] font-normal text-slate-400 dark:text-slate-500">Últ. vez: {{ c.ultima_vez | date:'d MMM y':'':'es' }}</span>
+                <span class="block text-xs font-normal text-slate-400 dark:text-slate-500">Últ. vez: {{ c.ultima_vez | date:'d MMM y':'':'es' }}</span>
               }
             </button>
           }
@@ -1797,33 +1687,33 @@ function normalizarTexto(s: string): string {
              opción sigue siendo alguien con otra parte, y esconderlo obligaría
              a buscarlo a mano sin saber por qué no salía. -->
         @if (candidatosOcupados(activeCellPuesto()).length > 0) {
-          <p class="text-[0.55rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 pt-2.5 pb-1 border-t border-slate-100 dark:border-slate-800">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 pt-2.5 pb-1 border-t border-slate-100 dark:border-slate-800">
             Ya tienen algo ese día
           </p>
           @for (c of candidatosOcupados(activeCellPuesto()); track c.id_publicador) {
             <button
               type="button"
               (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
-              [class]="'w-full text-left px-3 py-2 transition-colors flex items-baseline gap-2 ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800')">
+              [class]="'w-full text-left px-3 py-2 transition-colors flex items-baseline gap-2 ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-brand-purple dark:text-violet-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800')">
               <span class="flex-1 min-w-0">
                 <span class="block truncate text-xs text-slate-500 dark:text-slate-400">{{ c.nombre_completo }}</span>
                 @if (c.ultima_vez) {
-                  <span class="block text-[0.55rem] text-slate-400 dark:text-slate-500">Últ. vez: {{ c.ultima_vez | date:'d MMM y':'':'es' }}</span>
+                  <span class="block text-xs text-slate-400 dark:text-slate-500">Últ. vez: {{ c.ultima_vez | date:'d MMM y':'':'es' }}</span>
                 }
               </span>
-              <span class="shrink-0 text-[0.55rem] font-semibold text-amber-600 dark:text-amber-500">{{ motivoOcupado(c.id_publicador) }}</span>
+              <span class="shrink-0 text-xs font-semibold text-amber-600 dark:text-amber-500">{{ motivoOcupado(c.id_publicador) }}</span>
             </button>
           }
         }
 
         @if (getCandidatosFiltrados(activeCellPuesto()).length === 0) {
           @if (sinHabilitados(activeCellPuesto())) {
-            <p class="text-[0.65rem] text-slate-400 px-3 py-3 text-center leading-relaxed">
+            <p class="text-xs text-slate-400 px-3 py-3 text-center leading-relaxed">
               Nadie tiene el permiso de {{ activeCellPuestoLabel() }}.<br>
               Actívalo en Configuración o busca abajo.
             </p>
           } @else {
-            <p class="text-[0.65rem] text-slate-400 px-3 py-2.5 italic text-center">
+            <p class="text-xs text-slate-400 px-3 py-2.5 italic text-center">
               Ningún habilitado coincide
             </p>
           }
@@ -1833,9 +1723,9 @@ function normalizarTexto(s: string): string {
              dejando claro que va aparte. -->
         @if (cellSearch().trim().length > 0) {
           @if (buscandoPublicador()) {
-            <p class="text-[0.65rem] text-slate-400 px-3 py-2.5 italic text-center border-t border-slate-100 dark:border-slate-800">Buscando...</p>
+            <p class="text-xs text-slate-400 px-3 py-2.5 italic text-center border-t border-slate-100 dark:border-slate-800">Buscando...</p>
           } @else if (otrosPublicadores(activeCellPuesto()).length > 0) {
-            <p class="text-[0.55rem] font-black uppercase tracking-wider text-amber-600/90 dark:text-amber-500/90 px-3 pt-2.5 pb-1 border-t border-slate-100 dark:border-slate-800">
+            <p class="text-xs font-bold uppercase tracking-wider text-amber-600/90 dark:text-amber-500/90 px-3 pt-2.5 pb-1 border-t border-slate-100 dark:border-slate-800">
               Sin el permiso de {{ permisoLabel(activeCellPuesto()) }}
             </p>
             @for (c of otrosPublicadores(activeCellPuesto()); track c.id_publicador) {
@@ -1855,9 +1745,9 @@ function normalizarTexto(s: string): string {
                     (mousedown)="$event.preventDefault(); otorgarPermisoYAsignarActiva(c.id_publicador, c.nombre_completo)"
                     [disabled]="esOtorgando(c.id_publicador)"
                     [attr.aria-label]="'Dar el permiso de ' + permisoLabel(activeCellPuesto()) + ' a ' + c.nombre_completo"
-                    class="shrink-0 flex items-center gap-1 pl-1.5 pr-2 h-7 rounded-lg border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 text-[0.6rem] font-bold hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95 disabled:opacity-40">
+                    class="shrink-0 flex items-center gap-1 pl-1.5 pr-2 h-7 rounded-lg border border-violet-200 dark:border-violet-800 text-brand-purple dark:text-violet-400 text-xs font-bold hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95 disabled:opacity-40">
                     @if (esOtorgando(c.id_publicador)) {
-                      <div class="w-3 h-3 rounded-full border-2 border-violet-200 border-t-violet-500 animate-spin"></div>
+                      <div class="spinner-xs text-violet-500"></div>
                     } @else {
                       <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
                       Dar permiso
@@ -1873,13 +1763,13 @@ function normalizarTexto(s: string): string {
 
     <!-- ===== SHEET MÓVIL: COMBOBOX BÚSQUEDA PUBLICADOR ===== -->
     @if (activeCellKey() && puedeEditar()) {
-      <div class="md:hidden fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm sheet-overlay" (click)="cerrarCombobox()" data-cell-sheet>
-        <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl border-t border-slate-200 dark:border-slate-700 max-h-[85vh] flex flex-col sheet-content" (click)="$event.stopPropagation()" data-cell-sheet>
+      <div class="md:hidden fixed inset-0 z-[60] bg-black/50 sheet-overlay" (click)="cerrarCombobox()" data-cell-sheet>
+        <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-700 max-h-[85vh] flex flex-col sheet-content" (click)="$event.stopPropagation()" data-cell-sheet>
           <div class="shrink-0 pt-2.5 pb-2 flex justify-center">
             <div class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></div>
           </div>
           <div class="shrink-0 px-5 pb-3">
-            <p class="text-[0.65rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">{{ activeCellPuestoLabel() }}</p>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{{ activeCellPuestoLabel() }}</p>
             <p class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ activeCellFechaLabel() }}</p>
           </div>
           <div class="shrink-0 px-4 pb-3">
@@ -1896,7 +1786,7 @@ function normalizarTexto(s: string): string {
                 autofocus
               />
               @if (buscandoPublicador()) {
-                <div class="w-3.5 h-3.5 rounded-full border-2 border-violet-200 border-t-violet-500 animate-spin shrink-0"></div>
+                <div class="spinner-xs shrink-0"></div>
               }
             </div>
           </div>
@@ -1905,7 +1795,7 @@ function normalizarTexto(s: string): string {
               <button
                 type="button"
                 (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(null)"
-                class="w-full text-left text-sm px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2 mb-1">
+                class="w-full mb-1 btn-ghost-danger">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 Quitar asignación
               </button>
@@ -1913,14 +1803,14 @@ function normalizarTexto(s: string): string {
             <!-- Mismo criterio que en escritorio: primero quien puede y está
                  libre; después quien puede pero ya tiene algo, diciendo qué. -->
             @if (candidatosLibres(activeCellPuesto()).length > 0) {
-              <p class="text-[0.6rem] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 px-3 pt-2 pb-1">
+              <p class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 px-3 pt-2 pb-1">
                 Libres ese día
               </p>
               @for (c of candidatosLibres(activeCellPuesto()); track c.id_publicador) {
                 <button
                   type="button"
                   (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
-                  [class]="'w-full text-left text-sm px-3 py-3 rounded-xl transition-colors ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800')">
+                  [class]="'w-full text-left text-sm px-3 py-3 rounded-xl transition-colors ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-brand-purple dark:text-violet-300' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800')">
                   <span class="block">{{ c.nombre_completo }}</span>
                   @if (c.ultima_vez) {
                     <span class="block text-xs font-normal text-slate-400 dark:text-slate-500">Últ. vez: {{ c.ultima_vez | date:'d MMM y':'':'es' }}</span>
@@ -1930,21 +1820,21 @@ function normalizarTexto(s: string): string {
             }
 
             @if (candidatosOcupados(activeCellPuesto()).length > 0) {
-              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 pt-3 pb-1 border-t border-slate-100 dark:border-slate-800">
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 pt-3 pb-1 border-t border-slate-100 dark:border-slate-800">
                 Ya tienen algo ese día
               </p>
               @for (c of candidatosOcupados(activeCellPuesto()); track c.id_publicador) {
                 <button
                   type="button"
                   (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
-                  [class]="'w-full text-left px-3 py-3 rounded-xl transition-colors flex items-baseline gap-2 ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800')">
+                  [class]="'w-full text-left px-3 py-3 rounded-xl transition-colors flex items-baseline gap-2 ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-brand-purple dark:text-violet-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800')">
                   <span class="flex-1 min-w-0">
                     <span class="block truncate text-sm text-slate-500 dark:text-slate-400">{{ c.nombre_completo }}</span>
                     @if (c.ultima_vez) {
                       <span class="block text-xs text-slate-400 dark:text-slate-500">Últ. vez: {{ c.ultima_vez | date:'d MMM y':'':'es' }}</span>
                     }
                   </span>
-                  <span class="shrink-0 text-[0.6rem] font-semibold text-amber-600 dark:text-amber-500">{{ motivoOcupado(c.id_publicador) }}</span>
+                  <span class="shrink-0 text-xs font-semibold text-amber-600 dark:text-amber-500">{{ motivoOcupado(c.id_publicador) }}</span>
                 </button>
               }
             }
@@ -1965,7 +1855,7 @@ function normalizarTexto(s: string): string {
               @if (buscandoPublicador()) {
                 <p class="text-xs text-slate-400 px-3 py-4 italic text-center border-t border-slate-100 dark:border-slate-800">Buscando...</p>
               } @else if (otrosPublicadores(activeCellPuesto()).length > 0) {
-                <p class="text-[0.6rem] font-black uppercase tracking-wider text-amber-600/90 dark:text-amber-500/90 px-3 pt-3 pb-1 border-t border-slate-100 dark:border-slate-800">
+                <p class="text-xs font-bold uppercase tracking-wider text-amber-600/90 dark:text-amber-500/90 px-3 pt-3 pb-1 border-t border-slate-100 dark:border-slate-800">
                   Sin el permiso de {{ permisoLabel(activeCellPuesto()) }}
                 </p>
                 @for (c of otrosPublicadores(activeCellPuesto()); track c.id_publicador) {
@@ -1982,9 +1872,9 @@ function normalizarTexto(s: string): string {
                         (mousedown)="$event.preventDefault(); otorgarPermisoYAsignarActiva(c.id_publicador, c.nombre_completo)"
                         [disabled]="esOtorgando(c.id_publicador)"
                         [attr.aria-label]="'Dar el permiso de ' + permisoLabel(activeCellPuesto()) + ' a ' + c.nombre_completo"
-                        class="shrink-0 flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 text-[0.7rem] font-bold hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95 disabled:opacity-40">
+                        class="shrink-0 flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border border-violet-200 dark:border-violet-800 text-brand-purple dark:text-violet-400 text-xs font-bold hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95 disabled:opacity-40">
                         @if (esOtorgando(c.id_publicador)) {
-                          <div class="w-3.5 h-3.5 rounded-full border-2 border-violet-200 border-t-violet-500 animate-spin"></div>
+                          <div class="spinner-xs"></div>
                         } @else {
                           <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
                           Dar permiso
@@ -2617,7 +2507,7 @@ export class ReunionesLogisticaComponent implements OnInit {
       case 'publicado':
         return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300';
       case 'cambios_sin_publicar':
-        return 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300';
+        return 'bg-violet-100 dark:bg-violet-900/40 text-brand-purple dark:text-violet-300';
       case 'pendiente_revision':
         return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300';
       default:
@@ -3046,7 +2936,7 @@ export class ReunionesLogisticaComponent implements OnInit {
       case 'publicado':
         return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300';
       case 'cambios_sin_publicar':
-        return 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300';
+        return 'bg-violet-100 dark:bg-violet-900/40 text-brand-purple dark:text-violet-300';
       case 'pendiente_revision':
         return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300';
       default:
@@ -3269,8 +3159,13 @@ export class ReunionesLogisticaComponent implements OnInit {
 
   private recrearMes(ano: number, mes: number, cong: number | null): void {
     this.estado.set('loading');
-    this.logisticaSvc.eliminarMes(ano, mes, cong).subscribe({
-      next: () => this.ejecutarGenerar(ano, mes, cong),
+    // Atómico en el servidor: si generar falla, el mes anterior sigue intacto.
+    this.logisticaSvc.regenerar({ ano, mes }, cong).subscribe({
+      next: (data) => {
+        this.mesDatos.set(data);
+        this.estado.set('ready');
+        this.cargarMeses(cong);
+      },
       error: (err) => {
         this.errorMsg.set(err?.error?.detail ?? 'Error al recrear el mes');
         this.estado.set('error');

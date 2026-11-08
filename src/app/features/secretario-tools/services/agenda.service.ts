@@ -3,17 +3,28 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
-import { EventoAgenda, Festivo, Recordatorio, RecordatorioForm, Sugerencia } from '../models/agenda.model';
+import { EventoAgenda, Festivo, ModoAgenda, Recordatorio, RecordatorioForm, Sugerencia } from '../models/agenda.model';
 
+/**
+ * Agenda del secretario (/secretario/agenda) o agenda personal del coordinador y
+ * los ancianos (/agenda). La página se provee su propia instancia y fija el modo;
+ * la de raíz se queda en el del secretario (la usa Festivos).
+ */
 @Injectable({ providedIn: 'root' })
 export class AgendaService {
   private http = inject(HttpClient);
   private ctx = inject(CongregacionContextService);
   private url = `${environment.apiUrl}/secretario/agenda`;
+  private modo: ModoAgenda = 'secretaria';
 
-  /** Solo el Administrador manda la congregación; el resto la toma el backend. */
+  usarModo(modo: ModoAgenda) {
+    this.modo = modo;
+    this.url = modo === 'personal' ? `${environment.apiUrl}/agenda` : `${environment.apiUrl}/secretario/agenda`;
+  }
+
+  /** Solo el Administrador manda la congregación; el resto la toma el backend. La personal siempre es la propia. */
   private cong(params: Record<string, string> = {}): Record<string, string> {
-    const id = this.ctx.effectiveCongregacionId();
+    const id = this.modo === 'secretaria' ? this.ctx.effectiveCongregacionId() : null;
     return id ? { ...params, id_congregacion: String(id) } : params;
   }
 
@@ -53,8 +64,8 @@ export class AgendaService {
   }
 
   crear(data: RecordatorioForm): Observable<Recordatorio> {
-    const id = this.ctx.effectiveCongregacionId();
-    return this.http.post<Recordatorio>(`${this.url}/recordatorios`, { ...data, id_congregacion: id });
+    const id = this.modo === 'secretaria' ? this.ctx.effectiveCongregacionId() : null;
+    return this.http.post<Recordatorio>(`${this.url}/recordatorios`, id ? { ...data, id_congregacion: id } : data);
   }
 
   actualizar(id: number, data: RecordatorioForm): Observable<Recordatorio> {

@@ -1,6 +1,8 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TerritoriosService } from '../services/territorios.service';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import { HistorialEntrada, HistorialRespuesta } from '../models/territorio.model';
@@ -29,28 +31,18 @@ const PASO = 150;
 @Component({
   selector: 'app-historial-predicacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, SelectPickerComponent],
+  imports: [CommonModule, FormsModule, DatePipe, SelectPickerComponent, ModalComponent, EmptyStateComponent],
   template: `
-    <div class="fixed inset-0 z-[1100] flex justify-end">
-      <div class="velo absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" (click)="cerrar.emit()"></div>
-
-      <section class="cajon relative w-full sm:max-w-2xl h-full bg-white dark:bg-slate-800 shadow-2xl flex flex-col" role="dialog" aria-modal="true" aria-labelledby="hist-titulo">
-        <header class="shrink-0 flex items-start justify-between gap-3 px-5 pt-5 pb-3">
-          <div class="min-w-0">
-            <h2 id="hist-titulo" class="text-xl font-black text-slate-900 dark:text-white leading-tight">Historial de predicación</h2>
-            <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Todo lo que se registró, de lo más reciente a lo más antiguo.</p>
-          </div>
-          <button #cerrarBtn type="button" (click)="cerrar.emit()" class="shrink-0 w-11 h-11 -mr-2 -mt-1 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-white" aria-label="Cerrar el historial">
-            <svg class="mx-auto w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-          </button>
-        </header>
-
+    <app-modal [open]="true" variant="drawer" size="xl" title="Historial de predicación"
+               subtitle="Todo lo que se registró, de lo más reciente a lo más antiguo."
+               [padding]="false" (openChange)="$event || cerrar.emit()">
+      <div class="flex flex-col h-full min-h-0">
         <!-- Filtros: el periodo siempre a la vista; tarjeta y capitán, uno al lado del otro -->
         <div class="shrink-0 px-5 pb-4 space-y-3 border-b border-slate-100 dark:border-slate-700/60">
           <div class="grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900/50" role="radiogroup" aria-label="Periodo">
             @for (p of periodos; track p.id) {
               <button type="button" role="radio" [attr.aria-checked]="periodo() === p.id" (click)="cambiarPeriodo(p.id)"
-                class="h-10 rounded-lg text-[13px] font-bold transition-[background-color,color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/30"
+                class="h-10 rounded-lg text-sm font-bold transition-[background-color,color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/30"
                 [class]="periodo() === p.id ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'">{{ p.titulo }}</button>
             }
           </div>
@@ -76,46 +68,37 @@ const PASO = 150;
           @if (error()) {
             <div class="m-5 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/15 p-4" role="alert">
               <p class="text-sm font-semibold text-red-800 dark:text-red-200">No se pudo cargar el historial.</p>
-              <button type="button" (click)="cargar()" class="mt-2 h-10 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold">Intentar de nuevo</button>
+              <button type="button" (click)="cargar()" class="mt-2 btn-danger">Intentar de nuevo</button>
             </div>
           } @else if (cargando() && !datos()) {
             <div class="p-5 space-y-3" aria-busy="true">
-              @for (i of [1,2,3,4]; track i) { <div class="h-20 rounded-2xl bg-slate-100 dark:bg-slate-700/50 animate-pulse"></div> }
+              @for (i of [1,2,3,4]; track i) { <div class="h-20 rounded-2xl skeleton"></div> }
             </div>
           } @else if (!meses().length) {
-            <div class="px-8 py-14 text-center">
-              <div class="mx-auto w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700/60 text-slate-400 flex items-center justify-center">
-                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
-              </div>
-              <p class="mt-3 text-base font-bold text-slate-800 dark:text-slate-100">No hay salidas registradas aquí</p>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                @if (hayFiltros()) { Pruebe con otro periodo, otra tarjeta u otro capitán. }
-                @else { Cuando registre la predicación de una salida, aparecerá en esta lista. }
-              </p>
-              @if (hayFiltros()) {
-                <button type="button" (click)="limpiar()" class="mt-4 h-11 px-5 rounded-xl border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">Ver todo el historial</button>
-              }
-            </div>
+            <app-empty-state [compact]="true" accent="green" icon="clock"
+              title="No hay salidas registradas aquí"
+              [description]="hayFiltros() ? 'Pruebe con otro periodo, otra tarjeta u otro capitán.' : 'Cuando registre la predicación de una salida, aparecerá en esta lista.'"
+              [actionLabel]="hayFiltros() ? 'Ver todo el historial' : ''" (action)="limpiar()" />
           } @else {
             <div [class.opacity-60]="cargando()" class="transition-opacity duration-150">
               @for (m of meses(); track m.clave) {
-                <h3 class="sticky top-0 z-10 px-5 py-2 text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur border-b border-slate-100 dark:border-slate-700/60">{{ m.titulo }}</h3>
+                <h3 class="sticky top-0 z-10 px-5 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur border-b border-slate-100 dark:border-slate-700/60">{{ m.titulo }}</h3>
                 <ul class="px-3 py-1">
                   @for (v of m.entradas; track v.e.clave) {
                     <li class="entrada flex gap-3.5 px-2 py-3.5 rounded-xl border-b border-slate-100 dark:border-slate-700/40 last:border-b-0"
                         [style.animation-delay.ms]="v.indice < 12 ? v.indice * 24 : 0">
                       <span class="w-12 shrink-0 text-center rounded-xl py-1.5 self-start"
                             [class]="v.e.tipo === 'salida' ? 'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-800 dark:text-emerald-200' : 'bg-slate-100 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400'">
-                        <span class="block text-lg font-black leading-none tabular-nums">{{ v.e.fecha | date:'d':'':'es' }}</span>
-                        <span class="block text-[11px] font-bold leading-tight mt-0.5 opacity-80">{{ v.e.fecha | date:'MMM':'':'es' }}</span>
+                        <span class="block text-lg font-bold leading-none tabular-nums">{{ v.e.fecha | date:'d':'':'es' }}</span>
+                        <span class="block text-xs font-bold leading-tight mt-0.5 opacity-80">{{ v.e.fecha | date:'MMM':'':'es' }}</span>
                       </span>
 
                       <div class="min-w-0 flex-1">
                         <p class="flex flex-wrap items-baseline gap-x-2">
-                          <span class="text-[15px] font-bold text-slate-900 dark:text-white"><span class="capitalize">{{ v.e.fecha | date:'EEEE':'':'es' }}</span>@if (v.e.hora) { · {{ hora(v.e.hora) }} }</span>
+                          <span class="text-base font-bold text-slate-900 dark:text-white"><span class="capitalize">{{ v.e.fecha | date:'EEEE':'':'es' }}</span>@if (v.e.hora) { · {{ hora(v.e.hora) }} }</span>
                           @if (v.e.tipo === 'no_salio') { <span class="text-sm font-semibold text-slate-500 dark:text-slate-400">No se salió</span> }
                         </p>
-                        <p class="text-[13px] text-slate-500 dark:text-slate-400 leading-snug">
+                        <p class="text-sm text-slate-500 dark:text-slate-400 leading-snug">
                           {{ v.e.lugar || 'Sin lugar' }}@if (v.e.capitan) { · con {{ v.e.capitan }} } @else if (v.e.tipo === 'salida') { · sin capitán anotado }
                         </p>
 
@@ -123,7 +106,7 @@ const PASO = 150;
                           <ul class="mt-2 space-y-1.5">
                             @for (t of v.tarjetas; track t.codigo) {
                               <li class="flex items-baseline gap-2 text-sm">
-                                <span class="shrink-0 min-w-[2.75rem] text-center rounded-md px-1.5 py-0.5 text-xs font-black tabular-nums bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">{{ t.codigo }}</span>
+                                <span class="shrink-0 min-w-[2.75rem] text-center rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">{{ t.codigo }}</span>
                                 <span class="min-w-0 text-slate-700 dark:text-slate-200 leading-snug">
                                   @if (t.completas) { {{ t.completas }} }
                                   @for (md of t.medias; track md.numero) {
@@ -138,8 +121,8 @@ const PASO = 150;
 
                       @if (v.e.tipo === 'salida') {
                         <p class="shrink-0 text-right self-start leading-none">
-                          <span class="block text-xl font-black tabular-nums text-slate-900 dark:text-white">{{ v.total }}</span>
-                          <span class="block mt-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">{{ v.total === 1 ? 'manzana' : 'manzanas' }}</span>
+                          <span class="block text-xl font-bold tabular-nums text-slate-900 dark:text-white">{{ v.total }}</span>
+                          <span class="block mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{{ v.total === 1 ? 'manzana' : 'manzanas' }}</span>
                         </p>
                       }
                     </li>
@@ -148,7 +131,7 @@ const PASO = 150;
               }
               @if (datos()?.hay_mas) {
                 <div class="px-5 py-5">
-                  <button type="button" (click)="verMas()" [disabled]="cargando()" class="w-full h-12 rounded-xl border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50">
+                  <button type="button" (click)="verMas()" [disabled]="cargando()" class="w-full btn-secondary">
                     {{ cargando() ? 'Cargando…' : 'Ver salidas más antiguas' }}
                   </button>
                 </div>
@@ -156,24 +139,20 @@ const PASO = 150;
             </div>
           }
         </div>
-      </section>
-    </div>
+      </div>
+    </app-modal>
   `,
   styles: [`
     :host { display: contents; }
-    .cajon { animation: hist-cajon 260ms cubic-bezier(0.32, 0.72, 0, 1); }
-    .velo { animation: hist-velo 200ms ease-out; }
     .entrada { animation: hist-entra 260ms cubic-bezier(0.23, 1, 0.32, 1) both; transition: background-color 120ms ease-out; }
     .entrada:hover { background: rgb(248 250 252 / 0.8); }
     :host-context(.dark) .entrada:hover { background: rgb(51 65 85 / 0.25); }
     .scroll-fino { scrollbar-width: thin; scrollbar-color: rgb(203 213 225) transparent; }
-    @keyframes hist-cajon { from { transform: translateX(100%); } }
-    @keyframes hist-velo { from { opacity: 0; } }
     @keyframes hist-entra { from { opacity: 0; transform: translateY(8px); } }
-    @media (prefers-reduced-motion: reduce) { .cajon, .velo, .entrada { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .entrada { animation: none; } }
   `],
 })
-export class HistorialPredicacionComponent implements OnInit, AfterViewInit {
+export class HistorialPredicacionComponent implements OnInit {
   private svc = inject(TerritoriosService);
 
   /** Opciones de los filtros (las de la página). */
@@ -183,7 +162,6 @@ export class HistorialPredicacionComponent implements OnInit, AfterViewInit {
   @Input() tarjetaInicial: number | null = null;
   @Output() cerrar = new EventEmitter<void>();
 
-  @ViewChild('cerrarBtn') cerrarBtn?: ElementRef<HTMLButtonElement>;
 
   readonly hora = horaLegible;
   readonly periodos: Array<{ id: Periodo; titulo: string }> = [
@@ -234,13 +212,6 @@ export class HistorialPredicacionComponent implements OnInit, AfterViewInit {
     if (this.tarjetaInicial != null) { this.tarjeta.set(this.tarjetaInicial); this.periodo.set('todo'); }
     this.cargar();
   }
-
-  ngAfterViewInit(): void {
-    setTimeout(() => this.cerrarBtn?.nativeElement.focus());
-  }
-
-  @HostListener('document:keydown.escape')
-  alEscape(): void { this.cerrar.emit(); }
 
   private rango(): { desde: string | null; hasta: string | null } {
     const hoy = new Date();

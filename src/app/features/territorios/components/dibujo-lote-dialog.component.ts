@@ -1,6 +1,7 @@
 import { Component, DestroyRef, OnInit, computed, inject, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription, catchError, interval, of, startWith, switchMap } from 'rxjs';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { DibujoLote, DibujoLoteResumen, TerritoriosService } from '../services/territorios.service';
 
 /**
@@ -13,21 +14,10 @@ import { DibujoLote, DibujoLoteResumen, TerritoriosService } from '../services/t
 @Component({
   standalone: true,
   selector: 'app-dibujo-lote-dialog',
-  imports: [CommonModule],
+  imports: [CommonModule, ModalComponent],
   template: `
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="dibujo-lote-titulo">
-    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="cerrarDialogo()"></div>
-
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg max-h-[90dvh] relative z-10 shadow-2xl overflow-hidden animate-fadeIn flex flex-col">
-      <div class="p-5 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-3">
-        <h3 id="dibujo-lote-titulo" class="text-lg font-black text-slate-900 dark:text-white">Dibujar las manzanas de todas las tarjetas</h3>
-        <button (click)="cerrarDialogo()" type="button" aria-label="Cerrar"
-                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-        </button>
-      </div>
-
-      <div class="p-5 space-y-4 overflow-y-auto">
+  <app-modal [open]="true" size="lg" title="Dibujar las manzanas de todas las tarjetas" (openChange)="$event || cerrarDialogo()">
+      <div class="space-y-4">
         @if (cargando()) {
           <p class="text-base text-slate-600 dark:text-slate-300">Cargando…</p>
         } @else if (resumen(); as r) {
@@ -90,7 +80,7 @@ import { DibujoLote, DibujoLoteResumen, TerritoriosService } from '../services/t
                 <ul class="mt-2 divide-y divide-slate-100 dark:divide-slate-700/60 rounded-xl border border-slate-200 dark:border-slate-700">
                   @for (f of l.resultado; track f.id_territorio) {
                     <li class="flex items-start gap-3 px-3 py-2">
-                      <span class="min-w-12 text-sm font-black text-slate-800 dark:text-slate-100 tabular-nums">{{ f.codigo || ('#' + f.id_territorio) }}</span>
+                      <span class="min-w-12 text-sm font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ f.codigo || ('#' + f.id_territorio) }}</span>
                       @if (f.manzanas) {
                         <span class="text-sm text-slate-700 dark:text-slate-200">{{ f.manzanas }} {{ f.manzanas === 1 ? 'manzana' : 'manzanas' }}</span>
                       } @else {
@@ -119,23 +109,23 @@ import { DibujoLote, DibujoLoteResumen, TerritoriosService } from '../services/t
                 </ul>
                 <p class="text-sm text-violet-900 dark:text-violet-100">Tarjetas: {{ codigos(codigosPendientes()) }}</p>
                 <div class="flex gap-2">
-                  <button (click)="usarIA()" type="button" [disabled]="iniciando()" class="flex-1 h-11 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold disabled:opacity-60">Sí, usar la IA</button>
-                  <button (click)="confirmandoIA.set(false)" type="button" class="flex-1 h-11 rounded-xl border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200">No</button>
+                  <button (click)="usarIA()" type="button" [disabled]="iniciando()" class="flex-1 btn-primary">Sí, usar la IA</button>
+                  <button (click)="confirmandoIA.set(false)" type="button" class="flex-1 btn-secondary">No</button>
                 </div>
               </div>
             } @else {
               @if (todoListo()) {
                 <button (click)="cerrarDialogo()" type="button"
-                        class="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold transition-colors active:scale-[0.98]">
+                        class="w-full btn-primary">
                   Listo
                 </button>
                 <button (click)="buscarConCalles()" type="button" [disabled]="iniciando()"
-                        class="w-full h-10 rounded-lg text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors disabled:opacity-60">
+                        class="w-full btn-ghost">
                   Volver a buscar por si falta alguna cuadra
                 </button>
               } @else if (r.con_limite) {
                 <button (click)="buscarConCalles()" type="button" [disabled]="iniciando()"
-                        class="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold transition-colors active:scale-[0.98] disabled:opacity-60">
+                        class="w-full btn-primary">
                   {{ r.con_manzanas > 0 ? 'Buscar las que faltan con el mapa de calles (gratis)' : 'Buscar manzanas con el mapa de calles (gratis)' }}
                 </button>
               }
@@ -145,7 +135,7 @@ import { DibujoLote, DibujoLoteResumen, TerritoriosService } from '../services/t
                     {{ r.pendientes_ia.length }} {{ r.pendientes_ia.length === 1 ? 'tarjeta sigue' : 'tarjetas siguen' }} sin manzanas porque el mapa no tiene sus calles.
                   </p>
                   <button (click)="confirmandoIA.set(true)" type="button" [disabled]="usosRestantes() < r.pendientes_ia.length"
-                          class="w-full h-12 rounded-xl border-2 border-violet-500 text-violet-800 dark:text-violet-200 text-base font-bold hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50">
+                          class="w-full btn-secondary btn-lg">
                     Usar IA en {{ r.pendientes_ia.length === 1 ? 'esta tarjeta' : 'estas ' + r.pendientes_ia.length + ' tarjetas' }}
                   </button>
                   @if (usosRestantes() < r.pendientes_ia.length) {
@@ -157,8 +147,7 @@ import { DibujoLote, DibujoLoteResumen, TerritoriosService } from '../services/t
           }
         }
       </div>
-    </div>
-  </div>
+  </app-modal>
   `,
 })
 export class DibujoLoteDialogComponent implements OnInit {

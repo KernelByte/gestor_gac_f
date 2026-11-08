@@ -5,11 +5,13 @@ import { VisitaService } from '../../../secretario-tools/services/visita.service
 import { AgendaItem, AgendaSecciones, Visita } from '../../../secretario-tools/models/visita.model';
 import { AgendaEditorComponent } from '../../../secretario-tools/visita-superintendente/components/agenda-editor.component';
 import { EntregaMetodosComponent } from '../../../secretario-tools/visita-superintendente/components/entrega-metodos.component';
+import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
+import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
+import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { AuthStore } from '../../../../core/auth/auth.store';
 
 type Tab = 'agenda' | 'docs' | 'entrega';
 type ToastType = 'success' | 'error' | 'info';
-interface Toast { id: number; type: ToastType; msg: string; }
 
 /**
  * Pantalla simplificada para COLABORADORES de la Visita del Superintendente:
@@ -21,22 +23,13 @@ interface Toast { id: number; type: ToastType; msg: string; }
 @Component({
   standalone: true,
   selector: 'app-visita-colaborador',
-  imports: [CommonModule, FormsModule, AgendaEditorComponent, EntregaMetodosComponent],
+  imports: [CommonModule, FormsModule, AgendaEditorComponent, EntregaMetodosComponent, PageHeaderComponent, EmptyStateComponent],
   template: `
   <div class="h-full flex flex-col overflow-hidden">
-    <div class="flex-1 flex flex-col m-1 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 min-h-0">
+    <app-page-header eyebrow="Colaboración" title="Visita del Superintendente"
+      subtitle="Completa la agenda y adjunta los documentos que te corresponden."></app-page-header>
 
-      <!-- ───────── HERO ───────── -->
-      <header class="hero-grad text-white shrink-0">
-        <div class="relative z-10 px-4 sm:px-6 lg:px-10 py-4 sm:py-5">
-          <div class="hero-eyebrow">
-            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
-            <span>Colaboración</span>
-          </div>
-          <h1 class="hero-title">Visita del Superintendente</h1>
-          <p class="hero-desc">Completa la agenda y adjunta los documentos que te corresponden.</p>
-        </div>
-      </header>
+    <div class="flex-1 flex flex-col rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 min-h-0">
 
       <!-- ───────── BODY ───────── -->
       <div class="flex-1 bg-white dark:bg-slate-900 min-h-0 overflow-y-auto">
@@ -44,21 +37,13 @@ interface Toast { id: number; type: ToastType; msg: string; }
         @if (cargando()) {
           <div class="p-6 space-y-3">
             @for (s of [0,1]; track s) {
-              <div class="skeleton-card" [style.--stagger]="s * 60 + 'ms'"></div>
+              <div class="skeleton h-20 rounded-2xl"></div>
             }
           </div>
         } @else if (!visitas().length) {
           <!-- Empty state: no colabora en ninguna visita -->
-          <div class="empty-wrap">
-            <div class="empty-icon">
-              <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            </div>
-            <h3 class="text-base font-semibold text-slate-700 dark:text-slate-200">No tienes visitas asignadas</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm text-center">
-              Cuando el secretario te invite a colaborar en una visita del superintendente,
-              aparecerá aquí y recibirás una notificación.
-            </p>
-          </div>
+          <app-empty-state icon="calendar" title="No tienes visitas asignadas"
+            description="Cuando el secretario te invite a colaborar en una visita del superintendente, aparecerá aquí y recibirás una notificación."></app-empty-state>
         } @else {
 
           <!-- Selector de visita (solo si hay varias) -->
@@ -81,7 +66,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
 
           @if (seleccionada(); as v) {
             <!-- Barra de contexto de la visita -->
-            <div class="px-4 sm:px-6 lg:px-10 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-white/95 dark:bg-slate-900/95 sticky top-0 z-10 backdrop-blur-sm">
+            <div class="px-4 sm:px-6 lg:px-10 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-white/95 dark:bg-slate-900/95 sticky top-0 z-10">
               <div class="min-w-0">
                 <p class="font-semibold text-slate-800 dark:text-slate-100 text-sm sm:text-base truncate">
                   {{ v.nombre_superintendente || 'Visita del superintendente' }}
@@ -92,26 +77,26 @@ interface Toast { id: number; type: ToastType; msg: string; }
                 </p>
               </div>
               @if (visitas().length > 1) {
-                <button (click)="seleccionada.set(null)" class="btn-ghost text-xs shrink-0">Cambiar visita</button>
+                <button (click)="seleccionada.set(null)" class="btn-ghost btn-sm shrink-0">Cambiar visita</button>
               }
             </div>
 
             <!-- Tabs -->
             <div class="px-4 sm:px-6 lg:px-10 pt-3">
-              <nav class="tab-bar" role="tablist">
-                <button type="button" role="tab" class="tab-btn" [class.is-active]="activeTab() === 'agenda'"
+              <nav class="tab-nav" role="tablist">
+                <button type="button" role="tab" class="tab-item"
                         [attr.aria-selected]="activeTab() === 'agenda'" (click)="activeTab.set('agenda')">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                   Agenda
                   @if (agendaDirty()) { <span class="tab-dirty" title="Cambios sin guardar"></span> }
                 </button>
-                <button type="button" role="tab" class="tab-btn" [class.is-active]="activeTab() === 'docs'"
+                <button type="button" role="tab" class="tab-item"
                         [attr.aria-selected]="activeTab() === 'docs'" (click)="activeTab.set('docs')">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                   Documentos
-                  @if (archivos().length) { <span class="tab-badge">{{ archivos().length }}</span> }
+                  @if (archivos().length) { <span class="tab-count">{{ archivos().length }}</span> }
                 </button>
-                <button type="button" role="tab" class="tab-btn" [class.is-active]="activeTab() === 'entrega'"
+                <button type="button" role="tab" class="tab-item"
                         [attr.aria-selected]="activeTab() === 'entrega'" (click)="activeTab.set('entrega')">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
                   Entrega
@@ -131,8 +116,8 @@ interface Toast { id: number; type: ToastType; msg: string; }
                       <p class="text-xs opacity-80">Puedes recargar para ver los cambios (perderás tu edición) o guardar de todos modos.</p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
-                      <button (click)="recargarAgenda()" class="btn-ghost text-xs">Recargar</button>
-                      <button (click)="guardarAgenda(true)" class="btn-warn text-xs">Guardar igual</button>
+                      <button (click)="recargarAgenda()" class="btn-ghost btn-sm">Recargar</button>
+                      <button (click)="guardarAgenda(true)" class="btn-primary-orange btn-sm">Guardar igual</button>
                     </div>
                   </div>
                 }
@@ -158,9 +143,9 @@ interface Toast { id: number; type: ToastType; msg: string; }
                   (drop)="onDrop($event)">
                   <input #fi type="file" class="hidden" multiple (change)="onFile(fi)" />
                   <div class="text-center pointer-events-none">
-                    <div class="mx-auto w-12 h-12 rounded-full bg-violet-50 dark:bg-violet-900/30 text-violet-600 flex items-center justify-center mb-2">
+                    <div class="mx-auto w-12 h-12 rounded-full bg-violet-50 dark:bg-violet-900/30 text-brand-purple flex items-center justify-center mb-2">
                       @if (subiendo()) {
-                        <span class="spinner spinner-brand"></span>
+                        <span class="spinner" style="color: var(--color-brand-purple)"></span>
                       } @else {
                         <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.9 5 5 0 019.9-1A5.5 5.5 0 0118.5 16H17m-5-4v9m0 0l-3-3m3 3l3-3"/></svg>
                       }
@@ -202,8 +187,8 @@ interface Toast { id: number; type: ToastType; msg: string; }
                                 <button (click)="pendingDeleteFile.set(null)" class="text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 px-1.5 py-1" style="min-height: 2rem">No</button>
                               </div>
                             } @else {
-                              <button (click)="pendingDeleteFile.set(a.nombre)" class="btn-danger-ghost" [attr.aria-label]="'Eliminar ' + a.nombre">
-                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22"/></svg>
+                              <button (click)="pendingDeleteFile.set(a.nombre)" class="btn-icon-sm tone-danger" [attr.aria-label]="'Eliminar ' + a.nombre">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22"/></svg>
                               </button>
                             }
                           }
@@ -246,7 +231,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
             </span>
           }
           <button (click)="guardarAgenda()" [disabled]="guardando() || !agendaDirty()" class="btn-primary justify-center shrink-0" [class.btn-pulse]="agendaDirty()">
-            @if (guardando()) { <span class="spinner"></span> Guardando… } @else {
+            @if (guardando()) { <span class="spinner spinner-sm"></span> Guardando… } @else {
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
               Guardar agenda
             }
@@ -255,71 +240,15 @@ interface Toast { id: number; type: ToastType; msg: string; }
       }
     </div>
 
-    <!-- ───────── TOASTS ───────── -->
-    <div
-      class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-[100] flex flex-col gap-2 pointer-events-none"
-      aria-live="polite"
-      role="status">
-      @for (n of notifications(); track n.id) {
-        <div class="toast-item pointer-events-auto"
-             [class.toast-success]="n.type === 'success'"
-             [class.toast-error]="n.type === 'error'"
-             [class.toast-info]="n.type === 'info'">
-          <span class="flex-1 text-sm font-medium">{{ n.msg }}</span>
-          <button (click)="dismissToast(n.id)" class="shrink-0 opacity-60 hover:opacity-100 transition-opacity p-0.5" aria-label="Cerrar notificación">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </div>
-      }
-    </div>
   </div>
   `,
   styles: [`
     :host { display: block; height: 100%; min-height: 0; }
     :host {
       --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-      --brand-purple: #6D28D9;
+      --brand-purple: var(--color-brand-purple);
       --brand-purple-hover: #5B21B6;
     }
-
-    .hero-grad {
-      position: relative; overflow: hidden;
-      background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 60%, #a855f7 100%);
-      box-shadow: 0 6px 20px -6px rgba(109,40,217,0.4);
-    }
-    .hero-eyebrow {
-      display: flex; align-items: center; gap: 0.375rem;
-      color: rgba(196,181,253,0.9); font-size: 0.6rem; text-transform: uppercase;
-      letter-spacing: 0.18em; font-weight: 600; margin-bottom: 0.25rem;
-    }
-    .hero-title { font-family: var(--font-display); font-size: 1.375rem; font-weight: 800; line-height: 1.15; color: #fff; letter-spacing: -0.02em; }
-    .hero-desc { color: rgba(237,233,254,0.65); font-size: 0.75rem; margin-top: 0.125rem; line-height: 1.35; }
-    @media (max-width: 479px) { .hero-title { font-size: 1.25rem; } .hero-desc { display: none; } }
-
-    /* ── Skeleton / empty ── */
-    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-    .skeleton-card {
-      height: 5rem; border-radius: 0.875rem;
-      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.4s linear infinite;
-      animation-delay: var(--stagger, 0ms);
-    }
-    :host-context(.dark) .skeleton-card {
-      background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
-      background-size: 200% 100%;
-    }
-
-    .empty-wrap {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 4rem 1.5rem;
-    }
-    .empty-icon {
-      width: 4rem; height: 4rem; border-radius: 9999px;
-      background: rgba(109,40,217,0.08); color: var(--brand-purple);
-      display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;
-    }
-    :host-context(.dark) .empty-icon { background: rgba(167,139,250,0.12); color: #a78bfa; }
 
     /* ── Cards de visita ── */
     @keyframes visitaIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -336,76 +265,9 @@ interface Toast { id: number; type: ToastType; msg: string; }
     }
     .visita-card:active { transform: scale(0.99); }
 
-    /* ── Tabs ── */
-    .tab-bar {
-      display: flex; gap: 0.25rem;
-      border-bottom: 1px solid #f1f5f9;
-    }
-    :host-context(.dark) .tab-bar { border-bottom-color: #1e293b; }
-    .tab-btn {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.625rem 0.875rem; min-height: 2.75rem;
-      font-size: 0.8125rem; font-weight: 600; color: #94a3b8;
-      border-bottom: 2px solid transparent; margin-bottom: -1px;
-      cursor: pointer; transition: color 140ms, border-color 140ms;
-    }
-    .tab-btn.is-active { color: var(--brand-purple); border-bottom-color: var(--brand-purple); }
-    :host-context(.dark) .tab-btn.is-active { color: #a78bfa; border-bottom-color: #a78bfa; }
-    @media (hover: hover) { .tab-btn:hover:not(.is-active) { color: #475569; } }
-    :host-context(.dark) .tab-btn:hover:not(.is-active) { color: #cbd5e1; }
-
-    .tab-badge {
-      display: inline-flex; align-items: center; justify-content: center;
-      min-width: 1.125rem; height: 1.125rem; padding: 0 0.3rem;
-      border-radius: 9999px; background: var(--brand-purple); color: #fff;
-      font-size: 0.6rem; font-weight: 700;
-    }
-    :host-context(.dark) .tab-badge { background: #a78bfa; color: #1e293b; }
     .tab-dirty {
       width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: #f59e0b;
     }
-
-    /* ── Botones ── */
-    .btn-primary, .btn-ghost, .btn-warn {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.5rem 0.875rem; font-size: 0.8125rem; font-weight: 500;
-      border-radius: 0.625rem; cursor: pointer; user-select: none;
-      transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out);
-      min-height: 2.5rem;
-    }
-    .btn-primary { background: var(--brand-purple); color: #fff; box-shadow: 0 1px 2px rgba(109,40,217,0.18); }
-    .btn-ghost { color: #64748b; }
-    .btn-warn { background: #f59e0b; color: #fff; }
-    @media (hover: hover) and (pointer: fine) {
-      .btn-primary:hover:not(:disabled) { background: var(--brand-purple-hover); }
-      .btn-ghost:hover { background: rgba(100,116,139,0.08); color: #334155; }
-      :host-context(.dark) .btn-ghost:hover { background: rgba(148,163,184,0.12); color: #f1f5f9; }
-      .btn-warn:hover { background: #d97706; }
-    }
-    .btn-primary:active, .btn-ghost:active, .btn-warn:active { transform: scale(0.97); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    :host-context(.dark) .btn-ghost { color: #94a3b8; }
-
-    /* Quitar un documento: acción destructiva, discreta hasta que se usa. */
-    .btn-danger-ghost {
-      display: inline-flex; align-items: center; justify-content: center;
-      min-width: 2.25rem; min-height: 2.25rem; border-radius: 0.5rem;
-      color: #f43f5e; background: transparent; cursor: pointer;
-      transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out);
-    }
-    @media (max-width: 767px) { .btn-danger-ghost { min-width: 2.75rem; min-height: 2.75rem; } }
-    @media (hover: hover) and (pointer: fine) {
-      .btn-danger-ghost:hover { background: rgba(244,63,94,0.10); }
-    }
-    .btn-danger-ghost:active { transform: scale(0.95); }
-
-    .spinner {
-      display: inline-block; width: 1rem; height: 1rem; border-radius: 9999px;
-      border: 2px solid currentColor; border-top-color: transparent;
-      animation: spin 700ms linear infinite;
-    }
-    .spinner-brand { color: var(--brand-purple); }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Barra de guardado ──
        Pie fijo del layout — hermana del contenedor con scroll, no hija:
@@ -494,18 +356,6 @@ interface Toast { id: number; type: ToastType; msg: string; }
     }
     :host-context(.dark) .file-ico { background: #334155; color: #cbd5e1; }
 
-    /* ── Toasts ── */
-    @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-    .toast-item {
-      display: flex; align-items: center; gap: 0.625rem;
-      padding: 0.75rem 0.875rem; border-radius: 0.875rem;
-      box-shadow: 0 8px 24px -6px rgba(0,0,0,0.18);
-      animation: toastIn 240ms var(--ease-out) both;
-    }
-    .toast-success { background: #059669; color: #fff; }
-    .toast-error { background: #e11d48; color: #fff; }
-    .toast-info { background: #334155; color: #fff; }
-
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -546,7 +396,7 @@ export class VisitaColaboradorPage implements OnInit {
   subiendo = signal(false);
   isDragging = signal(false);
   conflictoAgenda = signal(false);
-  notifications = signal<Toast[]>([]);
+  private toastSvc = inject(ToastService);
 
   agendaDirty = signal(false);
   /** Snapshot (JSON) de la agenda tal como está guardada — comparamos contenido real,
@@ -556,7 +406,6 @@ export class VisitaColaboradorPage implements OnInit {
 
   /** actualizado_en de la visita al cargar la agenda — para detectar ediciones concurrentes. */
   private agendaBase: string | null = null;
-  private _nId = 0;
 
   ngOnInit() {
     this.svc.misColaboraciones().subscribe({
@@ -631,45 +480,48 @@ export class VisitaColaboradorPage implements OnInit {
   guardarAgenda(forzar = false) {
     const v = this.seleccionada();
     if (!v) return;
+    // Igual que en la página del secretario: una fila con datos pero sin actividad no se
+    // descarta en silencio (antes desaparecía al reabrir aunque se veía guardada).
+    const vacio = (x: unknown) => !(x ?? '').toString().trim();
+    const items: AgendaItem[] = [];
+    const incompletas: number[] = [];
+    this.agendaItems().forEach((i, idx) => {
+      const conDatos = [i.dia, i.hora_inicio, i.hora_fin, i.actividad, i.responsable, i.lugar, i.notas]
+        .some(x => !vacio(x));
+      if (!conDatos) return; // fila en blanco: se omite
+      if (vacio(i.actividad)) { incompletas.push(idx + 1); return; }
+      items.push({ ...i, dia: i.dia ?? '' });
+    });
+    if (incompletas.length) {
+      this.toast('error', `Completa la actividad de la fila ${incompletas.join(', ')} o bórrala antes de guardar.`, 6000);
+      return;
+    }
     this.guardando.set(true);
     this.conflictoAgenda.set(false);
 
-    const enviar = () => {
-      this.svc.generarAgenda({
-        id_visita: v.id_visita,
-        titulo: `Agenda Visita del Superintendente — ${v.semestre || ''}`.trim(),
-        items: this.agendaItems().filter(i => i.actividad?.trim()),
-        secciones: this.seccionesLimpias(),
-      }).subscribe({
-        next: (updated) => {
-          this.seleccionada.set(updated);
-          this.visitas.update(arr => arr.map(x => x.id_visita === updated.id_visita ? updated : x));
-          this.agendaBase = updated.actualizado_en;
-          this.agendaBaseline = this.snapshotAgenda();
-          this.agendaDirty.set(false);
-          this.toast('success', 'Agenda guardada correctamente');
-          this.guardando.set(false);
-        },
-        error: (e) => {
-          this.toast('error', e?.error?.detail || 'Error al guardar la agenda');
-          this.guardando.set(false);
-        },
-      });
-    };
-
-    if (forzar) { enviar(); return; }
-
-    // Detección simple de edición concurrente (last write wins con aviso)
-    this.svc.get(v.id_visita).subscribe({
-      next: (fresh) => {
-        if (this.agendaBase && fresh.actualizado_en !== this.agendaBase) {
-          this.conflictoAgenda.set(true);
-          this.guardando.set(false);
-          return;
-        }
-        enviar();
+    // El servidor compara la versión con la que se abrió y responde 409 si otro guardó
+    // mientras tanto (antes se comprobaba aquí con una lectura previa, que dejaba un hueco).
+    this.svc.generarAgenda({
+      id_visita: v.id_visita,
+      titulo: `Agenda Visita del Superintendente — ${v.semestre || ''}`.trim(),
+      items,
+      secciones: this.seccionesLimpias(),
+      esperado_actualizado_en: forzar ? null : this.agendaBase,
+    }).subscribe({
+      next: (updated) => {
+        this.seleccionada.set(updated);
+        this.visitas.update(arr => arr.map(x => x.id_visita === updated.id_visita ? updated : x));
+        this.agendaBase = updated.actualizado_en;
+        this.agendaBaseline = this.snapshotAgenda();
+        this.agendaDirty.set(false);
+        this.toast('success', 'Agenda guardada correctamente');
+        this.guardando.set(false);
       },
-      error: () => enviar(), // si la verificación falla, no bloqueamos el guardado
+      error: (e) => {
+        this.guardando.set(false);
+        if (e?.status === 409) { this.conflictoAgenda.set(true); return; }
+        this.toast('error', e?.error?.detail || 'Error al guardar la agenda');
+      },
     });
   }
 
@@ -735,12 +587,6 @@ export class VisitaColaboradorPage implements OnInit {
   // ── Toasts ──
 
   toast(type: ToastType, msg: string, duration = 4000) {
-    const id = ++this._nId;
-    this.notifications.update(n => [...n, { id, type, msg }]);
-    if (duration > 0) setTimeout(() => this.dismissToast(id), duration);
-  }
-
-  dismissToast(id: number) {
-    this.notifications.update(n => n.filter(x => x.id !== id));
+    this.toastSvc[type](msg, undefined, duration);
   }
 }

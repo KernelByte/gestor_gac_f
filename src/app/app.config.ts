@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection, LOCALE_ID, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, provideAppInitializer, provideBrowserGlobalErrorListeners, provideZoneChangeDetection, LOCALE_ID, importProvidersFrom } from '@angular/core';
 import { LucideAngularModule, APP_ICONS } from './shared/icons';
 import { provideRouter, TitleStrategy } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -12,12 +12,14 @@ import { CORE_PROVIDERS } from './core/providers';
 import { PUBLICADOR_REPO } from './features/secretario/publicadores/application/tokens';
 import { HttpPublicadorRepo } from './features/secretario/publicadores/infrastructure/adapters/http-publicador-repo';
 import { CustomTitleStrategy } from './core/services/custom-title.strategy';
+import { iniciarTooltips } from './shared/tooltip';
 
 registerLocaleData(localeEs, 'es');
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    provideAppInitializer(() => iniciarTooltips()),
     provideAnimations(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),

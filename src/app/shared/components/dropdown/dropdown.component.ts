@@ -28,28 +28,28 @@ export interface DropdownItem {
 
       <div
         *ngIf="isOpen()"
-        class="absolute z-30 mt-1 min-w-[180px] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-lg py-1 animate-scale-in origin-top-right"
+        class="absolute z-30 mt-1 min-w-[180px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg py-1 animate-scale-in origin-top-right"
         [class.right-0]="align === 'right'"
         [class.left-0]="align === 'left'"
         role="menu"
       >
         <ng-container *ngFor="let item of items">
-          <div *ngIf="item.divider" class="my-1 border-t border-gray-100 dark:border-slate-700"></div>
+          <div *ngIf="item.divider" class="my-1 border-t border-slate-200 dark:border-slate-800"></div>
           <button
             *ngIf="!item.divider"
             type="button"
             (click)="select(item)"
             [disabled]="item.disabled"
             class="w-full text-left flex items-center gap-2.5 px-3 py-2 text-sm transition focus-ring"
-            [class.text-gray-700]="!item.danger && !item.disabled"
+            [class.text-slate-700]="!item.danger && !item.disabled"
             [class.dark:text-slate-300]="!item.danger && !item.disabled"
-            [class.hover:bg-gray-50]="!item.disabled"
+            [class.hover:bg-slate-50]="!item.disabled"
             [class.dark:hover:bg-slate-700]="!item.disabled"
             [class.text-red-600]="item.danger"
             [class.dark:text-red-400]="item.danger"
             [class.hover:bg-red-50]="item.danger && !item.disabled"
             [class.dark:hover:bg-red-950/40]="item.danger && !item.disabled"
-            [class.text-gray-300]="item.disabled"
+            [class.text-slate-300]="item.disabled"
             [class.dark:text-slate-600]="item.disabled"
             [class.cursor-not-allowed]="item.disabled"
             role="menuitem"

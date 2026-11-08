@@ -3,7 +3,6 @@ export * from './empty-state/empty-state.component';
 export * from './stat-card/stat-card.component';
 export * from './page-header/page-header.component';
 export * from './tab-nav/tab-nav.component';
-export * from './data-table/data-table.component';
 export * from './password-strength/password-strength.component';
 
 // Design System v2 — componentes nuevos
@@ -15,6 +14,9 @@ export * from './avatar/avatar.component';
 export * from './breadcrumbs/breadcrumbs.component';
 export * from './progress/progress.component';
 export * from './confirm-dialog/confirm-dialog.component';
+export * from './confirm-dialog/confirm.service';
+export * from './confirm-dialog/confirm-host.component';
+export * from './aviso/aviso.component';
 export * from './dropdown/dropdown.component';
 export * from './command-palette/command-palette.component';
 export * from './import-publicadores/import-publicadores-modal.component';

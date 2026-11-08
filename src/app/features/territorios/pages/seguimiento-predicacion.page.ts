@@ -18,6 +18,7 @@ import {
 import { RecorridoMapaComponent } from '../components/recorrido-mapa.component';
 import { HistorialPredicacionComponent } from '../components/historial-predicacion.component';
 import { AuthStore } from '../../../core/auth/auth.store';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 
@@ -25,7 +26,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
   selector: 'app-seguimiento-predicacion',
   host: { class: 'tema-territorios' },
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent, SelectPickerComponent, RecorridoMapaComponent, HistorialPredicacionComponent],
+  imports: [CommonModule, FormsModule, DatePipe, ModalComponent, PageHeaderComponent, SelectPickerComponent, RecorridoMapaComponent, HistorialPredicacionComponent],
   template: `
     <div class="flex flex-col h-full min-h-0">
 
@@ -41,7 +42,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
               [options]="opcionesTarjeta()" placeholder="Toda la congregación" [searchable]="true" />
           </div>
           <button type="button" (click)="historialAbierto.set(true)"
-            class="shrink-0 h-11 px-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 inline-flex items-center justify-center gap-2 transition-[background-color,transform] duration-150 active:scale-[0.97] hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/30">
+            class="shrink-0 btn-secondary">
             <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/><polyline points="12 7 12 12 15.5 14"/></svg>
             Historial
           </button>
@@ -64,7 +65,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
               <section class="border-t border-slate-100 dark:border-slate-700/60 px-4 py-4">
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
-                    <p class="text-sm font-black text-slate-900 dark:text-white truncate">Tarjeta {{ t.codigo }}@if (t.nombre) { <span class="font-semibold text-slate-500 dark:text-slate-400"> · {{ t.nombre }}</span> }</p>
+                    <p class="text-sm font-bold text-slate-900 dark:text-white truncate">Tarjeta {{ t.codigo }}@if (t.nombre) { <span class="font-semibold text-slate-500 dark:text-slate-400"> · {{ t.nombre }}</span> }</p>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       @if (p?.ciclo; as ciclo) {
                         @if (ciclo.completado) {
@@ -81,7 +82,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
                 </div>
                 @if (p?.ciclo && !p!.ciclo!.completado && p!.total_manzanas === 0) {
                   <button type="button" (click)="completarVuelta()" [disabled]="completandoCiclo()"
-                    class="mt-3 w-full h-10 text-sm font-semibold border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors disabled:opacity-50">
+                    class="mt-3 w-full btn-secondary btn-sm">
                     Marcar vuelta completada
                   </button>
                 }
@@ -108,13 +109,13 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
 
               <!-- Historial de la tarjeta -->
               <section class="border-t border-slate-100 dark:border-slate-700/60 px-4 py-4" aria-labelledby="titulo-salidas">
-                <h3 id="titulo-salidas" class="text-sm font-black text-slate-900 dark:text-white">
+                <h3 id="titulo-salidas" class="text-sm font-bold text-slate-900 dark:text-white">
                   Salidas registradas
                   @if (salidas().length) { <span class="ml-1 font-semibold text-slate-400 tabular-nums">{{ salidas().length }}</span> }
                 </h3>
                 @if (salidasLoading()) {
                   <div class="mt-2 space-y-2">
-                    @for (i of [1,2]; track i) { <div class="h-14 bg-slate-100 dark:bg-slate-700/50 rounded-xl animate-pulse"></div> }
+                    @for (i of [1,2]; track i) { <div class="h-14 rounded-xl skeleton"></div> }
                   </div>
                 } @else if (salidas().length === 0) {
                   <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Todavía no hay salidas en esta tarjeta.</p>
@@ -125,14 +126,14 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
                         @if (confirmarEliminarId() === s.id_salida) {
                           <div class="flex items-center gap-2">
                             <span class="text-sm text-red-700 dark:text-red-400 font-semibold mr-auto">¿Eliminar la salida del {{ s.fecha_salida | date:'d MMM':'':'es' }}?</span>
-                            <button type="button" (click)="confirmarEliminarId.set(null)" class="h-9 px-3 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">No</button>
-                            <button type="button" (click)="confirmarEliminarSalida(s.id_salida)" class="h-9 px-3 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg">Sí, eliminar</button>
+                            <button type="button" (click)="confirmarEliminarId.set(null)" class="btn-ghost btn-sm">No</button>
+                            <button type="button" (click)="confirmarEliminarSalida(s.id_salida)" class="btn-danger">Sí, eliminar</button>
                           </div>
                         } @else {
                           <div class="flex items-center gap-3">
                             <span class="w-11 shrink-0 text-center rounded-lg py-1 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100">
-                              <span class="block text-base font-black leading-none tabular-nums">{{ s.fecha_salida | date:'d' }}</span>
-                              <span class="block text-[11px] font-bold leading-tight mt-0.5 text-slate-500 dark:text-slate-400">{{ s.fecha_salida | date:'MMM':'':'es' }}</span>
+                              <span class="block text-base font-bold leading-none tabular-nums">{{ s.fecha_salida | date:'d' }}</span>
+                              <span class="block text-xs font-bold leading-tight mt-0.5 text-slate-500 dark:text-slate-400">{{ s.fecha_salida | date:'MMM':'':'es' }}</span>
                             </span>
                             <span class="min-w-0 flex-1">
                               <span class="block text-sm font-semibold text-slate-900 dark:text-white truncate">{{ s.nombre_capitan || 'Sin capitán' }}</span>
@@ -140,14 +141,14 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
                                 {{ s.manzanas_predicadas === 1 ? '1 manzana' : s.manzanas_predicadas + ' manzanas' }}@if (s.nombre_punto_salida) { · {{ s.nombre_punto_salida }} }
                               </span>
                             </span>
-                            <span class="flex items-center gap-0.5 sm:opacity-0 sm:group-hover/s:opacity-100 sm:focus-within:opacity-100 transition-opacity">
+                            <span class="row-actions sm:opacity-0 sm:group-hover/s:opacity-100 sm:focus-within:opacity-100 transition-opacity">
                               <button type="button" (click)="openEditSalidaModal(s)" title="Editar salida" aria-label="Editar salida"
-                                class="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                class="btn-icon-sm">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                               </button>
                               <button type="button" (click)="confirmarEliminarId.set(s.id_salida)" title="Eliminar salida" aria-label="Eliminar salida"
-                                class="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                                class="btn-icon-sm tone-danger">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                               </button>
                             </span>
                           </div>
@@ -165,58 +166,42 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
 
     <!-- Modal Nueva/Editar Salida -->
     @if (showSalidaModal()) {
-      <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" (click)="showSalidaModal.set(false)"></div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 w-full max-w-sm relative z-10 shadow-2xl overflow-hidden">
-          <div class="p-5 border-b border-gray-100 dark:border-gray-700/50">
-            <h3 class="text-base font-bold text-gray-900 dark:text-white">
-              Editar salida
-            </h3>
+      <app-modal [open]="true" size="sm" title="Editar salida" [hasFooter]="true" (openChange)="$event || showSalidaModal.set(false)">
+        <div class="space-y-4">
+          <div>
+            <label for="salida-fecha" class="form-label">
+              Fecha <span class="text-red-500" aria-hidden="true">*</span>
+            </label>
+            <input id="salida-fecha" type="date" [(ngModel)]="editingSalida.fecha_salida" class="form-control" />
           </div>
-          <div class="p-5 space-y-4">
-            <div>
-              <label for="salida-fecha" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Fecha <span class="text-red-500" aria-hidden="true">*</span>
-              </label>
-              <input id="salida-fecha" type="date" [(ngModel)]="editingSalida.fecha_salida"
-                class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
-            </div>
-            <div>
-              <label for="salida-capitan" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Capitán <span class="text-xs text-gray-400 normal-case font-normal">(opcional)</span>
-              </label>
-              <app-select-picker colorScheme="emerald" ariaLabel="Capitán" [(ngModel)]="editingSalida.id_capitan"
-                [options]="opcionesCapitan()" placeholder="— Sin capitán —" />
-            </div>
-            <div>
-              <label for="salida-punto" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Punto de salida <span class="text-xs text-gray-400 normal-case font-normal">(opcional)</span>
-              </label>
-              <app-select-picker colorScheme="emerald" ariaLabel="Punto de salida" [(ngModel)]="editingSalida.id_punto_salida"
-                [options]="opcionesPunto()" placeholder="— Sin punto de salida —" [searchable]="false" />
-            </div>
-            <div>
-              <label for="salida-notas" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Notas <span class="text-xs text-gray-400 normal-case font-normal">(opcional)</span>
-              </label>
-              <input id="salida-notas" type="text" [(ngModel)]="editingSalida.notas"
-                placeholder="Observaciones..."
-                class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
-            </div>
+          <div>
+            <label for="salida-capitan" class="form-label">
+              Capitán <span class="text-xs text-slate-500 font-normal">(opcional)</span>
+            </label>
+            <app-select-picker colorScheme="emerald" ariaLabel="Capitán" [(ngModel)]="editingSalida.id_capitan"
+              [options]="opcionesCapitan()" placeholder="— Sin capitán —" />
           </div>
-          <div class="p-5 border-t border-gray-100 dark:border-gray-700/50 flex gap-3">
-            <button (click)="showSalidaModal.set(false)"
-              class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-semibold text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              Cancelar
-            </button>
-            <button (click)="saveSalida()"
-              [disabled]="!editingSalida.fecha_salida || salidaSaving()"
-              class="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              {{ salidaSaving() ? 'Guardando...' : 'Guardar' }}
-            </button>
+          <div>
+            <label for="salida-punto" class="form-label">
+              Punto de salida <span class="text-xs text-slate-500 font-normal">(opcional)</span>
+            </label>
+            <app-select-picker colorScheme="emerald" ariaLabel="Punto de salida" [(ngModel)]="editingSalida.id_punto_salida"
+              [options]="opcionesPunto()" placeholder="— Sin punto de salida —" [searchable]="false" />
+          </div>
+          <div>
+            <label for="salida-notas" class="form-label">
+              Notas <span class="text-xs text-slate-500 font-normal">(opcional)</span>
+            </label>
+            <input id="salida-notas" type="text" [(ngModel)]="editingSalida.notas" placeholder="Observaciones..." class="form-control" />
           </div>
         </div>
-      </div>
+        <ng-container slot="footer">
+          <button (click)="showSalidaModal.set(false)" class="btn-secondary">Cancelar</button>
+          <button (click)="saveSalida()" [disabled]="!editingSalida.fecha_salida || salidaSaving()" class="btn-primary">
+            {{ salidaSaving() ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </ng-container>
+      </app-modal>
     }
   `,
 })

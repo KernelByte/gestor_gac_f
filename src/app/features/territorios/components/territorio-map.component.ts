@@ -50,18 +50,16 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 
           <!-- Pasos 1 · 2 · 3 -->
           @if (!soloLimite && !panelExterno) {
-          <div class="gac-float pointer-events-auto flex items-center gap-0.5 p-1 rounded-xl" role="tablist" aria-label="Pasos del editor">
+          <div class="tab-nav pointer-events-auto shadow-md" role="tablist" aria-label="Pasos del editor">
             @for (paso of pasos; track paso.modo) {
               <button
                 (click)="setLayerMode(paso.modo)"
                 role="tab"
                 [attr.aria-selected]="layerMode() === paso.modo"
                 [title]="paso.titulo"
-                class="flex items-center gap-2 pl-1.5 pr-3 h-8 rounded-lg text-[13px] font-bold transition-[background-color,color,transform] duration-150 active:scale-[0.97]"
-                [class]="layerMode() === paso.modo ? paso.activo : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/70'"
+                class="tab-item !px-3 !py-1.5"
               >
-                <span class="w-5 h-5 rounded-md flex items-center justify-center text-[11px] font-black tabular-nums transition-colors"
-                      [class]="layerMode() === paso.modo ? 'bg-white/25 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'">{{ paso.n }}</span>
+                <span class="tab-count">{{ paso.n }}</span>
                 {{ paso.label }}
               </button>
             }
@@ -77,7 +75,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
             class="gac-float w-10 h-10 flex items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors disabled:opacity-60 active:scale-[0.96]"
           >
             @if (geolocating()) {
-              <div class="w-4 h-4 border-2 border-slate-400 border-t-emerald-500 rounded-full animate-spin"></div>
+              <div class="spinner-sm text-emerald-500"></div>
             } @else {
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
@@ -98,7 +96,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
                 [(ngModel)]="geocodeQueryStr"
                 (keydown.enter)="searchGeocode()"
                 placeholder="Buscar dirección..."
-                class="flex-1 min-w-0 px-2 py-2 bg-transparent text-[13px] font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none"
+                class="flex-1 min-w-0 px-2 py-2 bg-transparent text-sm font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none"
               >
               @if (geocodeQueryStr) {
                 <button (click)="clearGeocode()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
@@ -127,12 +125,12 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
               </ul>
             }
             @if (geocodeLoading() && geocodeResults().length === 0) {
-              <div class="absolute top-full left-0 right-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 border-t-0 rounded-b-xl shadow-xl z-10 px-3 py-3">
+              <div class="absolute top-full left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 border-t-0 rounded-b-xl shadow-xl z-10 px-3 py-3">
                 <p class="text-xs text-slate-400 text-center">Buscando...</p>
               </div>
             }
             @if (geocodeError()) {
-              <div class="absolute top-full left-0 right-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 border-t-0 rounded-b-xl shadow-xl z-10 px-3 py-3">
+              <div class="absolute top-full left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 border-t-0 rounded-b-xl shadow-xl z-10 px-3 py-3">
                 <p class="text-xs text-red-500 text-center">{{ geocodeError() }}</p>
               </div>
             }
@@ -147,7 +145,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
             <!-- Quién tiene cada manzana: el mismo color que en el dibujo -->
             <div class="gac-float rounded-xl px-3 py-2 space-y-1" role="list" aria-label="Manzanas asignadas">
               @for (l of leyendaAsignadas(); track l.nombre + l.texto) {
-                <div class="flex items-center gap-2 text-[13px] text-slate-700 dark:text-slate-200" role="listitem">
+                <div class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200" role="listitem">
                   <span class="w-3.5 h-3.5 rounded-[4px] shrink-0 border" [style.background-color]="l.color" [style.border-color]="l.color" aria-hidden="true"></span>
                   <span><span class="font-bold">{{ l.nombre }}</span> · {{ l.texto }}</span>
                 </div>
@@ -162,7 +160,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
               title="Propone las manzanas con las calles del mapa; usted revisa antes de guardar"
             >
               @if (detectando || extrayendo()) {
-                <div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                <div class="spinner-sm text-white"></div>
                 Buscando manzanas…
               } @else {
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
@@ -172,17 +170,17 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
           }
           @if (!soloLimite) {
           <div class="gac-float flex items-center gap-2.5 rounded-xl pl-2 pr-3.5 py-2">
-            <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-[12px] font-black tabular-nums"
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold tabular-nums"
                  [class]="layerMode() === 'territorio' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' : layerMode() === 'manzana' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'">
               {{ layerMode() === 'territorio' ? 1 : layerMode() === 'manzana' ? 2 : 3 }}
             </div>
-            <span class="text-[13px] font-semibold text-slate-700 dark:text-slate-200 leading-snug">{{ activeToolHint() }}</span>
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-snug">{{ activeToolHint() }}</span>
           </div>
           }
           @if (realtimeArea() && !soloLimite) {
             <div class="gac-float flex items-center gap-2 rounded-xl px-3 h-9">
               <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-              <span class="text-[13px] font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ realtimeArea() }}</span>
+              <span class="text-sm font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ realtimeArea() }}</span>
             </div>
           }
         </div>
@@ -190,16 +188,16 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 
         <!-- ── Revisión de manzanas propuestas ── -->
         @if (propuestasActivas()) {
-          <div class="absolute bottom-2 left-2 z-35 w-[min(calc(100%-1rem),440px)] bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-amber-300 dark:border-amber-700/60 rounded-2xl shadow-xl p-4">
-            <p class="text-sm font-black text-slate-800 dark:text-white">Se encontraron {{ propuestasTotal() }} manzanas</p>
+          <div class="absolute bottom-2 left-2 z-35 w-[min(calc(100%-1rem),440px)] bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border border-amber-300 dark:border-amber-700/60 rounded-2xl shadow-xl p-4">
+            <p class="text-sm font-bold text-slate-800 dark:text-white">Se encontraron {{ propuestasTotal() }} manzanas</p>
             <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-snug">
               Compárelas con las cuadras reales. Toque una manzana para quitarla (o para incluirla otra vez).
               Las que falten las puede dibujar después a mano.
             </p>
             <div class="flex gap-2 mt-3">
-              <button (click)="descartarPropuestas.emit()" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Descartar</button>
+              <button (click)="descartarPropuestas.emit()" class="flex-1 btn-secondary">Descartar</button>
               <button (click)="confirmarPropuestas()" [disabled]="propuestasIncluidas() === 0 || guardandoPropuestas"
-                class="flex-[2] py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold transition-colors">
+                class="flex-[2] btn-primary">
                 {{ guardandoPropuestas ? 'Guardando…' : 'Guardar ' + propuestasIncluidas() + ' manzanas' }}
               </button>
             </div>
@@ -228,7 +226,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
               <button
                 (click)="undoLastVertex()"
                 title="Deshacer último vértice (Ctrl+Z)"
-                class="gac-float flex items-center justify-center gap-2 min-w-9 px-2.5 sm:px-3.5 h-9 rounded-xl text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors active:scale-[0.97]"
+                class="gac-float flex items-center justify-center gap-2 min-w-9 px-2.5 sm:px-3.5 h-9 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors active:scale-[0.97]"
               >
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.51"></path></svg>
                 <span class="hidden sm:inline">Deshacer</span>
@@ -238,17 +236,17 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
               <button
                 (click)="showClearConfirm.set(true)"
                 title="Limpiar todos los trazos del territorio"
-                class="gac-float flex items-center justify-center gap-2 min-w-9 px-2.5 sm:px-3.5 h-9 rounded-xl text-[13px] font-bold text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors active:scale-[0.97]"
+                class="gac-float flex items-center justify-center gap-2 min-w-9 px-2.5 sm:px-3.5 h-9 rounded-xl text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors active:scale-[0.97]"
               >
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 <span class="hidden sm:inline">Limpiar territorio</span>
               </button>
             }
           } @else {
             <div class="gac-float flex items-center gap-2 rounded-xl pl-3 pr-1.5 h-10 !border-red-200 dark:!border-red-800/60">
               <svg class="w-3.5 h-3.5 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-              <span class="text-[13px] font-bold text-slate-700 dark:text-slate-200 mr-1">¿Borrar el límite dibujado?</span>
-              <button (click)="clearAll()" class="px-3 h-7 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">Sí, borrar</button>
+              <span class="text-sm font-bold text-slate-700 dark:text-slate-200 mr-1">¿Borrar el límite dibujado?</span>
+              <button (click)="clearAll()" class="btn-danger btn-sm">Sí, borrar</button>
               <button (click)="showClearConfirm.set(false)" class="px-3 h-7 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">No</button>
             </div>
           }
@@ -263,9 +261,9 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
             <div class="flex gap-2">
               @if (editandoForma()) {
                 <button (click)="terminarEdicion(false)" class="px-4 h-10 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors active:scale-[0.97]">Cancelar</button>
-                <button (click)="terminarEdicion(true)" class="px-5 h-10 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors active:scale-[0.97]">Listo, guardar</button>
+                <button (click)="terminarEdicion(true)" class="btn-primary">Listo, guardar</button>
               } @else {
-                <button (click)="map?.pm?.disableGlobalEditMode()" class="px-5 h-10 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors active:scale-[0.97]">Listo</button>
+                <button (click)="map?.pm?.disableGlobalEditMode()" class="btn-primary">Listo</button>
               }
             </div>
           </div>
@@ -292,9 +290,9 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
         <!-- ── Prompt: Número de manzana ── -->
         @if (showManzanaPrompt()) {
           <div class="absolute inset-0 z-40 flex items-center justify-center">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-72 shadow-2xl overflow-hidden">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-72 shadow-2xl overflow-hidden">
               <div class="p-4 border-b border-slate-100 dark:border-slate-700/50 bg-blue-50/50 dark:bg-blue-900/20">
-                <h4 class="text-sm font-black text-slate-800 dark:text-white">Número de manzana</h4>
+                <h4 class="text-sm font-bold text-slate-800 dark:text-white">Número de manzana</h4>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Ya va el siguiente número; cámbielo si hace falta</p>
               </div>
               <div class="p-4">
@@ -330,8 +328,8 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
                 }
               </div>
               <div class="p-4 pt-0 flex gap-2">
-                <button (click)="cancelManzana()" class="flex-1 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
-                <button (click)="confirmManzana()" [disabled]="!pendingManzanaNumero || !!avisoNumeroManzana()" class="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors disabled:opacity-50">Guardar manzana</button>
+                <button (click)="cancelManzana()" class="flex-1 btn-secondary btn-sm">Cancelar</button>
+                <button (click)="confirmManzana()" [disabled]="!pendingManzanaNumero || !!avisoNumeroManzana()" class="flex-1 btn-primary btn-sm">Guardar manzana</button>
               </div>
             </div>
           </div>
@@ -340,41 +338,41 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
         <!-- ── Prompt: Datos del punto ── -->
         @if (showPuntoPrompt()) {
           <div class="absolute inset-0 z-40 flex items-center justify-center">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-72 shadow-2xl overflow-hidden">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-72 shadow-2xl overflow-hidden">
               <div class="p-4 border-b border-slate-100 dark:border-slate-700/50 bg-rose-50/50 dark:bg-rose-900/20">
-                <h4 class="text-sm font-black text-slate-800 dark:text-white">Nuevo punto</h4>
+                <h4 class="text-sm font-bold text-slate-800 dark:text-white">Nuevo punto</h4>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Describe este lugar en el mapa</p>
               </div>
               <div class="p-4 space-y-3">
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre *</label>
+                  <label class="form-label">Nombre *</label>
                   <input
                     type="text"
                     [(ngModel)]="pendingPuntoNombre"
                     placeholder="Ej: Salida Males, Parque..."
                     (keydown.escape)="cancelPunto()"
-                    class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all"
+                    class="form-control"
                     autofocus
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tipo</label>
+                  <label class="form-label">Tipo</label>
                   <app-select-picker colorScheme="rose" ariaLabel="Tipo de punto" [(ngModel)]="pendingPuntoTipo"
                     [options]="opcionesTipoPunto" [clearable]="false" [searchable]="false" />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Notas (opcional)</label>
+                  <label class="form-label">Notas (opcional)</label>
                   <input
                     type="text"
                     [(ngModel)]="pendingPuntoNotas"
                     placeholder="Observaciones..."
-                    class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all"
+                    class="form-control"
                   />
                 </div>
               </div>
               <div class="p-4 pt-0 flex gap-2">
-                <button (click)="cancelPunto()" class="flex-1 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
-                <button (click)="confirmPunto()" [disabled]="!pendingPuntoNombre" class="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors disabled:opacity-50">Guardar punto</button>
+                <button (click)="cancelPunto()" class="flex-1 btn-secondary btn-sm">Cancelar</button>
+                <button (click)="confirmPunto()" [disabled]="!pendingPuntoNombre" class="flex-1 btn-primary btn-sm">Guardar punto</button>
               </div>
             </div>
           </div>

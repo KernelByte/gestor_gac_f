@@ -1,3 +1,4 @@
+import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 import {
   Component, Input, OnChanges, SimpleChanges, signal, computed,
   inject, ChangeDetectionStrategy, OnInit, OnDestroy, ElementRef,
@@ -50,7 +51,7 @@ const ICONOS_SECCION: Record<string, string> = {
   standalone: true,
   selector: 'app-entrega-portal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, NgTemplateOutlet, NgxEchartsDirective],
+  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, NgTemplateOutlet, NgxEchartsDirective, EmptyStateComponent],
   templateUrl: './entrega-portal.component.html',
   styleUrl: './entrega-portal.component.scss',
 })
@@ -664,9 +665,18 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
       });
     }
 
-    // Año de servicio implícito (Sep–Ago): no hay selector, se usa el año en curso.
+    // Año de servicio: el de la visita (lo dice el servidor según sus fechas, o la foto
+    // congelada). El año de hoy solo sirve de respaldo si no responde; con él, una visita de
+    // septiembre o un enlace abierto tras el cambio de año pedía un año que la visita no tiene.
     this.anioSel.set(this.calcularAnioServicio());
-    this.cargarSeccion('registros');
+    const anios$ = this.modo === 'publico' ? this.svc.aniosPublico(this.token) : this.svc.aniosInterno(this.idVisita!);
+    anios$.subscribe({
+      next: ({ anios }) => {
+        if (anios?.length) this.anioSel.set(anios[0]);
+        this.cargarSeccion(this.seccionActiva());
+      },
+      error: () => this.cargarSeccion(this.seccionActiva()),
+    });
     this.cargarContactos();
     this.cargarDocumentos();
     this.cargarAgenda();

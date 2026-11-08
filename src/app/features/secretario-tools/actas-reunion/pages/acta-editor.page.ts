@@ -9,6 +9,8 @@ import { Acta, Tarea, TipoReunion } from '../../models/acta.model';
 import { TareaDetailPanelComponent } from '../../tareas/components/tarea-detail-panel.component';
 import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
 import { LucideAngularModule } from '../../../../shared/icons';
+import { AuthStore } from '../../../../core/auth/auth.store';
+import { puedeEditarActas } from '../../../../core/auth/acceso-modulos';
 
 type MobileTab = 'notas' | 'acta' | 'tareas';
 type CampoTexto = 'notas' | 'acta';
@@ -57,7 +59,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
   @if (acta(); as a) {
 
     <!-- ══════════════ CABECERA ══════════════ -->
-    <header class="cab">
+    <header class="cab" [class.solo-lectura]="soloLectura">
       <button type="button" class="ctrl ctrl-icono cab-volver" (click)="volver()"
               aria-label="Volver a actas" title="Volver a actas">
         <lucide-icon name="arrow-left" [size]="18" aria-hidden="true"></lucide-icon>
@@ -79,7 +81,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
           </span>
           <span class="sena sena-guardado" role="status" aria-live="polite">
             @switch (estadoGuardado()) {
-              @case ('guardando') { <span class="spinner" aria-hidden="true"></span>Guardando… }
+              @case ('guardando') { <span class="spinner spinner-xs" aria-hidden="true"></span>Guardando… }
               @case ('pendiente') { Cambios sin guardar }
               @case ('guardado') {
                 <lucide-icon name="check" [size]="13" aria-hidden="true"></lucide-icon>Guardado {{ savedAgo() }}
@@ -104,6 +106,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
           </button>
         }
 
+        @if (!soloLectura) {
         <div class="estado-wrap" #estadoWrap (focusout)="onEstadoFocusOut($event)">
           <button #estadoTrigger type="button" class="ctrl ctrl-estado" [attr.data-estado]="a.estado"
                   aria-haspopup="true"
@@ -155,11 +158,17 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
             </div>
           }
         </div>
+        }
       </div>
     </header>
 
     <!-- ══════════════ AVISO SOLO LECTURA ══════════════ -->
-    @if (isReadonly()) {
+    @if (soloLectura) {
+      <div class="aviso-lectura" role="note">
+        <lucide-icon name="lock" [size]="16" class="ico-pos" aria-hidden="true"></lucide-icon>
+        <p><strong>Solo lectura.</strong> Puede leer y descargar el acta; la redacta el secretario.</p>
+      </div>
+    } @else if (isReadonly()) {
       <div class="aviso-lectura" role="note">
         <lucide-icon name="lock" [size]="16" class="ico-pos" aria-hidden="true"></lucide-icon>
         <p><strong>Acta finalizada.</strong> Está en solo lectura; las tareas siguen pudiéndose actualizar.</p>
@@ -170,26 +179,29 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
     }
 
     <!-- ══════════════ PESTAÑAS (móvil) ══════════════ -->
-    <div class="pestanas" role="tablist" aria-label="Secciones del acta" (keydown)="onTabsKeydown($event)">
-      @for (t of mobileTabs; track t.id) {
-        <button type="button" role="tab" class="pestana"
+    @if (pestanasVisibles.length) {
+    <div class="tab-nav pestanas w-full" role="tablist" aria-label="Secciones del acta" (keydown)="onTabsKeydown($event)">
+      @for (t of pestanasVisibles; track t.id) {
+        <button type="button" role="tab" class="tab-item"
                 [id]="'pestana-' + t.id"
                 [attr.aria-controls]="'panel-' + t.id"
                 [attr.aria-selected]="activeTab() === t.id"
                 [attr.tabindex]="activeTab() === t.id ? 0 : -1"
-                [class.activa]="activeTab() === t.id"
                 (click)="activeTab.set(t.id)">
           {{ t.label }}
           @if (t.id === 'tareas' && tareas().length) {
-            <span class="pestana-cifra">{{ tareas().length }}</span>
+            <span class="tab-count">{{ tareas().length }}</span>
           }
         </button>
       }
     </div>
+    }
 
     <!-- ══════════════ MESA DE TRABAJO ══════════════ -->
-    <div class="mesa">
+    <div class="mesa" [class.sin-tareas]="soloLectura">
 
+      <!-- Quien solo lee (el Coordinador) ve el acta como tal: las notas en bruto son del secretario. -->
+      @if (!soloLectura) {
       <!-- ── Notas ── -->
       <section id="panel-notas" class="panel panel-notas"
                [class.soltando]="soltandoEn() === 'notas'"
@@ -208,17 +220,17 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
             <button type="button" class="ctrl ctrl-sm" (click)="elegirImagen('notas')" [disabled]="!!subiendoImagen()"
                     title="Añadir una foto o captura. También puedes pegarla o arrastrarla aquí.">
               @if (subiendoImagen() === 'notas') {
-                <span class="spinner" aria-hidden="true"></span>Subiendo…
+                <span class="spinner spinner-xs" aria-hidden="true"></span>Subiendo…
               } @else {
                 <lucide-icon name="image-plus" [size]="14" aria-hidden="true"></lucide-icon>Imagen
               }
             </button>
-            <button type="button" class="btn-primario btn-generar" (click)="redactarIA()"
+            <button type="button" class="btn-primary btn-generar" (click)="redactarIA()"
                     [disabled]="redactando() || !a.notas_originales || rateLimitSecondsLeft() > 0"
                     [title]="tituloGenerar(a)" aria-describedby="notas-ayuda"
                     [attr.aria-keyshortcuts]="atajo === '⌘' ? 'Meta+Enter' : 'Control+Enter'">
               @if (redactando()) {
-                <span class="spinner" aria-hidden="true"></span>Generando…
+                <span class="spinner spinner-xs" aria-hidden="true"></span>Generando…
               } @else if (rateLimitSecondsLeft() > 0) {
                 <lucide-icon name="clock" [size]="15" aria-hidden="true"></lucide-icon>Disponible en {{ formatoEspera(rateLimitSecondsLeft()) }}
               } @else {
@@ -252,7 +264,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
                     <lucide-icon name="alert-circle" [size]="16" aria-hidden="true"></lucide-icon>
                   </span>
                 } @else {
-                  <span class="spinner" aria-hidden="true"></span>
+                  <span class="spinner spinner-xs" aria-hidden="true"></span>
                 }
                 @if (!isReadonly()) {
                   <button type="button" class="miniatura-quitar" (click)="quitarImagen('notas', im.id)"
@@ -265,6 +277,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
           </ul>
         }
       </section>
+      }
 
       <!-- ── Acta redactada ── -->
       <section id="panel-acta" class="panel panel-acta"
@@ -283,7 +296,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
                     (click)="elegirImagen('acta')" [disabled]="!!subiendoImagen()"
                     title="Añadir una foto o captura al acta. También puedes pegarla o arrastrarla aquí.">
               @if (subiendoImagen() === 'acta') {
-                <span class="spinner" aria-hidden="true"></span>Subiendo…
+                <span class="spinner spinner-xs" aria-hidden="true"></span>Subiendo…
               } @else {
                 <lucide-icon name="image-plus" [size]="14" aria-hidden="true"></lucide-icon>Imagen
               }
@@ -305,7 +318,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
         <div class="panel-cuerpo acta-cuerpo">
           @if (redactando()) {
             <div class="generando" role="status" aria-live="polite">
-              <p class="generando-titulo"><span class="spinner" aria-hidden="true"></span>Redactando el acta…</p>
+              <p class="generando-titulo"><span class="spinner spinner-xs" aria-hidden="true"></span>Redactando el acta…</p>
               <p class="generando-sub">Tarda unos segundos. Tus notas no se modifican.</p>
               <div class="esqueleto" aria-hidden="true">
                 <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
@@ -314,7 +327,10 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
           } @else if (!a.contenido_redactado && !actaFocused()) {
             <div class="vacio">
               <lucide-icon name="file-text" [size]="24" class="vacio-ico" aria-hidden="true"></lucide-icon>
-              @if (isReadonly()) {
+              @if (soloLectura) {
+                <p class="vacio-titulo">Todavía no hay acta</p>
+                <p class="vacio-sub">El secretario aún no la ha redactado.</p>
+              } @else if (isReadonly()) {
                 <p class="vacio-titulo">Sin texto redactado</p>
                 <p class="vacio-sub">Esta acta se finalizó sin redacción.</p>
               } @else {
@@ -353,7 +369,8 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
         </div>
       </section>
 
-      <!-- ── Tareas ── -->
+      <!-- ── Tareas ── (no van para quien solo lee: la API se las niega) -->
+      @if (!soloLectura) {
       <section id="panel-tareas" class="panel panel-tareas"
                [class.tab-hidden]="isMobileMode() && activeTab() !== 'tareas'"
                [attr.role]="isMobileMode() ? 'tabpanel' : 'region'"
@@ -395,12 +412,11 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
               </div>
               <fieldset class="campo-grupo">
                 <legend class="etq-campo">Prioridad</legend>
-                <div class="segmento">
+                <div class="segmented w-full" role="radiogroup" aria-label="Prioridad">
                   @for (p of prioridades; track p) {
-                    <label>
-                      <input type="radio" name="prio-inline" [value]="p" [(ngModel)]="tareaForm.prioridad" />
+                    <button type="button" role="radio" class="segmented-item flex-1" [attr.aria-checked]="tareaForm.prioridad === p" (click)="tareaForm.prioridad = p">
                       <span class="punto" [attr.data-prio]="p" aria-hidden="true"></span>{{ prioridadLabel(p) }}
-                    </label>
+                    </button>
                   }
                 </div>
               </fieldset>
@@ -411,7 +427,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
             </div>
             <div class="form-tarea-acciones">
               <button type="button" class="ctrl" (click)="cerrarFormularioTarea()">Cancelar</button>
-              <button type="button" class="btn-primario" (click)="crearTarea()" [disabled]="!tareaForm.titulo">Crear tarea</button>
+              <button type="button" class="btn-primary" (click)="crearTarea()" [disabled]="!tareaForm.titulo">Crear tarea</button>
             </div>
           </div>
         }
@@ -478,6 +494,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
           }
         </div>
       </section>
+      }
     </div><!-- /mesa -->
 
     <!-- ══════════════ BARRA DE ESCRITURA (móvil, teclado abierto) ══════════════ -->
@@ -485,7 +502,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
       <div class="barra-escritura">
         <span class="barra-estado">
           @switch (estadoGuardado()) {
-            @case ('guardando') { <span class="spinner" aria-hidden="true"></span>Guardando… }
+            @case ('guardando') { <span class="spinner spinner-xs" aria-hidden="true"></span>Guardando… }
             @case ('pendiente') { Sin guardar }
             @case ('guardado') { <lucide-icon name="check" [size]="13" aria-hidden="true"></lucide-icon>Guardado }
           }
@@ -501,13 +518,13 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
                   (click)="elegirImagen(notasFocused() ? 'notas' : 'acta')" [disabled]="!!subiendoImagen()"
                   aria-label="Añadir imagen" title="Añadir imagen">
             @if (subiendoImagen()) {
-              <span class="spinner" aria-hidden="true"></span>
+              <span class="spinner spinner-xs" aria-hidden="true"></span>
             } @else {
               <lucide-icon name="image-plus" [size]="16" aria-hidden="true"></lucide-icon>
             }
           </button>
         }
-        <button type="button" class="btn-primario" (click)="blurActiveTextarea()">Listo</button>
+        <button type="button" class="btn-primary" (click)="blurActiveTextarea()">Listo</button>
       </div>
     }
 
@@ -594,12 +611,11 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
           </div>
           <fieldset class="campo-grupo">
             <legend class="etq-campo">Prioridad</legend>
-            <div class="segmento">
+            <div class="segmented w-full" role="radiogroup" aria-label="Prioridad">
               @for (p of prioridades; track p) {
-                <label>
-                  <input type="radio" name="prio-hoja" [value]="p" [(ngModel)]="tareaForm.prioridad" />
+                <button type="button" role="radio" class="segmented-item flex-1" [attr.aria-checked]="tareaForm.prioridad === p" (click)="tareaForm.prioridad = p">
                   <span class="punto" [attr.data-prio]="p" aria-hidden="true"></span>{{ prioridadLabel(p) }}
-                </label>
+                </button>
               }
             </div>
           </fieldset>
@@ -621,7 +637,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
         </div>
         <div class="hoja-pie">
           <button type="button" class="ctrl" (click)="cerrarFormularioTarea()">Cancelar</button>
-          <button type="button" class="btn-primario hoja-pie-principal" (click)="crearTarea()" [disabled]="!tareaForm.titulo">
+          <button type="button" class="btn-primary hoja-pie-principal" (click)="crearTarea()" [disabled]="!tareaForm.titulo">
             <lucide-icon name="plus" [size]="16" aria-hidden="true"></lucide-icon>Crear tarea
           </button>
         </div>
@@ -640,9 +656,9 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
           <div class="dialogo-acciones">
             <button type="button" class="ctrl" data-autofocus
                     [disabled]="eliminandoTarea()" (click)="cancelarEliminarTarea()">Cancelar</button>
-            <button type="button" class="btn-primario btn-peligro"
+            <button type="button" class="btn-danger"
                     [disabled]="eliminandoTarea()" (click)="confirmarEliminarTarea()">
-              @if (eliminandoTarea()) { <span class="spinner" aria-hidden="true"></span>Eliminando… } @else { Eliminar }
+              @if (eliminandoTarea()) { <span class="spinner spinner-xs" aria-hidden="true"></span>Eliminando… } @else { Eliminar }
             </button>
           </div>
         </div>
@@ -661,7 +677,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
           </p>
           <div class="dialogo-acciones">
             <button type="button" class="ctrl" (click)="confirmRegenerar.set(false)">Cancelar</button>
-            <button type="button" class="btn-primario" data-autofocus (click)="confirmarRegenerar()">
+            <button type="button" class="btn-primary" data-autofocus (click)="confirmarRegenerar()">
               <lucide-icon name="sparkles" [size]="15" aria-hidden="true"></lucide-icon>Generar de nuevo
             </button>
           </div>
@@ -694,7 +710,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
         <button type="button" class="ctrl" (click)="volver()">
           <lucide-icon name="arrow-left" [size]="15" aria-hidden="true"></lucide-icon>Volver a actas
         </button>
-        <button type="button" class="btn-primario" (click)="cargar()">
+        <button type="button" class="btn-primary" (click)="cargar()">
           <lucide-icon name="refresh-cw" [size]="15" aria-hidden="true"></lucide-icon>Reintentar
         </button>
       </div>
@@ -784,7 +800,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
     /* ── Controles ───────────────────────────────────────────────────
        Mismo control que Reportes: filete, sin sombra. Un único relleno de
        acento por zona (Generar acta) marca la acción principal. */
-    .ctrl, .btn-primario {
+    .ctrl {
       display: inline-flex; align-items: center; justify-content: center; gap: 0.4375rem;
       height: 2.25rem; padding-inline: 0.75rem;
       border: 1px solid var(--linea); border-radius: var(--radio-ctrl);
@@ -794,26 +810,15 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
       transition: border-color 140ms var(--ease), color 140ms var(--ease),
                   background-color 140ms var(--ease), transform 120ms var(--ease);
     }
-    .ctrl:active:not(:disabled), .btn-primario:active:not(:disabled) { transform: scale(0.97); }
-    .ctrl:disabled, .btn-primario:disabled { opacity: 0.45; cursor: not-allowed; }
+    .ctrl:active:not(:disabled) { transform: scale(0.97); }
+    .ctrl:disabled { opacity: 0.45; cursor: not-allowed; }
     @media (hover: hover) and (pointer: fine) {
       .ctrl:hover:not(:disabled) { border-color: var(--txt-4); color: var(--txt-1); }
-      .btn-primario:hover:not(:disabled) { background: color-mix(in oklch, var(--acento) 86%, var(--txt-1)); }
     }
     .ctrl-icono { width: 2.25rem; padding-inline: 0; }
     .ctrl-sm { height: 2rem; padding-inline: 0.625rem; font-size: 0.75rem; }
     .ctrl-bloque { width: 100%; height: 2.75rem; font-size: 0.875rem; }
 
-    .btn-primario {
-      border-color: transparent;
-      background: var(--acento);
-      color: var(--sobre-solido);
-      font-weight: 600;
-    }
-    .btn-peligro { background: var(--neg); }
-    @media (hover: hover) and (pointer: fine) {
-      .btn-peligro:hover:not(:disabled) { background: color-mix(in oklch, var(--neg) 86%, var(--txt-1)); }
-    }
 
     .ctrl-icono-sm {
       position: relative;
@@ -829,7 +834,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
     .kbd {
       display: inline-flex; align-items: center;
       padding: 0.1875rem 0.3125rem;
-      font: 500 0.6875rem/1 var(--font-mono);
+      font: 500 0.75rem/1 var(--font-mono);
       color: var(--txt-2);
       background: var(--superficie-alt);
       border: 1px solid var(--linea);
@@ -843,19 +848,12 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
     /* En táctil el blanco de 36 px se queda corto del mínimo de 44 px; con
        puntero fino la densidad de escritorio es la correcta. */
     @media (pointer: coarse) {
-      .ctrl, .btn-primario, .ctrl-sm { min-height: 2.75rem; }
+      .ctrl, .ctrl-sm { min-height: 2.75rem; }
       .ctrl-icono { width: 2.75rem; height: 2.75rem; }
       .ctrl-icono-sm { width: 2.75rem; height: 2.75rem; }
       .kbd { display: none; }
     }
 
-    .spinner {
-      display: inline-block; flex-shrink: 0;
-      width: 0.8125rem; height: 0.8125rem; border-radius: 50%;
-      border: 2px solid currentColor; border-right-color: transparent;
-      animation: gira 650ms linear infinite;
-    }
-    @keyframes gira { to { transform: rotate(360deg); } }
 
     .punto { display: inline-block; flex-shrink: 0; width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: currentColor; }
     .punto-borrador { background: var(--aviso); }
@@ -873,7 +871,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
     }
     .cab-volver { margin-top: 0.125rem; }
     .cab-ceja {
-      font-size: 0.6875rem; font-weight: 600;
+      font-size: 0.75rem; font-weight: 600;
       letter-spacing: 0.08em; text-transform: uppercase;
       color: var(--acento);
     }
@@ -927,7 +925,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
     @keyframes entra-menu { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
     .menu-titulo {
       padding: 0.375rem 0.625rem 0.25rem;
-      font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--txt-2);
     }
     .menu-op, .opcion {
@@ -959,25 +957,8 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
     .aviso-lectura strong { font-weight: 700; }
 
     /* ── Pestañas (solo móvil) ── */
-    .pestanas { display: none; }
-    .pestana {
-      display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
-      height: 2.75rem; min-width: 0;
-      border: 1px solid transparent; border-radius: 0.5rem;
-      background: transparent; color: var(--txt-2);
-      font-family: inherit; font-size: 0.8125rem; font-weight: 600;
-      cursor: pointer; touch-action: manipulation;
-      transition: background-color 160ms var(--ease), color 160ms var(--ease), border-color 160ms var(--ease);
-    }
-    .pestana.activa { background: var(--superficie); border-color: var(--linea); color: var(--txt-1); }
-    .pestana:focus-visible { outline-offset: -2px; }
-    .pestana-cifra {
-      display: inline-grid; place-items: center;
-      min-width: 1.25rem; height: 1.25rem; padding-inline: 0.3125rem;
-      border-radius: 999px;
-      font: 600 0.6875rem/1 var(--font-mono);
-      background: var(--acento-tenue); color: var(--acento);
-    }
+    .pestanas.pestanas { display: none; }
+    .pestanas .tab-item { min-height: 2.75rem; font-size: 0.8125rem; }
 
     /* ── Mesa de trabajo ──────────────────────────────────────────────
        ≥ 1280 px: tres columnas, nada de scroll de página (cada panel lo
@@ -994,6 +975,12 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
     .panel-notas  { grid-area: notas; }
     .panel-acta   { grid-area: acta; }
     .panel-tareas { grid-area: tareas; }
+    /* Lectura del Coordinador: solo el acta, como una hoja centrada (sin notas ni tareas). */
+    .mesa.sin-tareas {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr); grid-template-areas: "acta";
+      width: 100%; max-width: 60rem; margin-inline: auto;
+    }
     @media (min-width: 1280px) {
       .mesa {
         grid-template-columns: minmax(15rem, 1fr) minmax(0, 1.4fr) minmax(15rem, 0.85fr);
@@ -1004,7 +991,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
 
     /* Etiqueta pequeña en mayúsculas (secciones de la hoja de acciones). */
     .etq {
-      font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--txt-2);
     }
 
@@ -1218,23 +1205,6 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
     .campo:focus { outline: none; border-color: var(--acento); box-shadow: 0 0 0 3px var(--acento-tenue); }
     .selector-fecha { display: block; width: 100%; }
 
-    .segmento {
-      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.25rem;
-      padding: 0.1875rem;
-      border: 1px solid var(--linea); border-radius: var(--radio-ctrl);
-      background: var(--superficie);
-    }
-    .segmento label {
-      position: relative;
-      display: flex; align-items: center; justify-content: center; gap: 0.375rem;
-      height: 1.75rem; border-radius: 0.3125rem;
-      font-size: 0.8125rem; font-weight: 500; color: var(--txt-2);
-      cursor: pointer;
-      transition: background-color 140ms var(--ease), color 140ms var(--ease);
-    }
-    .segmento input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-    .segmento label:has(input:checked) { background: var(--acento-tenue); color: var(--txt-1); font-weight: 600; }
-    .segmento label:has(input:focus-visible) { outline: 2px solid var(--acento); outline-offset: 1px; }
     .punto[data-prio="alta"]  { background: var(--neg); }
     .punto[data-prio="media"] { background: var(--aviso); }
     .punto[data-prio="baja"]  { background: var(--txt-3); }
@@ -1341,13 +1311,13 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
     .hoja-seccion { display: flex; flex-direction: column; gap: 0.5rem; }
     .hoja-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
     .hoja-pie { display: flex; gap: 0.75rem; padding: 0.75rem 1.25rem 0; border-top: 1px solid var(--linea); }
-    .hoja-pie .ctrl, .hoja-pie .btn-primario { height: 3rem; font-size: 0.9375rem; }
+    .hoja-pie .ctrl, .hoja-pie .btn-primary { height: 3rem; font-size: 0.9375rem; }
     .hoja-pie-principal { flex: 1; }
     .opcion { min-height: 3.75rem; padding: 0.75rem 0.875rem; border-color: var(--linea); }
     .opcion[aria-pressed="true"] { border-color: var(--acento-borde); background: var(--acento-tenue); }
     .hoja .campo { height: 2.75rem; font-size: 1rem; }
     .hoja textarea.campo { height: auto; }
-    .hoja .segmento label { height: 2.5rem; font-size: 0.875rem; }
+    .hoja .segmented-item { min-height: 2.5rem; font-size: 0.875rem; }
 
     /* ── Diálogos ── */
     .dialogo-capa {
@@ -1472,19 +1442,17 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
       .cab { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.5rem; }
       .cab-volver { margin-top: 0; }
       .cab-ceja, .grupo-export, .btn-guardar { display: none; }
+      /* Sin menú de acciones (solo lectura), la descarga queda a la vista. */
+      .cab.solo-lectura { grid-template-columns: auto minmax(0, 1fr); }
+      .cab.solo-lectura .cab-acciones { grid-column: 1 / -1; }
+      .cab.solo-lectura .grupo-export { display: inline-flex; }
       .cab-titulo { margin-top: 0; font-size: 1.125rem; letter-spacing: -0.02em; }
       .senas { margin-top: 0.1875rem; }
       .ctrl-estado { width: 2.75rem; height: 2.75rem; padding-inline: 0; }
 
       .aviso-lectura { padding: 0.375rem 0.375rem 0.375rem 0.75rem; font-size: 0.75rem; }
 
-      .pestanas {
-        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.25rem;
-        padding: 0.25rem;
-        background: var(--superficie-alt);
-        border: 1px solid var(--linea); border-radius: 0.625rem;
-        flex-shrink: 0;
-      }
+      .pestanas.pestanas { display: grid; flex-shrink: 0; }
 
       .mesa { display: flex; flex-direction: column; gap: 0; }
       .mesa > section { flex: 1 1 0; min-height: 0; animation: aparece 160ms var(--ease); }
@@ -1543,7 +1511,9 @@ export class ActaEditorPage implements OnInit, OnDestroy {
 
   acta = signal<Acta | null>(null);
   cargaError = signal(false);
-  isReadonly = computed(() => this.acta()?.estado === 'finalizada');
+  /** Quien no es Secretario/Administrador (el Coordinador) solo lee el acta. */
+  readonly soloLectura = !puedeEditarActas(inject(AuthStore));
+  isReadonly = computed(() => this.soloLectura || this.acta()?.estado === 'finalizada');
   tareas = signal<Tarea[]>([]);
   guardando = signal(false);
   redactando = signal(false);
@@ -1567,7 +1537,7 @@ export class ActaEditorPage implements OnInit, OnDestroy {
       : this.hasUnsaved() ? 'pendiente'
       : this.savedAgo() !== null ? 'guardado'
       : null);
-  activeTab = signal<MobileTab>('notas');
+  activeTab = signal<MobileTab>(this.soloLectura ? 'acta' : 'notas');
   isMobileMode = signal(false);
   estadoOpen = signal(false);
   actaFocused = signal(false);
@@ -1621,6 +1591,8 @@ export class ActaEditorPage implements OnInit, OnDestroy {
     { id: 'acta', label: 'Acta' },
     { id: 'tareas', label: 'Tareas' },
   ];
+  /** Quien solo lee ve únicamente el acta: no hay pestañas. */
+  readonly pestanasVisibles = this.soloLectura ? [] : this.mobileTabs;
 
   constructor() {
     // Al abrir un diálogo, hoja o menú el foco entra en él; al cerrarlo vuelve
@@ -1725,7 +1697,7 @@ export class ActaEditorPage implements OnInit, OnDestroy {
       next: a => this.acta.set(a),
       error: () => this.cargaError.set(true),
     });
-    this.svc.listarTareas(id).subscribe(t => this.tareas.set(t));
+    if (!this.soloLectura) this.svc.listarTareas(id).subscribe(t => this.tareas.set(t));
   }
 
   markDirty() {
@@ -1804,32 +1776,50 @@ export class ActaEditorPage implements OnInit, OnDestroy {
       if (this.saveTimer) clearTimeout(this.saveTimer);
       this.guardar(true);
     }
-    this.router.navigate(['/secretario-tools/actas-reunion']);
+    this.router.navigate(['/administracion/actas-reunion']);
   }
 
-  guardar(auto = false) {
+  /** Guarda el acta. Resuelve true si quedó guardada (la IA y el cambio de estado lo esperan). */
+  guardar(auto = false): Promise<boolean> {
     const a = this.acta();
-    if (!a) return;
+    if (!a) return Promise.resolve(false);
+    if (this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
     if (!auto) this.guardando.set(true);
-    this.svc.update(a.id_acta, {
+    const enviado = {
       titulo: a.titulo,
       fecha_reunion: a.fecha_reunion,
       tipo_reunion: a.tipo_reunion,
       notas_originales: a.notas_originales,
       contenido_redactado: a.contenido_redactado,
       estado: a.estado,
-    }).subscribe({
-      next: (updated) => {
-        this.acta.set(updated);
-        this.guardando.set(false);
-        this.hasUnsaved.set(false);
-        this.savedAt = new Date();
-        this.savedAgo.set('justo ahora');
-      },
-      error: (e) => {
-        this.guardando.set(false);
-        this.showToast(e?.error?.detail || 'No se pudieron guardar los cambios. Intenta de nuevo.', 'error');
-      },
+    };
+    return new Promise<boolean>(resolve => {
+      this.svc.update(a.id_acta, enviado).subscribe({
+        next: (updated) => {
+          this.guardando.set(false);
+          const actual = this.acta();
+          // Si el usuario siguió escribiendo mientras se guardaba, su texto manda: antes se
+          // reemplazaba por lo que respondió el servidor y se perdía, aunque decía «Guardado».
+          const siguio = !!actual && (Object.keys(enviado) as (keyof typeof enviado)[])
+            .some(k => (actual as any)[k] !== enviado[k]);
+          if (siguio) {
+            this.acta.set({ ...updated, ...Object.fromEntries(
+              (Object.keys(enviado) as (keyof typeof enviado)[]).map(k => [k, (actual as any)[k]])) } as any);
+            this.markDirty();  // queda pendiente: se guarda en el siguiente autoguardado
+          } else {
+            this.acta.set(updated);
+            this.hasUnsaved.set(false);
+          }
+          this.savedAt = new Date();
+          this.savedAgo.set('justo ahora');
+          resolve(true);
+        },
+        error: (e) => {
+          this.guardando.set(false);
+          this.showToast(e?.error?.detail || 'No se pudieron guardar los cambios. Intenta de nuevo.', 'error');
+          resolve(false);
+        },
+      });
     });
   }
 
@@ -1864,8 +1854,16 @@ export class ActaEditorPage implements OnInit, OnDestroy {
     const a = this.acta();
     if (!a) return;
     this.prevContenido = a.contenido_redactado?.trim() ? a.contenido_redactado : null;
-    this.guardar(true);
     this.redactando.set(true);
+    // Primero se guardan las notas: si la IA sale a la vez, puede leer las viejas (o ninguna).
+    void (async () => {
+      if (this.hasUnsaved() && !(await this.guardar(true))) { this.redactando.set(false); return; }
+      this.pedirRedaccion(a.id_acta);
+    })();
+  }
+
+  private pedirRedaccion(idActa: number) {
+    const a = { id_acta: idActa };
     this.svc.redactarIA({ id_acta: a.id_acta }).subscribe({
       next: (res) => {
         this.acta.update(x => x ? { ...x, contenido_redactado: res.contenido_redactado } : x);
@@ -2176,11 +2174,15 @@ export class ActaEditorPage implements OnInit, OnDestroy {
     return this.sanitizer.bypassSecurityTrustHtml(html);
   }
 
-  setEstado(a: any, val: string) {
-    a.estado = val;
+  /** Cambia el estado y lo guarda; si no se puede guardar, vuelve al anterior (antes quedaba «Finalizada» solo en pantalla). */
+  async setEstado(a: any, val: string) {
+    const anterior = a.estado;
+    this.acta.update(x => x ? { ...x, estado: val } as any : x);
     this.estadoOpen.set(false);
     this.hasUnsaved.set(true);
-    this.guardar();
+    if (!(await this.guardar())) {
+      this.acta.update(x => x ? { ...x, estado: anterior } as any : x);
+    }
   }
 
   alternarEstado() {
@@ -2209,7 +2211,7 @@ export class ActaEditorPage implements OnInit, OnDestroy {
 
   /** Flechas, Inicio y Fin entre pestañas (patrón ARIA de tabs con activación automática). */
   onTabsKeydown(e: KeyboardEvent) {
-    const ids = this.mobileTabs.map(t => t.id);
+    const ids = this.pestanasVisibles.map(t => t.id);
     let i = ids.indexOf(this.activeTab());
     if (e.key === 'ArrowRight') i = (i + 1) % ids.length;
     else if (e.key === 'ArrowLeft') i = (i - 1 + ids.length) % ids.length;
@@ -2313,7 +2315,7 @@ export class ActaEditorPage implements OnInit, OnDestroy {
     } else {
       const a = this.acta();
       this.router.navigate(
-        ['/secretario-tools/tareas', t.id_tarea],
+        ['/administracion/tareas', t.id_tarea],
         { queryParams: { desde: 'acta-editor', ...(a ? { origen_acta: a.id_acta } : {}) } },
       );
     }

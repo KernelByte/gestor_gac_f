@@ -17,7 +17,7 @@ type PasswordStrength = 'weak' | 'medium' | 'strong' | null;
         <div class="h-1 flex-1 rounded-full transition-colors duration-300"
           [ngClass]="strength === 'strong' ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'"></div>
       </div>
-      <p class="text-[10px] font-bold ml-0.5 transition-colors"
+      <p class="text-xs font-bold ml-0.5 transition-colors"
         [ngClass]="strength === 'weak' ? 'text-red-500' : strength === 'medium' ? 'text-amber-500' : 'text-emerald-500'">
         {{ strength === 'weak' ? 'Contraseña débil' : strength === 'medium' ? 'Contraseña moderada' : 'Contraseña fuerte' }}
       </p>

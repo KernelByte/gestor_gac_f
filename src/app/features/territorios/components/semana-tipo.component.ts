@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { SalidaEditorComponent } from './salida-editor.component';
 import { PuntoSalidaOpcion } from '../models/territorio.model';
 import {
@@ -14,28 +15,11 @@ import {
 @Component({
   standalone: true,
   selector: 'app-semana-tipo',
-  imports: [CommonModule, SalidaEditorComponent],
+  imports: [CommonModule, SalidaEditorComponent, ModalComponent],
   template: `
-    <div class="fixed inset-0 z-[110] flex items-center justify-center sm:p-4">
-      <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="cerrar.emit(false)"></div>
-
-      <div class="relative w-full max-w-3xl h-[100dvh] sm:h-auto sm:max-h-[90vh] bg-white dark:bg-slate-800 sm:rounded-2xl sm:border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden animate-fadeIn">
-        <header class="px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-4 bg-gradient-to-r from-emerald-50/60 to-white dark:from-emerald-900/10 dark:to-slate-800">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-              <svg class="text-emerald-600 dark:text-emerald-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
-            </div>
-            <div class="min-w-0">
-              <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">Salidas fijas</h3>
-              <p class="text-[13px] text-slate-500 dark:text-slate-400">Las salidas que se repiten cada semana. Con ellas se crea el programa.</p>
-            </div>
-          </div>
-          <button (click)="cerrar.emit(false)" title="Cerrar" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors shrink-0">
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </header>
-
-        <div class="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-5">
+    <app-modal [open]="true" size="xl" title="Salidas fijas" subtitle="Las salidas que se repiten cada semana. Con ellas se crea el programa."
+               [hasFooter]="true" [dismissible]="!editando()" (openChange)="$event || cerrar.emit(false)">
+        <div class="space-y-5">
           <!-- Cómo trabaja la congregación -->
           <section class="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
             <p class="text-sm font-bold text-slate-800 dark:text-slate-100">¿Cada cuánto crea y comparte el programa?</p>
@@ -45,7 +29,7 @@ import {
                   class="text-left p-3 rounded-xl border-2 transition-colors"
                   [class]="periodoSel() === op.id ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'">
                   <span class="block text-sm font-bold text-slate-900 dark:text-white">{{ op.titulo }}</span>
-                  <span class="block text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">{{ op.detalle }}</span>
+                  <span class="block text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ op.detalle }}</span>
                 </button>
               }
             </div>
@@ -56,8 +40,8 @@ import {
             @for (d of dias; track $index; let i = $index) {
               <div class="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div class="flex items-center justify-between px-4 h-12 bg-slate-50 dark:bg-slate-900/40">
-                  <span class="text-sm font-black text-slate-800 dark:text-slate-100">{{ d }}</span>
-                  <button type="button" (click)="nueva(i + 1)" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[13px] font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
+                  <span class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ d }}</span>
+                  <button type="button" (click)="nueva(i + 1)" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Agregar salida
                   </button>
@@ -67,7 +51,7 @@ import {
                     <span class="w-20 shrink-0 text-sm font-bold text-slate-900 dark:text-white tabular-nums">{{ hora(f.hora_inicio) || 'Sin hora' }}</span>
                     <span class="min-w-0 flex-1">
                       <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ f.lugar || 'Sin lugar' }}</span>
-                      <span class="block text-[13px] text-slate-500 dark:text-slate-400 truncate">
+                      <span class="block text-sm text-slate-500 dark:text-slate-400 truncate">
                         {{ nombres(f.capitanes) || 'Capitán: se turnan' }}@if (f.grupos.length) { · {{ gruposTexto(f) }} }@if (f.nombre_barrio) { · Barrio {{ f.nombre_barrio }} }
                       </span>
                     </span>
@@ -82,16 +66,14 @@ import {
           }
         </div>
 
-        <footer class="px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-700/50 flex items-center gap-2">
-          <span class="mr-auto text-[13px] text-slate-500 dark:text-slate-400">{{ filas().length }} {{ filas().length === 1 ? 'salida' : 'salidas' }} por semana</span>
-          <button (click)="cerrar.emit(false)" class="h-11 px-4 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
-          <button (click)="guardarTodo()" [disabled]="guardando()"
-            class="h-11 px-5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-[background-color,transform] active:scale-[0.97]">
+        <ng-container slot="footer">
+          <span class="mr-auto text-sm text-slate-500 dark:text-slate-400">{{ filas().length }} {{ filas().length === 1 ? 'salida' : 'salidas' }} por semana</span>
+          <button (click)="cerrar.emit(false)" class="btn-ghost">Cancelar</button>
+          <button (click)="guardarTodo()" [disabled]="guardando()" class="btn-primary">
             {{ guardando() ? 'Guardando…' : 'Guardar salidas fijas' }}
           </button>
-        </footer>
-      </div>
-    </div>
+        </ng-container>
+    </app-modal>
 
     @if (editando(); as e) {
       <app-salida-editor

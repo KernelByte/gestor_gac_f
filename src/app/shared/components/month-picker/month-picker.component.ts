@@ -1,6 +1,7 @@
 import { Component, Input, signal, computed, forwardRef, ElementRef, inject, HostListener, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { zoomDe } from '../../zoom';
 
 type ViewMode = 'months' | 'years';
 type ColorScheme = 'orange' | 'violet' | 'blue' | 'teal' | 'rose';
@@ -554,8 +555,10 @@ export class MonthPickerComponent implements ControlValueAccessor, AfterViewInit
       if (!trigger || !popup || !popup.matches(':popover-open')) return;
 
       const r = trigger.getBoundingClientRect();
-      const ancho = popup.offsetWidth || 264;
-      const alto = popup.offsetHeight || 280;
+      // Con `zoom` en la pantalla (2K/4K) el popup lo hereda: se pasa a sus px.
+      const z = zoomDe(popup);
+      const ancho = (popup.offsetWidth || 264) * z;
+      const alto = (popup.offsetHeight || 280) * z;
       const margen = 8;
 
       const espacioAbajo = window.innerHeight - r.bottom;
@@ -563,13 +566,13 @@ export class MonthPickerComponent implements ControlValueAccessor, AfterViewInit
       const arriba = espacioAbajo < alto + margen && espacioArriba > espacioAbajo;
       this.openAbove.set(arriba);
 
-      popup.style.left = `${Math.max(margen, Math.min(r.left, window.innerWidth - ancho - margen))}px`;
+      popup.style.left = `${Math.max(margen, Math.min(r.left, window.innerWidth - ancho - margen)) / z}px`;
       if (arriba) {
          popup.style.top = 'auto';
-         popup.style.bottom = `${window.innerHeight - r.top + 4}px`;
+         popup.style.bottom = `${(window.innerHeight - r.top + 4) / z}px`;
       } else {
          popup.style.bottom = 'auto';
-         popup.style.top = `${r.bottom + 4}px`;
+         popup.style.top = `${(r.bottom + 4) / z}px`;
       }
    }
 

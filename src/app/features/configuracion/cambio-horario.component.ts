@@ -14,16 +14,16 @@ import {
 const BTN = 'inline-flex items-center justify-center gap-2 min-h-11 px-4 rounded-xl text-sm font-semibold ' +
    'transition-[background-color,transform] duration-150 ease-out active:scale-[0.98] ' +
    'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ' +
-   'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25';
-const BTN_PRIMARIO = BTN + ' px-5 bg-brand-purple text-white hover:bg-purple-700';
+   'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-purple/25';
+const BTN_PRIMARIO = BTN + ' px-5 bg-brand-purple text-white hover:bg-[#5b21b6]';
 const BTN_SECUNDARIO = BTN + ' border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 ' +
    'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700';
 const CHIP = BTN + ' border';
 const CHIP_ON = 'border-brand-purple bg-brand-purple text-white';
 const CHIP_OFF = 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 hover:border-slate-400';
 const CAMPO = 'h-12 px-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/60 ' +
-   'text-[15px] font-medium text-slate-900 dark:text-white tabular-nums outline-none ' +
-   'focus:border-brand-purple focus:ring-4 focus:ring-purple-500/15 transition-[border-color,box-shadow] duration-150';
+   'text-base font-medium text-slate-900 dark:text-white tabular-nums outline-none ' +
+   'focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/15 transition-[border-color,box-shadow] duration-150';
 
 /**
  * Cambio de horario con fecha (Configuración → Reuniones).

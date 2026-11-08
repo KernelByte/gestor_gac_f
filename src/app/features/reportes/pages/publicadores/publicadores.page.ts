@@ -53,7 +53,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
         </div>
 
         <!-- ── Actividad y riesgo ─────────────────────────────────────── -->
-        <h2 class="pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
+        <h2 class="pt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
           Actividad y riesgo de inactividad
         </h2>
 
@@ -73,7 +73,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
 
           <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 flex flex-col gap-3">
             <div>
-              <h3 class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
+              <h3 class="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
                 Riesgo de inactividad
               </h3>
               <p class="text-[0.8125rem] text-slate-700 dark:text-slate-200 mt-0.5">
@@ -83,7 +83,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
             <div *ngIf="d.riesgo_inactividad.length; else sinRiesgoTpl" class="overflow-x-auto overflow-y-auto max-h-72">
               <table class="w-full text-sm">
                 <thead>
-                  <tr class="text-left text-[0.6875rem] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  <tr class="text-left text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     <th class="py-1.5 pr-3 font-semibold">Publicador</th>
                     <th class="py-1.5 pr-3 font-semibold">Grupo</th>
                     <th class="py-1.5 pr-3 font-semibold">Último informe</th>
@@ -111,7 +111,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
         </div>
 
         <!-- ── Capacidad de servicio ──────────────────────────────────── -->
-        <h2 class="pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
+        <h2 class="pt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
           Capacidad de servicio
         </h2>
 
@@ -127,7 +127,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
         </div>
 
         <!-- ── Crecimiento ────────────────────────────────────────────── -->
-        <h2 class="pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
+        <h2 class="pt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
           Crecimiento
         </h2>
 
@@ -153,7 +153,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
 
           <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 flex flex-col gap-3">
             <div>
-              <h3 class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
+              <h3 class="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
                 Publicadores no bautizados
               </h3>
               <p class="text-[0.8125rem] text-slate-700 dark:text-slate-200 mt-0.5">
@@ -163,7 +163,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
             <div *ngIf="d.sin_bautizar.length; else sinPnbTpl" class="overflow-x-auto overflow-y-auto max-h-72">
               <table class="w-full text-sm">
                 <thead>
-                  <tr class="text-left text-[0.6875rem] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  <tr class="text-left text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     <th class="py-1.5 pr-3 font-semibold">Publicador</th>
                     <th class="py-1.5 pr-3 font-semibold">Grupo</th>
                     <th class="py-1.5 pr-3 font-semibold">Publicador desde</th>
@@ -193,7 +193,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
         </div>
 
         <!-- ── Demografía ─────────────────────────────────────────────── -->
-        <h2 class="pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
+        <h2 class="pt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
           Demografía
         </h2>
 

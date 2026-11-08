@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { DiscursosService } from '../services/discursos.service';
 import { CatalogoCantico, CatalogoCanticosPublicacion } from '../models/discursos.models';
@@ -18,7 +19,7 @@ import { CatalogoCantico, CatalogoCanticosPublicacion } from '../models/discurso
 @Component({
   selector: 'app-catalogo-canticos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmDialogComponent],
   template: `
     <div class="flex-1 min-h-0 flex flex-col overflow-y-auto simple-scrollbar animate-fadeIn pb-6">
     <div class="flex items-start justify-between gap-3 mb-4">
@@ -52,8 +53,8 @@ import { CatalogoCantico, CatalogoCanticosPublicacion } from '../models/discurso
           class="w-full flex flex-col items-center justify-center gap-3 px-6 py-10 text-center disabled:cursor-wait">
           <div class="w-14 h-14 rounded-2xl flex items-center justify-center"
             [class]="arrastrando()
-              ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300'
-              : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 shadow-sm'">
+              ? 'bg-violet-100 dark:bg-violet-900/40 text-brand-purple dark:text-violet-300'
+              : 'bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 shadow-sm'">
             <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0-12l-4 4m4-4l4 4"/>
             </svg>
@@ -74,7 +75,7 @@ import { CatalogoCantico, CatalogoCanticosPublicacion } from '../models/discurso
               <div class="h-full rounded-full bg-violet-500 transition-[width] duration-200 ease-out"
                 [style.width.%]="progreso()"></div>
             </div>
-            <p class="mt-2 text-[0.7rem] text-slate-500 dark:text-slate-400 text-center">
+            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400 text-center">
               {{ progreso() >= 100 ? 'Leyendo los cánticos del archivo…' : 'Subiendo… ' + progreso() + '%' }}
             </p>
           </div>
@@ -106,12 +107,12 @@ import { CatalogoCantico, CatalogoCanticosPublicacion } from '../models/discurso
       <div class="flex flex-wrap items-center gap-3 mb-4">
         @if (publicacion(); as p) {
           <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-            <span class="shrink-0 px-2 h-6 rounded-md bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[0.65rem] font-black flex items-center">
+            <span class="shrink-0 px-2 h-6 rounded-md bg-violet-100 dark:bg-violet-900/40 text-brand-purple dark:text-violet-300 text-xs font-bold flex items-center">
               ♪
             </span>
             <div class="min-w-0">
               <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">Cantemos con gozo a Jehová</p>
-              <p class="text-[0.7rem] text-slate-400">
+              <p class="text-xs text-slate-400">
                 {{ canticos().length }} cánticos
                 <span *ngIf="p.importado_en"> · importado el {{ p.importado_en | date:'d MMM y, HH:mm' }}</span>
               </p>
@@ -129,7 +130,7 @@ import { CatalogoCantico, CatalogoCanticosPublicacion } from '../models/discurso
         <div class="max-h-[48vh] overflow-y-auto custom-scrollbar divide-y divide-slate-50 dark:divide-slate-800/60">
           @for (c of filtrados(); track c.numero) {
             <div class="flex items-center gap-3 px-4 py-2.5">
-              <span class="shrink-0 min-w-[2.25rem] h-6 px-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[0.65rem] font-black flex items-center justify-center">
+              <span class="shrink-0 min-w-[2.25rem] h-6 px-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold flex items-center justify-center">
                 {{ c.numero }}
               </span>
               <span class="flex-1 min-w-0 text-sm text-slate-700 dark:text-slate-200">{{ c.titulo }}</span>
@@ -146,31 +147,15 @@ import { CatalogoCantico, CatalogoCanticosPublicacion } from '../models/discurso
     </div>
 
     <!-- ===== CONFIRMAR VACIADO ===== -->
-    @if (confirmandoBorrado()) {
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm"
-        (click)="confirmandoBorrado.set(false)">
-        <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm border border-slate-200/60 dark:border-slate-700/60 overflow-hidden"
-          (click)="$event.stopPropagation()">
-          <div class="px-5 pt-5 pb-3">
-            <h3 class="text-base font-black text-slate-800 dark:text-slate-100">Vaciar el catálogo</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-              Se borrarán los {{ canticos().length }} cánticos. Los meses ya programados
-              conservan lo escrito: sólo dejará de haber sugerencias al escribir.
-            </p>
-          </div>
-          <div class="flex gap-2 px-5 pb-6 sm:pb-5 pt-1">
-            <button (click)="confirmandoBorrado.set(false)"
-              class="flex-1 h-11 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-[background-color] duration-150 ease-out active:scale-[0.97]">
-              Cancelar
-            </button>
-            <button (click)="vaciar()" [disabled]="borrando()"
-              class="flex-1 h-11 rounded-xl bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-sm font-bold text-white transition-[background-color] duration-150 ease-out active:scale-[0.97]">
-              {{ borrando() ? 'Borrando…' : 'Vaciar' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    }
+    <app-confirm-dialog
+      [open]="confirmandoBorrado()"
+      title="Vaciar el catálogo"
+      [message]="'Se borrarán los ' + canticos().length + ' cánticos. Los meses ya programados conservan lo escrito: sólo dejará de haber sugerencias al escribir.'"
+      confirmLabel="Vaciar"
+      severity="danger"
+      [busy]="borrando()"
+      (confirmed)="vaciar()"
+      (openChange)="$event || confirmandoBorrado.set(false)" />
   `,
 })
 export class CatalogoCanticosComponent implements OnInit {

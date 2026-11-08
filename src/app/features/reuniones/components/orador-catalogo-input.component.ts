@@ -85,7 +85,7 @@ export interface DiscursanteConCongregacion {
                  primero bajo su nombre; lo que coincida en otras
                  congregaciones queda debajo, separado. -->
             @if (nDeCongregacion() > 0 && (i === 0 || i === nDeCongregacion())) {
-              <p role="presentation" class="px-2.5 pt-2 pb-1 text-[0.6rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+              <p role="presentation" class="px-2.5 pt-2 pb-1 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
                 [class]="i > 0 ? 'mt-1 border-t border-slate-100 dark:border-slate-800' : ''">
                 {{ i === 0 ? 'Discursantes de ' + nombreCongregacion() : 'Otras congregaciones' }}
               </p>
@@ -98,7 +98,7 @@ export interface DiscursanteConCongregacion {
               (mouseenter)="resaltado.set(i)"
               class="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-lg text-left transition-[background-color] duration-100 ease-out"
               [class]="i === resaltado() ? 'bg-teal-50 dark:bg-teal-400/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'">
-              <span class="shrink-0 w-8 h-8 mt-0.5 rounded-full bg-teal-100 dark:bg-teal-400/15 text-teal-700 dark:text-teal-300 text-xs font-black flex items-center justify-center">
+              <span class="shrink-0 w-8 h-8 mt-0.5 rounded-full bg-teal-100 dark:bg-teal-400/15 text-teal-700 dark:text-teal-300 text-xs font-bold flex items-center justify-center">
                 {{ r.discursante.nombre.charAt(0).toUpperCase() }}
               </span>
               <div class="min-w-0 flex-1">
@@ -108,14 +108,14 @@ export interface DiscursanteConCongregacion {
                     {{ r.discursante.nombre }}
                   </span>
                   @if (esActual(r)) {
-                    <span class="shrink-0 text-[0.6rem] font-bold text-teal-700 dark:text-teal-300">Actual</span>
+                    <span class="shrink-0 text-xs font-bold text-teal-700 dark:text-teal-300">Actual</span>
                   }
                   @if (r.discursante.telefono) {
-                    <span class="shrink-0 font-mono text-[0.65rem] text-slate-400 dark:text-slate-500 tabular-nums">{{ telefonoLegible(r.discursante.telefono) }}</span>
+                    <span class="shrink-0 font-mono text-xs text-slate-400 dark:text-slate-500 tabular-nums">{{ telefonoLegible(r.discursante.telefono) }}</span>
                   }
                 </div>
                 @if (i >= nDeCongregacion()) {
-                <div class="flex items-center gap-1 mt-0.5 text-[0.7rem] text-slate-400 dark:text-slate-500">
+                <div class="flex items-center gap-1 mt-0.5 text-xs text-slate-400 dark:text-slate-500">
                   <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                   <span class="truncate">{{ r.congregacion.nombre }}</span>
                 </div>
@@ -125,12 +125,12 @@ export interface DiscursanteConCongregacion {
                        vistazo; el título completo va en el tooltip. -->
                   <div class="flex items-center gap-1 mt-1 min-w-0" [title]="r.discursante.bosquejos.join('\n')">
                     @for (b of r.discursante.bosquejos.slice(0, 4); track b) {
-                      <span class="font-mono text-[0.6rem] font-bold text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-400/15 px-1.5 py-px rounded tabular-nums">{{ etiquetaBosquejo(b) }}</span>
+                      <span class="font-mono text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-400/15 px-1.5 py-px rounded tabular-nums">{{ etiquetaBosquejo(b) }}</span>
                     }
                     @if (r.discursante.bosquejos.length > 4) {
-                      <span class="text-[0.6rem] font-bold text-slate-400">+{{ r.discursante.bosquejos.length - 4 }}</span>
+                      <span class="text-xs font-bold text-slate-400">+{{ r.discursante.bosquejos.length - 4 }}</span>
                     }
-                    <span class="min-w-0 flex-1 truncate text-[0.65rem] text-slate-400 dark:text-slate-500">
+                    <span class="min-w-0 flex-1 truncate text-xs text-slate-400 dark:text-slate-500">
                       {{ r.discursante.bosquejos.length === 1 ? tituloBosquejo(r.discursante.bosquejos[0]) : r.discursante.bosquejos.length + ' bosquejos' }}
                     </span>
                   </div>
@@ -141,7 +141,7 @@ export interface DiscursanteConCongregacion {
         </div>
         <!-- El listado ya explica de dónde sale el dato: quien no reconoce
              ningún nombre entiende que puede seguir escribiendo el suyo. -->
-        <p class="px-3 py-1.5 border-t border-slate-100 dark:border-slate-800 text-[0.65rem] text-slate-400 dark:text-slate-500">
+        <p class="px-3 py-1.5 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500">
           Al elegir se rellenan congregación y discurso
         </p>
       </div>

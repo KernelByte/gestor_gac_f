@@ -3,6 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { AvisoComponent } from '../../../shared/components/aviso/aviso.component';
 import { TerritoriosService } from '../services/territorios.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
@@ -30,23 +34,23 @@ interface TarjetaElegible {
   standalone: true,
   selector: 'app-sectores-page',
   host: { class: 'tema-territorios' },
-  imports: [CommonModule, FormsModule, TerritorioMapComponent],
+  imports: [CommonModule, FormsModule, TerritorioMapComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
   template: `
     <div class="flex flex-col h-full min-h-0 gap-3">
       <!-- Cabecera en una fila: el mapa recibe casi toda la altura -->
       <header class="shrink-0 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div class="flex items-center gap-1 min-w-0">
           <button type="button" (click)="volver()" aria-label="Volver a Territorios" title="Volver a Territorios"
-            class="-ml-2 w-11 h-11 shrink-0 inline-flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97] focus-ring-green">
+            class="-ml-2 w-11 h-11 shrink-0 inline-flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           </button>
           <div class="min-w-0">
-            <h1 class="font-display font-bold text-xl sm:text-2xl leading-tight text-gray-900 dark:text-slate-100">Barrios</h1>
+            <h1 class="page-title">Barrios</h1>
             <p class="hidden lg:block text-sm text-slate-500 dark:text-slate-400 truncate">Divida el territorio en barrios, cada uno con su color. Después las tarjetas se agrupan dentro de ellos.</p>
           </div>
         </div>
         @if (puedeEditar() && sectores().length > 0) {
-          <button type="button" (click)="nuevoSector()" class="btn-primary-green focus-ring-green h-11 whitespace-nowrap">
+          <button type="button" (click)="nuevoSector()" class="btn-primary whitespace-nowrap">
             <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             Nuevo barrio
           </button>
@@ -54,10 +58,7 @@ interface TarjetaElegible {
       </header>
 
       @if (aviso()) {
-        <div role="alert" class="shrink-0 flex items-start justify-between gap-3 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
-          <p class="text-sm font-medium text-amber-900 dark:text-amber-200">{{ aviso() }}</p>
-          <button (click)="aviso.set(null)" class="text-sm font-bold text-amber-800 dark:text-amber-300 shrink-0 h-8 px-1">Entendido</button>
-        </div>
+        <app-aviso tone="warning" class="shrink-0 block" [dismissible]="true" (dismissed)="aviso.set(null)">{{ aviso() }}</app-aviso>
       }
 
       <!-- Mapa arriba en el teléfono; a la derecha desde lg. La lista nunca queda tapada. -->
@@ -77,31 +78,30 @@ interface TarjetaElegible {
         <section class="order-2 lg:order-1 min-h-0 flex flex-col gap-3 overflow-y-auto simple-scrollbar pr-1" aria-label="Lista de barrios">
 
           @if (!hayLimite() && !cargando()) {
-            <div class="rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-3">
-              <p class="text-base font-bold text-amber-900 dark:text-amber-100">Falta el territorio de la congregación</p>
-              <p class="text-sm text-amber-900/90 dark:text-amber-200">Los barrios se dibujan dentro de ese límite. Suba el archivo .kml en Mapa general y vuelva aquí.</p>
-              <button type="button" (click)="irAMapaGeneral()" class="btn-primary-green focus-ring-green h-11">Ir a Mapa general</button>
-            </div>
+            <app-aviso tone="warning" title="Falta el territorio de la congregación">
+              <p>Los barrios se dibujan dentro de ese límite. Suba el archivo .kml en Mapa general y vuelva aquí.</p>
+              <button type="button" (click)="irAMapaGeneral()" class="btn-primary mt-3">Ir a Mapa general</button>
+            </app-aviso>
           }
 
           @if (cargando()) {
             <div class="space-y-2" aria-hidden="true">
-              @for (n of [1,2,3]; track n) { <div class="h-[4.25rem] rounded-xl bg-slate-100 dark:bg-slate-800/60 animate-pulse"></div> }
+              @for (n of [1,2,3]; track n) { <div class="h-[4.25rem] rounded-xl skeleton"></div> }
             </div>
           } @else if (sectores().length === 0) {
             <!-- Estado vacío que enseña el camino -->
             <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
               <div>
-                <h2 class="text-lg font-black text-slate-900 dark:text-white">Cree su primer barrio</h2>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">Cree su primer barrio</h2>
                 <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Son tres pasos y lo verá aquí mismo en el mapa.</p>
               </div>
               <ol class="space-y-3 text-base text-slate-700 dark:text-slate-200">
-                <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-emerald-600 text-white text-sm font-black flex items-center justify-center shrink-0" aria-hidden="true">1</span> Póngale nombre y elija un color</li>
-                <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-emerald-600 text-white text-sm font-black flex items-center justify-center shrink-0" aria-hidden="true">2</span> Marque la zona tocando el mapa</li>
-                <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-emerald-600 text-white text-sm font-black flex items-center justify-center shrink-0" aria-hidden="true">3</span> Confirme las tarjetas que quedan dentro</li>
+                <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-emerald-600 text-white text-sm font-bold flex items-center justify-center shrink-0" aria-hidden="true">1</span> Póngale nombre y elija un color</li>
+                <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-emerald-600 text-white text-sm font-bold flex items-center justify-center shrink-0" aria-hidden="true">2</span> Marque la zona tocando el mapa</li>
+                <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-emerald-600 text-white text-sm font-bold flex items-center justify-center shrink-0" aria-hidden="true">3</span> Confirme las tarjetas que quedan dentro</li>
               </ol>
               @if (puedeEditar()) {
-                <button type="button" (click)="nuevoSector()" class="btn-primary-green focus-ring-green h-11 w-full justify-center">
+                <button type="button" (click)="nuevoSector()" class="btn-primary w-full justify-center">
                   <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                   Nuevo barrio
                 </button>
@@ -117,7 +117,7 @@ interface TarjetaElegible {
               @for (s of sectores(); track s.id_sector) {
                 <li [ngClass]="seleccionado() === s.id_sector ? 'bg-slate-50 dark:bg-slate-800/40' : ''" class="transition-colors">
                   <button type="button" (click)="elegir(s)" [attr.aria-expanded]="seleccionado() === s.id_sector"
-                    class="w-full min-h-[4rem] flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors focus-ring-green">
+                    class="w-full min-h-[4rem] flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <span class="w-4 h-4 rounded-full shrink-0 ring-2 ring-white dark:ring-slate-900" [style.background-color]="s.color || '#94a3b8'" aria-hidden="true"></span>
                     <span class="min-w-0 flex-1">
                       <span class="block text-base font-bold text-slate-900 dark:text-white truncate">{{ s.nombre }}</span>
@@ -133,22 +133,22 @@ interface TarjetaElegible {
                     <div class="revelar px-4 pb-4 flex flex-wrap gap-2">
                       @if (puedeEditar()) {
                         @if (!s.coordenada) {
-                          <button type="button" (click)="editarSector(s)" class="btn-primary-green focus-ring-green h-11 flex-1 justify-center whitespace-nowrap">
+                          <button type="button" (click)="editarSector(s)" class="btn-primary flex-1 justify-center whitespace-nowrap">
                             <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 22 8.5 18 21 6 21 2 8.5 12 2"></polygon></svg>
                             Dibujar en el mapa
                           </button>
-                          <button type="button" (click)="elegirTarjetas(s)" class="h-11 px-4 inline-flex items-center justify-center gap-2 rounded-lg border text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.97] focus-ring-green border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Elegir tarjetas</button>
+                          <button type="button" (click)="elegirTarjetas(s)" class="btn-secondary whitespace-nowrap">Elegir tarjetas</button>
                         } @else {
-                          <button type="button" (click)="elegirTarjetas(s)" class="btn-primary-green focus-ring-green h-11 flex-1 justify-center whitespace-nowrap">Elegir tarjetas</button>
-                          <button type="button" (click)="editarSector(s)" class="h-11 px-4 inline-flex items-center justify-center gap-2 rounded-lg border text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.97] focus-ring-green border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Editar</button>
+                          <button type="button" (click)="elegirTarjetas(s)" class="btn-primary flex-1 justify-center whitespace-nowrap">Elegir tarjetas</button>
+                          <button type="button" (click)="editarSector(s)" class="btn-secondary whitespace-nowrap">Editar</button>
                         }
-                        <button type="button" (click)="verTarjetas(s)" class="h-11 px-4 inline-flex items-center justify-center gap-2 rounded-lg border text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.97] focus-ring-green border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Ver tarjetas</button>
+                        <button type="button" (click)="verTarjetas(s)" class="btn-secondary whitespace-nowrap">Ver tarjetas</button>
                         <button type="button" (click)="pedirBorrar(s)" aria-label="Borrar este barrio" title="Borrar este barrio"
-                          class="w-11 h-11 shrink-0 inline-flex items-center justify-center rounded-lg border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors active:scale-[0.97] focus-ring-green">
-                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                          class="w-11 h-11 shrink-0 inline-flex items-center justify-center rounded-lg border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors active:scale-[0.97]">
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                       } @else {
-                        <button type="button" (click)="verTarjetas(s)" class="h-11 px-4 inline-flex items-center justify-center gap-2 rounded-lg border text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.97] focus-ring-green border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex-1">Ver tarjetas</button>
+                        <button type="button" (click)="verTarjetas(s)" class="btn-secondary flex-1 whitespace-nowrap">Ver tarjetas</button>
                       }
                     </div>
                   }
@@ -162,14 +162,14 @@ interface TarjetaElegible {
                 <svg class="w-5 h-5 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 <p class="flex-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Todas las tarjetas ya tienen barrio.</p>
                 @if (todosDibujados()) {
-                  <button type="button" (click)="volver()" class="btn-primary-green focus-ring-green h-11 whitespace-nowrap">Siguiente: las tarjetas →</button>
+                  <button type="button" (click)="volver()" class="btn-primary whitespace-nowrap">Siguiente: las tarjetas →</button>
                 }
               } @else {
                 <div class="min-w-0 flex-1">
                   <p class="text-sm font-bold text-slate-900 dark:text-white">{{ sinSector() }} {{ sinSector() === 1 ? 'tarjeta' : 'tarjetas' }} sin barrio</p>
                   <p class="text-sm text-slate-500 dark:text-slate-400">Abra un barrio y use «Elegir tarjetas».</p>
                 </div>
-                <button type="button" (click)="verSinSector()" class="h-11 px-4 inline-flex items-center justify-center gap-2 rounded-lg border text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.97] focus-ring-green border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Verlas</button>
+                <button type="button" (click)="verSinSector()" class="btn-secondary whitespace-nowrap">Verlas</button>
               }
             </div>
           }
@@ -178,19 +178,15 @@ interface TarjetaElegible {
     </div>
 
     @if (sinLimite()) {
-      <div class="fixed inset-0 z-[110] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tituloSinLimite">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="sinLimite.set(false)"></div>
-        <div class="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 text-center shadow-2xl space-y-4">
-          <h3 id="tituloSinLimite" class="text-lg font-black text-slate-900 dark:text-white">Primero suba el territorio de la congregación</h3>
-          <p class="text-base text-slate-600 dark:text-slate-400">
-            Los barrios se dibujan dentro del límite de la congregación. Suba el archivo .kml en Mapa general y vuelva aquí.
-          </p>
-          <div class="flex flex-col sm:flex-row gap-2 justify-center">
-            <button (click)="irAMapaGeneral()" class="btn-primary-green focus-ring-green justify-center">Ir a Mapa general</button>
-            <button (click)="sinLimite.set(false)" class="btn-secondary focus-ring-green justify-center">Entendido</button>
-          </div>
-        </div>
-      </div>
+      <app-modal [open]="true" size="md" title="Primero suba el territorio de la congregación" [hasFooter]="true" (openChange)="$event || sinLimite.set(false)">
+        <p class="text-base text-slate-600 dark:text-slate-400">
+          Los barrios se dibujan dentro del límite de la congregación. Suba el archivo .kml en Mapa general y vuelva aquí.
+        </p>
+        <ng-container slot="footer">
+          <button (click)="sinLimite.set(false)" class="btn-secondary">Entendido</button>
+          <button (click)="irAMapaGeneral()" class="btn-primary">Ir a Mapa general</button>
+        </ng-container>
+      </app-modal>
     }
 
     <!-- ═══ Editor de barrio: panel con pasos + mapa ═══ -->
@@ -212,10 +208,10 @@ interface TarjetaElegible {
           <header class="flex items-start justify-between gap-3 px-6 pt-6 pb-4">
             <div class="min-w-0">
               <p class="text-xs font-semibold tracking-wide uppercase text-slate-500 dark:text-slate-400">Barrio</p>
-              <h2 id="tituloBarrio" class="text-xl font-black text-slate-900 dark:text-white mt-0.5">{{ e.id_sector ? 'Editar barrio' : 'Nuevo barrio' }}</h2>
+              <h2 id="tituloBarrio" class="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{{ e.id_sector ? 'Editar barrio' : 'Nuevo barrio' }}</h2>
             </div>
             <button type="button" (click)="cerrarEditor()" aria-label="Cerrar sin guardar" title="Cerrar sin guardar"
-              class="-mr-2 w-11 h-11 shrink-0 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 focus-ring-green transition-colors active:scale-95">
+              class="-mr-2 w-11 h-11 shrink-0 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-95">
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </header>
@@ -223,7 +219,7 @@ interface TarjetaElegible {
           <ol class="flex-1 overflow-y-auto simple-scrollbar px-6 pb-4 space-y-6">
             <!-- 1 · Nombre -->
             <li class="flex gap-3">
-              <span class="mt-0.5 w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-sm font-black transition-colors"
+              <span class="mt-0.5 w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-sm font-bold transition-colors"
                 [ngClass]="e.nombre.trim() ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'" aria-hidden="true">
                 @if (e.nombre.trim()) {
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -252,7 +248,7 @@ interface TarjetaElegible {
                   @for (c of colores; track c) {
                     <button type="button" role="radio" [attr.aria-checked]="e.color === c" (click)="e.color = c"
                       [attr.aria-label]="nombreColor(c)" [title]="colorEnUso(c, e.id_sector) ? 'Ya lo usa ' + colorEnUso(c, e.id_sector) : nombreColor(c)"
-                      class="relative w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-90 focus-ring-green"
+                      class="relative w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-90"
                       [ngClass]="e.color === c ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900' : ''"
                       [style.background-color]="c" [style.--tw-ring-color]="c">
                       @if (e.color === c) {
@@ -268,7 +264,7 @@ interface TarjetaElegible {
 
             <!-- 3 · Zona en el mapa -->
             <li class="flex gap-3">
-              <span class="mt-0.5 w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-sm font-black transition-colors"
+              <span class="mt-0.5 w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-sm font-bold transition-colors"
                 [ngClass]="hayDibujo() ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'" aria-hidden="true">
                 @if (hayDibujo()) {
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -284,11 +280,11 @@ interface TarjetaElegible {
                     @if (mapaBarrio.realtimeArea()) { <p class="text-sm font-bold text-emerald-900 dark:text-emerald-200 mt-2 tabular-nums">{{ mapaBarrio.realtimeArea() }}</p> }
                     <div class="mt-3 flex flex-wrap items-center gap-2">
                       <button type="button" (click)="mapaBarrio.undoLastVertex()" [disabled]="mapaBarrio.puntosColocados() < 1"
-                        class="h-11 px-4 inline-flex items-center gap-2 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 text-sm font-bold text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97] focus-ring-green">
+                        class="h-11 px-4 inline-flex items-center gap-2 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 text-sm font-bold text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]">
                         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.51"></path></svg>
                         Quitar el último punto
                       </button>
-                      <button type="button" (click)="mapaBarrio.cancelarDibujo()" class="h-11 px-4 rounded-lg text-sm font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 focus-ring-green">Cancelar</button>
+                      <button type="button" (click)="mapaBarrio.cancelarDibujo()" class="h-11 px-4 rounded-lg text-sm font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30">Cancelar</button>
                     </div>
                     <p class="mt-2 text-sm text-emerald-800/80 dark:text-emerald-300/80">
                       También puede presionar <kbd class="px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 text-xs font-bold">{{ mapaBarrio.atajoDeshacer }}</kbd>.
@@ -305,29 +301,29 @@ interface TarjetaElegible {
                     }
                     <div class="mt-3 flex flex-wrap gap-2">
                       <button type="button" (click)="mapaBarrio.alternarEdicion()" [attr.aria-pressed]="mapaBarrio.editMode()"
-                        class="h-10 px-4 rounded-lg border text-sm font-bold transition-colors focus-ring-green"
+                        class="h-10 px-4 rounded-lg border text-sm font-bold transition-colors"
                         [ngClass]="mapaBarrio.editMode() ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'">
                         {{ mapaBarrio.editMode() ? 'Listo' : 'Acomodar los bordes' }}
                       </button>
                       <button type="button" (click)="mapaBarrio.deshacerZona()" [disabled]="!mapaBarrio.puedeDeshacerZona()"
                         [attr.title]="'Deshace el último cambio de la zona (' + mapaBarrio.atajoDeshacer + ')'"
-                        class="h-10 px-4 inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97] focus-ring-green">
+                        class="btn-secondary btn-sm">
                         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.51"></path></svg>
                         Deshacer
                       </button>
                       <button type="button" (click)="dibujarDeNuevo(mapaBarrio)"
-                        class="h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 focus-ring-green">Dibujar de nuevo</button>
+                        class="btn-secondary btn-sm">Dibujar de nuevo</button>
                     </div>
                   </div>
                 } @else {
                   <p class="text-sm text-slate-500 dark:text-slate-400">Dibuje el contorno del barrio sobre el mapa.</p>
                   @if (mapaBarrio.puedeDeshacerZona()) {
-                    <button type="button" (click)="mapaBarrio.deshacerZona()" class="mt-3 h-11 px-4 inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 focus-ring-green">
+                    <button type="button" (click)="mapaBarrio.deshacerZona()" class="mt-3 btn-secondary">
                       <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.51"></path></svg>
                       Recuperar la zona anterior
                     </button>
                   }
-                  <button type="button" (click)="mapaBarrio.empezarDibujo()" class="mt-3 btn-secondary focus-ring-green">
+                  <button type="button" (click)="mapaBarrio.empezarDibujo()" class="mt-3 btn-secondary">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 22 8.5 18 21 6 21 2 8.5 12 2"></polygon></svg>
                     Empezar a dibujar
                   </button>
@@ -341,8 +337,8 @@ interface TarjetaElegible {
               <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">Sin la zona marcada, el barrio no se verá en el mapa.</p>
             }
             <div class="flex items-center justify-end gap-3">
-              <button type="button" (click)="cerrarEditor()" class="h-11 px-5 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus-ring-green">Cancelar</button>
-              <button type="button" (click)="guardarSector()" [disabled]="!e.nombre.trim() || guardando()" class="btn-primary-green focus-ring-green h-11">
+              <button type="button" (click)="cerrarEditor()" class="btn-ghost">Cancelar</button>
+              <button type="button" (click)="guardarSector()" [disabled]="!e.nombre.trim() || guardando()" class="btn-primary">
                 {{ guardando() ? 'Guardando…' : 'Guardar barrio' }}
               </button>
             </div>
@@ -353,47 +349,33 @@ interface TarjetaElegible {
 
     <!-- ═══ Ventana: tarjetas que encontró dentro del barrio / elegir a mano ═══ -->
     @if (eleccion(); as e) {
-      <div class="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tituloEleccion">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="cerrarEleccion()"></div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg max-h-[85vh] flex flex-col relative z-10 shadow-2xl overflow-hidden">
-          <div class="p-5 border-b border-slate-100 dark:border-slate-700/50">
-            <h3 id="tituloEleccion" class="text-lg font-black text-slate-900 dark:text-white">{{ e.titulo }}</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">{{ e.ayuda }}</p>
-          </div>
-          <div class="flex-1 overflow-y-auto p-2">
-            @if (e.tarjetas.length === 0) {
-              <p class="p-4 text-sm text-slate-500">No hay tarjetas para mostrar.</p>
-            }
-            @for (t of e.tarjetas; track t.id_territorio) {
-              <label class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/40 cursor-pointer">
-                <input type="checkbox" [(ngModel)]="t.marcada" class="w-5 h-5 accent-emerald-600">
-                <span class="font-display font-bold text-slate-900 dark:text-white tabular-nums">{{ t.codigo }}</span>
-                <span class="text-sm text-slate-600 dark:text-slate-300 truncate flex-1">{{ t.nombre }}</span>
-                @if (t.sectorActual) { <span class="text-xs text-slate-500 shrink-0">Hoy: {{ t.sectorActual }}</span> }
-              </label>
-            }
-          </div>
-          <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20 flex justify-end gap-3">
-            <button (click)="cerrarEleccion()" class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">{{ e.soloLectura ? 'Cerrar' : 'Ahora no' }}</button>
-            <button (click)="asignarElegidas()" [disabled]="guardando()" class="btn-primary-green focus-ring-green">Asignar al barrio</button>
-          </div>
+      <app-modal [open]="true" size="lg" [title]="e.titulo" [subtitle]="e.ayuda" [padding]="false" [hasFooter]="true" (openChange)="$event || cerrarEleccion()">
+        <div class="p-2">
+          @if (e.tarjetas.length === 0) {
+            <p class="p-4 text-sm text-slate-500">No hay tarjetas para mostrar.</p>
+          }
+          @for (t of e.tarjetas; track t.id_territorio) {
+            <label class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="t.marcada" class="w-5 h-5 accent-emerald-600">
+              <span class="font-display font-bold text-slate-900 dark:text-white tabular-nums">{{ t.codigo }}</span>
+              <span class="text-sm text-slate-600 dark:text-slate-300 truncate flex-1">{{ t.nombre }}</span>
+              @if (t.sectorActual) { <span class="text-xs text-slate-500 shrink-0">Hoy: {{ t.sectorActual }}</span> }
+            </label>
+          }
         </div>
-      </div>
+        <ng-container slot="footer">
+          <button (click)="cerrarEleccion()" class="btn-ghost">{{ e.soloLectura ? 'Cerrar' : 'Ahora no' }}</button>
+          <button (click)="asignarElegidas()" [disabled]="guardando()" class="btn-primary">Asignar al barrio</button>
+        </ng-container>
+      </app-modal>
     }
 
     <!-- ═══ Confirmar borrar ═══ -->
     @if (porBorrar(); as s) {
-      <div class="fixed inset-0 z-[100] flex items-center justify-center p-4" role="alertdialog" aria-modal="true">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="porBorrar.set(null)"></div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm relative z-10 shadow-2xl p-5 space-y-4">
-          <h3 class="text-lg font-black text-slate-900 dark:text-white">¿Borrar «{{ s.nombre }}»?</h3>
-          <p class="text-sm text-slate-600 dark:text-slate-400">Las {{ s.tarjetas_count }} tarjetas de este barrio no se borran: solo quedan sin barrio.</p>
-          <div class="flex justify-end gap-3">
-            <button (click)="porBorrar.set(null)" class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancelar</button>
-            <button (click)="confirmarBorrar()" class="px-5 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl">Sí, borrar</button>
-          </div>
-        </div>
-      </div>
+      <app-confirm-dialog [open]="true" severity="danger" [title]="'¿Borrar «' + s.nombre + '»?'"
+        [message]="'Las ' + s.tarjetas_count + ' tarjetas de este barrio no se borran: solo quedan sin barrio.'"
+        confirmLabel="Sí, borrar" cancelLabel="Cancelar"
+        (confirmed)="confirmarBorrar()" (openChange)="$event || porBorrar.set(null)" />
     }
 
   `,
@@ -408,6 +390,7 @@ interface TarjetaElegible {
 })
 export class SectoresPage implements OnInit {
   private svc = inject(TerritoriosService);
+  private confirmar = inject(ConfirmService);
   private router = inject(Router);
   private authStore = inject(AuthStore);
   @ViewChild('mapaGeneral') private mapaGeneral?: TerritorioMapComponent;
@@ -552,10 +535,10 @@ export class SectoresPage implements OnInit {
     void this.router.navigate(['/territorios/mapa']);
   }
 
-  cerrarEditor(): void {
+  async cerrarEditor(): Promise<void> {
     const e = this.editor();
     const conCambios = !!e && (!e.id_sector && (e.nombre.trim() !== '' || this.hayDibujo()));
-    if (conCambios && !confirm('¿Cerrar sin guardar este barrio?')) return;
+    if (conCambios && !(await this.confirmar.ask({ title: '¿Cerrar sin guardar este barrio?', confirmLabel: 'Cerrar sin guardar', severity: 'warning' }))) return;
     this.editor.set(null);
   }
 

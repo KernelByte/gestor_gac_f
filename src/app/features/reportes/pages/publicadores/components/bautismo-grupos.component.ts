@@ -40,7 +40,7 @@ import type { BautismoGrupo } from '../../../services/reportes.service';
     }
 
     .titulo {
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;

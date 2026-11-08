@@ -50,6 +50,13 @@ export class LogisticaService {
     });
   }
 
+  /** Borra y genera de nuevo el mes en una sola transacción: si falla, no se pierde nada. */
+  regenerar(payload: GenerarLogisticaRequest, idCong: number | null): Observable<LogisticaMesOut> {
+    return this.http.post<LogisticaMesOut>(`${this.base}/regenerar`, payload, {
+      params: this.congParams(idCong),
+    });
+  }
+
   getMes(ano: number, mes: number, idCong: number | null): Observable<LogisticaMesOut> {
     let params = this.congParams(idCong).set('ano', ano).set('mes', mes);
     return this.http.get<LogisticaMesOut>(`${this.base}/mes`, { params });

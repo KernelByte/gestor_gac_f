@@ -10,44 +10,43 @@ export type ConfirmSeverity = 'danger' | 'warning' | 'info';
   standalone: true,
   imports: [CommonModule, ModalComponent, LucideAngularModule],
   template: `
-    <app-modal [open]="open" [size]="'sm'" [padding]="false" (closed)="cancel()">
+    <app-modal
+      [open]="open"
+      size="sm"
+      [padding]="false"
+      [dismissible]="!busy"
+      [hasFooter]="true"
+      (closed)="cancel()"
+    >
       <div class="p-6">
         <div class="flex items-start gap-4">
-          <!-- Icon -->
           <div
             class="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
-            [class.bg-red-100]="severity === 'danger'"
-            [class.bg-amber-100]="severity === 'warning'"
-            [class.bg-blue-100]="severity === 'info'"
+            [ngClass]="chipClass"
           >
-            <lucide-icon *ngIf="severity === 'danger'"  name="trash-2"         [size]="22" class="text-red-600"></lucide-icon>
-            <lucide-icon *ngIf="severity === 'warning'" name="alert-triangle"  [size]="22" class="text-amber-600"></lucide-icon>
-            <lucide-icon *ngIf="severity === 'info'"    name="info"            [size]="22" class="text-blue-600"></lucide-icon>
+            <lucide-icon *ngIf="severity === 'danger'"  name="trash-2"        [size]="22" class="text-red-700 dark:text-red-400"></lucide-icon>
+            <lucide-icon *ngIf="severity === 'warning'" name="alert-triangle" [size]="22" class="text-amber-700 dark:text-amber-400"></lucide-icon>
+            <lucide-icon *ngIf="severity === 'info'"    name="info"           [size]="22" class="text-sky-700 dark:text-sky-400"></lucide-icon>
           </div>
-          <!-- Content -->
           <div class="flex-1 min-w-0">
             <h2 class="display-section text-lg">{{ title }}</h2>
-            <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">{{ message }}</p>
+            <p *ngIf="message" class="text-sm text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-line">{{ message }}</p>
           </div>
         </div>
       </div>
-      <!-- Footer -->
-      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/30 rounded-b-2xl">
+      <ng-container slot="footer">
+        <button type="button" *ngIf="cancelLabel" (click)="cancel()" [disabled]="busy" class="btn-secondary">{{ cancelLabel }}</button>
         <button
-          (click)="cancel()"
-          class="btn-secondary focus-ring"
-        >{{ cancelLabel }}</button>
-        <button
+          type="button"
           (click)="accept()"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-semibold transition active:scale-95 focus-ring"
-          [class.bg-red-600]="severity === 'danger'"
-          [class.hover:bg-red-700]="severity === 'danger'"
-          [class.bg-amber-600]="severity === 'warning'"
-          [class.hover:bg-amber-700]="severity === 'warning'"
-          [class.bg-violet-600]="severity === 'info'"
-          [class.hover:bg-violet-700]="severity === 'info'"
+          [disabled]="busy"
+          [class.btn-loading]="busy"
+          [class.btn-danger]="severity === 'danger'"
+          [class.btn-primary]="severity !== 'danger'"
+          [style.--accent]="severity === 'warning' ? '#b45309' : null"
+          [style.--accent-hover]="severity === 'warning' ? '#92400e' : null"
         >{{ confirmLabel }}</button>
-      </div>
+      </ng-container>
     </app-modal>
   `,
 })
@@ -56,19 +55,36 @@ export class ConfirmDialogComponent {
   @Input() title: string = '¿Confirmar acción?';
   @Input() message: string = '';
   @Input() confirmLabel: string = 'Confirmar';
+  /** Vacío = un solo botón (aviso informativo). */
   @Input() cancelLabel: string = 'Cancelar';
   @Input() severity: ConfirmSeverity = 'danger';
+  /**
+   * Acción asíncrona en curso (borrar, guardar): el botón muestra el spinner y
+   * ni Esc ni el velo cierran el diálogo hasta que termine. Con `busy` activo,
+   * `confirmed` NO cierra el diálogo: lo cierra quien lo abrió al terminar.
+   */
+  @Input() busy: boolean = false;
 
   @Output() openChange = new EventEmitter<boolean>();
   @Output() confirmed = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
 
+  get chipClass(): string {
+    if (this.severity === 'danger') return 'bg-red-100 dark:bg-red-950/60';
+    if (this.severity === 'warning') return 'bg-amber-100 dark:bg-amber-950/60';
+    return 'bg-sky-100 dark:bg-sky-950/60';
+  }
+
   accept() {
+    if (this.busy) return;
     this.confirmed.emit();
-    this.close();
+    // Si el padre activó `busy` al recibir `confirmed`, se queda abierto. Va en
+    // setTimeout para que el input `busy` ya se haya actualizado (CD corre antes).
+    setTimeout(() => { if (!this.busy) this.close(); });
   }
 
   cancel() {
+    if (this.busy) return;
     this.cancelled.emit();
     this.close();
   }

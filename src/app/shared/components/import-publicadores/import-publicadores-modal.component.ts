@@ -162,16 +162,16 @@ const TIPO_LABEL: Record<ConflictoFila['tipo'], string> = {
         <!-- Resumen previo -->
         <div class="grid grid-cols-3 gap-3 mb-5">
           <div class="bg-emerald-50 dark:bg-emerald-900/10 rounded-xl p-3 border border-emerald-100 dark:border-emerald-900/40 text-center">
-            <div class="text-xl font-black text-emerald-600 dark:text-emerald-400">{{ analisisResumen()?.nuevos || 0 }}</div>
-            <div class="text-[0.65rem] font-bold text-emerald-600/70 uppercase tracking-wide">Nuevos</div>
+            <div class="text-xl font-bold text-emerald-600 dark:text-emerald-400">{{ analisisResumen()?.nuevos || 0 }}</div>
+            <div class="text-xs font-bold text-emerald-600/70 uppercase tracking-wide">Nuevos</div>
           </div>
           <div class="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-3 border border-blue-100 dark:border-blue-900/40 text-center">
-            <div class="text-xl font-black text-blue-600 dark:text-blue-400">{{ analisisResumen()?.actualizaciones || 0 }}</div>
-            <div class="text-[0.65rem] font-bold text-blue-600/70 uppercase tracking-wide">Actualizaciones</div>
+            <div class="text-xl font-bold text-blue-600 dark:text-blue-400">{{ analisisResumen()?.actualizaciones || 0 }}</div>
+            <div class="text-xs font-bold text-blue-600/70 uppercase tracking-wide">Actualizaciones</div>
           </div>
           <div class="bg-amber-50 dark:bg-amber-900/10 rounded-xl p-3 border border-amber-100 dark:border-amber-900/40 text-center">
-            <div class="text-xl font-black text-amber-600 dark:text-amber-400">{{ conflictos().length }}</div>
-            <div class="text-[0.65rem] font-bold text-amber-600/70 uppercase tracking-wide">Conflictos</div>
+            <div class="text-xl font-bold text-amber-600 dark:text-amber-400">{{ conflictos().length }}</div>
+            <div class="text-xs font-bold text-amber-600/70 uppercase tracking-wide">Conflictos</div>
           </div>
         </div>
 
@@ -208,7 +208,7 @@ const TIPO_LABEL: Record<ConflictoFila['tipo'], string> = {
                  [class.bg-orange-50]="c.tipo === 'privilegio_sexo_invalido'"
                  [class.dark:bg-orange-900/20]="c.tipo === 'privilegio_sexo_invalido'">
               <div>
-                <span class="text-xs font-black uppercase tracking-widest"
+                <span class="text-xs font-bold uppercase tracking-widest"
                       [class.text-amber-600]="c.tipo === 'ambiguo'"
                       [class.text-blue-600]="c.tipo === 'similar'"
                       [class.text-rose-600]="c.tipo === 'fechas_distintas'"
@@ -471,20 +471,20 @@ const TIPO_LABEL: Record<ConflictoFila['tipo'], string> = {
         <!-- Stats publicadores -->
         <div class="grid grid-cols-2 gap-3 mb-4">
           <div class="bg-emerald-50 dark:bg-emerald-900/10 rounded-xl p-4 border border-emerald-100 dark:border-emerald-900/50 text-center">
-            <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400">{{ finalResult()?.resumen?.insertados || 0 }}</div>
-            <div class="text-[0.65rem] font-bold text-emerald-600/70 uppercase tracking-wide">Insertados</div>
+            <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ finalResult()?.resumen?.insertados || 0 }}</div>
+            <div class="text-xs font-bold text-emerald-600/70 uppercase tracking-wide">Insertados</div>
           </div>
           <div class="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-900/50 text-center">
-            <div class="text-2xl font-black text-blue-600 dark:text-blue-400">{{ finalResult()?.resumen?.actualizados || 0 }}</div>
-            <div class="text-[0.65rem] font-bold text-blue-600/70 uppercase tracking-wide">Actualizados</div>
+            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ finalResult()?.resumen?.actualizados || 0 }}</div>
+            <div class="text-xs font-bold text-blue-600/70 uppercase tracking-wide">Actualizados</div>
           </div>
           <div class="bg-amber-50 dark:bg-amber-900/10 rounded-xl p-4 border border-amber-100 dark:border-amber-900/50 text-center">
-            <div class="text-2xl font-black text-amber-600 dark:text-amber-400">{{ finalResult()?.resumen?.omitidos || 0 }}</div>
-            <div class="text-[0.65rem] font-bold text-amber-600/70 uppercase tracking-wide">Omitidos</div>
+            <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ finalResult()?.resumen?.omitidos || 0 }}</div>
+            <div class="text-xs font-bold text-amber-600/70 uppercase tracking-wide">Omitidos</div>
           </div>
           <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
-            <div class="text-2xl font-black text-slate-600 dark:text-slate-300">{{ finalResult()?.resumen?.descartados || 0 }}</div>
-            <div class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wide">Descartados</div>
+            <div class="text-2xl font-bold text-slate-600 dark:text-slate-300">{{ finalResult()?.resumen?.descartados || 0 }}</div>
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">Descartados</div>
           </div>
         </div>
 
@@ -512,16 +512,16 @@ const TIPO_LABEL: Record<ConflictoFila['tipo'], string> = {
           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Informes Históricos</p>
           <div class="grid grid-cols-3 gap-2">
             <div class="bg-indigo-50 dark:bg-indigo-900/10 rounded-xl p-3 border border-indigo-100 dark:border-indigo-900/50 text-center">
-              <div class="text-lg font-black text-indigo-600 dark:text-indigo-400">{{ finalResult()?.resumen?.informes_insertados || 0 }}</div>
-              <div class="text-[0.6rem] font-bold text-indigo-600/70 uppercase tracking-wide">Creados</div>
+              <div class="text-lg font-bold text-indigo-600 dark:text-indigo-400">{{ finalResult()?.resumen?.informes_insertados || 0 }}</div>
+              <div class="text-xs font-bold text-indigo-600/70 uppercase tracking-wide">Creados</div>
             </div>
             <div class="bg-cyan-50 dark:bg-cyan-900/10 rounded-xl p-3 border border-cyan-100 dark:border-cyan-900/50 text-center">
-              <div class="text-lg font-black text-cyan-600 dark:text-cyan-400">{{ finalResult()?.resumen?.informes_actualizados || 0 }}</div>
-              <div class="text-[0.6rem] font-bold text-cyan-600/70 uppercase tracking-wide">Actualizados</div>
+              <div class="text-lg font-bold text-cyan-600 dark:text-cyan-400">{{ finalResult()?.resumen?.informes_actualizados || 0 }}</div>
+              <div class="text-xs font-bold text-cyan-600/70 uppercase tracking-wide">Actualizados</div>
             </div>
             <div class="bg-rose-50 dark:bg-rose-900/10 rounded-xl p-3 border border-rose-100 dark:border-rose-900/50 text-center">
-              <div class="text-lg font-black text-rose-600 dark:text-rose-400">{{ finalResult()?.resumen?.informes_errores || 0 }}</div>
-              <div class="text-[0.6rem] font-bold text-rose-600/70 uppercase tracking-wide">Errores</div>
+              <div class="text-lg font-bold text-rose-600 dark:text-rose-400">{{ finalResult()?.resumen?.informes_errores || 0 }}</div>
+              <div class="text-xs font-bold text-rose-600/70 uppercase tracking-wide">Errores</div>
             </div>
           </div>
         </div>
@@ -529,7 +529,7 @@ const TIPO_LABEL: Record<ConflictoFila['tipo'], string> = {
         <!-- Total filas -->
         <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700 flex items-center justify-between mb-6">
           <span class="text-sm font-bold text-slate-600 dark:text-slate-400">Total filas procesadas</span>
-          <span class="text-lg font-black text-slate-900 dark:text-white">{{ finalResult()?.resumen?.filas || 0 }}</span>
+          <span class="text-lg font-bold text-slate-900 dark:text-white">{{ finalResult()?.resumen?.filas || 0 }}</span>
         </div>
 
         <button (click)="close()"

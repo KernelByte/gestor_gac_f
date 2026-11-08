@@ -1,59 +1,26 @@
-<div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/70 backdrop-blur-sm animate-backdrop-in">
-    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-4xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-dialog-in">
-
-        <!-- Toast notification -->
-        <div *ngIf="toastMessage()"
-             class="absolute top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2.5 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold rounded-xl shadow-lg flex items-center gap-2 pointer-events-none"
-             style="animation: slideDown 0.2s ease-out;">
-            <svg class="w-3.5 h-3.5 text-emerald-400 dark:text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-            </svg>
-            {{ toastMessage() }}
-        </div>
-
-        <!-- Header -->
-        <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center text-violet-600 dark:text-violet-400 shrink-0">
-                    <svg class="w-4.5 h-4.5" style="width:1.125rem;height:1.125rem" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <div class="min-w-0">
-                    <h2 class="text-base font-bold text-slate-800 dark:text-white leading-tight truncate">{{ publicadorNombre }}</h2>
-                    <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Editar historial · {{ titleText }}</p>
-                </div>
-            </div>
-            <button (click)="cancelar()"
-                class="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-colors shrink-0">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
+<app-modal [open]="true" size="3xl" [padding]="false" [hasFooter]="true"
+           [title]="publicadorNombre" [subtitle]="'Editar historial · ' + titleText"
+           [dismissible]="!saving()" (closed)="cancelar()">
 
         <!-- Body -->
-        <div class="flex flex-1 overflow-hidden flex-col md:flex-row">
+        <div class="flex flex-col md:flex-row overflow-hidden h-[min(36rem,72dvh)]">
 
             <!-- Left Panel: Year/Month Navigation -->
             <div class="w-full md:w-56 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 bg-slate-50 dark:bg-slate-900/60">
 
                 <!-- Year Selector -->
                 <div class="p-3 border-b border-slate-200 dark:border-slate-800">
-                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-widest mb-2 px-0.5">Año</p>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-0.5">Año</p>
                     <div *ngIf="loadingPeriodos()" class="flex items-center justify-center py-3">
-                        <svg class="animate-spin h-4 w-4 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
+                        <span class="spinner-sm text-brand-purple" role="status"></span>
                     </div>
                     <div *ngIf="!loadingPeriodos()" class="flex overflow-x-auto md:flex-wrap gap-1.5 hide-scrollbar">
                         <button *ngFor="let a of availableAnos()"
                             (click)="onAnoSelect(a)"
                             class="relative shrink-0 px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all duration-150 disabled:opacity-40"
                             [ngClass]="selectedAno() === a
-                                ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
-                                : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-700 hover:text-violet-600 dark:hover:text-violet-400'"
+                                ? 'bg-brand-purple text-white border-brand-purple shadow-sm'
+                                : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-brand-purple hover:text-brand-purple dark:hover:text-violet-400'"
                             [disabled]="loading() || saving()">
                             {{ a }}
                             <div *ngIf="hasChangesInYear(a)" class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-amber-400 rounded-full border border-white dark:border-slate-800"></div>
@@ -63,13 +30,13 @@
 
                 <!-- Month List -->
                 <div class="md:flex-1 md:overflow-y-auto p-3 pt-2">
-                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-widest mb-2 px-0.5 hidden md:block">Mes</p>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-0.5 hidden md:block">Mes</p>
                     <div class="flex overflow-x-auto md:flex-col gap-1 md:gap-0.5 hide-scrollbar">
                         <button *ngFor="let m of availableMeses()"
                             (click)="onMesSelect(m.num)"
                             class="relative shrink-0 md:w-full px-3 py-1.5 md:py-2 text-xs md:text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-40"
                             [ngClass]="selectedMes() === m.num
-                                ? 'bg-white dark:bg-slate-800 text-violet-700 dark:text-violet-300 font-semibold shadow-sm border border-slate-200 dark:border-slate-700 scale-[1.01]'
+                                ? 'bg-white dark:bg-slate-900 text-brand-purple dark:text-violet-300 font-semibold shadow-sm border border-slate-200 dark:border-slate-700 scale-[1.01]'
                                 : 'text-slate-500 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-800/60 hover:text-slate-700 dark:hover:text-slate-200 scale-100'"
                             [disabled]="loading() || saving()">
                             <div class="w-1 rounded-full shrink-0 transition-all duration-200 hidden md:block"
@@ -92,33 +59,33 @@
                     <button (click)="switchTab('informe')"
                         class="relative flex items-center gap-2 px-1 py-3.5 text-sm font-semibold mr-5 transition-colors duration-150"
                         [ngClass]="activeTab() === 'informe'
-                            ? 'text-violet-700 dark:text-violet-300'
+                            ? 'text-brand-purple dark:text-violet-300'
                             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         Informe
                         <span *ngIf="pendingChanges.size > 0 && activeTab() !== 'informe'"
-                            class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-white text-[0.5625rem] font-bold">
+                            class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-white text-xs font-bold">
                             {{ pendingChanges.size }}
                         </span>
-                        <div *ngIf="activeTab() === 'informe'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-600 dark:bg-violet-400 rounded-t-full"></div>
+                        <div *ngIf="activeTab() === 'informe'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-purple dark:bg-violet-400 rounded-t-full"></div>
                     </button>
 
                     <button (click)="switchTab('privilegios')"
                         class="relative flex items-center gap-2 px-1 py-3.5 text-sm font-semibold transition-colors duration-150"
                         [ngClass]="activeTab() === 'privilegios'
-                            ? 'text-violet-700 dark:text-violet-300'
+                            ? 'text-brand-purple dark:text-violet-300'
                             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
                         Privilegios
                         <span *ngIf="privilegiosPrecursor().length > 0"
-                            class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[0.5625rem] font-bold">
+                            class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-xs font-bold">
                             {{ privilegiosPrecursor().length }}
                         </span>
-                        <div *ngIf="activeTab() === 'privilegios'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-600 dark:bg-violet-400 rounded-t-full"></div>
+                        <div *ngIf="activeTab() === 'privilegios'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-purple dark:bg-violet-400 rounded-t-full"></div>
                     </button>
                 </div>
 
@@ -134,7 +101,7 @@
                          [ngClass]="loading() ? 'opacity-40 pointer-events-none select-none' : 'opacity-100'">
 
                         <!-- Participación -->
-                        <div class="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+                        <div class="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                                      [ngClass]="participo() ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-700/60 text-slate-400'">
@@ -158,29 +125,29 @@
 
                         <!-- Horas + Cursos -->
                         <div class="grid grid-cols-2 gap-3">
-                            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
                                 <div class="flex items-center gap-2 mb-3">
                                     <svg class="w-3.5 h-3.5 text-sky-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                     </svg>
-                                    <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Cursos bíblicos</label>
+                                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Cursos bíblicos</label>
                                 </div>
                                 <input type="number" min="0"
                                        [ngModel]="cursosBiblicos()"
                                        (ngModelChange)="cursosBiblicos.set($event)"
-                                       class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-2xl font-bold text-center focus:border-violet-500 focus:ring-1 focus:ring-violet-500 py-2 outline-none transition-colors">
+                                       class="form-control text-center">
                             </div>
-                            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
                                 <div class="flex items-center gap-2 mb-3">
                                     <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Horas</label>
+                                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Horas</label>
                                 </div>
                                 <input type="number" min="0"
                                        [ngModel]="horas()"
                                        (ngModelChange)="onHorasChange($event)"
-                                       class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-2xl font-bold text-center focus:border-violet-500 focus:ring-1 focus:ring-violet-500 py-2 outline-none transition-colors">
+                                       class="form-control text-center">
                                 <div *ngIf="totalHorasConCreditos() !== null" class="mt-2 flex items-center justify-center gap-1.5 text-xs">
                                     <span class="text-slate-400">{{ horas() }}</span>
                                     <span class="text-slate-300 dark:text-slate-600">+</span>
@@ -194,26 +161,19 @@
                         <!-- Precursor type: conditional — solo si es/fue precursor -->
                         <div *ngIf="esPrecursor() || esAuxiliar() || esRegular() || esEspecial()">
                             <!-- Validation error -->
-                            <div *ngIf="showValidationError() && horasRequierePrecursor()"
-                                 class="mb-3 flex items-start gap-3 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm">
-                                <svg class="w-4 h-4 text-red-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                                <div>
-                                    <p class="font-semibold text-red-700 dark:text-red-300 text-xs">Tipo de precursor requerido</p>
-                                    <p class="text-red-600 dark:text-red-400 text-xs mt-0.5">Cuando se registran horas, indica si fue Auxiliar, Regular o Especial este mes.</p>
-                                </div>
-                            </div>
+                            <app-aviso *ngIf="showValidationError() && horasRequierePrecursor()" tone="danger" [dense]="true" class="mb-3 block" title="Tipo de precursor requerido">
+                                Cuando se registran horas, indica si fue Auxiliar, Regular o Especial este mes.
+                            </app-aviso>
 
-                            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4"
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4"
                                  [ngClass]="showValidationError() && horasRequierePrecursor() ? 'border-red-300 dark:border-red-700 ring-1 ring-red-300 dark:ring-red-700' : ''">
                                 <div class="flex items-center justify-between mb-3">
-                                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider"
+                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider"
                                        [ngClass]="showValidationError() && horasRequierePrecursor() ? 'text-red-500 dark:text-red-400' : ''">
                                         Precursor este mes
                                     </p>
                                     <button (click)="switchTab('privilegios')"
-                                        class="text-[0.625rem] font-semibold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors flex items-center gap-1">
+                                        class="text-xs font-semibold text-brand-purple dark:text-violet-400 hover:text-brand-purple dark:hover:text-violet-300 transition-colors flex items-center gap-1">
                                         Ver períodos registrados
                                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -231,46 +191,46 @@
                                             <svg *ngIf="esAuxiliar()" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                                             </svg>
-                                            <span *ngIf="!esAuxiliar()" class="text-[0.625rem] font-bold">A</span>
+                                            <span *ngIf="!esAuxiliar()" class="text-xs font-bold">A</span>
                                         </div>
-                                        <span class="text-[0.625rem] font-bold uppercase tracking-wide"
+                                        <span class="text-xs font-bold uppercase tracking-wide"
                                               [ngClass]="esAuxiliar() ? 'text-amber-700 dark:text-amber-300' : 'text-slate-400 dark:text-slate-500'">Auxiliar</span>
                                     </button>
 
                                     <button (click)="togglePrivilegio('Regular')"
                                         class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 transition-all duration-150"
                                         [ngClass]="esRegular()
-                                            ? 'border-violet-400 bg-violet-50 dark:bg-violet-900/20 dark:border-violet-600'
+                                            ? 'border-violet-400 bg-violet-50 dark:bg-violet-900/20 dark:border-brand-purple'
                                             : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:border-violet-200 dark:hover:border-violet-800'">
                                         <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs"
-                                             [ngClass]="esRegular() ? 'bg-violet-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'">
+                                             [ngClass]="esRegular() ? 'bg-brand-purple text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'">
                                             <svg *ngIf="esRegular()" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                                             </svg>
-                                            <span *ngIf="!esRegular()" class="text-[0.625rem] font-bold">R</span>
+                                            <span *ngIf="!esRegular()" class="text-xs font-bold">R</span>
                                         </div>
-                                        <span class="text-[0.625rem] font-bold uppercase tracking-wide"
-                                              [ngClass]="esRegular() ? 'text-violet-700 dark:text-violet-300' : 'text-slate-400 dark:text-slate-500'">Regular</span>
+                                        <span class="text-xs font-bold uppercase tracking-wide"
+                                              [ngClass]="esRegular() ? 'text-brand-purple dark:text-violet-300' : 'text-slate-400 dark:text-slate-500'">Regular</span>
                                     </button>
 
                                     <button (click)="togglePrivilegio('Especial')"
                                         class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 transition-all duration-150"
                                         [ngClass]="esEspecial()
-                                            ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-600'
+                                            ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20 dark:border-brand-purple'
                                             : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:hover:border-purple-800'">
                                         <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs"
-                                             [ngClass]="esEspecial() ? 'bg-purple-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'">
+                                             [ngClass]="esEspecial() ? 'bg-brand-purple text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'">
                                             <svg *ngIf="esEspecial()" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                                             </svg>
-                                            <span *ngIf="!esEspecial()" class="text-[0.625rem] font-bold">E</span>
+                                            <span *ngIf="!esEspecial()" class="text-xs font-bold">E</span>
                                         </div>
-                                        <span class="text-[0.625rem] font-bold uppercase tracking-wide"
-                                              [ngClass]="esEspecial() ? 'text-purple-700 dark:text-purple-300' : 'text-slate-400 dark:text-slate-500'">Especial</span>
+                                        <span class="text-xs font-bold uppercase tracking-wide"
+                                              [ngClass]="esEspecial() ? 'text-brand-purple dark:text-purple-300' : 'text-slate-400 dark:text-slate-500'">Especial</span>
                                     </button>
                                 </div>
-                                <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-2.5">
-                                    Marca el tipo correspondiente a este mes. Para gestionar períodos formales con fechas, usa la pestaña <button (click)="switchTab('privilegios')" class="text-violet-600 dark:text-violet-400 font-semibold hover:underline">Privilegios</button>.
+                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-2.5">
+                                    Marca el tipo correspondiente a este mes. Para gestionar períodos formales con fechas, usa la pestaña <button (click)="switchTab('privilegios')" class="text-brand-purple dark:text-violet-400 font-semibold hover:underline">Privilegios</button>.
                                 </p>
 
                                 <!-- Quick form for Regular / Especial -->
@@ -280,8 +240,8 @@
                                          ? 'border-violet-200 dark:border-violet-800 bg-violet-50/60 dark:bg-violet-900/10'
                                          : 'border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-900/10'">
 
-                                    <p class="text-[0.625rem] font-bold uppercase tracking-wider"
-                                       [ngClass]="showQuickPrivForm() === 'Regular' ? 'text-violet-600 dark:text-violet-400' : 'text-purple-600 dark:text-purple-400'">
+                                    <p class="text-xs font-bold uppercase tracking-wider"
+                                       [ngClass]="showQuickPrivForm() === 'Regular' ? 'text-brand-purple dark:text-violet-400' : 'text-brand-purple dark:text-purple-400'">
                                         Registrar privilegio de {{ showQuickPrivForm() }} — sin fecha fin
                                     </p>
 
@@ -291,7 +251,7 @@
                                         <svg class="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
-                                        <p class="text-[0.625rem] text-amber-700 dark:text-amber-300 leading-relaxed">
+                                        <p class="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
                                             Ya tiene un privilegio activo sin fecha fin. Crear otro puede generar un duplicado. Revisa en la pestaña
                                             <button (click)="switchTab('privilegios')" class="font-semibold underline">Privilegios</button>.
                                         </p>
@@ -299,16 +259,16 @@
 
                                     <div class="flex items-end gap-2">
                                         <div class="flex-1">
-                                            <label class="block text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider mb-1">Inicio</label>
+                                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Inicio</label>
                                             <input type="date"
                                                    [ngModel]="quickPrivFechaInicio()"
                                                    (ngModelChange)="quickPrivFechaInicio.set($event)"
-                                                   class="w-full text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-700 dark:text-slate-200 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none transition-colors" />
+                                                   class="form-control" />
                                         </div>
                                         <button (click)="crearPrivRapido()"
                                                 [disabled]="savingQuickPriv() || !quickPrivFechaInicio() || tienePrivActivoSinFin()"
                                                 class="text-xs font-semibold text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                                [ngClass]="showQuickPrivForm() === 'Regular' ? 'bg-violet-600 hover:bg-violet-700' : 'bg-purple-600 hover:bg-purple-700'">
+                                                [ngClass]="showQuickPrivForm() === 'Regular' ? 'bg-brand-purple hover:bg-brand-purple' : 'bg-brand-purple hover:bg-[#5b21b6]'">
                                             {{ savingQuickPriv() ? 'Guardando…' : 'Confirmar' }}
                                         </button>
                                         <button (click)="cancelarQuickPriv()"
@@ -326,10 +286,7 @@
                             <button (click)="crearAuxiliarRapido()"
                                     [disabled]="savingQuickAuxiliar()"
                                     class="w-5 h-5 shrink-0 rounded border-2 border-slate-300 dark:border-slate-600 hover:border-violet-500 dark:hover:border-violet-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center">
-                                <svg *ngIf="savingQuickAuxiliar()" class="w-3 h-3 text-slate-400 animate-spin" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                                </svg>
+                                <span *ngIf="savingQuickAuxiliar()" class="spinner-xs text-slate-400" role="status"></span>
                             </button>
                             <p class="text-xs text-slate-400 dark:text-slate-500 flex-1">
                                 ¿Fue Precursor Auxiliar este mes?
@@ -342,12 +299,12 @@
 
                         <!-- Observaciones -->
                         <div>
-                            <label class="block text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider mb-2 px-0.5">Observaciones</label>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-0.5">Observaciones</label>
                             <textarea
                                 [ngModel]="observaciones()"
                                 (ngModelChange)="observaciones.set($event)"
                                 rows="3"
-                                class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl focus:border-violet-500 focus:ring-1 focus:ring-violet-500 p-3 resize-none text-sm outline-none transition-colors placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                                class="form-control resize-none"
                                 placeholder="Notas adicionales sobre este mes..."></textarea>
                         </div>
                     </div>
@@ -357,20 +314,15 @@
                 <div *ngIf="activeTab() === 'privilegios'" class="flex-1 overflow-y-auto animate-tab-in">
 
                     <!-- Permanent-save notice banner -->
-                    <div class="mx-4 mt-4 mb-1 flex items-start gap-2.5 px-3.5 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-                        <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p class="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-                            <strong>Los cambios aquí se guardan al instante</strong> y no se revierten con Cancelar. Los períodos del historial son el registro oficial del publicador.
-                        </p>
-                    </div>
+                    <app-aviso tone="warning" [dense]="true" class="mx-4 mt-4 mb-1 block">
+                        <strong>Los cambios aquí se guardan al instante</strong> y no se revierten con Cancelar. Los períodos del historial son el registro oficial del publicador.
+                    </app-aviso>
 
                     <div class="px-4 pb-4 pt-3 space-y-2">
 
                         <!-- Add button -->
                         <button *ngIf="!showNewPrivilegioForm()" (click)="mostrarFormNuevo()"
-                            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-900 text-xs font-semibold text-violet-500 dark:text-violet-400 hover:border-violet-400 dark:hover:border-violet-700 hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-all duration-150">
+                            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-900 text-xs font-semibold text-brand-purple dark:text-violet-400 hover:border-violet-400 dark:hover:border-brand-purple hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-all duration-150">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
@@ -380,20 +332,20 @@
                         <!-- New privilege form -->
                         <div *ngIf="showNewPrivilegioForm()"
                              class="rounded-xl border-2 border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/20 p-4">
-                            <p class="text-xs font-bold text-violet-700 dark:text-violet-300 mb-3">Nuevo período de precursor</p>
+                            <p class="text-xs font-bold text-brand-purple dark:text-violet-300 mb-3">Nuevo período de precursor</p>
 
                             <!-- Tipo selector -->
                             <div class="mb-3">
-                                <label class="block text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Tipo *</label>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Tipo *</label>
                                 <div class="grid grid-cols-3 gap-1.5">
                                     <button *ngFor="let tipo of ['Precursor Auxiliar', 'Precursor Regular', 'Precursor Especial']"
                                         type="button" (click)="newPrivTipo.set(tipo)"
-                                        class="py-2 px-1 rounded-lg border-2 text-[0.625rem] font-bold uppercase tracking-wide transition-all duration-150 text-center"
+                                        class="py-2 px-1 rounded-lg border-2 text-xs font-bold uppercase tracking-wide transition-all duration-150 text-center"
                                         [ngClass]="{
                                             'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:border-amber-600 dark:text-amber-300': tipo === 'Precursor Auxiliar' && newPrivTipo() === tipo,
-                                            'border-violet-400 bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:border-violet-500 dark:text-violet-300': tipo === 'Precursor Regular' && newPrivTipo() === tipo,
-                                            'border-purple-400 bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:border-purple-600 dark:text-purple-300': tipo === 'Precursor Especial' && newPrivTipo() === tipo,
-                                            'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600': newPrivTipo() !== tipo
+                                            'border-violet-400 bg-violet-100 text-brand-purple dark:bg-violet-900/40 dark:border-violet-500 dark:text-violet-300': tipo === 'Precursor Regular' && newPrivTipo() === tipo,
+                                            'border-purple-400 bg-purple-50 text-brand-purple dark:bg-purple-900/30 dark:border-brand-purple dark:text-purple-300': tipo === 'Precursor Especial' && newPrivTipo() === tipo,
+                                            'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600': newPrivTipo() !== tipo
                                         }">
                                         {{ tipo.replace('Precursor ', '') }}
                                     </button>
@@ -403,14 +355,14 @@
                             <!-- Date pickers -->
                             <div class="grid grid-cols-2 gap-2 mb-3">
                                 <div>
-                                    <label class="block text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Inicio *</label>
+                                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Inicio *</label>
                                     <app-date-picker placeholder="Fecha inicio"
                                         [ngModel]="newPrivFechaInicio()"
                                         (ngModelChange)="newPrivFechaInicio.set($event ?? '')">
                                     </app-date-picker>
                                 </div>
                                 <div>
-                                    <label class="block text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
                                         Fin
                                         <span class="normal-case font-normal text-slate-400 ml-1">vacío = activo</span>
                                     </label>
@@ -450,16 +402,13 @@
 
                             <div class="flex items-center justify-end gap-2">
                                 <button (click)="cancelarNuevoPrivilegio()"
-                                    class="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                    class="btn-secondary btn-sm">
                                     Cancelar
                                 </button>
                                 <button (click)="crearPrivilegio()"
                                     [disabled]="savingNewPrivilegio() || !newPrivTipo() || !newPrivFechaInicio()"
-                                    class="px-3 py-1.5 text-xs font-semibold text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 flex items-center gap-1.5">
-                                    <svg *ngIf="savingNewPrivilegio()" class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
+                                    class="px-3 py-1.5 text-xs font-semibold text-white bg-brand-purple rounded-lg hover:bg-brand-purple transition-colors disabled:opacity-50 flex items-center gap-1.5">
+                                    <span *ngIf="savingNewPrivilegio()" class="spinner-xs" role="status"></span>
                                     Guardar período
                                 </button>
                             </div>
@@ -467,16 +416,13 @@
 
                         <!-- Loading -->
                         <div *ngIf="loadingPrivilegios()" class="flex items-center justify-center py-8">
-                            <svg class="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
+                            <span class="spinner text-brand-purple" role="status"></span>
                         </div>
 
                         <!-- Empty state -->
                         <div *ngIf="!loadingPrivilegios() && privilegiosPrecursor().length === 0 && !showNewPrivilegioForm()"
                              class="py-8 text-center">
-                            <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center mx-auto mb-3">
                                 <svg class="w-5 h-5 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
@@ -490,9 +436,9 @@
                             <div *ngFor="let priv of privilegiosPrecursor()"
                                  class="rounded-xl border transition-all duration-150 overflow-hidden"
                                  [ngClass]="{
-                                    'border-violet-300 dark:border-violet-700 bg-violet-50 dark:bg-violet-900/20': editingPrivilegioId() === priv.id_publicador_privilegio,
+                                    'border-violet-300 dark:border-brand-purple bg-violet-50 dark:bg-violet-900/20': editingPrivilegioId() === priv.id_publicador_privilegio,
                                     'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10': deletingPrivilegioId() === priv.id_publicador_privilegio,
-                                    'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800': editingPrivilegioId() !== priv.id_publicador_privilegio && deletingPrivilegioId() !== priv.id_publicador_privilegio
+                                    'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900': editingPrivilegioId() !== priv.id_publicador_privilegio && deletingPrivilegioId() !== priv.id_publicador_privilegio
                                  }">
 
                                 <!-- Normal row -->
@@ -502,8 +448,8 @@
                                     <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                                          [ngClass]="{
                                             'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300': priv.nombre === 'Precursor Auxiliar',
-                                            'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300': priv.nombre === 'Precursor Regular',
-                                            'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300': priv.nombre === 'Precursor Especial'
+                                            'bg-violet-100 text-brand-purple dark:bg-violet-900/50 dark:text-violet-300': priv.nombre === 'Precursor Regular',
+                                            'bg-purple-100 text-brand-purple dark:bg-purple-900/50 dark:text-purple-300': priv.nombre === 'Precursor Especial'
                                          }">
                                         {{ priv.nombre === 'Precursor Auxiliar' ? 'A' : priv.nombre === 'Precursor Regular' ? 'R' : 'E' }}
                                     </div>
@@ -520,7 +466,7 @@
                                     <!-- Actions -->
                                     <div class="flex items-center gap-1 shrink-0">
                                         <button (click)="iniciarEdicionPrivilegio(priv)"
-                                            class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 dark:text-slate-600 hover:text-violet-600 hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-900/30 transition-colors"
+                                            class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 dark:text-slate-600 hover:text-brand-purple hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-900/30 transition-colors"
                                             title="Editar fechas">
                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -539,19 +485,19 @@
                                 <!-- Edit row -->
                                 <div *ngIf="editingPrivilegioId() === priv.id_publicador_privilegio" class="p-3">
                                     <div class="flex items-center gap-2 mb-3">
-                                        <span class="text-xs font-semibold text-violet-700 dark:text-violet-300">Editando fechas ·</span>
+                                        <span class="text-xs font-semibold text-brand-purple dark:text-violet-300">Editando fechas ·</span>
                                         <span class="text-xs text-slate-500 dark:text-slate-400">{{ priv.nombre }}</span>
                                     </div>
                                     <div class="grid grid-cols-2 gap-2 mb-3">
                                         <div>
-                                            <label class="block text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider mb-1">Inicio</label>
+                                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Inicio</label>
                                             <app-date-picker placeholder="Fecha inicio"
                                                 [ngModel]="editFechaInicio()"
                                                 (ngModelChange)="editFechaInicio.set($event ?? '')">
                                             </app-date-picker>
                                         </div>
                                         <div>
-                                            <label class="block text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                                                 Fin <span class="normal-case font-normal">vacío = activo</span>
                                             </label>
                                             <app-date-picker placeholder="Sin fecha fin"
@@ -586,15 +532,12 @@
 
                                     <div class="flex items-center justify-end gap-2">
                                         <button (click)="cancelarEdicionPrivilegio()"
-                                            class="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                            class="btn-secondary btn-sm">
                                             Cancelar
                                         </button>
                                         <button (click)="guardarEdicionPrivilegio()" [disabled]="savingPrivilegio()"
-                                            class="px-3 py-1.5 text-xs font-semibold text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-60 flex items-center gap-1.5">
-                                            <svg *ngIf="savingPrivilegio()" class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
+                                            class="px-3 py-1.5 text-xs font-semibold text-white bg-brand-purple rounded-lg hover:bg-brand-purple transition-colors disabled:opacity-60 flex items-center gap-1.5">
+                                            <span *ngIf="savingPrivilegio()" class="spinner-xs" role="status"></span>
                                             Guardar cambios
                                         </button>
                                     </div>
@@ -602,23 +545,17 @@
 
                                 <!-- Delete confirmation -->
                                 <div *ngIf="deletingPrivilegioId() === priv.id_publicador_privilegio" class="p-3">
-                                    <div *ngIf="privNoEliminableMotivo()"
-                                         class="flex items-start gap-2 mb-3 p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
-                                        <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                        <p class="text-xs text-amber-700 dark:text-amber-300">{{ privNoEliminableMotivo() }}</p>
-                                    </div>
+                                    <app-aviso *ngIf="privNoEliminableMotivo()" tone="warning" [dense]="true" class="mb-3 block">{{ privNoEliminableMotivo() }}</app-aviso>
                                     <p *ngIf="!privNoEliminableMotivo()" class="text-xs text-slate-600 dark:text-slate-300 mb-3">
                                         ¿Eliminar el período <strong>{{ priv.nombre }}</strong> ({{ formatFecha(priv.fecha_inicio) }} – {{ formatFecha(priv.fecha_fin) }})? Esta acción no se puede deshacer.
                                     </p>
                                     <div class="flex items-center justify-end gap-2">
                                         <button (click)="cancelarEliminacionPrivilegio()"
-                                            class="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                            class="btn-secondary btn-sm">
                                             Cancelar
                                         </button>
                                         <button *ngIf="!privNoEliminableMotivo()" (click)="confirmarEliminarPrivilegio()"
-                                            class="px-3 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+                                            class="btn-danger btn-sm">
                                             Eliminar
                                         </button>
                                     </div>
@@ -632,9 +569,8 @@
             </div>
         </div>
 
-        <!-- Footer — only shown on Informe tab -->
-        <div *ngIf="activeTab() === 'informe'"
-             class="px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
+    <ng-container slot="footer">
+        <div *ngIf="activeTab() === 'informe'" class="w-full flex items-center justify-between gap-3">
             <div class="text-xs text-slate-400 dark:text-slate-500">
                 <span *ngIf="pendingChanges.size > 0" class="inline-flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
@@ -643,16 +579,13 @@
             </div>
             <div class="flex items-center gap-3">
                 <button (click)="cancelar()" [disabled]="saving()"
-                    class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50">
+                    class="btn-secondary">
                     Cancelar
                 </button>
                 <p *ngIf="saveError()" class="text-xs font-medium text-rose-500 self-center">{{ saveError() }}</p>
                 <button (click)="guardar()" [disabled]="saving() || loading()"
-                    class="px-5 py-2 text-sm font-semibold text-white bg-violet-600 rounded-xl hover:bg-violet-700 active:scale-[0.97] active:bg-violet-800 transition-all duration-150 disabled:opacity-60 flex items-center gap-2 shadow-sm">
-                    <svg *ngIf="saving()" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    class="btn-primary">
+                    <span *ngIf="saving()" class="spinner-sm text-white" role="status"></span>
                     <svg *ngIf="!saving()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
@@ -661,43 +594,17 @@
             </div>
         </div>
 
-        <!-- Footer — Privilegios tab: close only -->
-        <div *ngIf="activeTab() === 'privilegios'"
-             class="px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end bg-white dark:bg-slate-900 shrink-0">
+        
+        <div *ngIf="activeTab() === 'privilegios'" class="w-full flex items-center justify-end">
             <button (click)="cancelar()"
-                class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                class="btn-secondary">
                 Cerrar
             </button>
         </div>
-
-    </div>
-</div>
+    </ng-container>
+</app-modal>
 
 <style>
-/* Toast */
-@keyframes slideDown {
-    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-
-/* Modal backdrop */
-@keyframes backdropIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-.animate-backdrop-in {
-    animation: backdropIn 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* Modal dialog: fade + scale */
-@keyframes dialogIn {
-    from { opacity: 0; transform: scale(0.97) translateY(6px); }
-    to   { opacity: 1; transform: scale(1)    translateY(0); }
-}
-.animate-dialog-in {
-    animation: dialogIn 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
 /* Tab switch: fade + slide up */
 @keyframes tabIn {
     from { opacity: 0; transform: translateY(6px); }
@@ -728,8 +635,6 @@
 
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-    .animate-backdrop-in,
-    .animate-dialog-in,
     .animate-tab-in,
     .animate-content-in,
     .animate-progress-indeterminate {

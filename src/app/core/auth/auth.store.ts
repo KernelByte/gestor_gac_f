@@ -16,6 +16,10 @@ export interface SessionUser {
   totp_activo?: boolean;
   /** Administrador que debe activar la verificación en dos pasos antes de seguir. */
   mfa_pendiente?: boolean;
+  /** Su publicador tiene hoy el privilegio de Anciano (abre Reuniones de ancianos). */
+  es_anciano?: boolean;
+  /** Está convocado a alguna reunión de organización ya convocada (abre el módulo). */
+  participa_reuniones?: boolean;
 }
 
 export const ROL_ADMINISTRADOR = 'Administrador';

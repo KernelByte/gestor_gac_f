@@ -56,6 +56,11 @@ export interface ProximaReunion {
   hora: string | null;
 }
 
+/** La próxima reunión de cualquier publicador, sin requerir permisos de reuniones.* */
+export interface MiProximaReunion extends ProximaReunion {
+  lugar: string | null;
+}
+
 export interface FechasAGenerar {
   fechas: string[];
   /** La congregación no tiene día configurado para ese tipo de reunión. */
@@ -148,6 +153,11 @@ export class ReunionesService {
   getProximasReuniones(idCong: number, cantidad: number): Observable<ProximaReunion[]> {
     const params = new HttpParams().set('id_congregacion', idCong).set('cantidad', cantidad);
     return this.http.get<ProximaReunion[]>(`${this.base}/proximas-reuniones`, { params });
+  }
+
+  getMiProximaReunion(idCong: number): Observable<MiProximaReunion | null> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.get<MiProximaReunion | null>(`${this.base}/mi-proxima-reunion`, { params });
   }
 
   getFechasAGenerar(q: {

@@ -60,6 +60,8 @@ export interface AgendaRequest {
   titulo?: string;
   items: AgendaItem[];
   secciones?: AgendaSecciones;
+  /** `actualizado_en` de la visita al abrirla: si cambió, el servidor responde 409 en vez de pisarla. */
+  esperado_actualizado_en?: string | null;
 }
 
 export interface TokenVisita {

@@ -72,7 +72,7 @@ function leerCerrada(): boolean {
                   </span>
                 } @else {
                   <!-- Tres estados que se distinguen sin leer: ✓ lleno (hecho), círculo invertido (ahora), contorno (después). -->
-                  <span class="w-7 h-7 rounded-full text-sm font-black tabular-nums flex items-center justify-center" aria-hidden="true"
+                  <span class="w-7 h-7 rounded-full text-sm font-bold tabular-nums flex items-center justify-center" aria-hidden="true"
                         [class]="esActual ? 'bg-white text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'border-[1.5px] border-dashed border-slate-300 dark:border-slate-600'">{{ s.n }}</span>
                 }
                 <span class="sr-only">Paso {{ s.n }}: </span>
@@ -91,10 +91,10 @@ function leerCerrada(): boolean {
           @if (puedeEditar()) {
             <div class="flex flex-wrap gap-2 shrink-0">
               @if (s.destino) {
-                <button type="button" (click)="ir.emit(s.destino)" class="btn-primary-green focus-ring-green h-10 whitespace-nowrap">{{ s.boton }}</button>
+                <button type="button" (click)="ir.emit(s.destino)" class="btn-primary h-10 whitespace-nowrap">{{ s.boton }}</button>
               }
               @if (s.boton2 && s.destino2) {
-                <button type="button" (click)="ir.emit(s.destino2)" class="btn-secondary focus-ring-green h-10 whitespace-nowrap">{{ s.boton2 }}</button>
+                <button type="button" (click)="ir.emit(s.destino2)" class="btn-secondary h-10 whitespace-nowrap">{{ s.boton2 }}</button>
               }
             </div>
           }

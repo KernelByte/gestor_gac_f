@@ -66,35 +66,6 @@ lucide-icon { display: inline-flex; flex-shrink: 0; }
   outline-offset: 2px;
 }
 
-/* ── Controles (mismo idioma que Reportes y Actas) ───────────────────── */
-.ctrl, .btn-primario {
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.4375rem;
-  height: 2.25rem; padding-inline: 0.875rem;
-  border: 1px solid var(--linea); border-radius: var(--radio-ctrl);
-  background: var(--superficie); color: var(--txt-2);
-  font-family: inherit; font-size: 0.8125rem; font-weight: 500; line-height: 1;
-  white-space: nowrap; cursor: pointer; touch-action: manipulation;
-  transition: border-color 140ms var(--ease), color 140ms var(--ease),
-              background-color 140ms var(--ease), transform 120ms var(--ease);
-}
-.ctrl:active:not(:disabled), .btn-primario:active:not(:disabled) { transform: scale(0.97); }
-.ctrl:disabled, .btn-primario:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.btn-primario {
-  border-color: transparent;
-  background: var(--acento);
-  color: var(--sobre-solido);
-  font-weight: 600;
-}
-.ctrl-sm { height: 2rem; padding-inline: 0.75rem; font-size: 0.75rem; }
-.ctrl-peligro { color: var(--neg); }
-
-@media (hover: hover) and (pointer: fine) {
-  .ctrl:hover:not(:disabled) { border-color: var(--txt-4); color: var(--txt-1); }
-  .ctrl-peligro:hover:not(:disabled) { border-color: var(--neg); color: var(--neg); background: var(--neg-tenue); }
-  .btn-primario:hover:not(:disabled) { background: color-mix(in oklab, var(--acento) 86%, var(--txt-1)); }
-}
-
 .contador {
   display: inline-grid; place-items: center;
   min-width: 1.25rem; height: 1.25rem; padding-inline: 0.3125rem;
@@ -179,32 +150,9 @@ lucide-icon { display: inline-flex; flex-shrink: 0; }
   display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end;
 }
 
-/* ── Pestañas (estrecho) ─────────────────────────────────────────────── */
-.pestanas {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem;
-  flex-shrink: 0;
-  padding: 0.25rem;
-  border: 1px solid var(--linea); border-radius: var(--radio-ctrl);
-  background: var(--superficie-alt);
-}
-.pestana {
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-  min-height: 2.75rem;
-  border: 1px solid transparent; border-radius: 0.375rem;
-  background: transparent; color: var(--txt-2);
-  font: 600 0.8125rem/1 var(--font-sans);
-  cursor: pointer;
-  transition: background-color 140ms var(--ease), color 140ms var(--ease);
-}
-.pestana[aria-selected="true"] {
-  background: var(--superficie); color: var(--txt-1);
-  border-color: var(--linea);
-}
-.pestana-total {
-  font: 600 0.6875rem/1 var(--font-mono); font-variant-numeric: tabular-nums;
-  color: var(--txt-3);
-}
-.pestana[aria-selected="true"] .pestana-total { color: var(--acento); }
+/* ── Pestañas (estrecho): diseño global .tab-nav; aquí solo no encoger ── */
+.pestanas { flex-shrink: 0; min-height: 2.75rem; }
+.pestanas .tab-item { min-height: 2.5rem; }
 
 /* ── Tablero ──────────────────────────────────────────────────────────── */
 .tablero {
@@ -405,7 +353,7 @@ lucide-icon { display: inline-flex; flex-shrink: 0; }
 .vacio-texto { max-width: 32ch; font-size: 0.75rem; line-height: 1.5; color: var(--txt-2); text-wrap: pretty; }
 .vacio-texto strong { color: var(--txt-1); font-weight: 700; }
 .vacio-texto--ancho { display: none; }
-.vacio .ctrl { margin-top: 0.5rem; }
+.vacio .btn-secondary { margin-top: 0.5rem; }
 
 .estado-error {
   display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
@@ -467,24 +415,10 @@ lucide-icon { display: inline-flex; flex-shrink: 0; }
   padding-bottom: env(safe-area-inset-bottom, 0px);
   border-top: 1px solid var(--linea);
 }
-.barra-movil .ctrl, .barra-movil .btn-primario { height: 2.75rem; font-size: 0.875rem; }
-.barra-movil .btn-primario { padding-inline: 1.125rem; }
+.barra-movil .btn-secondary, .barra-movil .btn-primary { min-height: 2.75rem; }
 .ctrl-mover:not(:disabled) { border-color: var(--acento-borde); color: var(--acento); background: var(--acento-tenue); }
 
 /* ── Confirmación ─────────────────────────────────────────────────────── */
-.toast {
-  position: fixed; left: 50%; bottom: 5.5rem; z-index: 50;
-  display: inline-flex; align-items: center; gap: 0.625rem;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radio-panel);
-  background: var(--txt-1); color: var(--superficie);
-  font-size: 0.8125rem; font-weight: 600;
-  white-space: nowrap;
-  transform: translateX(-50%);
-  transition: opacity 200ms var(--ease), transform 200ms var(--ease);
-  @starting-style { opacity: 0; transform: translate(-50%, 6px); }
-}
-.toast-icono { color: color-mix(in oklab, var(--pos) 70%, var(--superficie)); }
 
 /* ── Ancho: dos paneles con columna de mover ───────────────────────────────
    40rem de contenedor: tablet en vertical sin barra lateral o laptop de
@@ -525,8 +459,6 @@ lucide-icon { display: inline-flex; flex-shrink: 0; }
 
 /* ── Táctil: objetivos de 44 px ─────────────────────────────────────────── */
 @media (pointer: coarse) {
-  .ctrl, .btn-primario { min-height: 2.75rem; }
-  .ctrl-sm { min-height: 2.75rem; }
   .buscador-campo { height: 2.75rem; font-size: 1rem; }
   .buscador-limpiar { width: 2.75rem; height: 2.75rem; right: 0; }
   .selector { min-height: 2.75rem; }
@@ -536,10 +468,9 @@ lucide-icon { display: inline-flex; flex-shrink: 0; }
 
 /* ── Movimiento reducido: sin desplazamientos ni destellos ──────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .ctrl, .btn-primario, .btn-mover { transition-property: border-color, color, background-color; }
-  .ctrl:active:not(:disabled), .btn-primario:active:not(:disabled),
+  .btn-mover { transition-property: border-color, color, background-color; }
   .btn-mover:active:not(:disabled) { transform: none; }
-  .aviso, .toast { transition: none; }
+  .aviso { transition: none; }
   .fila--recien::after, .esqueleto { animation: none; }
   .fila--recien::after { opacity: 0; }
   .spinner { animation-duration: 1.6s; }

@@ -10,10 +10,9 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
       </button>
 
-      <nav class="seccion-nav" role="tablist" #navSecciones (scroll)="recalcularNavOverflow()">
+      <nav class="seccion-nav tab-nav" role="tablist" #navSecciones (scroll)="recalcularNavOverflow()">
         @for (s of secciones(); track s.id) {
-          <button type="button" role="tab" class="seccion-btn"
-            [class.active]="seccionActiva() === s.id"
+          <button type="button" role="tab" class="seccion-btn tab-item"
             [attr.aria-selected]="seccionActiva() === s.id"
             [attr.aria-label]="s.label"
             [title]="s.label"
@@ -66,7 +65,7 @@
           </div>
           <button class="btn-zip" (click)="onDescargarZip()" [disabled]="descargandoZip()">
             @if (descargandoZip()) {
-              <span class="spinner-sm"></span>
+              <span class="spinner spinner-sm"></span>
             } @else {
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -98,7 +97,7 @@
     <!-- Estado de carga -->
     @if (cargando()) {
       <div class="loading-state">
-        <div class="loading-spinner"></div>
+        <div class="spinner spinner-lg" style="color: var(--brand)"></div>
         <p class="loading-text">Cargando información…</p>
       </div>
     }
@@ -129,18 +128,18 @@
           </div>
 
           <!-- Sub-tabs activos/precursores/inactivos -->
-          <div class="sub-tabs">
-          <button class="sub-tab" [class.active]="subTabRegistros() === 'activos'" (click)="subTabRegistros.set('activos')">
+          <div class="segmented sub-tabs" role="tablist" aria-label="Tipo de registro">
+          <button type="button" role="tab" class="segmented-item" [attr.aria-selected]="subTabRegistros() === 'activos'" (click)="subTabRegistros.set('activos')">
             Activos
-            <span class="sub-count">{{ totalActivos() }}</span>
+            <span class="tab-count">{{ totalActivos() }}</span>
           </button>
-          <button class="sub-tab" [class.active]="subTabRegistros() === 'prec_reg'" (click)="subTabRegistros.set('prec_reg')">
+          <button type="button" role="tab" class="segmented-item" [attr.aria-selected]="subTabRegistros() === 'prec_reg'" (click)="subTabRegistros.set('prec_reg')">
             Prec. Regulares
-            <span class="sub-count">{{ totalPrecRegulares() }}</span>
+            <span class="tab-count">{{ totalPrecRegulares() }}</span>
           </button>
-          <button class="sub-tab" [class.active]="subTabRegistros() === 'inactivos'" (click)="subTabRegistros.set('inactivos')">
+          <button type="button" role="tab" class="segmented-item" [attr.aria-selected]="subTabRegistros() === 'inactivos'" (click)="subTabRegistros.set('inactivos')">
             Inactivos
-            <span class="sub-count">{{ registros()!.inactivos.length }}</span>
+            <span class="tab-count">{{ registros()!.inactivos.length }}</span>
           </button>
         </div>
 
@@ -245,7 +244,7 @@
                         [disabled]="descargandoGrupo() === (grupo.grupo_id ?? 'sin-grupo')"
                         (click)="onDescargarGrupoActivos(grupo)">
                         @if (descargandoGrupo() === (grupo.grupo_id ?? 'sin-grupo')) {
-                          <span class="spinner-sm"></span>
+                          <span class="spinner spinner-sm"></span>
                         } @else {
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -262,7 +261,7 @@
             </div>
           }
           @empty {
-            <div class="empty-section">Sin publicadores activos registrados.</div>
+            <app-empty-state [compact]="true" title="Sin publicadores activos registrados."></app-empty-state>
           }
         }
 
@@ -275,7 +274,7 @@
                   [disabled]="descargandoGrupo() === 'prec_reg'"
                   (click)="onDescargarGrupoPrecReg()">
                   @if (descargandoGrupo() === 'prec_reg') {
-                    <span class="spinner-sm"></span>
+                    <span class="spinner spinner-sm"></span>
                   } @else {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -290,7 +289,7 @@
               </ng-container>
             </div>
           } @else {
-            <div class="empty-section">Sin precursores regulares para este año.</div>
+            <app-empty-state [compact]="true" title="Sin precursores regulares para este año."></app-empty-state>
           }
         }
 
@@ -303,7 +302,7 @@
                   [disabled]="descargandoGrupo() === 'inactivos'"
                   (click)="onDescargarGrupoInactivos()">
                   @if (descargandoGrupo() === 'inactivos') {
-                    <span class="spinner-sm"></span>
+                    <span class="spinner spinner-sm"></span>
                   } @else {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -318,7 +317,7 @@
               </ng-container>
             </div>
           } @else {
-            <div class="empty-section">Sin publicadores inactivos en el sistema.</div>
+            <app-empty-state [compact]="true" title="Sin publicadores inactivos en el sistema."></app-empty-state>
           }
         }
       </div>
@@ -449,7 +448,7 @@
                 </p>
               </div>
               <button class="btn-download-s88" (click)="onDescargarContactosPdf()" [disabled]="descargandoContactosPdf()">
-                @if (descargandoContactosPdf()) { <span class="spinner-sm"></span> } @else {
+                @if (descargandoContactosPdf()) { <span class="spinner spinner-sm"></span> } @else {
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/>
                   </svg>
@@ -483,10 +482,8 @@
         </div>
 
         @if (contactosFiltrados().length === 0) {
-          <div class="empty-section">
-            @if (filtroContactos()) { Sin resultados para "{{ filtroContactos() }}". }
-            @else { No hay contactos de emergencia registrados. }
-          </div>
+          <app-empty-state [compact]="true"
+            [title]="filtroContactos() ? 'Sin resultados para &quot;' + filtroContactos() + '&quot;.' : 'No hay contactos de emergencia registrados.'"></app-empty-state>
         }
 
         <div class="contactos-grid">
@@ -558,7 +555,7 @@
                 <p class="panel-subtitle">Reuniones entre semana y fin de semana</p>
               </div>
               <button class="btn-download-s88" (click)="onDescargarS88()" [disabled]="descargandoS88()">
-                @if (descargandoS88()) { <span class="spinner-sm"></span> } @else {
+                @if (descargandoS88()) { <span class="spinner spinner-sm"></span> } @else {
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/>
                   </svg>
@@ -602,7 +599,7 @@
         </div>
 
         @if (documentos()!.length === 0) {
-          <div class="empty-section">No hay documentos adjuntos en esta visita.</div>
+          <app-empty-state [compact]="true" title="No hay documentos adjuntos en esta visita."></app-empty-state>
         }
 
         <div class="docs-grid">
@@ -651,7 +648,7 @@
                         (click)="onDescargarDocumento(doc)"
                         [disabled]="docDescargando() === doc.nombre">
                   @if (docDescargando() === doc.nombre) {
-                    <span class="spinner-sm"></span>
+                    <span class="spinner spinner-sm"></span>
                   } @else {
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -844,7 +841,7 @@
                                       [disabled]="descargandoTarjeta() === t.id"
                                       [attr.aria-label]="'Ver la tarjeta de ' + t.nombre">
                                 @if (descargandoTarjeta() === t.id) {
-                                  <span class="spinner-sm"></span>
+                                  <span class="spinner spinner-sm"></span>
                                 } @else {
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="3" y="4" width="18" height="16" rx="2"/>
@@ -1043,7 +1040,7 @@
                     [attr.aria-label]="'Ver tarjeta de ' + pub.nombre_completo"
                     (click)="onDescargarTarjeta(pub)">
                     @if (descargandoTarjeta() === pub.id_publicador) {
-                      <span class="spinner-sm"></span>
+                      <span class="spinner spinner-sm"></span>
                     } @else {
                       <!-- Mismo icono que "Ver tarjeta" en la agenda: es la
                            misma acción sobre el mismo documento. -->

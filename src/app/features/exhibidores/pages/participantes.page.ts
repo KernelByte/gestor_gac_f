@@ -23,6 +23,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
 
 @Component({
   selector: 'app-participantes-exhibidores-page',
+  host: { class: 'tema-exhibidores' },
   standalone: true,
   imports: [
     CommonModule, FormsModule, PageHeaderComponent, ModalComponent,
@@ -115,8 +116,8 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
              el mismo desplazamiento para quedar alineado justo encima de él. -->
         <div class="shrink-0 flex items-center justify-between gap-3 pl-4 pr-2 py-2.5
                     bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
-          <span class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-600 dark:text-slate-400">Publicador</span>
-          <span class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-600 dark:text-slate-400">Exhibidor</span>
+          <span class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-600 dark:text-slate-400">Publicador</span>
+          <span class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-600 dark:text-slate-400">Exhibidor</span>
         </div>
 
         <ul class="flex-1 min-h-0 overflow-y-auto custom-scrollbar divide-y divide-gray-100 dark:divide-slate-700/60">
@@ -128,7 +129,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
                    "Ana Clara Hinestroza Palacio" cortado obliga a abrir la
                    ficha solo para saber de quién se trata. Que ocupe dos
                    líneas cuesta menos que ese viaje. -->
-              <button type="button"
+              <div class="row-actions"><button type="button"
                       class="flex flex-1 min-w-0 items-center gap-3 text-left rounded-xl py-1 -my-1 focus-ring-blue active:opacity-70"
                       (click)="editar(p)" [attr.aria-label]="'Ver ficha de ' + p.nombre_completo">
                 <span class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
@@ -136,13 +137,13 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
                   {{ iniciales(p.nombre_completo) }}
                 </span>
                 <span class="min-w-0">
-                  <span class="block text-[15px] font-semibold leading-snug text-slate-800 dark:text-slate-100">
+                  <span class="block text-base font-semibold leading-snug text-slate-800 dark:text-slate-100">
                     {{ p.nombre_completo }}
                   </span>
                   <span *ngIf="p.es_exhibidor && !p.activo"
                         class="block mt-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">En pausa</span>
                 </span>
-              </button>
+              </button></div>
 
               <!-- Interruptor en vez de la insignia Sí/No de la tabla: el
                    blanco táctil pasa de 34x22 a 56x44 y el estado se lee sin
@@ -170,7 +171,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
             <div *ngIf="p.es_exhibidor" class="mt-3 space-y-2 max-w-md">
               <div class="flex gap-1" role="group" aria-label="Días en que puede salir">
                 <button *ngFor="let d of diasCorto; let di = index" type="button"
-                        class="flex-1 min-w-0 h-10 rounded-lg text-[11px] font-bold transition-colors
+                        class="flex-1 min-w-0 h-10 rounded-lg text-xs font-bold transition-colors
                                focus-ring-blue active:scale-95"
                         [ngClass]="diaDisponible(p, di)
                           ? 'bg-exh-100 text-exh-700 dark:bg-exh-950/70 dark:text-exh-300'
@@ -187,7 +188,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
                         class="shrink-0 h-10 px-3.5 rounded-lg text-xs font-bold border transition-colors
                                focus-ring-blue active:scale-95"
                         [ngClass]="p.tiene_fluidez
-                          ? 'bg-violet-100 border-violet-200 text-violet-700 dark:bg-violet-950/60 dark:border-violet-800/50 dark:text-violet-300'
+                          ? 'bg-violet-100 border-violet-200 text-brand-purple dark:bg-violet-950/60 dark:border-violet-800/50 dark:text-violet-300'
                           : 'bg-transparent border-slate-200 text-slate-400 dark:border-slate-700 dark:text-slate-500'"
                         [attr.aria-pressed]="p.tiene_fluidez"
                         [attr.aria-label]="(p.tiene_fluidez ? 'Quitar' : 'Marcar') + ' fluidez a ' + p.nombre_completo"
@@ -301,7 +302,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
               <td class="table-cell">
                 <div *ngIf="p.es_exhibidor" class="flex gap-1">
                   <button *ngFor="let d of diasCorto; let di = index" type="button"
-                          class="w-6 h-6 rounded-md text-[10px] font-bold flex items-center justify-center
+                          class="w-6 h-6 rounded-md text-xs font-bold flex items-center justify-center
                                  transition-colors focus-ring-blue hover:ring-2 hover:ring-exh-300 dark:hover:ring-exh-700"
                           [ngClass]="diaDisponible(p, di)
                             ? 'bg-exh-100 text-exh-700 dark:bg-exh-950/70 dark:text-exh-300'
@@ -316,7 +317,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
               <td class="table-cell">
                 <select *ngIf="p.es_exhibidor" class="inline-select-compact h-7 pl-2 pr-6 rounded-lg border
                                border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900
-                               text-[11px] font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer
+                               text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer
                                hover:border-slate-400 dark:hover:border-slate-500
                                focus:border-exh-600 dark:focus:border-exh-600 focus:ring-2 focus:ring-exh-600/20 transition-all"
                         [ngModel]="franjaSeleccionadaDe(p)" (ngModelChange)="cambiarFranjaInline(p, $event)"
@@ -327,7 +328,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
               <td class="table-cell text-center">
                 <select *ngIf="p.es_exhibidor" class="inline-select-compact h-7 pl-2 pr-6 rounded-lg border
                                border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900
-                               text-[11px] font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer
+                               text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer
                                hover:border-slate-400 dark:hover:border-slate-500
                                focus:border-exh-600 dark:focus:border-exh-600 focus:ring-2 focus:ring-exh-600/20 transition-all"
                         [ngModel]="p.max_turnos_mes" (ngModelChange)="cambiarMaxTurnosInline(p, $event)"
@@ -337,8 +338,8 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
                 </select>
               </td>
               <td class="table-cell text-right">
-                <button class="btn-icon-edit" (click)="editar(p)" aria-label="Editar participante">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <button class="btn-icon-sm" (click)="editar(p)" aria-label="Editar participante">
+                  <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487Z"/>
                   </svg>
                 </button>
@@ -515,12 +516,12 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
                 <span class="w-1.5 h-1.5 rounded-full" [ngClass]="accionDe(v.accion).dotClass"></span>
                 {{ accionDe(v.accion).label }}
               </span>
-              <span class="badge-neutral !text-[10px] shrink-0">{{ etiquetaTipo(v.tipo) }}</span>
+              <span class="badge-neutral !text-xs shrink-0">{{ etiquetaTipo(v.tipo) }}</span>
             </p>
           </div>
-          <button class="btn-icon-delete shrink-0 !p-2.5 sm:!p-1.5" (click)="eliminarVinculo(v)"
+          <button class="btn-icon-sm tone-danger" (click)="eliminarVinculo(v)"
                   [attr.aria-label]="'Eliminar vínculo entre ' + v.publicador_a.nombre_completo + ' y ' + v.publicador_b.nombre_completo">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
             </svg>
           </button>
@@ -631,7 +632,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
           </div>
           <p class="shrink-0 text-right">
             <span class="data-num text-lg font-bold text-slate-900 dark:text-slate-100">{{ h.total_salidas }}</span>
-            <span class="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">salidas</span>
+            <span class="block text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">salidas</span>
           </p>
         </li>
       </ul>

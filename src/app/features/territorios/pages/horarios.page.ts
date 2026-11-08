@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, signal, computed, effect, inject, OnInit, untracked } from '@angular/core';
+import { Component, signal, computed, effect, inject, OnInit, untracked } from '@angular/core';
 import { VacanteTraslado, VacantesTrasladoService, textoVacante, vacantesPor } from '../../../shared/vacantes-traslado';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
@@ -8,6 +8,9 @@ import { AuthStore } from '../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { Sector, PuntoSalidaOpcion, SugerenciaSalida } from '../models/territorio.model';
 import { codigosDe, textoManzanas } from '../utils/rangos-manzanas.util';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { AvisoComponent } from '../../../shared/components/aviso/aviso.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { nombreMostrado } from '../../../core/utils/nombre.util';
 import { SalidaEditorComponent } from '../components/salida-editor.component';
@@ -35,7 +38,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
   standalone: true,
   selector: 'app-horarios-page',
   host: { class: 'tema-territorios' },
-  imports: [CommonModule, PageHeaderComponent, SalidaEditorComponent, SemanaTipoComponent],
+  imports: [CommonModule, PageHeaderComponent, SalidaEditorComponent, SemanaTipoComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
   template: `
     <div class="flex flex-col h-full min-h-0 gap-4">
       <app-page-header
@@ -44,9 +47,9 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
         subtitle="Qué días se predica, dónde se reúnen, quién saca el grupo y en qué barrio.">
         <div class="relative">
           <button (click)="menuCompartir.set(!menuCompartir())" [disabled]="!salidas().length || exportando()"
-            class="btn-secondary focus-ring-green whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+            class="btn-secondary whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
             @if (exportando()) {
-              <div class="w-4 h-4 border-2 border-slate-300 border-t-emerald-600 rounded-full animate-spin"></div>
+              <div class="spinner-sm text-emerald-600"></div>
             } @else {
               <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
             }
@@ -54,14 +57,14 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
           </button>
           @if (menuCompartir()) {
             <div class="fixed inset-0 z-40" (click)="menuCompartir.set(false)"></div>
-            <div class="absolute right-0 mt-2 z-50 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-1.5">
+            <div class="absolute right-0 mt-2 z-50 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-1.5">
               <button (click)="compartir('image')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors">
                 <span class="block text-sm font-bold text-slate-800 dark:text-slate-100">Imagen (WhatsApp)</span>
-                <span class="block text-[12px] text-slate-500 dark:text-slate-400">Se descarga una foto de la hoja</span>
+                <span class="block text-xs text-slate-500 dark:text-slate-400">Se descarga una foto de la hoja</span>
               </button>
               <button (click)="compartir('pdf')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors">
                 <span class="block text-sm font-bold text-slate-800 dark:text-slate-100">PDF para imprimir</span>
-                <span class="block text-[12px] text-slate-500 dark:text-slate-400">Para pegar en el tablero</span>
+                <span class="block text-xs text-slate-500 dark:text-slate-400">Para pegar en el tablero</span>
               </button>
             </div>
           }
@@ -70,19 +73,19 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
 
       <!-- Barra: periodo · resumen · acciones -->
       <div class="shrink-0 flex flex-wrap items-center gap-x-3 gap-y-2">
-        <div class="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl p-1 shadow-sm">
+        <div class="flex items-center gap-0.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-1 shadow-sm">
           <button (click)="mover(-1)" [title]="periodo() === 'mes' ? 'Mes anterior' : 'Semana anterior'"
             class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors active:scale-95">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <span class="min-w-[11.5rem] text-center text-[15px] font-black text-slate-900 dark:text-white px-1 tabular-nums">{{ titulo() }}</span>
+          <span class="min-w-[11.5rem] text-center text-base font-bold text-slate-900 dark:text-white px-1 tabular-nums">{{ titulo() }}</span>
           <button (click)="mover(1)" [title]="periodo() === 'mes' ? 'Mes siguiente' : 'Semana siguiente'"
             class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors active:scale-95">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
         @if (!esActual()) {
-          <button (click)="irHoy()" class="h-9 px-3 rounded-lg text-[13px] font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
+          <button (click)="irHoy()" class="h-9 px-3 rounded-lg text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
             Ir a {{ periodo() === 'mes' ? 'este mes' : 'esta semana' }}
           </button>
         }
@@ -96,38 +99,38 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
         @if (puedeEditar() && !sinCongregacion() && !loading()) {
           <div class="flex gap-2 ml-auto w-full sm:w-auto">
             @if (estado() === 'sin-fijas') {
-              <button (click)="abrirSemanaTipo()" class="btn-primario flex-1 sm:flex-none">
+              <button (click)="abrirSemanaTipo()" class="btn-primary flex-1 sm:flex-none">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
                 Configurar salidas fijas
               </button>
             } @else {
-              <button (click)="nuevaSalida()" class="btn-suave flex-1 sm:flex-none">
+              <button (click)="nuevaSalida()" class="btn-secondary flex-1 sm:flex-none">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Agregar salida
               </button>
               <div class="relative">
-                <button (click)="menuPrograma.set(!menuPrograma())" class="btn-suave !px-3" aria-haspopup="menu" [attr.aria-expanded]="menuPrograma()" title="Más opciones del programa">
+                <button (click)="menuPrograma.set(!menuPrograma())" class="btn-secondary !px-3" aria-haspopup="menu" [attr.aria-expanded]="menuPrograma()" title="Más opciones del programa">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
                   <span class="sr-only">Más opciones</span>
                 </button>
                 @if (menuPrograma()) {
                   <div class="fixed inset-0 z-40" (click)="menuPrograma.set(false)"></div>
-                  <div class="menu-pop absolute right-0 mt-2 z-50 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-1.5" role="menu" (keydown.escape)="menuPrograma.set(false)">
+                  <div class="menu-pop absolute right-0 mt-2 z-50 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-1.5" role="menu" (keydown.escape)="menuPrograma.set(false)">
                     @if (estado() === 'con-programa') {
                       <button role="menuitem" (click)="menuPrograma.set(false); pedirRecrear()" class="opcion-menu">
                         <span class="block text-sm font-bold text-slate-800 dark:text-slate-100">Volver a crear con las salidas fijas</span>
-                        <span class="block text-[12px] text-slate-500 dark:text-slate-400">Agregar las que falten o empezar de nuevo</span>
+                        <span class="block text-xs text-slate-500 dark:text-slate-400">Agregar las que falten o empezar de nuevo</span>
                       </button>
                     }
                     <button role="menuitem" (click)="menuPrograma.set(false); abrirSemanaTipo()" class="opcion-menu">
                       <span class="block text-sm font-bold text-slate-800 dark:text-slate-100">Cambiar las salidas fijas</span>
-                      <span class="block text-[12px] text-slate-500 dark:text-slate-400">Días, horas, lugares y capitanes que se repiten</span>
+                      <span class="block text-xs text-slate-500 dark:text-slate-400">Días, horas, lugares y capitanes que se repiten</span>
                     </button>
                     @if (estado() === 'con-programa') {
                       <div class="my-1 border-t border-slate-100 dark:border-slate-700/60"></div>
                       <button role="menuitem" (click)="menuPrograma.set(false); dialogoBorrar.set(true)" class="opcion-menu">
                         <span class="block text-sm font-bold text-red-700 dark:text-red-400">Borrar {{ periodo() === 'mes' ? 'el programa del mes' : 'el programa de la semana' }}</span>
-                        <span class="block text-[12px] text-slate-500 dark:text-slate-400">Quita las {{ salidas().length }} salidas de {{ periodo() === 'mes' ? 'este mes' : 'esta semana' }}</span>
+                        <span class="block text-xs text-slate-500 dark:text-slate-400">Quita las {{ salidas().length }} salidas de {{ periodo() === 'mes' ? 'este mes' : 'esta semana' }}</span>
                       </button>
                     }
                   </div>
@@ -139,66 +142,58 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
       </div>
 
       @if (error()) {
-        <div class="shrink-0 flex items-start gap-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-xl px-4 py-3" role="alert">
-          <svg class="w-4 h-4 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <p class="flex-1 text-sm font-semibold text-red-700 dark:text-red-300">{{ error() }}</p>
-          <button (click)="error.set(null)" class="text-sm font-bold text-red-700 dark:text-red-300 px-1" title="Cerrar aviso">✕</button>
-        </div>
+        <app-aviso tone="danger" class="shrink-0 block" [dismissible]="true" (dismissed)="error.set(null)">{{ error() }}</app-aviso>
       }
 
       @if (hecho(); as h) {
-        <div class="aviso-hecho shrink-0 flex items-start gap-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-3" role="status">
-          <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-          <p class="flex-1 text-sm font-semibold text-emerald-900 dark:text-emerald-200">{{ h }}</p>
-          <button (click)="hecho.set(null)" class="text-sm font-bold text-emerald-800 dark:text-emerald-300 px-1" title="Cerrar aviso">✕</button>
-        </div>
+        <app-aviso tone="success" class="shrink-0 block aviso-hecho" [dismissible]="true" (dismissed)="hecho.set(null)">{{ h }}</app-aviso>
       }
 
       <!-- Contenido: ocupa el alto que queda; solo se desplaza por dentro si hace falta -->
       <div class="flex-1 min-h-0">
         @if (sinCongregacion()) {
-          <div class="h-full flex items-center justify-center bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/50 px-6 py-10 text-center">
+          <div class="h-full flex items-center justify-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 px-6 py-10 text-center">
             <div>
-              <p class="text-lg font-black text-slate-900 dark:text-white">Elija una congregación</p>
+              <p class="text-lg font-bold text-slate-900 dark:text-white">Elija una congregación</p>
               <p class="mt-1 text-sm text-slate-500 dark:text-slate-400 max-w-sm">El programa de salidas es de cada congregación. Elíjala en el selector de arriba para verlo o armarlo.</p>
             </div>
           </div>
         } @else if (loading()) {
           <div class="h-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-2">
             @for (i of [1, 2, 3, 4, 5, 6, 7]; track i) {
-              <div class="rounded-2xl bg-slate-100 dark:bg-slate-800/60 animate-pulse min-h-24"></div>
+              <div class="rounded-2xl skeleton min-h-24"></div>
             }
           </div>
         } @else if (!salidas().length && !semanaTipo().length && puedeEditar()) {
-          <div class="h-full flex items-center justify-center bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/50 px-6 py-10 text-center">
+          <div class="h-full flex items-center justify-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 px-6 py-10 text-center">
             <div>
-              <p class="text-lg font-black text-slate-900 dark:text-white">Arme el programa en 3 pasos</p>
+              <p class="text-lg font-bold text-slate-900 dark:text-white">Arme el programa en 3 pasos</p>
               <ol class="mt-5 max-w-md mx-auto text-left space-y-3">
                 @for (paso of pasos; track $index) {
                   <li class="flex gap-3">
-                    <span class="w-7 h-7 shrink-0 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[13px] font-black flex items-center justify-center">{{ $index + 1 }}</span>
+                    <span class="w-7 h-7 shrink-0 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-sm font-bold flex items-center justify-center">{{ $index + 1 }}</span>
                     <span class="text-sm text-slate-600 dark:text-slate-300 pt-1">{{ paso }}</span>
                   </li>
                 }
               </ol>
-              <button (click)="abrirSemanaTipo()" class="mt-6 h-11 px-5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-colors">Configurar salidas fijas</button>
+              <button (click)="abrirSemanaTipo()" class="mt-6 btn-primary">Configurar salidas fijas</button>
             </div>
           </div>
         } @else if (estado() === 'vacio' && puedeEditar()) {
           <div class="h-full overflow-y-auto flex items-start sm:items-center justify-center py-2">
-            <section class="vacio-card w-full max-w-xl bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-5 sm:p-7">
-              <p class="text-[12px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">{{ titulo() }}</p>
-              <h2 class="mt-1 text-xl font-black text-slate-900 dark:text-white">{{ periodo() === 'mes' ? 'Este mes' : 'Esta semana' }} aún no tiene programa</h2>
+            <section class="vacio-card w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-7">
+              <p class="text-xs font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">{{ titulo() }}</p>
+              <h2 class="mt-1 text-xl font-bold text-slate-900 dark:text-white">{{ periodo() === 'mes' ? 'Este mes' : 'Esta semana' }} aún no tiene programa</h2>
               <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
                 Se crearán <b class="text-slate-900 dark:text-white tabular-nums">{{ totalPrevio() }}</b> {{ totalPrevio() === 1 ? 'salida' : 'salidas' }} con sus salidas fijas{{ periodo() === 'mes' ? ' (cada semana del mes)' : '' }}. Después puede cambiar lo que quiera.
               </p>
               <ul class="mt-4 divide-y divide-slate-100 dark:divide-slate-700/60 rounded-xl border border-slate-100 dark:border-slate-700/60 overflow-hidden">
                 @for (d of vistaPrevia(); track d.dia) {
                   <li class="flex gap-3 px-4 py-2.5">
-                    <span class="w-24 shrink-0 text-sm font-black text-slate-900 dark:text-white">{{ d.dia }}</span>
+                    <span class="w-24 shrink-0 text-sm font-bold text-slate-900 dark:text-white">{{ d.dia }}</span>
                     <span class="min-w-0 flex-1 space-y-1">
                       @for (f of d.filas; track $index) {
-                        <span class="block text-[13px] leading-snug text-slate-700 dark:text-slate-200">
+                        <span class="block text-sm leading-snug text-slate-700 dark:text-slate-200">
                           <b class="tabular-nums">{{ hora(f.hora_inicio) || 'Sin hora' }}</b> · {{ f.lugar || 'Sin lugar' }}
                           <span class="text-slate-500 dark:text-slate-400"> · {{ f.capitanes.length ? nombresDe(f.capitanes) : 'Capitán: se turnan' }}</span>
                         </span>
@@ -209,13 +204,13 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
               </ul>
               <div class="mt-5 flex flex-col-reverse sm:flex-row sm:items-center gap-2">
                 <button (click)="abrirSemanaTipo()" class="h-11 px-4 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Cambiar las salidas fijas</button>
-                <button (click)="crear('nuevo')" [disabled]="generando()" class="btn-primario sm:ml-auto !h-12 !px-6">
-                  @if (generando()) { <span class="giro"></span> }
+                <button (click)="crear('nuevo')" [disabled]="generando()" class="btn-primary btn-lg sm:ml-auto">
+                  @if (generando()) { <span class="spinner-sm text-white"></span> }
                   {{ textoCrear() }}
                 </button>
               </div>
               @if (sinFijoCuantas()) {
-                <p class="mt-3 text-[12px] leading-snug text-slate-500 dark:text-slate-400">Las salidas sin capitán fijo reciben por turnos a uno de los habilitados como capitán. Revíselos después y cámbielos si hace falta.</p>
+                <p class="mt-3 text-xs leading-snug text-slate-500 dark:text-slate-400">Las salidas sin capitán fijo reciben por turnos a uno de los habilitados como capitán. Revíselos después y cámbielos si hace falta.</p>
               }
             </section>
           </div>
@@ -227,8 +222,8 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                        [class.dia--vacio]="!d.salidas.length && d.fecha !== hoyIso">
                 <header class="dia__cab flex items-start justify-between gap-2">
                   <div class="min-w-0">
-                    <p class="text-[12px] font-bold uppercase tracking-wide" [class]="d.fecha === hoyIso ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'">{{ d.nombre }}</p>
-                    <p class="text-xl font-black leading-tight text-slate-900 dark:text-white tabular-nums">{{ d.numero }}@if (d.fecha === hoyIso) {<span class="ml-1.5 align-middle text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-600 text-white">Hoy</span>}</p>
+                    <p class="text-xs font-bold uppercase tracking-wide" [class]="d.fecha === hoyIso ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'">{{ d.nombre }}</p>
+                    <p class="text-xl font-bold leading-tight text-slate-900 dark:text-white tabular-nums">{{ d.numero }}@if (d.fecha === hoyIso) {<span class="ml-1.5 align-middle text-xs font-bold px-1.5 py-0.5 rounded-full bg-emerald-600 text-white">Hoy</span>}</p>
                   </div>
                   @if (puedeEditar()) {
                     <button (click)="nuevaSalida(d.fecha)" [title]="'Agregar salida el ' + d.titulo"
@@ -240,12 +235,12 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                 <div class="xl:flex-1 xl:min-h-0 xl:overflow-y-auto pt-3 pb-1 space-y-3 scroll-fino">
                   @for (s of d.salidas; track s.id_horario) {
                     <button type="button" (click)="editar(s)" [disabled]="!puedeEditar()" class="tarjeta">
-                      <span class="block text-[16px] font-black text-slate-900 dark:text-white tabular-nums">{{ hora(s.hora_inicio) || 'Sin hora' }}</span>
-                      <span class="block mt-1.5 text-[14px] font-semibold text-slate-800 dark:text-slate-100 leading-snug">{{ s.lugar || 'Sin lugar' }}</span>
+                      <span class="block text-base font-bold text-slate-900 dark:text-white tabular-nums">{{ hora(s.hora_inicio) || 'Sin hora' }}</span>
+                      <span class="block mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug">{{ s.lugar || 'Sin lugar' }}</span>
                       @if (s.grupos.length) {
-                        <span class="block mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">{{ gruposCorto(s) }}</span>
+                        <span class="block mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ gruposCorto(s) }}</span>
                       }
-                      <span class="tarjeta__quien flex items-start gap-2 text-[13px] leading-snug" [class]="s.capitanes.length ? 'text-slate-600 dark:text-slate-300' : 'text-amber-700 dark:text-amber-300 font-semibold'">
+                      <span class="tarjeta__quien flex items-start gap-2 text-sm leading-snug" [class]="s.capitanes.length ? 'text-slate-600 dark:text-slate-300' : 'text-amber-700 dark:text-amber-300 font-semibold'">
                         <svg class="w-3.5 h-3.5 mt-[3px] shrink-0 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         <span class="min-w-0 space-y-0.5">
                           @if (s.capitanes.length) {
@@ -256,22 +251,22 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                         </span>
                       </span>
                       @if (s.codigo_territorio) {
-                        <span class="mt-2.5 inline-flex items-center gap-1 max-w-full px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-900/25 text-emerald-800 dark:text-emerald-300 text-[12px] font-bold" [title]="s.nombre_territorio ?? ''">
+                        <span class="mt-2.5 inline-flex items-center gap-1 max-w-full px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-900/25 text-emerald-800 dark:text-emerald-300 text-xs font-bold" [title]="s.nombre_territorio ?? ''">
                           <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
                           <span class="truncate">{{ s.codigo_territorio }}</span>
                         </span>
                       }
                       @if (s.nombre_barrio) {
-                        <span class="mt-1.5 block text-[12px] text-slate-500 dark:text-slate-400">Barrio {{ s.nombre_barrio }}</span>
+                        <span class="mt-1.5 block text-xs text-slate-500 dark:text-slate-400">Barrio {{ s.nombre_barrio }}</span>
                       }
                       @if (plan(s); as p) {
-                        <span class="mt-2 block rounded-lg px-2 py-1.5 text-[12px] leading-snug font-semibold"
+                        <span class="mt-2 block rounded-lg px-2 py-1.5 text-xs leading-snug font-semibold"
                               [class]="p.tipo === 'hecho' ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/25 dark:text-emerald-300' : p.tipo === 'toca' ? 'bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:text-amber-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300'"
                               [title]="p.aviso ?? ''">{{ p.texto }}</span>
                       }
                     </button>
                   } @empty {
-                    <p class="pt-1 text-[13px] text-slate-400 dark:text-slate-500">Sin salidas</p>
+                    <p class="pt-1 text-sm text-slate-400 dark:text-slate-500">Sin salidas</p>
                   }
                 </div>
               </section>
@@ -282,10 +277,10 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
           </div>
         } @else {
           <!-- Mes: calendario en escritorio, agenda en teléfono -->
-          <div class="hidden xl:flex h-full flex-col bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm overflow-hidden">
+          <div class="hidden xl:flex h-full flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <div class="grid grid-cols-7 shrink-0 border-b border-slate-100 dark:border-slate-700/60">
               @for (n of diasCortos; track n) {
-                <span class="px-3 h-9 flex items-center text-[12px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ n }}</span>
+                <span class="px-3 h-9 flex items-center text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ n }}</span>
               }
             </div>
             <div class="flex-1 min-h-0 grid grid-cols-7" [style.grid-template-rows]="'repeat(' + mes().length / 7 + ', minmax(0, 1fr))'">
@@ -293,7 +288,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                 <div class="min-h-0 flex flex-col border-b border-r border-slate-100 dark:border-slate-700/50 [&:nth-child(7n)]:border-r-0"
                      [class.celda--fuera]="!c.enMes">
                   <div class="flex items-center justify-between px-2 pt-1.5">
-                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-bold tabular-nums"
+                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold tabular-nums"
                           [class]="c.fecha === hoyIso ? 'bg-emerald-600 text-white' : c.enMes ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-600'">{{ c.numero }}</span>
                     @if (puedeEditar() && c.enMes) {
                       <button (click)="nuevaSalida(c.fecha)" title="Agregar salida" class="celda-mas w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
@@ -304,9 +299,9 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                   <div class="flex-1 min-h-0 overflow-y-auto px-1.5 pb-1.5 space-y-1 scroll-fino">
                     @for (s of c.salidas; track s.id_horario) {
                       <button type="button" (click)="editar(s)" [disabled]="!puedeEditar()" [title]="detalle(s)"
-                        class="w-full text-left px-2 py-1 rounded-md text-[12px] leading-tight bg-emerald-50/80 dark:bg-emerald-900/20 enabled:hover:bg-emerald-100 dark:enabled:hover:bg-emerald-900/40 transition-colors"
+                        class="w-full text-left px-2 py-1 rounded-md text-xs leading-tight bg-emerald-50/80 dark:bg-emerald-900/20 enabled:hover:bg-emerald-100 dark:enabled:hover:bg-emerald-900/40 transition-colors"
                         [class.ring-1]="!s.capitanes.length" [class.ring-amber-400]="!s.capitanes.length">
-                        <span class="font-black text-slate-900 dark:text-white tabular-nums">{{ horaCorta(s.hora_inicio) }}</span>
+                        <span class="font-bold text-slate-900 dark:text-white tabular-nums">{{ horaCorta(s.hora_inicio) }}</span>
                         <span class="text-slate-700 dark:text-slate-200"> {{ s.lugar || 'Sin lugar' }}</span>
                       </button>
                     }
@@ -320,14 +315,14 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
             @for (c of mes(); track c.fecha) {
               @if (c.enMes && c.salidas.length) {
                 <section class="dia dia--movil" [class.dia--hoy]="c.fecha === hoyIso">
-                  <p class="px-4 pt-3.5 text-[13px] font-black text-slate-900 dark:text-white">{{ tituloDia(c.fecha) }}</p>
+                  <p class="px-4 pt-3.5 text-sm font-bold text-slate-900 dark:text-white">{{ tituloDia(c.fecha) }}</p>
                   <div class="px-3 pb-3 pt-2 space-y-2">
                     @for (s of c.salidas; track s.id_horario) {
                       <button type="button" (click)="editar(s)" [disabled]="!puedeEditar()" class="tarjeta">
-                        <span class="text-[15px] font-black text-slate-900 dark:text-white tabular-nums">{{ hora(s.hora_inicio) }}</span>
-                        <span class="text-[13px] font-bold text-slate-800 dark:text-slate-100"> · {{ s.lugar || 'Sin lugar' }}</span>
-                        <span class="block mt-1 text-[13px] text-slate-600 dark:text-slate-300">{{ capitanes(s) || 'Sin capitán' }}@if (s.codigo_territorio) { · {{ s.codigo_territorio }} }</span>
-                        @if (plan(s); as p) { <span class="block mt-1 text-[12px] font-semibold text-slate-600 dark:text-slate-300">{{ p.texto }}</span> }
+                        <span class="text-base font-bold text-slate-900 dark:text-white tabular-nums">{{ hora(s.hora_inicio) }}</span>
+                        <span class="text-sm font-bold text-slate-800 dark:text-slate-100"> · {{ s.lugar || 'Sin lugar' }}</span>
+                        <span class="block mt-1 text-sm text-slate-600 dark:text-slate-300">{{ capitanes(s) || 'Sin capitán' }}@if (s.codigo_territorio) { · {{ s.codigo_territorio }} }</span>
+                        @if (plan(s); as p) { <span class="block mt-1 text-xs font-semibold text-slate-600 dark:text-slate-300">{{ p.texto }}</span> }
                       </button>
                     }
                   </div>
@@ -398,44 +393,31 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
     }
 
     @if (dialogoRecrear()) {
-      <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center sm:p-4" (keydown.escape)="dialogoRecrear.set(false)">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="dialogoRecrear.set(false)"></div>
-        <div class="dialogo relative w-full sm:max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-5 sm:p-6"
-             role="dialog" aria-modal="true" aria-labelledby="recrear-titulo">
-          <h3 id="recrear-titulo" class="text-lg font-black text-slate-900 dark:text-white">Volver a crear {{ periodo() === 'mes' ? 'el mes' : 'la semana' }}</h3>
-          <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ titulo() }} ya tiene {{ salidas().length }} {{ salidas().length === 1 ? 'salida' : 'salidas' }}. ¿Qué desea hacer?</p>
-          <div class="mt-5 space-y-2">
-            <button #recomendado (click)="crear('faltantes')" [disabled]="generando()" class="opcion-dialogo opcion-dialogo--ok focus-ring-green">
-              <span class="block text-[15px] font-black">Agregar solo las que faltan</span>
-              <span class="block text-[13px] font-medium opacity-80">No se toca nada de lo que ya está ni lo cambiado a mano.</span>
-            </button>
-            <button (click)="crear('reemplazar')" [disabled]="generando()" class="opcion-dialogo opcion-dialogo--peligro focus-ring-green">
-              <span class="block text-[15px] font-black">Empezar de nuevo</span>
-              <span class="block text-[13px] font-medium opacity-80">Se borran las salidas de {{ periodo() === 'mes' ? 'este mes' : 'esta semana' }} y se crean otra vez. Se perderán los cambios hechos a mano; las que ya se registraron en Seguimiento se conservan.</span>
-            </button>
-          </div>
-          <button (click)="dialogoRecrear.set(false)" class="mt-3 w-full h-11 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
+      <app-modal [open]="true" variant="sheet" size="md" [title]="'Volver a crear ' + (periodo() === 'mes' ? 'el mes' : 'la semana')"
+                 [subtitle]="titulo() + ' ya tiene ' + salidas().length + ' ' + (salidas().length === 1 ? 'salida' : 'salidas') + '. ¿Qué desea hacer?'"
+                 [hasFooter]="true" (openChange)="$event || dialogoRecrear.set(false)">
+        <div class="space-y-2">
+          <button (click)="crear('faltantes')" [disabled]="generando()" class="opcion-dialogo opcion-dialogo--ok">
+            <span class="block text-base font-bold">Agregar solo las que faltan</span>
+            <span class="block text-sm font-medium opacity-80">No se toca nada de lo que ya está ni lo cambiado a mano.</span>
+          </button>
+          <button (click)="crear('reemplazar')" [disabled]="generando()" class="opcion-dialogo opcion-dialogo--peligro">
+            <span class="block text-base font-bold">Empezar de nuevo</span>
+            <span class="block text-sm font-medium opacity-80">Se borran las salidas de {{ periodo() === 'mes' ? 'este mes' : 'esta semana' }} y se crean otra vez. Se perderán los cambios hechos a mano; las que ya se registraron en Seguimiento se conservan.</span>
+          </button>
         </div>
-      </div>
+        <ng-container slot="footer">
+          <button (click)="dialogoRecrear.set(false)" class="btn-ghost">Cancelar</button>
+        </ng-container>
+      </app-modal>
     }
 
     @if (dialogoBorrar()) {
-      <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center sm:p-4" (keydown.escape)="dialogoBorrar.set(false)">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="dialogoBorrar.set(false)"></div>
-        <div class="dialogo relative w-full sm:max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-5 sm:p-6"
-             role="alertdialog" aria-modal="true" aria-labelledby="borrar-titulo">
-          <h3 id="borrar-titulo" class="text-lg font-black text-slate-900 dark:text-white">¿Borrar el programa {{ periodo() === 'mes' ? 'del mes' : 'de la semana' }}?</h3>
-          <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Se borrarán las {{ salidas().length }} salidas {{ periodo() === 'mes' ? 'de ' : 'de la ' }}{{ tituloEnFrase() }}. Lo que ya registró en Seguimiento de predicación no se pierde. Después puede volver a crearlo con las salidas fijas.
-          </p>
-          <div class="mt-5 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
-            <button #cancelarBorrar (click)="dialogoBorrar.set(false)" class="h-11 px-5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors focus-ring-green">Cancelar</button>
-            <button (click)="borrarPeriodo()" [disabled]="generando()" class="h-11 px-5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 transition-[background-color,transform] active:scale-[0.97]">
-              {{ generando() ? 'Borrando…' : 'Sí, borrar' }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <app-confirm-dialog [open]="true" severity="danger" [busy]="generando()"
+        [title]="'¿Borrar el programa ' + (periodo() === 'mes' ? 'del mes' : 'de la semana') + '?'"
+        [message]="'Se borrarán las ' + salidas().length + ' salidas ' + (periodo() === 'mes' ? 'de ' : 'de la ') + tituloEnFrase() + '. Lo que ya registró en Seguimiento de predicación no se pierde. Después puede volver a crearlo con las salidas fijas.'"
+        confirmLabel="Sí, borrar" cancelLabel="Cancelar"
+        (confirmed)="borrarPeriodo()" (openChange)="$event || dialogoBorrar.set(false)" />
     }
 
     @if (mostrarSemanaTipo()) {
@@ -460,7 +442,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
     .resumen--aviso { background: rgb(255 251 235); border-color: rgb(253 230 138); color: rgb(146 64 14); }
     .resumen--aviso b { color: rgb(120 53 15); }
     .punto { width: 8px; height: 8px; border-radius: 999px; }
-    :host-context(.dark) .resumen { background: rgb(30 41 59); border-color: rgb(51 65 85); color: rgb(203 213 225); }
+    :host-context(.dark) .resumen { background: rgb(15 23 42); border-color: rgb(30 41 59); color: rgb(203 213 225); }
     :host-context(.dark) .resumen b { color: #fff; }
     :host-context(.dark) .resumen--aviso { background: rgba(120,53,15,0.25); border-color: rgba(180,83,9,0.5); color: rgb(252 211 77); }
 
@@ -496,7 +478,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
     .tarjeta__quien { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgb(241 245 249); }
     :host-context(.dark) .tarjeta__quien { border-top-color: rgb(51 65 85 / 0.7); }
     .tarjeta:focus-visible { outline: 2px solid rgb(16 185 129); outline-offset: 2px; }
-    :host-context(.dark) .tarjeta { background: rgb(30 41 59); border-color: rgb(51 65 85); box-shadow: none; }
+    :host-context(.dark) .tarjeta { background: rgb(15 23 42); border-color: rgb(30 41 59); box-shadow: none; }
     :host-context(.dark) .tarjeta:enabled:hover { border-color: rgb(16 185 129 / 0.6); }
 
     /* En teléfono la semana es una agenda: los días vacíos no ocupan lugar */
@@ -507,28 +489,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
     .celda-mas { opacity: 0; transition: opacity 120ms ease-out; }
     div:hover > div > .celda-mas, .celda-mas:focus-visible { opacity: 1; }
 
-    .btn-primario {
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 18px;
-      border-radius: 12px; font-size: 14px; font-weight: 700; white-space: nowrap; color: #fff;
-      background: rgb(5 150 105); box-shadow: 0 4px 10px -2px rgb(5 150 105 / 0.3);
-      transition: background-color 150ms ease-out, transform 120ms ease-out;
-    }
-    .btn-primario:hover:enabled { background: rgb(4 120 87); }
-    .btn-primario:active:enabled { transform: scale(0.97); }
-    .btn-primario:disabled { opacity: 0.6; }
-    .btn-suave {
-      display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 44px; padding: 0 16px;
-      border-radius: 12px; font-size: 14px; font-weight: 700; white-space: nowrap; color: rgb(51 65 85);
-      background: #fff; border: 1px solid rgb(226 232 240);
-      transition: background-color 150ms ease-out, transform 120ms ease-out;
-    }
-    .btn-suave:hover { background: rgb(248 250 252); }
-    .btn-suave:active { transform: scale(0.97); }
-    :host-context(.dark) .btn-suave { color: rgb(226 232 240); background: rgb(30 41 59); border-color: rgb(51 65 85); }
-    :host-context(.dark) .btn-suave:hover { background: rgb(51 65 85); }
-    .btn-primario:focus-visible, .btn-suave:focus-visible, .opcion-menu:focus-visible { outline: 2px solid rgb(16 185 129); outline-offset: 2px; }
-    .giro { width: 16px; height: 16px; border-radius: 999px; border: 2px solid rgb(255 255 255 / 0.35); border-top-color: #fff; animation: girar 0.7s linear infinite; }
-    @keyframes girar { to { transform: rotate(360deg); } }
+    .opcion-menu:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
     .opcion-menu { display: block; width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; transition: background-color 120ms ease-out; }
     .opcion-menu:hover { background: rgb(248 250 252); }
@@ -547,7 +508,6 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
 
     /* Entradas cortas (ease-out); se omiten con «reducir movimiento» */
     .menu-pop { animation: pop 140ms cubic-bezier(0.23, 1, 0.32, 1); transform-origin: top right; }
-    .dialogo { animation: subir 200ms cubic-bezier(0.23, 1, 0.32, 1); }
     .vacio-card, .aviso-hecho { animation: subir 220ms cubic-bezier(0.23, 1, 0.32, 1); }
     .entra .tarjeta { animation: subir 180ms cubic-bezier(0.23, 1, 0.32, 1) both; }
     @keyframes pop { from { opacity: 0; transform: scale(0.96); } }
@@ -556,8 +516,8 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
     .scroll-fino { scrollbar-width: thin; scrollbar-color: rgb(203 213 225) transparent; }
     @media (prefers-reduced-motion: reduce) {
       .tarjeta { transition: none; } .tarjeta:enabled:active { transform: none; }
-      .menu-pop, .dialogo, .vacio-card, .aviso-hecho, .entra .tarjeta, .giro { animation: none; }
-      .btn-primario:active:enabled, .btn-suave:active, .opcion-dialogo:active:enabled { transform: none; }
+      .menu-pop, .vacio-card, .aviso-hecho, .entra .tarjeta { animation: none; }
+      .opcion-dialogo:active:enabled { transform: none; }
     }
   `],
 })
@@ -848,15 +808,6 @@ export class HorariosPage implements OnInit {
         this.mostrarError(e, 'No se pudo borrar el programa.');
       },
     });
-  }
-
-  /** Al abrir el diálogo, el foco va a la opción recomendada (no borra nada). */
-  @ViewChild('cancelarBorrar') set cancelarBorrar(b: ElementRef<HTMLButtonElement> | undefined) {
-    if (b) setTimeout(() => b.nativeElement.focus());
-  }
-
-  @ViewChild('recomendado') set recomendado(b: ElementRef<HTMLButtonElement> | undefined) {
-    if (b) setTimeout(() => b.nativeElement.focus());
   }
 
   crear(modo: ModoCrear): void {

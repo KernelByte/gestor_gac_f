@@ -21,7 +21,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
   imports: [CommonModule],
   template: `
   @if (mapa(); as m) {
-  <aside class="flex flex-col min-h-0 bg-white dark:bg-slate-800 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-700 transition-[width,height] duration-200"
+  <aside class="flex flex-col min-h-0 bg-white dark:bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 transition-[width,height] duration-200"
          [class]="plegado() ? 'lg:w-14 h-14 lg:h-auto' : 'lg:w-[380px] h-[48dvh] lg:h-auto'">
 
     <button (click)="alternarPlegado()" type="button"
@@ -37,7 +37,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
       <!-- ═════ 1 · Límite ═════ -->
       <section>
         <button (click)="m.setLayerMode('territorio')" type="button" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors" [attr.aria-expanded]="m.layerMode() === 'territorio'">
-          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0" [class]="m.layerMode() === 'territorio' ? 'bg-green-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'">1</span>
+          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0" [class]="m.layerMode() === 'territorio' ? 'bg-green-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'">1</span>
           <span class="flex-1 text-base font-extrabold text-slate-900 dark:text-white">Límite del territorio</span>
           @if (m.tieneLimite()) { <span class="text-emerald-600 dark:text-emerald-400 text-sm font-bold">✓ Listo</span> }
         </button>
@@ -61,18 +61,18 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
               <p class="text-sm text-slate-500 dark:text-slate-400 -mt-2">Si es la primera vez que se usa esta zona puede tardar casi un minuto: el mapa de calles es un servicio público y a veces va lento. Después queda guardada.</p>
             }
             @if (m.cuadrasDesactualizadas()) {
-              <button (click)="m.buscarCuadrasAqui()" type="button" [disabled]="m.cuadrasCargando()" class="btn-sec w-full">Buscar cuadras aquí</button>
+              <button (click)="m.buscarCuadrasAqui()" type="button" [disabled]="m.cuadrasCargando()" class="btn-secondary w-full">Buscar cuadras aquí</button>
             }
             <button (click)="m.armarLimiteConCuadras()" type="button" [disabled]="m.cuadrasCargando() || m.cuadrasElegidas() === 0"
-                    class="w-full h-12 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-700 text-white text-base font-bold transition-colors active:scale-[0.98]">Listo, armar el límite</button>
-            <button (click)="m.cancelarCuadras()" type="button" class="btn-sec w-full">Cancelar</button>
+                    class="w-full btn-primary">Listo, armar el límite</button>
+            <button (click)="m.cancelarCuadras()" type="button" class="btn-secondary w-full">Cancelar</button>
           } @else if (!m.tieneLimite()) {
             @if (m.drawingActive()) {
               <ol class="text-sm text-slate-600 dark:text-slate-300 space-y-1 list-decimal pl-5">
                 <li>Haga clic en cada esquina del territorio. El lápiz se pega a las calles.</li>
                 <li>Doble clic en la última esquina para terminar.</li>
               </ol>
-              <button (click)="m.cancelarDibujoActual()" type="button" class="btn-sec w-full">Cancelar dibujo</button>
+              <button (click)="m.cancelarDibujoActual()" type="button" class="btn-secondary w-full">Cancelar dibujo</button>
             } @else {
               <p class="text-base font-bold text-slate-800 dark:text-slate-100">¿Cómo quiere marcar el límite?</p>
 
@@ -109,20 +109,20 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
             @if (m.realtimeArea()) { <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ m.realtimeArea() }}</p> }
             @if (m.editMode()) {
               <p class="text-sm text-slate-600 dark:text-slate-300">Arrastre las esquinas del mapa para corregir el contorno.</p>
-              <button (click)="m.map?.pm?.disableGlobalEditMode()" type="button" class="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold transition-colors active:scale-[0.98]">Listo, terminé de ajustar</button>
+              <button (click)="m.map?.pm?.disableGlobalEditMode()" type="button" class="w-full btn-primary">Listo, terminé de ajustar</button>
             } @else {
               <div class="grid grid-cols-2 gap-2">
-                <button (click)="m.alternarEdicion()" type="button" class="btn-sec">Ajustar esquinas</button>
-                <button (click)="confirmarRedibujo.set(true)" type="button" class="btn-sec">Dibujar de nuevo</button>
+                <button (click)="m.alternarEdicion()" type="button" class="btn-secondary">Ajustar esquinas</button>
+                <button (click)="confirmarRedibujo.set(true)" type="button" class="btn-secondary">Dibujar de nuevo</button>
               </div>
-              <button (click)="m.empezarCuadras()" type="button" class="btn-sec w-full">Agregar o quitar cuadras</button>
+              <button (click)="m.empezarCuadras()" type="button" class="btn-secondary w-full">Agregar o quitar cuadras</button>
             }
             @if (confirmarRedibujo()) {
               <div class="rounded-xl border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-900/20 p-3 space-y-2">
                 <p class="text-sm font-semibold text-red-800 dark:text-red-200">¿Borrar el límite y dibujarlo otra vez?</p>
                 <div class="flex gap-2">
-                  <button (click)="redibujar(m)" type="button" class="flex-1 h-10 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold">Sí, dibujar de nuevo</button>
-                  <button (click)="confirmarRedibujo.set(false)" type="button" class="flex-1 h-10 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200">No</button>
+                  <button (click)="redibujar(m)" type="button" class="flex-1 btn-danger">Sí, dibujar de nuevo</button>
+                  <button (click)="confirmarRedibujo.set(false)" type="button" class="flex-1 btn-secondary btn-sm">No</button>
                 </div>
               </div>
             }
@@ -133,7 +133,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
           <!-- Sin límite no hay nada que guardar: el botón solo confundiría («Límite guardado» sin haber dibujado). -->
           @if (limiteSinGuardar() || saving()) {
           <button (click)="guardarLimite.emit()" type="button" [disabled]="saving()"
-                  class="w-full h-12 rounded-xl text-base font-bold transition-colors active:scale-[0.98] text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                  class="w-full btn-primary">
             {{ saving() ? 'Guardando…' : 'Guardar límite' }}
           </button>
           } @else if (m.tieneLimite() && !m.editMode() && !m.eligiendoCuadras() && !m.drawingActive()) {
@@ -151,7 +151,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
       <!-- ═════ 2 · Manzanas ═════ -->
       <section>
         <button (click)="m.setLayerMode('manzana')" type="button" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors" [attr.aria-expanded]="m.layerMode() === 'manzana'">
-          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0" [class]="m.layerMode() === 'manzana' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'">2</span>
+          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0" [class]="m.layerMode() === 'manzana' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'">2</span>
           <span class="flex-1 text-base font-extrabold text-slate-900 dark:text-white">Manzanas</span>
           <span class="text-sm font-bold text-slate-500 dark:text-slate-400">{{ manzanas().length }}</span>
         </button>
@@ -163,13 +163,13 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
               <li>Doble clic en la última esquina para terminar.</li>
               <li>Confirme el número y se guarda.</li>
             </ol>
-            <button (click)="m.cancelarDibujoActual()" type="button" class="btn-sec w-full">Cancelar dibujo</button>
+            <button (click)="m.cancelarDibujoActual()" type="button" class="btn-secondary w-full">Cancelar dibujo</button>
           } @else {
             <button (click)="m.empezarManzana()" type="button" class="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-base font-bold transition-colors active:scale-[0.98]">{{ manzanas().length ? 'Dibujar otra manzana' : 'Dibujar una manzana' }}</button>
             @if (numeracion()) {
               <p class="text-sm text-slate-500 dark:text-slate-400 -mt-1">Le tocará el número {{ siguienteNumero() }} de la secuencia.</p>
             }
-            <button (click)="m.detectarManzanas()" type="button" [disabled]="detectando() || m.extrayendo()" class="btn-sec w-full disabled:opacity-60">
+            <button (click)="m.detectarManzanas()" type="button" [disabled]="detectando() || m.extrayendo()" class="btn-secondary w-full disabled:opacity-60">
               {{ detectando() || m.extrayendo() ? 'Buscando manzanas…' : 'Detectar manzanas automáticamente' }}
             </button>
           }
@@ -181,7 +181,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
               <div class="rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-900/20 p-3 space-y-2" role="status">
                 @if (cambiosRenumeracion() === 0) {
                   <p class="text-sm font-semibold text-amber-900 dark:text-amber-100">Las manzanas ya están en orden. No hay nada que cambiar.</p>
-                  <button (click)="cancelarRenumeracion.emit()" type="button" class="w-full h-10 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200">Cerrar</button>
+                  <button (click)="cancelarRenumeracion.emit()" type="button" class="w-full btn-secondary btn-sm">Cerrar</button>
                 } @else {
                   <p class="text-sm font-semibold text-amber-900 dark:text-amber-100">
                     En el mapa se ven en naranja los números nuevos de esta tarjeta: {{ rangoPropio() }}, fila por fila desde arriba a la izquierda.
@@ -190,13 +190,13 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
                     La secuencia sigue entre tarjetas (T01, T02…): cambian {{ cambiosRenumeracion() }} de {{ r.length }} manzanas en toda la congregación.
                   </p>
                   <div class="flex gap-2">
-                    <button (click)="confirmarRenumeracion.emit()" type="button" [disabled]="renumerando()" class="flex-1 h-10 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold disabled:opacity-60">{{ renumerando() ? 'Guardando…' : 'Sí, cambiar los números' }}</button>
-                    <button (click)="cancelarRenumeracion.emit()" type="button" class="flex-1 h-10 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200">No</button>
+                    <button (click)="confirmarRenumeracion.emit()" type="button" [disabled]="renumerando()" class="flex-1 btn-primary btn-sm">{{ renumerando() ? 'Guardando…' : 'Sí, cambiar los números' }}</button>
+                    <button (click)="cancelarRenumeracion.emit()" type="button" class="flex-1 btn-secondary btn-sm">No</button>
                   </div>
                 }
               </div>
             } @else if (!m.drawingActive()) {
-              <button (click)="renumerar.emit()" type="button" [disabled]="renumerando()" class="btn-sec w-full">{{ renumerando() ? 'Calculando…' : 'Numerar en secuencia' }}</button>
+              <button (click)="renumerar.emit()" type="button" [disabled]="renumerando()" class="btn-secondary w-full">{{ renumerando() ? 'Calculando…' : 'Numerar en secuencia' }}</button>
             }
             @if (hayDeIA()) {
               <p class="text-sm text-violet-800 dark:text-violet-200 rounded-lg bg-violet-50 dark:bg-violet-900/20 px-3 py-2">
@@ -216,9 +216,9 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
                       <label class="block text-sm font-bold text-slate-700 dark:text-slate-200">Número de la manzana
                         <div class="mt-1 flex gap-2">
                           <input type="text" [value]="numeroBorrador()" (input)="numeroBorrador.set($any($event.target).value)" (keydown.enter)="guardarNumero(z.id)"
-                                 class="flex-1 min-w-0 h-11 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                 class="flex-1 min-w-0 form-control" />
                           <button (click)="guardarNumero(z.id)" type="button" [disabled]="!numeroBorrador().trim() || numeroBorrador().trim() === z.numero || !!avisoNumero(z.id)"
-                                  class="px-4 h-11 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-700 text-white text-sm font-bold">Guardar</button>
+                                  class="btn-primary">Guardar</button>
                         </div>
                       </label>
                       @if (avisoNumero(z.id); as aviso) {
@@ -231,22 +231,22 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
                         <div class="rounded-lg border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-900/20 p-3 space-y-2">
                           <p class="text-sm font-semibold text-red-800 dark:text-red-200">¿Borrar la manzana {{ z.numero }}? No se puede deshacer.</p>
                           <div class="flex gap-2">
-                            <button (click)="borrarManzana.emit(z.id); m.borrando.set(false)" type="button" class="flex-1 h-10 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold">Sí, borrar</button>
-                            <button (click)="m.borrando.set(false)" type="button" class="flex-1 h-10 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200">No</button>
+                            <button (click)="borrarManzana.emit(z.id); m.borrando.set(false)" type="button" class="flex-1 btn-danger">Sí, borrar</button>
+                            <button (click)="m.borrando.set(false)" type="button" class="flex-1 btn-secondary btn-sm">No</button>
                           </div>
                         </div>
                       } @else if (m.editandoForma()) {
                         <p class="text-sm text-slate-600 dark:text-slate-300">Arrastre las esquinas en el mapa y pulse «Listo, guardar».</p>
                       } @else {
                         <div class="grid grid-cols-2 gap-2">
-                          <button (click)="m.ajustarForma()" type="button" class="btn-sec">Ajustar forma</button>
-                          <button (click)="m.borrando.set(true)" type="button" class="btn-sec !text-red-700 dark:!text-red-300 !border-red-200 dark:!border-red-800/60">Borrar</button>
+                          <button (click)="m.ajustarForma()" type="button" class="btn-secondary">Ajustar forma</button>
+                          <button (click)="m.borrando.set(true)" type="button" class="btn-secondary !text-red-700 dark:!text-red-300 !border-red-200 dark:!border-red-800/60">Borrar</button>
                         </div>
                       }
                     </div>
                   } @else {
                     <button (click)="m.seleccionar('manzana', z.id, true)" type="button" class="w-full flex items-center gap-3 px-3 h-12 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-left transition-colors">
-                      <span class="min-w-8 h-8 px-1.5 rounded-lg bg-slate-600 text-white text-sm font-black flex items-center justify-center">{{ z.numero }}</span>
+                      <span class="min-w-8 h-8 px-1.5 rounded-lg bg-slate-600 text-white text-sm font-bold flex items-center justify-center">{{ z.numero }}</span>
                       <span class="flex-1 text-base font-semibold text-slate-800 dark:text-slate-100">Manzana {{ z.numero }}</span>
                       @if (z.origen === 'ia') { <span class="px-2 py-0.5 rounded-md bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-200 text-xs font-bold">IA · revisar</span> }
                     </button>
@@ -262,7 +262,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
       <!-- ═════ 3 · Puntos ═════ -->
       <section>
         <button (click)="m.setLayerMode('punto')" type="button" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors" [attr.aria-expanded]="m.layerMode() === 'punto'">
-          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0" [class]="m.layerMode() === 'punto' ? 'bg-rose-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'">3</span>
+          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0" [class]="m.layerMode() === 'punto' ? 'bg-rose-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'">3</span>
           <span class="flex-1 text-base font-extrabold text-slate-900 dark:text-white">Puntos de salida y lugares</span>
           <span class="text-sm font-bold text-slate-500 dark:text-slate-400">{{ puntos().length }}</span>
         </button>
@@ -270,7 +270,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
         <div class="px-4 pb-4 space-y-3">
           @if (m.colocandoPunto()) {
             <p class="text-sm text-slate-600 dark:text-slate-300">Haga clic en el mapa donde va el punto.</p>
-            <button (click)="m.detenerPunto()" type="button" class="btn-sec w-full">Terminar de poner puntos</button>
+            <button (click)="m.detenerPunto()" type="button" class="btn-secondary w-full">Terminar de poner puntos</button>
           } @else {
             <button (click)="m.empezarPunto()" type="button" class="w-full h-12 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-base font-bold transition-colors active:scale-[0.98]">Poner un punto en el mapa</button>
           }
@@ -289,11 +289,11 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
                       </div>
                       <label class="block text-sm font-bold text-slate-700 dark:text-slate-200">Nombre
                         <input type="text" [value]="pNombre()" (input)="pNombre.set($any($event.target).value)"
-                               class="mt-1 w-full h-11 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-base text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500" />
+                               class="mt-1 w-full form-control" />
                       </label>
                       <label class="block text-sm font-bold text-slate-700 dark:text-slate-200">Tipo
                         <select [value]="pTipo()" (change)="pTipo.set($any($event.target).value)"
-                                class="mt-1 w-full h-11 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-base text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500">
+                                class="mt-1 w-full form-select">
                           <option value="Salida" [selected]="pTipo() === 'Salida'">Salida</option>
                           <option value="Lugar" [selected]="pTipo() === 'Lugar'">Lugar de interés</option>
                           <option value="Otro" [selected]="pTipo() === 'Otro'">Otro</option>
@@ -301,30 +301,30 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
                       </label>
                       <label class="block text-sm font-bold text-slate-700 dark:text-slate-200">Notas (opcional)
                         <input type="text" [value]="pNotas()" (input)="pNotas.set($any($event.target).value)"
-                               class="mt-1 w-full h-11 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-base text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500" />
+                               class="mt-1 w-full form-control" />
                       </label>
                       <button (click)="guardarPunto(p.id)" type="button" [disabled]="!pNombre().trim() || !puntoCambiado(p)"
-                              class="w-full h-11 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-700 text-white text-sm font-bold">Guardar cambios</button>
+                              class="w-full btn-primary">Guardar cambios</button>
                       @if (m.borrando()) {
                         <div class="rounded-lg border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-900/20 p-3 space-y-2">
                           <p class="text-sm font-semibold text-red-800 dark:text-red-200">¿Borrar este punto? No se puede deshacer.</p>
                           <div class="flex gap-2">
-                            <button (click)="borrarPunto.emit(p.id); m.borrando.set(false)" type="button" class="flex-1 h-10 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold">Sí, borrar</button>
-                            <button (click)="m.borrando.set(false)" type="button" class="flex-1 h-10 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200">No</button>
+                            <button (click)="borrarPunto.emit(p.id); m.borrando.set(false)" type="button" class="flex-1 btn-danger">Sí, borrar</button>
+                            <button (click)="m.borrando.set(false)" type="button" class="flex-1 btn-secondary btn-sm">No</button>
                           </div>
                         </div>
                       } @else if (m.editandoForma()) {
                         <p class="text-sm text-slate-600 dark:text-slate-300">Arrastre el punto en el mapa y pulse «Listo, guardar».</p>
                       } @else {
                         <div class="grid grid-cols-2 gap-2">
-                          <button (click)="m.moverPunto()" type="button" class="btn-sec">Mover en el mapa</button>
-                          <button (click)="m.borrando.set(true)" type="button" class="btn-sec !text-red-700 dark:!text-red-300 !border-red-200 dark:!border-red-800/60">Borrar</button>
+                          <button (click)="m.moverPunto()" type="button" class="btn-secondary">Mover en el mapa</button>
+                          <button (click)="m.borrando.set(true)" type="button" class="btn-secondary !text-red-700 dark:!text-red-300 !border-red-200 dark:!border-red-800/60">Borrar</button>
                         </div>
                       }
                     </div>
                   } @else {
                     <button (click)="m.seleccionar('punto', p.id, true)" type="button" class="w-full flex items-center gap-3 px-3 h-12 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-left transition-colors">
-                      <span class="w-8 h-8 rounded-lg bg-rose-600 text-white text-sm font-black flex items-center justify-center shrink-0">{{ p.tipo === 'Salida' ? 'S' : p.tipo === 'Lugar' ? 'L' : 'P' }}</span>
+                      <span class="w-8 h-8 rounded-lg bg-rose-600 text-white text-sm font-bold flex items-center justify-center shrink-0">{{ p.tipo === 'Salida' ? 'S' : p.tipo === 'Lugar' ? 'L' : 'P' }}</span>
                       <span class="flex-1 min-w-0 truncate text-base font-semibold text-slate-800 dark:text-slate-100">{{ p.nombre || 'Punto sin nombre' }}</span>
                     </button>
                   }
@@ -342,16 +342,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
   `,
   styles: [`
     :host { display: contents; }
-    .btn-sec {
-      display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 12px;
-      border-radius: 12px; border: 1px solid rgb(203 213 225); background: transparent;
-      font-size: 14px; font-weight: 700; color: rgb(51 65 85); transition: background-color 120ms ease-out, transform 120ms;
-    }
-    .btn-sec:hover { background: rgb(248 250 252); }
-    .btn-sec:active { transform: scale(0.98); }
-    :host-context(.dark) .btn-sec { border-color: rgb(71 85 105); color: rgb(226 232 240); }
-    :host-context(.dark) .btn-sec:hover { background: rgba(51,65,85,0.6); }
-    @media (prefers-reduced-motion: reduce) { aside, .btn-sec { transition: none !important; } }
+    @media (prefers-reduced-motion: reduce) { aside { transition: none !important; } }
   `],
 })
 export class EditorPanelComponent {

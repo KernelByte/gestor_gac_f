@@ -6,6 +6,9 @@ import { trigger, transition, style, animate, query, stagger } from '@angular/an
 import { lastValueFrom, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { UsuariosService, Rol, Congregacion, Estado, UsuarioCreatePublicador, PublicadorRapidoCreate } from '../services/usuarios.service';
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
+import { AvisoComponent } from '../../../../shared/components/aviso/aviso.component';
+import { ConfirmService } from '../../../../shared/components/confirm-dialog/confirm.service';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { HttpClient } from '@angular/common/http';
 import { Usuario } from '../models/usuario.model';
@@ -16,14 +19,14 @@ import { getInitialAvatarStyle } from '../../../../core/utils/avatar-style.util'
 import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
 import { PasswordStrengthComponent } from '../../../../shared/components/password-strength/password-strength.component';
 import { whatsappUrl } from '../../../../shared/whatsapp';
-import { nombreMostrado } from '../../../../core/utils/nombre.util';
+import { nombreMostrado, inicialesDe } from '../../../../core/utils/nombre.util';
 
 type UserFormTab = 'datos' | 'acceso' | 'seguridad';
 
 @Component({
    standalone: true,
    selector: 'app-usuarios-page',
-   imports: [CommonModule, ReactiveFormsModule, SelectPickerComponent, PasswordStrengthComponent],
+   imports: [CommonModule, ReactiveFormsModule, SelectPickerComponent, PasswordStrengthComponent, ModalComponent, AvisoComponent],
    animations: [
       trigger('tableAnimation', [
          transition('* => *', [
@@ -56,6 +59,112 @@ type UserFormTab = 'datos' | 'acceso' | 'seguridad';
     .simple-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .simple-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .simple-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    :host-context(.dark) .simple-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+    :host-context(.dark) .simple-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* Tokens locales. El violeta de marca y el texto de los controles se
+       definen una vez y cambian con el tema; antes var(--color-brand-purple) y compañía estaban
+       copiados a mano ~15 veces, cada uno con su variante oscura aparte. */
+    :host { --u-marca: var(--color-brand-purple); --u-marca-hover: color-mix(in oklab, var(--color-brand-purple) 85%, black); --u-marca-suave: #f5f3ff; --u-marca-suave-hover: #ede9fe;
+      --u-marca-texto: var(--color-brand-purple); --u-control: #4b5563; }
+    :host-context(.dark) { --u-marca-suave: rgb(139 92 246 / 0.14); --u-marca-suave-hover: rgb(139 92 246 / 0.24);
+      --u-marca-texto: #c4b5fd; --u-control: #cbd5e1; }
+
+    /* ── Lenguaje visual del dashboard: panel blanco de borde fino y radio
+       0.75rem, tokens --dash-* / --estado-* globales (cambian solos con el
+       tema), chips con texto, filas limpias sin cajas anidadas. ── */
+    .page-head { min-height: 2.75rem; }
+
+    .segmented-item:focus-visible,
+     .campo-select:focus-visible, .link-quitar:focus-visible { outline: 2px solid var(--u-marca); outline-offset: 2px; }
+
+    .panel-lista { background: white; border: 1px solid rgb(17 24 39 / 0.07); border-radius: 0.75rem; }
+    :host-context(.dark) .panel-lista { background: var(--color-slate-900, #0f172a); border-color: rgb(148 163 184 / 0.14); }
+    .toolbar { padding: 0.875rem 1rem 0.75rem; border-bottom: 1px solid var(--dash-borde); }
+    :host-context(.dark) .toolbar { border-bottom-color: rgb(148 163 184 / 0.14); }
+
+    .buscador { height: 2.75rem; border-radius: 0.625rem; background: var(--dash-tesela); border: 1px solid transparent;
+      transition: border-color 150ms ease, background-color 150ms ease; }
+    .buscador:focus-within { background: white; border-color: var(--u-marca); }
+    :host-context(.dark) .buscador:focus-within { background: rgb(15 23 42); }
+    .buscador-ic { position: absolute; inset: 0 auto 0 0; width: 2.75rem; display: grid; place-items: center; color: var(--u-control); pointer-events: none; }
+    .buscador:focus-within .buscador-ic { color: var(--u-marca-texto); }
+    .buscador input { width: 100%; height: 100%; padding: 0 2.75rem; background: transparent; border: 0; outline: 0; font-size: 1rem; font-weight: 500;
+      color: var(--color-gray-900, #111827); }
+    :host-context(.dark) .buscador input { color: var(--color-slate-100, #f1f5f9); }
+    .buscador input::placeholder { color: var(--u-control); opacity: 1; }
+    .buscador-x { position: absolute; inset: 0 0 0 auto; width: 2.75rem; display: grid; place-items: center; color: var(--u-control); }
+    .buscador-x:hover { color: #dc2626; }
+
+    .campo-select { width: 100%; height: 2.75rem; padding: 0 2.25rem 0 0.75rem; appearance: none; -webkit-appearance: none;
+      border: 0; border-radius: 0.625rem; background: var(--dash-tesela); font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      color: var(--color-gray-700, #374151); text-overflow: ellipsis; transition: background-color 150ms ease; }
+    :host-context(.dark) .campo-select { color: var(--color-slate-200, #e2e8f0); }
+    .campo-select:hover { background: var(--dash-borde); }
+    .campo-select.activo { color: var(--u-marca-texto); }
+    .campo-flecha { position: absolute; right: 0.75rem; top: 50%; width: 1rem; height: 1rem; transform: translateY(-50%);
+      color: var(--u-control); pointer-events: none; }
+
+    /* Nombre como botón real, extendido a toda la tarjeta con ::after: el clic
+       y el teclado abren la edición, y los botones de acción quedan por encima. */
+    .nombre-btn { display: block; max-width: 100%; text-align: left; }
+    .nombre-btn::after { content: ''; position: absolute; inset: 0; }
+    .nombre-btn:focus-visible { outline: none; }
+    .tarjeta:has(.nombre-btn:focus-visible) { outline: 2px solid var(--u-marca); outline-offset: -2px; }
+    .tarjeta .btn-icon-sm, .tarjeta .btn-tonal { position: relative; z-index: 1; }
+
+    /* Filtro rápido por estado: usa el diseño global .segmented; aquí solo iconos y números */
+    .filtro-estado { align-self: flex-start; flex-shrink: 0; }
+    @media (min-width: 640px) { .filtro-estado { align-self: center; } }
+    .segmented-item svg { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+    .segmented-item:not(.is-active) svg.ok, .segmented-item:not(.is-active) b.ok { color: var(--estado-ok-fg); }
+    .segmented-item b { font-weight: 700; font-variant-numeric: tabular-nums; }
+    @media (pointer: coarse) { .segmented-item { min-height: 2.75rem; } }
+
+    .link-quitar { font-size: 0.875rem; font-weight: 600; color: var(--u-marca-texto); padding: 0.5rem 0.25rem; border-radius: 0.375rem; }
+    .link-quitar:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    .chip { display: inline-flex; align-items: center; gap: 0.375rem; flex-shrink: 0; white-space: nowrap;
+      padding: 0.125rem 0.625rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; line-height: 1.25rem; }
+    .chip-info { background: var(--estado-info-bg); color: var(--estado-info-fg); padding-right: 0.25rem; }
+    .chip { border: 1px solid transparent; }
+    .chip .punto { width: 0.375rem; height: 0.375rem; border-radius: 999px; background: currentColor; }
+    /* Insignia de rol/congregación: el texto siempre completo (envuelve, no se corta) */
+    .badge { display: inline-block; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-wrap: balance; padding: 0.1875rem 0.625rem; border-radius: 0.875rem; font-size: 0.75rem; font-weight: 700; line-height: 1.25; }
+    .chip-x { width: 1.375rem; height: 1.375rem; display: grid; place-items: center; border-radius: 999px; }
+    .chip-x:hover { background: rgb(0 0 0 / 0.08); }
+
+    .t1 { font-size: 0.875rem; font-weight: 600; line-height: 1.25; color: var(--color-gray-900, #111827);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .t2 { font-size: 0.8125rem; line-height: 1.25; color: var(--dash-texto-suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    :host-context(.dark) .t1 { color: var(--color-slate-100, #f1f5f9); }
+
+    /* Tabla */
+    .list-table thead th { position: sticky; top: 0; z-index: 1; padding: 0.625rem 1rem; font-size: 0.75rem; font-weight: 600;
+      color: var(--dash-texto-suave); background: white; border-bottom: 1px solid var(--dash-borde); }
+    :host-context(.dark) .list-table thead th { background: rgb(15 23 42); border-bottom-color: rgb(148 163 184 / 0.14); }
+    .list-table tbody td { padding: 0.9375rem 1rem; border-bottom: 1px solid rgb(17 24 39 / 0.05); vertical-align: middle; }
+    :host-context(.dark) .list-table tbody td { border-bottom-color: rgb(148 163 184 / 0.1); }
+    .list-table tbody td:last-child { padding-right: 1.125rem; }
+    .fila-t { transition: background-color 150ms ease; }
+    .fila-t.clicable { cursor: pointer; }
+    @media (hover: hover) and (pointer: fine) { .fila-t:hover { background: var(--dash-hover); } }
+
+    /* Tarjetas */
+    .tarjeta { padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid rgb(17 24 39 / 0.05); transition: background-color 150ms ease;
+      animation: fila-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 35ms); }
+    :host-context(.dark) .tarjeta { border-bottom-color: rgb(148 163 184 / 0.1); }
+    .tarjeta:active { background: var(--dash-hover); }
+    @keyframes fila-in { from { opacity: 0; transform: translateY(5px); } }
+    @media (prefers-reduced-motion: reduce) { .tarjeta { animation: none; } }
+
+    /* Estado vacío: enseña qué hacer a continuación */
+    .vacio-box { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 3rem 1.5rem; }
+    .vacio-ic { width: 3rem; height: 3rem; display: grid; place-items: center; border-radius: 0.75rem; background: var(--dash-tesela); color: var(--dash-texto-suave); }
+    .vacio-ic svg { width: 1.375rem; height: 1.375rem; }
+    .vacio-t { margin-top: 0.75rem; font-size: 0.9375rem; font-weight: 700; color: var(--color-gray-900, #111827); }
+    :host-context(.dark) .vacio-t { color: var(--color-slate-100, #f1f5f9); }
+    .vacio-d { margin-top: 0.25rem; max-width: 40ch; font-size: 0.875rem; line-height: 1.45; color: var(--dash-texto-suave); }
 
     /* ── Lista adaptativa: tabla y tarjetas conmutadas por el ancho REAL
        disponible (container query), no por el viewport. Sin esto, abrir el
@@ -65,7 +174,10 @@ type UserFormTab = 'datos' | 'acceso' | 'seguridad';
 
     .list-table  { display: none; }
     .list-cards  { display: block; }
-    @container listpanel (min-width: 880px) {
+    /* La tabla necesita sitio real: sus columnas fijas suman ~776px. Por debajo
+       de 1000px de columna el nombre y el correo quedaban muy estrechos, así que
+       ahí mandan las tarjetas. */
+    @container listpanel (min-width: 62rem) {
       .list-table { display: table; }
       .list-cards { display: none; }
     }
@@ -83,12 +195,6 @@ type UserFormTab = 'datos' | 'acceso' | 'seguridad';
       .filters-actions { width: 100%; }
       .filters-divider { display: none; }
       .filters-actions-buttons { margin-left: auto; }
-    }
-
-    /* Resumen de conteos: se compacta con la columna en lugar de desaparecer. */
-    @container listpanel (max-width: 420px) {
-      .summary-strip { gap: 0.75rem; }
-      .summary-sep   { display: none; }
     }
 
     /* Tarjeta de usuario: los 3 botones de acción (44px cada uno) más el avatar
@@ -216,6 +322,7 @@ export class UsuariosPage implements OnInit {
 
    private service = inject(UsuariosService);
    private toast = inject(ToastService);
+   private confirm = inject(ConfirmService);
    private http = inject(HttpClient);
    private fb = inject(FormBuilder);
    private route = inject(ActivatedRoute);
@@ -410,11 +517,7 @@ export class UsuariosPage implements OnInit {
    selectedRolFilter = signal<number | null>(null); // Filter by role from query params
    searchQuery = signal(''); // Signal for reactive search
 
-   // Congregation filter dropdown (custom, replaces native select)
-   congFilterDropdownOpen = signal(false);
-   congFilterDropdownPos = signal({ top: 0, left: 0, width: 224 });
-
-   // Inline error states (replace alert())
+   // Inline error states
    saveError = signal<string | null>(null);
    deleteError = signal<string | null>(null);
 
@@ -720,6 +823,10 @@ export class UsuariosPage implements OnInit {
       this.idTypes.map(t => ({ value: t.code, label: t.name }))
    );
 
+   getInitials(name: string): string {
+      return inicialesDe(name);
+   }
+
    getUserStyle(name: string): string {
       return getInitialAvatarStyle(name);
    }
@@ -793,39 +900,22 @@ export class UsuariosPage implements OnInit {
 
    selectedCongregacionFilter = signal<number | null>(null);
 
-   setCongFilter(event: Event) {
-      const val = (event.target as HTMLSelectElement).value;
-      this.selectedCongregacionFilter.set(val ? Number(val) : null);
-   }
-
    clearAllFilters() {
       this.searchControl.setValue('');
       this.selectedRolFilter.set(null);
       this.selectedCongregacionFilter.set(null);
-      this.congFilterDropdownOpen.set(false);
-   }
-
-   toggleCongFilterDropdown(btn: HTMLElement) {
-      if (!this.congFilterDropdownOpen()) {
-         const rect = btn.getBoundingClientRect();
-         this.congFilterDropdownPos.set({ top: rect.bottom + 4, left: rect.left, width: rect.width });
-      }
-      this.congFilterDropdownOpen.set(!this.congFilterDropdownOpen());
+      this.estadoFilter.set('todos');
    }
 
    selectCongFilter(id: number | null) {
       this.selectedCongregacionFilter.set(id);
-      this.congFilterDropdownOpen.set(false);
    }
 
-   getCongFilterName(): string {
-      const id = this.selectedCongregacionFilter();
-      if (!id) return '';
-      const c = this.congregaciones().find(x => x.id_congregacion === id);
-      return c ? c.nombre_congregacion : '';
-   }
+   /** Filtro rápido por estado: los conteos de la cabecera de la lista son a la vez el filtro. */
+   estadoFilter = signal<'todos' | 'activos' | 'inactivos'>('todos');
 
-   filteredUsuarios = computed(() => {
+   /** Resultado de búsqueda, rol y congregación, sin aplicar el estado: de aquí salen los conteos. */
+   private coincidentes = computed(() => {
       const q = this.searchQuery().toLowerCase();
       const rolFilter = this.selectedRolFilter();
       const pageCongFilter = this.selectedCongregacionFilter();
@@ -833,23 +923,30 @@ export class UsuariosPage implements OnInit {
       return this.usuarios().filter(u => {
          const matchesSearch = u.nombre.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q);
          const matchesRol = rolFilter === null || u.id_rol_usuario === rolFilter;
-         
          // Filtro directo seleccionado en el combo local de la página
          const matchesPageFilter = pageCongFilter === null || u.id_congregacion === pageCongFilter;
-         
          return matchesSearch && matchesRol && matchesPageFilter;
       });
+   });
+
+   filteredUsuarios = computed(() => {
+      const estado = this.estadoFilter();
+      const lista = this.coincidentes();
+      if (estado === 'activos') return lista.filter(u => u.id_usuario_estado === 1);
+      if (estado === 'inactivos') return lista.filter(u => u.id_usuario_estado !== 1);
+      return lista;
    });
 
    /** Distingue "la lista está vacía" de "los filtros no devuelven nada",
     *  para que el estado vacío ofrezca la salida correcta. */
    hasActiveFilters = computed(() =>
       !!this.searchQuery() || this.selectedRolFilter() !== null || this.selectedCongregacionFilter() !== null
+      || this.estadoFilter() !== 'todos'
    );
 
-   totalUsuarios = computed(() => this.filteredUsuarios().length);
-   usuariosActivos = computed(() => this.filteredUsuarios().filter(u => u.id_usuario_estado === 1).length);
-   usuariosInactivos = computed(() => this.filteredUsuarios().filter(u => u.id_usuario_estado !== 1).length);
+   totalUsuarios = computed(() => this.coincidentes().length);
+   usuariosActivos = computed(() => this.coincidentes().filter(u => u.id_usuario_estado === 1).length);
+   usuariosInactivos = computed(() => this.coincidentes().filter(u => u.id_usuario_estado !== 1).length);
 
    async loadData() {
       try {
@@ -938,13 +1035,6 @@ export class UsuariosPage implements OnInit {
       }
    }
 
-   /** El desplegable de congregaciones se posiciona con coordenadas fijas
-    *  calculadas al abrirlo. Si el panel se abre encima, queda flotando sobre
-    *  él con la posición ya obsoleta; hay que cerrarlo antes. */
-   private closeFloatingDropdowns() {
-      this.congFilterDropdownOpen.set(false);
-   }
-
    /** El alta rápida no debe sobrevivir a un cambio de contexto del panel. */
    private resetQuickPubForm() {
       this.showQuickPubForm.set(false);
@@ -954,7 +1044,6 @@ export class UsuariosPage implements OnInit {
    }
 
    openCreatePanel() {
-      this.closeFloatingDropdowns();
       this.resetQuickPubForm();
       this.activeTab.set('datos');
       this.maxStepReached.set(0);
@@ -1013,7 +1102,6 @@ export class UsuariosPage implements OnInit {
       // Administrador y Gestores solo los edita el Administrador (el backend
       // respondería 403 al guardar).
       if (!this.puedeEditarFila(u)) return;
-      this.closeFloatingDropdowns();
       this.resetQuickPubForm();
       this.activeTab.set('datos');
       this.maxStepReached.set(this.tabs.length - 1); // editando se navega libre
@@ -1055,7 +1143,6 @@ export class UsuariosPage implements OnInit {
    }
 
    closePanel() {
-      this.closeFloatingDropdowns();
       this.resetQuickPubForm();
       this.panelOpen.set(false);
       this.editingUser.set(null);
@@ -1082,7 +1169,7 @@ export class UsuariosPage implements OnInit {
 
    /** El rol es único: nombrar Gestor a un Secretario, Coordinador o
     *  Superintendente le quita ese rol. Se avisa antes de guardar. */
-   private confirmarCambioAGestor(u: Usuario, idRolNuevo: number | null | undefined): boolean {
+   private async confirmarCambioAGestor(u: Usuario, idRolNuevo: number | null | undefined): Promise<boolean> {
       const nuevo = this.roles().find(r => r.id_rol === idRolNuevo);
       if ((nuevo?.nombre_rol || '').trim().toLowerCase() !== 'gestor aplicación') return true;
       if (u.id_rol_usuario === idRolNuevo) return true;
@@ -1090,12 +1177,14 @@ export class UsuariosPage implements OnInit {
       const conMando = ['coordinador', 'secretario', 'superintendente de servicio']
          .some(r => actual.toLowerCase().includes(r));
       if (!conMando) return true;
-      return confirm(
-         `${u.nombre} dejará de tener el rol ${actual}.\n\n` +
+      return this.confirm.ask({
+         title: 'Cambiar a Gestor',
+         severity: 'warning',
+         message: `${u.nombre} dejará de tener el rol ${actual}.\n\n` +
          'Como Gestor de la congregación seguirá siendo publicador y podrá gestionar ' +
          'usuarios y permisos, pero lo demás que hacía como ' + actual +
          ' pasará a depender de los permisos que tenga asignados.\n\n¿Continuar?'
-      );
+      });
    }
 
    async save() {
@@ -1142,7 +1231,7 @@ export class UsuariosPage implements OnInit {
             // Administrador: puede editar cualquier campo crítico
             // Coordinador/Secretario: pueden cambiar rol entre 2, 3 o 6 (validado en servidor)
             if (this.isAdmin()) {
-               if (!this.confirmarCambioAGestor(this.editingUser()!, formValue.id_rol_usuario)) {
+               if (!(await this.confirmarCambioAGestor(this.editingUser()!, formValue.id_rol_usuario))) {
                   this.saving.set(false);
                   return;
                }
@@ -1270,7 +1359,7 @@ export class UsuariosPage implements OnInit {
          return 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50';
       }
       if (rolName.includes('gestor')) {
-         return 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800/50';
+         return 'bg-brand-purple/10 text-brand-purple border border-brand-purple/30 dark:bg-brand-purple/20 dark:text-purple-300 dark:border-brand-purple/40';
       }
       if (rolName.includes('public')) {
          return 'bg-cyan-50 text-cyan-700 border border-cyan-200 dark:bg-cyan-900/20 dark:text-cyan-400 dark:border-cyan-800/50';
@@ -1301,7 +1390,7 @@ export class UsuariosPage implements OnInit {
       const id = u.id_usuario_estado;
       if (id === 1) return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-800/30';
       if (id === 2) return 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800/50';
-      return 'bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border border-slate-100 dark:border-slate-700';
+      return 'bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-400 border border-slate-100 dark:border-slate-700';
    }
 
    deleteUsuario(u: Usuario) {
@@ -1487,4 +1576,3 @@ export class UsuariosPage implements OnInit {
       window.open(whatsappUrl(message, phone), '_blank', 'noopener,noreferrer');
    }
 }
-

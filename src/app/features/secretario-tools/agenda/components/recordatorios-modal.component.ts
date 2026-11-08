@@ -1,12 +1,13 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
 import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
+import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { AgendaService } from '../../services/agenda.service';
-import { Recordatorio, RecordatorioForm, Sugerencia } from '../../models/agenda.model';
+import { ModoAgenda, Recordatorio, RecordatorioForm, Sugerencia } from '../../models/agenda.model';
 import { avisoCorto, fechaLarga, frecuenciaCorta, textoFrecuencia } from '../agenda-fechas';
 
 const INTERVALOS = [
@@ -44,11 +45,15 @@ function vacio(): RecordatorioForm {
  *   - "Sugerencias": tarjetas para agregar de un clic (consulta de inhabilidades, S-88…);
  *   - formulario de alta o edición.
  * Si todavía no hay ninguno, abre directo en Sugerencias.
+ *
+ * En la agenda personal (coordinador y ancianos) no hay sugerencias: cada uno crea
+ * los suyos, y el coordinador puede crear uno para todos los ancianos. Los que
+ * comparte el coordinador se ven aquí, pero solo él los edita o borra.
  */
 @Component({
   selector: 'app-recordatorios-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, DatePickerComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, DatePickerComponent, EmptyStateComponent],
   template: `
     <app-modal [open]="open" (openChange)="cerrar()" size="2xl" [hasFooter]="true"
                [title]="editando() === null ? 'Recordatorios periódicos' : (editando() === 'nuevo' ? 'Nuevo recordatorio' : 'Editar recordatorio')"
@@ -56,17 +61,19 @@ function vacio(): RecordatorioForm {
 
       @if (editando() === null) {
         <!-- ── Pestañas ── -->
-        <div class="pestanas" role="tablist" aria-label="Recordatorios">
-          <button type="button" role="tab" class="pestana" [class.pestana--on]="pestana() === 'mios'"
+        <div class="segmented mb-3.5" role="tablist" aria-label="Recordatorios">
+          <button type="button" role="tab" class="segmented-item"
                   [attr.aria-selected]="pestana() === 'mios'" (click)="pestana.set('mios')">
             Mis recordatorios
-            <span class="pestana-n">{{ lista().length }}</span>
+            <span class="tab-count">{{ lista().length }}</span>
           </button>
-          <button type="button" role="tab" class="pestana" [class.pestana--on]="pestana() === 'sugerencias'"
-                  [attr.aria-selected]="pestana() === 'sugerencias'" (click)="pestana.set('sugerencias')">
-            Sugerencias
-            @if (sugerenciasPendientes().length) { <span class="pestana-n pestana-n--nuevo">{{ sugerenciasPendientes().length }}</span> }
-          </button>
+          @if (modo === 'secretaria') {
+            <button type="button" role="tab" class="segmented-item"
+                    [attr.aria-selected]="pestana() === 'sugerencias'" (click)="pestana.set('sugerencias')">
+              Sugerencias
+              @if (sugerenciasPendientes().length) { <span class="tab-count">{{ sugerenciasPendientes().length }}</span> }
+            </button>
+          }
         </div>
 
         @if (pestana() === 'mios') {
@@ -83,34 +90,34 @@ function vacio(): RecordatorioForm {
                 <div class="skeleton h-24 rounded-xl"></div><div class="skeleton h-24 rounded-xl"></div>
               </div>
             } @else if (!lista().length) {
-              <div class="vacio">
-                <span class="vacio-icono" aria-hidden="true">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z"/></svg>
-                </span>
-                <p class="vacio-titulo">Todavía no tiene recordatorios</p>
-                <p class="vacio-texto">Empiece con las sugerencias o cree uno propio.</p>
-                <div class="flex flex-wrap justify-center gap-2 mt-3">
-                  @if (sugerenciasPendientes().length) {
-                    <button type="button" class="btn-pri" (click)="pestana.set('sugerencias')">Ver sugerencias</button>
-                  }
-                  <button type="button" class="btn-sec" (click)="nuevo()">Crear uno</button>
-                </div>
-              </div>
+              <app-empty-state [compact]="true" icon="clock" title="Todavía no tiene recordatorios"
+                [description]="modo === 'secretaria' ? 'Empiece con las sugerencias o cree uno propio.' : 'Cree uno y la agenda le avisará cuando toque.'"
+                [actionLabel]="sugerenciasPendientes().length ? 'Ver sugerencias' : 'Crear uno'"
+                (action)="sugerenciasPendientes().length ? pestana.set('sugerencias') : nuevo()"
+                [secondaryLabel]="sugerenciasPendientes().length ? 'Crear uno' : ''" (secondary)="nuevo()"></app-empty-state>
             } @else {
               <ul class="grid sm:grid-cols-2 gap-2.5">
                 @for (r of lista(); track r.id_recordatorio) {
                   <li class="tarjeta" [class.tarjeta--pausa]="!r.activo">
                     <div class="flex items-start gap-2">
                       <h3 class="tarjeta-titulo flex-1 min-w-0">{{ r.titulo }}</h3>
-                      <div class="flex shrink-0 -mr-1.5 -mt-1">
-                        <button type="button" class="icono-btn" (click)="editar(r)" [attr.aria-label]="'Editar ' + r.titulo" title="Editar">
-                          <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l3.6-.8 11.1-11.1a1.87 1.87 0 0 0-2.65-2.65L4.95 16.55 4 20Z"/></svg>
+                      @if (r.es_mio !== false) {
+                      <div class="row-actions shrink-0 -mr-1.5 -mt-1">
+                        <button type="button" class="btn-icon-sm" (click)="editar(r)" [attr.aria-label]="'Editar ' + r.titulo" title="Editar">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l3.6-.8 11.1-11.1a1.87 1.87 0 0 0-2.65-2.65L4.95 16.55 4 20Z"/></svg>
                         </button>
-                        <button type="button" class="icono-btn icono-btn--peligro" (click)="borrar(r)" [attr.aria-label]="'Borrar ' + r.titulo" title="Borrar">
-                          <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+                        <button type="button" class="btn-icon-sm tone-danger" (click)="borrar(r)" [attr.aria-label]="'Borrar ' + r.titulo" title="Borrar">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
                         </button>
                       </div>
+                      }
                     </div>
+                    @if (r.alcance === 'ancianos') {
+                      <p class="compartido">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1m18 0v-1a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M14 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/></svg>
+                        Para todos los ancianos{{ r.es_mio ? '' : ' · lo maneja el coordinador' }}
+                      </p>
+                    }
                     <p class="meta">{{ frecuenciaCorta(r) }} · {{ avisoCorto(r.dias_aviso).toLowerCase() }}</p>
                     <p class="proxima" [class.proxima--pausa]="!r.activo">
                       @if (!r.activo) { Pausado }
@@ -125,13 +132,8 @@ function vacio(): RecordatorioForm {
         } @else {
           <div class="panel">
             @if (!sugerenciasPendientes().length) {
-              <div class="vacio">
-                <span class="vacio-icono vacio-icono--ok" aria-hidden="true">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
-                </span>
-                <p class="vacio-titulo">Ya agregó todas las sugerencias</p>
-                <p class="vacio-texto">Puede editarlas en «Mis recordatorios».</p>
-              </div>
+              <app-empty-state [compact]="true" variant="success" title="Ya agregó todas las sugerencias"
+                description="Puede editarlas en «Mis recordatorios»."></app-empty-state>
             } @else {
               <div class="flex items-center justify-between gap-3 mb-2.5">
                 <p class="text-sm text-slate-600 dark:text-slate-300">Marque las que quiera. Después puede cambiar la fecha o borrarlas.</p>
@@ -168,12 +170,29 @@ function vacio(): RecordatorioForm {
             @if (intentado() && !form.titulo.trim()) { <p class="error" role="alert">Escriba qué hay que hacer.</p> }
           </div>
 
+          @if (modo === 'personal' && coordinador) {
+            <div>
+              <span class="etiqueta" id="lbl-quien">¿Para quién es?</span>
+              <div class="segmented w-full" role="radiogroup" aria-labelledby="lbl-quien">
+                <button type="button" role="radio" class="segmented-item flex-1"
+                        [attr.aria-checked]="form.alcance !== 'ancianos'" (click)="form.alcance = 'personal'">Solo para mí</button>
+                <button type="button" role="radio" class="segmented-item flex-1"
+                        [attr.aria-checked]="form.alcance === 'ancianos'" (click)="form.alcance = 'ancianos'">Para todos los ancianos</button>
+              </div>
+              @if (form.alcance === 'ancianos') {
+                <p class="ayuda">Saldrá en la agenda de cada anciano, y cada uno marca «Ya lo hice» por su cuenta.</p>
+              } @else if (alcanceOriginal === 'ancianos') {
+                <p class="ayuda ayuda--aviso" role="status">Al guardar, dejará de salir en la agenda de los demás ancianos y solo lo verá usted.</p>
+              }
+            </div>
+          }
+
           <div>
             <span class="etiqueta" id="lbl-repite">¿Se repite?</span>
-            <div class="segmento" role="radiogroup" aria-labelledby="lbl-repite">
-              <button type="button" role="radio" class="segmento-op" [class.segmento-op--on]="form.frecuencia === 'periodica'"
+            <div class="segmented w-full" role="radiogroup" aria-labelledby="lbl-repite">
+              <button type="button" role="radio" class="segmented-item flex-1"
                       [attr.aria-checked]="form.frecuencia === 'periodica'" (click)="form.frecuencia = 'periodica'">Sí, cada cierto tiempo</button>
-              <button type="button" role="radio" class="segmento-op" [class.segmento-op--on]="form.frecuencia === 'unica'"
+              <button type="button" role="radio" class="segmented-item flex-1"
                       [attr.aria-checked]="form.frecuencia === 'unica'" (click)="form.frecuencia = 'unica'">No, una sola vez</button>
             </div>
           </div>
@@ -189,7 +208,7 @@ function vacio(): RecordatorioForm {
             }
             <div>
               <span class="etiqueta">{{ form.frecuencia === 'periodica' ? 'Primera fecha' : 'Fecha' }}</span>
-              <app-date-picker name="fecha" [(ngModel)]="form.fecha_inicio" [fieldLike]="true" colorScheme="violet" placeholder="Elegir fecha"/>
+              <app-date-picker name="fecha" [(ngModel)]="form.fecha_inicio" [fieldLike]="true" colorScheme="rose" placeholder="Elegir fecha"/>
               @if (intentado() && !form.fecha_inicio) { <p class="error" role="alert">Elija la fecha.</p> }
             </div>
             <div>
@@ -217,11 +236,11 @@ function vacio(): RecordatorioForm {
               <label class="etiqueta" for="rec-enlace">Página web <span class="opcional">· opcional</span></label>
               <input id="rec-enlace" name="enlace" type="url" class="campo" maxlength="500" [(ngModel)]="form.enlace" placeholder="https://…"/>
               @if (editando() !== 'nuevo') {
-                <label class="interruptor mt-4">
-                  <input type="checkbox" name="activo" class="sr-only" [(ngModel)]="form.activo"/>
-                  <span class="interruptor-pista" aria-hidden="true"><span class="interruptor-bola"></span></span>
-                  <span class="text-sm text-slate-700 dark:text-slate-200">Activo <span class="opcional">· si lo apaga, deja de salir en la agenda</span></span>
-                </label>
+                <div class="flex items-center gap-3 mt-4">
+                  <button type="button" class="switch" role="switch" id="rec-activo" aria-labelledby="rec-activo-txt"
+                          [attr.aria-checked]="form.activo" (click)="form.activo = !form.activo"><span class="toggle-thumb"></span></button>
+                  <span id="rec-activo-txt" class="text-sm text-slate-700 dark:text-slate-200">Activo <span class="opcional">· si lo apaga, deja de salir en la agenda</span></span>
+                </div>
               }
             </div>
           </div>
@@ -230,18 +249,18 @@ function vacio(): RecordatorioForm {
 
       <ng-container slot="footer">
         @if (editando() !== null) {
-          <button type="button" class="btn-sec flex-1 sm:flex-none" (click)="volver()">Volver</button>
-          <button type="button" class="btn-pri flex-1 sm:flex-none justify-center" [disabled]="guardando()" (click)="guardar()">
+          <button type="button" class="btn-secondary flex-1 sm:flex-none" (click)="volver()">Volver</button>
+          <button type="button" class="btn-primary flex-1 sm:flex-none justify-center" [disabled]="guardando()" (click)="guardar()">
             {{ guardando() ? 'Guardando…' : 'Guardar' }}
           </button>
         } @else if (pestana() === 'sugerencias' && sugerenciasPendientes().length) {
-          <button type="button" class="btn-sec flex-1 sm:flex-none" (click)="cerrar()">Cerrar</button>
-          <button type="button" class="btn-pri flex-1 sm:flex-none justify-center" [disabled]="!elegidas().size || guardando()" (click)="aplicarSugerencias()">
+          <button type="button" class="btn-secondary flex-1 sm:flex-none" (click)="cerrar()">Cerrar</button>
+          <button type="button" class="btn-primary flex-1 sm:flex-none justify-center" [disabled]="!elegidas().size || guardando()" (click)="aplicarSugerencias()">
             {{ guardando() ? 'Agregando…' : elegidas().size ? 'Agregar ' + elegidas().size + (elegidas().size === 1 ? ' recordatorio' : ' recordatorios') : 'Marque al menos uno' }}
           </button>
         } @else {
-          <button type="button" class="btn-sec flex-1 sm:flex-none" (click)="cerrar()">Cerrar</button>
-          <button type="button" class="btn-pri flex-1 sm:flex-none justify-center" (click)="nuevo()">
+          <button type="button" class="btn-secondary flex-1 sm:flex-none" (click)="cerrar()">Cerrar</button>
+          <button type="button" class="btn-primary flex-1 sm:flex-none justify-center" (click)="nuevo()">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14m-7-7h14"/></svg>
             Nuevo recordatorio
           </button>
@@ -250,29 +269,10 @@ function vacio(): RecordatorioForm {
     </app-modal>
   `,
   styles: [`
+    :host { --accent: #e11d48; --accent-hover: #be123c; --accent-focus: #e11d48; --accent-ring: color-mix(in oklab, #e11d48 20%, transparent); --accent-shadow: 0 6px 16px -8px rgb(225 29 72 / 0.6); }
     /* La fuente de la app (Manrope) también en controles: los navegadores no la heredan en botones, campos ni selects. */
     :host { --ease: var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)); font-family: var(--font-sans, inherit); }
     :host button, :host input, :host select, :host textarea { font-family: inherit; }
-
-    /* Pestañas */
-    .pestanas { display: inline-flex; gap: 2px; padding: 3px; margin-bottom: 14px; border-radius: 12px; background: rgb(241 245 249); }
-    :host-context(.dark) .pestanas { background: rgb(15 23 42 / 0.7); }
-    .pestana {
-      display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 9px;
-      font-size: 14px; font-weight: 600; color: rgb(71 85 105);
-      transition: background 150ms var(--ease), color 150ms var(--ease), transform 100ms var(--ease);
-    }
-    .pestana:hover:not(.pestana--on) { color: rgb(15 23 42); }
-    .pestana:active { transform: scale(0.97); }
-    .pestana--on { background: #fff; color: rgb(15 23 42); box-shadow: 0 1px 2px rgb(15 23 42 / 0.1); }
-    :host-context(.dark) .pestana { color: rgb(148 163 184); }
-    :host-context(.dark) .pestana:hover:not(.pestana--on) { color: #fff; }
-    :host-context(.dark) .pestana--on { background: rgb(51 65 85); color: #fff; box-shadow: none; }
-    .pestana-n { min-width: 20px; height: 20px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px;
-      font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; background: rgb(226 232 240); color: rgb(51 65 85); }
-    .pestana-n--nuevo { background: rgb(109 40 217); color: #fff; }
-    :host-context(.dark) .pestana-n { background: rgb(71 85 105); color: rgb(241 245 249); }
-    :host-context(.dark) .pestana-n--nuevo { background: rgb(124 58 237); }
 
     .panel { animation: entra 200ms var(--ease); }
     @keyframes entra { from { opacity: 0; transform: translateY(4px); } }
@@ -283,19 +283,26 @@ function vacio(): RecordatorioForm {
       background: #fff; border: 1px solid rgb(226 232 240);
       transition: border-color 150ms var(--ease), background 150ms var(--ease), box-shadow 150ms var(--ease), transform 100ms var(--ease);
     }
-    :host-context(.dark) .tarjeta { background: rgb(30 41 59 / 0.6); border-color: rgb(51 65 85); }
+    :host-context(.dark) .tarjeta { background: rgb(30 41 59 / 0.6); border-color: rgb(30 41 59); }
     .tarjeta--eleg { cursor: pointer; }
-    .tarjeta--eleg:hover { border-color: rgb(196 181 253); }
+    .tarjeta--eleg:hover { border-color: rgb(253 164 175); }
     .tarjeta--eleg:active { transform: scale(0.985); }
-    .tarjeta--eleg:has(input:focus-visible) { outline: 2px solid rgb(139 92 246); outline-offset: 2px; }
-    .tarjeta--on, .tarjeta--on:hover { border-color: rgb(124 58 237); background: rgb(245 243 255); box-shadow: 0 0 0 1px rgb(124 58 237); }
-    :host-context(.dark) .tarjeta--eleg:hover { border-color: rgb(109 40 217); }
-    :host-context(.dark) .tarjeta--on, :host-context(.dark) .tarjeta--on:hover { background: rgb(76 29 149 / 0.25); border-color: rgb(139 92 246); box-shadow: 0 0 0 1px rgb(139 92 246); }
+    .tarjeta--eleg:has(input:focus-visible) { outline: 2px solid rgb(244 63 94); outline-offset: 2px; }
+    .tarjeta--on, .tarjeta--on:hover { border-color: rgb(225 29 72); background: rgb(255 241 242); box-shadow: 0 0 0 1px rgb(225 29 72); }
+    :host-context(.dark) .tarjeta--eleg:hover { border-color: rgb(225 29 72); }
+    :host-context(.dark) .tarjeta--on, :host-context(.dark) .tarjeta--on:hover { background: rgb(136 19 55 / 0.25); border-color: rgb(244 63 94); box-shadow: 0 0 0 1px rgb(244 63 94); }
     .tarjeta--pausa { opacity: 0.65; }
     .tarjeta-titulo { font-family: var(--font-display, inherit); font-size: 16px; font-weight: 700; line-height: 1.3; color: rgb(15 23 42); }
     :host-context(.dark) .tarjeta-titulo { color: rgb(248 250 252); }
-    .meta { font-size: 13px; font-weight: 600; color: rgb(109 40 217); }
-    :host-context(.dark) .meta { color: rgb(196 181 253); }
+    .meta { font-size: 13px; font-weight: 600; color: rgb(225 29 72); }
+    .compartido { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 2px 8px; border-radius: 999px;
+      font-size: 12px; font-weight: 600; color: rgb(3 105 161); background: rgb(240 249 255); border: 1px solid rgb(186 230 253); }
+    :host-context(.dark) .compartido { color: rgb(125 211 252); background: rgb(12 74 110 / 0.35); border-color: rgb(3 105 161 / 0.6); }
+    .ayuda { margin-top: 6px; font-size: 13px; color: rgb(100 116 139); }
+    .ayuda--aviso { font-weight: 600; color: rgb(180 83 9); }
+    :host-context(.dark) .ayuda--aviso { color: rgb(252 211 77); }
+    :host-context(.dark) .ayuda { color: rgb(148 163 184); }
+    :host-context(.dark) .meta { color: rgb(253 164 175); }
     .descripcion {
       font-size: 13px; line-height: 1.45; color: rgb(71 85 105);
       display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
@@ -313,52 +320,21 @@ function vacio(): RecordatorioForm {
       transition: background 150ms var(--ease), border-color 150ms var(--ease), color 150ms var(--ease), transform 150ms var(--ease);
     }
     :host-context(.dark) .check { background: rgb(15 23 42); border-color: rgb(100 116 139); }
-    .tarjeta--on .check { background: rgb(109 40 217); border-color: rgb(109 40 217); color: #fff; transform: scale(1.05); }
+    .tarjeta--on .check { background: rgb(225 29 72); border-color: rgb(225 29 72); color: #fff; transform: scale(1.05); }
 
-    .icono-btn {
-      width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; color: rgb(100 116 139);
-      transition: background 150ms var(--ease), color 150ms var(--ease), transform 100ms var(--ease);
-    }
-    .icono-btn:hover { background: rgb(241 245 249); color: rgb(15 23 42); }
-    .icono-btn--peligro:hover { background: rgb(254 242 242); color: rgb(185 28 28); }
-    .icono-btn:active { transform: scale(0.92); }
-    :host-context(.dark) .icono-btn { color: rgb(148 163 184); }
-    :host-context(.dark) .icono-btn:hover { background: rgb(51 65 85); color: #fff; }
-    :host-context(.dark) .icono-btn--peligro:hover { background: rgb(69 10 10 / 0.6); color: rgb(252 165 165); }
-
-    .enlace-btn { font-size: 14px; font-weight: 600; color: rgb(109 40 217); padding: 4px 8px; border-radius: 8px; transition: background 150ms var(--ease); }
-    .enlace-btn:hover { background: rgb(245 243 255); }
-    :host-context(.dark) .enlace-btn { color: rgb(196 181 253); }
-    :host-context(.dark) .enlace-btn:hover { background: rgb(76 29 149 / 0.3); }
+    .enlace-btn { font-size: 14px; font-weight: 600; color: rgb(225 29 72); padding: 4px 8px; border-radius: 8px; transition: background 150ms var(--ease); }
+    .enlace-btn:hover { background: rgb(255 241 242); }
+    :host-context(.dark) .enlace-btn { color: rgb(253 164 175); }
+    :host-context(.dark) .enlace-btn:hover { background: rgb(136 19 55 / 0.3); }
 
     .deshacer { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding: 6px 6px 6px 14px; border-radius: 12px;
       font-size: 14px; background: rgb(15 23 42); color: #fff; animation: entra 200ms var(--ease); }
     :host-context(.dark) .deshacer { background: rgb(51 65 85); }
-    .deshacer-btn { height: 32px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 700; color: rgb(196 181 253); transition: background 150ms var(--ease); }
+    .deshacer-btn { height: 32px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 700; color: rgb(253 164 175); transition: background 150ms var(--ease); }
     .deshacer-btn:hover { background: rgb(255 255 255 / 0.1); }
 
-    .vacio { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 28px 16px; }
-    .vacio-icono { width: 48px; height: 48px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: rgb(245 243 255); color: rgb(109 40 217); }
-    .vacio-icono--ok { background: rgb(236 253 245); color: rgb(4 120 87); }
-    :host-context(.dark) .vacio-icono { background: rgb(76 29 149 / 0.3); color: rgb(196 181 253); }
-    :host-context(.dark) .vacio-icono--ok { background: rgb(6 78 59 / 0.4); color: rgb(110 231 183); }
-    .vacio-titulo { margin-top: 12px; font-size: 16px; font-weight: 700; color: rgb(15 23 42); }
-    :host-context(.dark) .vacio-titulo { color: rgb(248 250 252); }
-    .vacio-texto { font-size: 14px; color: rgb(100 116 139); }
 
     /* Botones */
-    .btn-pri, .btn-sec {
-      display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 16px; border-radius: 10px; font-size: 14px; font-weight: 600; white-space: nowrap;
-      transition: background 150ms var(--ease), border-color 150ms var(--ease), transform 100ms var(--ease);
-    }
-    .btn-pri { background: var(--color-brand-purple, #6d28d9); color: #fff; box-shadow: 0 1px 2px rgb(109 40 217 / 0.2); }
-    .btn-pri:hover:not(:disabled) { background: rgb(91 33 182); }
-    .btn-pri:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-    .btn-sec { border: 1px solid rgb(203 213 225); color: rgb(51 65 85); background: #fff; justify-content: center; }
-    .btn-sec:hover { background: rgb(248 250 252); border-color: rgb(148 163 184); }
-    :host-context(.dark) .btn-sec { background: rgb(30 41 59); border-color: rgb(71 85 105); color: rgb(226 232 240); }
-    :host-context(.dark) .btn-sec:hover { background: rgb(51 65 85); }
-    .btn-pri:active:not(:disabled), .btn-sec:active { transform: scale(0.97); }
 
     /* Formulario */
     .etiqueta { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; color: rgb(51 65 85); }
@@ -371,44 +347,25 @@ function vacio(): RecordatorioForm {
       transition: border-color 150ms var(--ease), box-shadow 150ms var(--ease);
     }
     .campo::placeholder { color: rgb(148 163 184); }
-    .campo:focus { outline: none; border-color: rgb(167 139 250); box-shadow: 0 0 0 4px rgb(139 92 246 / 0.15); }
+    .campo:focus { outline: none; border-color: rgb(167 139 250); box-shadow: 0 0 0 4px rgb(244 63 94 / 0.15); }
     .campo--error, .campo--error:focus { border-color: rgb(239 68 68); box-shadow: 0 0 0 4px rgb(239 68 68 / 0.1); }
     .campo--select {
       appearance: none; padding-right: 36px;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
     }
-    :host-context(.dark) .campo { background-color: rgb(15 23 42); border-color: rgb(51 65 85); color: rgb(241 245 249); }
+    :host-context(.dark) .campo { background-color: rgb(15 23 42); border-color: rgb(30 41 59); color: rgb(241 245 249); }
 
-    .segmento { display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: rgb(241 245 249); max-width: 100%; }
-    :host-context(.dark) .segmento { background: rgb(15 23 42 / 0.7); }
-    .segmento-op {
-      min-height: 38px; padding: 0 16px; border-radius: 9px; font-size: 14px; font-weight: 600; color: rgb(71 85 105);
-      transition: background 150ms var(--ease), color 150ms var(--ease), transform 100ms var(--ease);
-    }
-    .segmento-op:active { transform: scale(0.97); }
-    .segmento-op--on { background: #fff; color: rgb(91 33 182); box-shadow: 0 1px 2px rgb(15 23 42 / 0.1); }
-    :host-context(.dark) .segmento-op { color: rgb(148 163 184); }
-    :host-context(.dark) .segmento-op--on { background: rgb(76 29 149 / 0.55); color: #fff; box-shadow: none; }
 
     .resumen { display: flex; gap: 8px; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.45; font-weight: 500;
-      color: rgb(91 33 182); background: rgb(245 243 255); }
-    :host-context(.dark) .resumen { color: rgb(221 214 254); background: rgb(76 29 149 / 0.25); }
+      color: rgb(190 18 60); background: rgb(255 241 242); }
+    :host-context(.dark) .resumen { color: rgb(254 205 211); background: rgb(136 19 55 / 0.25); }
 
-    .interruptor { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
-    .interruptor-pista { position: relative; width: 40px; height: 24px; border-radius: 999px; flex-shrink: 0; background: rgb(203 213 225); transition: background 150ms var(--ease); }
-    .interruptor-bola { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 999px; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.25); transition: transform 180ms var(--ease); }
-    .interruptor input:checked + .interruptor-pista { background: rgb(109 40 217); }
-    .interruptor input:checked + .interruptor-pista .interruptor-bola { transform: translateX(16px); }
-    .interruptor:has(input:focus-visible) .interruptor-pista { outline: 2px solid rgb(139 92 246); outline-offset: 2px; }
-    :host-context(.dark) .interruptor-pista { background: rgb(71 85 105); }
 
-    button:focus-visible { outline: 2px solid rgb(139 92 246); outline-offset: 2px; }
+    button:focus-visible { outline: 2px solid rgb(244 63 94); outline-offset: 2px; }
 
     /* Pantallas táctiles: todo lo que se pulsa mide al menos 44 px. */
     @media (pointer: coarse) {
-      .icono-btn { width: 44px; height: 44px; }
-      .btn-pri, .btn-sec, .pestana, .segmento-op, .enlace-btn, .deshacer-btn { min-height: 44px; height: auto; }
       .tarjeta--eleg .check { width: 26px; height: 26px; }
     }
 
@@ -423,6 +380,10 @@ export class RecordatoriosModalComponent implements OnChanges {
   @Output() openChange = new EventEmitter<boolean>();
   /** Se emite tras cualquier cambio, para que la agenda se recargue. */
   @Output() cambiado = new EventEmitter<void>();
+  /** Agenda del secretario (con sugerencias) o personal. */
+  @Input() modo: ModoAgenda = 'secretaria';
+  /** Agenda personal: el coordinador puede crear recordatorios para todos los ancianos. */
+  @Input() coordinador = false;
 
   private svc = inject(AgendaService);
   private toast = inject(ToastService);
@@ -440,8 +401,11 @@ export class RecordatoriosModalComponent implements OnChanges {
   /** null = pestañas; 'nuevo' = alta; número = edición de ese id. */
   editando = signal<null | 'nuevo' | number>(null);
   form: RecordatorioForm = vacio();
+  /** Alcance con el que se abrió para editar: avisa si uno compartido pasa a ser solo propio. */
+  alcanceOriginal: 'personal' | 'ancianos' | null = null;
   /** Recordatorio ya quitado de la lista que se borra de verdad al pasar unos segundos, salvo que se deshaga. */
   porBorrar = signal<Recordatorio | null>(null);
+  private pideLista?: Subscription;
   private temporizadorBorrado: ReturnType<typeof setTimeout> | null = null;
 
   frecuencia = textoFrecuencia;
@@ -460,10 +424,14 @@ export class RecordatoriosModalComponent implements OnChanges {
   /** `inicial`: al abrir, si no hay nada configurado y sí sugerencias, se abre en Sugerencias. */
   private cargar(inicial = false) {
     this.cargando.set(true);
-    forkJoin({ lista: this.svc.recordatorios(), sug: this.svc.sugerencias() }).subscribe({
+    this.pideLista?.unsubscribe();
+    const sugerencias = this.modo === 'secretaria' ? this.svc.sugerencias() : of<Sugerencia[]>([]);
+    this.pideLista = forkJoin({ lista: this.svc.recordatorios(), sug: sugerencias }).subscribe({
       next: ({ lista, sug }) => {
         const pendientes = sug.filter(x => !x.ya_agregada);
-        this.lista.set(lista);
+        // El que está esperando el «Deshacer» sigue en el servidor: no debe volver a aparecer.
+        const porBorrar = this.porBorrar()?.id_recordatorio;
+        this.lista.set(porBorrar == null ? lista : lista.filter(x => x.id_recordatorio !== porBorrar));
         this.sugerenciasPendientes.set(pendientes);
         this.elegidas.set(new Set(pendientes.map(x => x.clave)));
         if (inicial) this.pestana.set(!lista.length && pendientes.length ? 'sugerencias' : 'mios');
@@ -503,7 +471,8 @@ export class RecordatoriosModalComponent implements OnChanges {
   }
 
   nuevo() {
-    this.form = vacio();
+    this.form = this.modo === 'personal' ? { ...vacio(), alcance: 'personal' } : vacio();
+    this.alcanceOriginal = null;
     this.intentado.set(false);
     this.editando.set('nuevo');
   }
@@ -511,6 +480,8 @@ export class RecordatoriosModalComponent implements OnChanges {
   editar(r: Recordatorio) {
     const { titulo, descripcion, enlace, frecuencia, intervalo_meses, fecha_inicio, dias_aviso, activo } = r;
     this.form = { titulo, descripcion, enlace, frecuencia, intervalo_meses, fecha_inicio, dias_aviso, activo };
+    if (this.modo === 'personal' && r.alcance !== 'secretaria') this.form.alcance = r.alcance;
+    this.alcanceOriginal = r.alcance === 'secretaria' ? null : r.alcance;
     this.intentado.set(false);
     this.editando.set(r.id_recordatorio);
   }
@@ -557,7 +528,7 @@ export class RecordatoriosModalComponent implements OnChanges {
     if (this.temporizadorBorrado) clearTimeout(this.temporizadorBorrado);
     this.temporizadorBorrado = null;
     this.porBorrar.set(null);
-    this.lista.update(l => [...l, r].sort((a, b) => Number(b.activo) - Number(a.activo) || a.titulo.localeCompare(b.titulo)));
+    this.lista.update(l => [...l.filter(x => x.id_recordatorio !== r.id_recordatorio), r].sort((a, b) => Number(b.activo) - Number(a.activo) || a.titulo.localeCompare(b.titulo)));
   }
 
   /** Borra de verdad el pendiente (al vencer el plazo, al borrar otro o al cerrar la ventana). */

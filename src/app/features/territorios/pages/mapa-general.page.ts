@@ -3,6 +3,9 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
+import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm.service';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { AvisoComponent } from '../../../shared/components/aviso/aviso.component';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
 import { EstadoCalles, EstadoSugerenciasIa, LadoLimite, TerritoriosService } from '../services/territorios.service';
 import { AuthStore } from '../../../core/auth/auth.store';
@@ -12,18 +15,18 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
   standalone: true,
   selector: 'app-mapa-general-page',
   host: { class: 'tema-territorios' },
-  imports: [CommonModule, FormsModule, DatePipe, TerritorioMapComponent],
+  imports: [CommonModule, FormsModule, DatePipe, TerritorioMapComponent, ModalComponent, AvisoComponent],
   template: `
     <div class="flex flex-col h-full overflow-hidden gap-3">
       <!-- Cabecera compacta en una sola fila: así el mapa recibe casi toda la altura -->
       <header class="shrink-0 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div class="flex items-center gap-1 min-w-0">
           <button type="button" (click)="goBack()" aria-label="Volver a Territorios" title="Volver a Territorios"
-            class="-ml-2 w-11 h-11 shrink-0 inline-flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97] focus-ring-green">
+            class="-ml-2 w-11 h-11 shrink-0 inline-flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           </button>
           <div class="min-w-0">
-            <h1 class="font-display font-bold text-xl sm:text-2xl leading-tight text-gray-900 dark:text-slate-100">Mapa General</h1>
+            <h1 class="page-title">Mapa General</h1>
             <p class="hidden xl:block text-sm text-slate-500 dark:text-slate-400 truncate">El territorio de la congregación, sus barrios y todas las tarjetas.</p>
           </div>
         </div>
@@ -35,7 +38,7 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
               <!-- Interruptor: el estado se ve (color + ojo), no solo se lee -->
               <button type="button" (click)="alternarFicha()" [attr.aria-pressed]="verFicha()"
                 title="Muestra u oculta el panel con los datos y los límites norte, este, sur y oeste"
-                class="inline-flex items-center gap-2 h-11 px-4 rounded-lg border text-sm font-medium whitespace-nowrap transition-colors active:scale-[0.97] focus-ring-green"
+                class="inline-flex items-center gap-2 h-11 px-4 rounded-lg border text-sm font-medium whitespace-nowrap transition-colors active:scale-[0.97]"
                 [ngClass]="verFicha()
                   ? 'border-teal-500 bg-teal-50 text-teal-800 dark:border-teal-500/70 dark:bg-teal-900/30 dark:text-teal-200'
                   : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'">
@@ -47,12 +50,12 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
                 @if (c.estado === 'en_curso') {
                   <span role="status" title="Bajando las calles del mapa. Puede seguir usando la pantalla."
                     class="inline-flex items-center gap-2 h-11 px-4 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-medium text-gray-700 dark:text-slate-200 whitespace-nowrap">
-                    <span class="w-4 h-4 shrink-0 rounded-full border-2 border-current/30 border-t-current animate-spin" aria-hidden="true"></span>
+                    <span class="spinner-sm text-current shrink-0" aria-hidden="true"></span>
                     Calles {{ c.total ? c.procesadas + '/' + c.total : '…' }}
                   </span>
                 } @else if (puedeActualizarCalles()) {
                   <button type="button" (click)="actualizarCalles()" [disabled]="actualizandoCalles()" [attr.title]="tituloCalles(c)"
-                    class="btn-secondary focus-ring-green h-11 whitespace-nowrap disabled:opacity-60">
+                    class="btn-secondary h-11 whitespace-nowrap disabled:opacity-60">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.5 15a9 9 0 1 1-2.1-9.4L23 10"></path></svg>
                     {{ c.celdas_listas ? 'Actualizar calles' : 'Descargar calles' }}
                     @if (!callesCompletas(c)) {
@@ -67,17 +70,17 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
               @if (unidad()?.coordenada) {
                 <button type="button" (click)="empezarAjuste()"
                   title="Mueva los puntos del borde para corregir el dibujo del territorio"
-                  class="btn-primary-green focus-ring-green h-11 whitespace-nowrap">
+                  class="btn-primary h-11 whitespace-nowrap">
                   <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                   Ajustar el límite
                 </button>
               }
               <button type="button" (click)="elegirArchivo.click()" [disabled]="subiendo()"
                 [attr.title]="unidad() ? 'Sube otro archivo .kml y reemplaza el territorio guardado. Antes verá cómo quedaría.' : null"
-                [ngClass]="unidad() ? 'btn-secondary' : 'btn-primary-green'"
-                class="focus-ring-green h-11 whitespace-nowrap disabled:opacity-60 disabled:cursor-wait">
+                [ngClass]="unidad() ? 'btn-secondary' : 'btn-primary'"
+                class=" h-11 whitespace-nowrap disabled:opacity-60 disabled:cursor-wait">
                 @if (subiendo()) {
-                  <span class="w-4 h-4 shrink-0 rounded-full border-2 border-current/30 border-t-current animate-spin" aria-hidden="true"></span>
+                  <span class="spinner-sm text-current shrink-0" aria-hidden="true"></span>
                   Leyendo el archivo…
                 } @else {
                   <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -91,19 +94,17 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
       </header>
 
       @if (siguientePaso()) {
-        <div role="status" class="shrink-0 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3">
-          <svg class="w-5 h-5 shrink-0 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          <p class="flex-1 min-w-[12rem] text-sm font-semibold text-emerald-900 dark:text-emerald-100">Mapa guardado. Siguiente paso: crear los barrios.</p>
-          <button type="button" (click)="irABarrios()" class="btn-primary-green focus-ring-green h-10 whitespace-nowrap">Ir a Barrios</button>
-          <button type="button" (click)="siguientePaso.set(false)" class="h-10 px-3 text-sm font-bold text-emerald-800 dark:text-emerald-300">Ahora no</button>
-        </div>
+        <app-aviso tone="success" class="shrink-0 block">
+          <div class="flex flex-wrap items-center gap-3">
+            <p class="flex-1 min-w-[12rem] font-semibold">Mapa guardado. Siguiente paso: crear los barrios.</p>
+            <button type="button" (click)="irABarrios()" class="btn-primary btn-sm whitespace-nowrap">Ir a Barrios</button>
+            <button type="button" (click)="siguientePaso.set(false)" class="btn-ghost btn-sm">Ahora no</button>
+          </div>
+        </app-aviso>
       }
 
       @if (aviso()) {
-        <div role="alert" class="shrink-0 flex items-start justify-between gap-3 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
-          <p class="text-sm font-medium text-amber-900 dark:text-amber-200">{{ aviso() }}</p>
-          <button (click)="aviso.set(null)" class="text-sm font-bold text-amber-800 dark:text-amber-300 shrink-0">Entendido</button>
-        </div>
+        <app-aviso tone="warning" class="shrink-0 block" [dismissible]="true" (dismissed)="aviso.set(null)">{{ aviso() }}</app-aviso>
       }
 
       @if (editandoLimite()) {
@@ -112,8 +113,8 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
             Arrastre un punto blanco para moverlo. Para agregar uno nuevo, arrastre o toque un punto verde con «+» a mitad de una línea.
           </p>
           <div class="flex gap-2">
-            <button (click)="cancelarAjuste()" [disabled]="subiendo()" class="btn-secondary focus-ring-green">Cancelar</button>
-            <button (click)="guardarAjuste()" [disabled]="subiendo() || !limitePendiente()" class="btn-primary-green focus-ring-green">Guardar el límite</button>
+            <button (click)="cancelarAjuste()" [disabled]="subiendo()" class="btn-secondary">Cancelar</button>
+            <button (click)="guardarAjuste()" [disabled]="subiendo() || !limitePendiente()" class="btn-primary">Guardar el límite</button>
           </div>
         </div>
       }
@@ -124,10 +125,10 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
           @if (hayTerritorios()) {
             <ul class="flex flex-wrap items-center gap-x-4 gap-y-1 h-9 m-0 p-0 list-none" aria-label="Territorios por estado">
               @for (e of estados; track e.clave) {
-                <li class="inline-flex items-center gap-2 text-[13px] font-semibold text-slate-600 dark:text-slate-300">
+                <li class="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
                   <span class="w-3 h-3 rounded-[4px] border-2" [class]="e.punto" aria-hidden="true"></span>
                   {{ e.label }}
-                  <span class="font-black text-slate-900 dark:text-white tabular-nums">{{ conteo()[e.clave] ?? 0 }}</span>
+                  <span class="font-bold text-slate-900 dark:text-white tabular-nums">{{ conteo()[e.clave] ?? 0 }}</span>
                 </li>
               }
             </ul>
@@ -135,11 +136,11 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
           @if (sectores().length > 0) {
             <div class="flex-1 min-w-0 flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar por barrio o sector">
               <button type="button" (click)="sectorSel.set(null)" [attr.aria-pressed]="sectorSel() === null"
-                class="h-9 px-3.5 rounded-full text-[13px] font-semibold border transition-[background-color,border-color,transform] duration-150 active:scale-[0.97] focus-ring-green"
+                class="h-9 px-3.5 rounded-full text-sm font-semibold border transition-[background-color,border-color,transform] duration-150 active:scale-[0.97]"
                 [ngClass]="claseChip(sectorSel() === null)">Todos los barrios</button>
               @for (s of sectores(); track s.id_sector) {
                 <button type="button" (click)="sectorSel.set(sectorSel() === s.id_sector ? null : s.id_sector)" [attr.aria-pressed]="sectorSel() === s.id_sector"
-                  class="h-9 px-3.5 rounded-full text-[13px] font-semibold border transition-[background-color,border-color,transform] duration-150 active:scale-[0.97] inline-flex items-center gap-2 focus-ring-green"
+                  class="h-9 px-3.5 rounded-full text-sm font-semibold border transition-[background-color,border-color,transform] duration-150 active:scale-[0.97] inline-flex items-center gap-2"
                   [ngClass]="claseChip(sectorSel() === s.id_sector)">
                   <span class="w-2.5 h-2.5 rounded-full" [style.background-color]="s.color || '#94a3b8'" aria-hidden="true"></span>{{ s.nombre }}
                 </button>
@@ -151,9 +152,9 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
 
       <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-4">
         <!-- Map -->
-        <div class="relative flex-1 min-h-[22rem] bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm overflow-hidden p-1.5">
+        <div class="relative flex-1 min-h-[22rem] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-1.5">
           @if (loading()) {
-            <div class="w-full h-full rounded-xl bg-slate-100 dark:bg-slate-900/60 animate-pulse flex items-center justify-center">
+            <div class="w-full h-full rounded-xl skeleton flex items-center justify-center">
               <span class="text-sm text-slate-500 dark:text-slate-400 font-medium">Cargando el mapa…</span>
             </div>
           } @else {
@@ -183,9 +184,9 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
 
         <!-- Ficha del territorio de la congregación, como en JW -->
         @if (verFicha() && unidad(); as u) {
-          <aside class="relative lg:w-96 shrink-0 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-4" aria-label="Límites del territorio">
+          <aside class="relative lg:w-96 shrink-0 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4" aria-label="Límites del territorio">
             <button type="button" (click)="cerrarFicha()" aria-label="Cerrar los límites" title="Cerrar (Esc)"
-              class="absolute top-2 right-2 w-11 h-11 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 focus-ring-green transition-colors active:scale-95">
+              class="absolute top-2 right-2 w-11 h-11 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-95">
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
             <div class="pr-10"><ng-container *ngTemplateOutlet="ficha; context: { u: u }"></ng-container></div>
@@ -196,7 +197,7 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
                     Cuando ya esté seguro del dibujo, la IA puede proponer los nombres de las calles de los cuatro lados. Usa el límite guardado.
                   </p>
                   <button (click)="pedirSugerencias()" [disabled]="calculandoIa() || (estadoIa()?.intentos_restantes ?? 0) < 1"
-                    class="btn-primary-green focus-ring-green w-full justify-center">
+                    class="btn-primary w-full justify-center">
                     {{ calculandoIa() ? 'Buscando las calles…' : 'Sugerir los nombres de las calles' }}
                   </button>
                   <p class="text-xs font-medium text-slate-500 dark:text-slate-400" aria-live="polite">
@@ -205,7 +206,7 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
                   </p>
                 </div>
               }
-              <button (click)="editarFicha()" class="btn-secondary focus-ring-green w-full justify-center mt-4">Corregir los datos</button>
+              <button (click)="editarFicha()" class="btn-secondary w-full justify-center mt-4">Corregir los datos</button>
             }
           </aside>
         }
@@ -214,7 +215,7 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
 
     <ng-template #ficha let-u="u">
       <dl class="space-y-3 text-sm">
-        <div><dt class="sr-only">Nombre</dt><dd class="text-lg font-black uppercase text-slate-900 dark:text-white">{{ u.nombre }}</dd></div>
+        <div><dt class="sr-only">Nombre</dt><dd class="text-lg font-bold uppercase text-slate-900 dark:text-white">{{ u.nombre }}</dd></div>
         <div><dt class="text-slate-500 dark:text-slate-400">Tipo</dt><dd class="text-base text-slate-800 dark:text-slate-100">{{ u.tipo || '—' }}</dd></div>
         <div><dt class="text-slate-500 dark:text-slate-400">Idioma</dt><dd class="text-base text-slate-800 dark:text-slate-100">{{ u.idioma || '—' }}</dd></div>
         <div><dt class="text-slate-500 dark:text-slate-400">Última actualización</dt><dd class="text-base text-slate-800 dark:text-slate-100">{{ u.ultima_actualizacion ? (u.ultima_actualizacion | date:'d MMM y') : '—' }}</dd></div>
@@ -230,81 +231,58 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
 
     <!-- Vista previa del archivo antes de guardarlo -->
     @if (vistaPrevia(); as vp) {
-      <div class="fixed inset-0 z-[1100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tituloPrevia">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="descartarVistaPrevia()"></div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col relative z-10 shadow-2xl overflow-hidden">
-          <div class="p-5 border-b border-slate-100 dark:border-slate-700/50">
-            <h3 id="tituloPrevia" class="text-lg font-black text-slate-900 dark:text-white">Así quedaría el territorio</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Revise los datos. Al guardar, el límite aparecerá en el mapa.</p>
-          </div>
-          <div class="flex-1 overflow-y-auto p-5">
-            <ng-container *ngTemplateOutlet="ficha; context: { u: vp[0] }"></ng-container>
-          </div>
-          <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20 flex justify-end gap-3">
-            <button (click)="descartarVistaPrevia()" class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancelar</button>
-            <button (click)="guardarImportacion()" [disabled]="subiendo()" class="btn-primary-green focus-ring-green">Guardar territorio</button>
-          </div>
-        </div>
-      </div>
+      <app-modal [open]="true" size="md" title="Así quedaría el territorio" subtitle="Revise los datos. Al guardar, el límite aparecerá en el mapa."
+                 [hasFooter]="true" (openChange)="$event || descartarVistaPrevia()">
+        <ng-container *ngTemplateOutlet="ficha; context: { u: vp[0] }"></ng-container>
+        <ng-container slot="footer">
+          <button (click)="descartarVistaPrevia()" class="btn-ghost">Cancelar</button>
+          <button (click)="guardarImportacion()" [disabled]="subiendo()" class="btn-primary">Guardar territorio</button>
+        </ng-container>
+      </app-modal>
     }
 
     <!-- Sugerencias de la IA para los cuatro lados -->
     @if (sugIa(); as sug) {
-      <div class="fixed inset-0 z-[1100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tituloSugIa">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="sugIa.set(null)"></div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col relative z-10 shadow-2xl overflow-hidden">
-          <div class="p-5 border-b border-slate-100 dark:border-slate-700/50">
-            <h3 id="tituloSugIa" class="text-lg font-black text-slate-900 dark:text-white">Nombres de las calles propuestos</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              {{ sug.aviso || 'Salen de las calles del mapa. Revíselos y marque los que quiera usar; puede corregir el texto.' }}
-            </p>
-          </div>
-          <div class="flex-1 overflow-y-auto p-5 space-y-4">
-            @for (l of lados; track l.clave) {
-              <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 space-y-2">
-                <div class="flex items-center justify-between gap-3">
-                  <label [for]="'sug_' + l.clave" class="text-base font-bold text-slate-800 dark:text-slate-100">{{ l.etiqueta }}</label>
-                  <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 min-h-[44px]">
-                    <input type="checkbox" [(ngModel)]="sug.usar[l.clave]" class="w-5 h-5"> Usar este
-                  </label>
-                </div>
-                <p class="text-sm text-slate-500 dark:text-slate-400">Ahora dice: {{ sug.actuales[l.clave] || '—' }}</p>
-                <input [id]="'sug_' + l.clave" type="text" [(ngModel)]="sug.textos[l.clave]" placeholder="Sin calles en el mapa"
-                  class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-base text-slate-900 dark:text-white">
+      <app-modal [open]="true" size="xl" title="Nombres de las calles propuestos"
+                 [subtitle]="sug.aviso || 'Salen de las calles del mapa. Revíselos y marque los que quiera usar; puede corregir el texto.'"
+                 [hasFooter]="true" (openChange)="$event || sugIa.set(null)">
+        <div class="space-y-4">
+          @for (l of lados; track l.clave) {
+            <div class="rounded-xl border border-slate-200 dark:border-slate-800 p-3 space-y-2">
+              <div class="flex items-center justify-between gap-3">
+                <label [for]="'sug_' + l.clave" class="text-base font-bold text-slate-800 dark:text-slate-100">{{ l.etiqueta }}</label>
+                <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 min-h-[44px]">
+                  <input type="checkbox" [(ngModel)]="sug.usar[l.clave]" class="w-5 h-5"> Usar este
+                </label>
               </div>
-            }
-          </div>
-          <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20 flex justify-end gap-3">
-            <button (click)="sugIa.set(null)" class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Dejar como está</button>
-            <button (click)="aplicarSugerencias()" [disabled]="subiendo() || !hayMarcados()" class="btn-primary-green focus-ring-green">Usar los marcados</button>
-          </div>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Ahora dice: {{ sug.actuales[l.clave] || '—' }}</p>
+              <input [id]="'sug_' + l.clave" type="text" [(ngModel)]="sug.textos[l.clave]" placeholder="Sin calles en el mapa" class="form-control">
+            </div>
+          }
         </div>
-      </div>
+        <ng-container slot="footer">
+          <button (click)="sugIa.set(null)" class="btn-ghost">Dejar como está</button>
+          <button (click)="aplicarSugerencias()" [disabled]="subiendo() || !hayMarcados()" class="btn-primary">Usar los marcados</button>
+        </ng-container>
+      </app-modal>
     }
 
     <!-- Corregir los datos de la ficha -->
     @if (formFicha(); as u) {
-      <div class="fixed inset-0 z-[1100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tituloFicha">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="formFicha.set(null)"></div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col relative z-10 shadow-2xl overflow-hidden">
-          <div class="p-5 border-b border-slate-100 dark:border-slate-700/50">
-            <h3 id="tituloFicha" class="text-lg font-black text-slate-900 dark:text-white">Corregir datos del territorio</h3>
-          </div>
-          <div class="flex-1 overflow-y-auto p-5 space-y-3">
-            @for (c of camposFicha; track c.clave) {
-              <div>
-                <label [for]="'f_' + c.clave" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">{{ c.etiqueta }}</label>
-                <input [id]="'f_' + c.clave" [type]="c.clave === 'ultima_actualizacion' ? 'date' : 'text'" [(ngModel)]="$any(u)[c.clave]"
-                  class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-base text-slate-900 dark:text-white">
-              </div>
-            }
-          </div>
-          <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20 flex justify-end gap-3">
-            <button (click)="formFicha.set(null)" class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancelar</button>
-            <button (click)="guardarFicha()" [disabled]="!u.nombre.trim() || subiendo()" class="btn-primary-green focus-ring-green">Guardar</button>
-          </div>
+      <app-modal [open]="true" size="lg" title="Corregir datos del territorio" [hasFooter]="true" (openChange)="$event || formFicha.set(null)">
+        <div class="space-y-3">
+          @for (c of camposFicha; track c.clave) {
+            <div>
+              <label [for]="'f_' + c.clave" class="form-label">{{ c.etiqueta }}</label>
+              <input [id]="'f_' + c.clave" [type]="c.clave === 'ultima_actualizacion' ? 'date' : 'text'" [(ngModel)]="$any(u)[c.clave]" class="form-control">
+            </div>
+          }
         </div>
-      </div>
+        <ng-container slot="footer">
+          <button (click)="formFicha.set(null)" class="btn-ghost">Cancelar</button>
+          <button (click)="guardarFicha()" [disabled]="!u.nombre.trim() || subiendo()" class="btn-primary">Guardar</button>
+        </ng-container>
+      </app-modal>
     }
   `,
   styles: [`
@@ -313,6 +291,7 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
 })
 export class MapaGeneralPage implements OnInit, OnDestroy {
   private territoriosService = inject(TerritoriosService);
+  private confirmar = inject(ConfirmService);
   private router = inject(Router);
   private authStore = inject(AuthStore);
   @ViewChild(TerritorioMapComponent) private mapa?: TerritorioMapComponent;
@@ -680,8 +659,8 @@ export class MapaGeneralPage implements OnInit, OnDestroy {
 
   irABarrios(): void { this.router.navigate(['/territorios/sectores']); }
 
-  goBack(): void {
-    if (this.editandoLimite() && this.limitePendiente() && !confirm('Tiene cambios sin guardar en el límite. ¿Salir sin guardarlos?')) return;
+  async goBack(): Promise<void> {
+    if (this.editandoLimite() && this.limitePendiente() && !(await this.confirmar.ask({ title: '¿Salir sin guardar?', message: 'Tiene cambios sin guardar en el límite.', confirmLabel: 'Salir sin guardar', severity: 'warning' }))) return;
     this.router.navigate(['/territorios']);
   }
 }

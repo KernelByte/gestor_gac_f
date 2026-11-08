@@ -27,7 +27,7 @@ import { UbicacionSaliente } from '../models/discursos.models';
       @if (direccion().trim() || gps()) {
         <div class="flex items-center gap-2 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20 px-3 py-2"
           [class.h-11]="size === 'md'" [class.min-h-10]="size === 'sm'">
-          <svg class="w-4 h-4 shrink-0 text-violet-600 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg class="w-4 h-4 shrink-0 text-brand-purple dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
             <circle cx="12" cy="11" r="2.5"/>
           </svg>
@@ -38,7 +38,7 @@ import { UbicacionSaliente } from '../models/discursos.models';
           </span>
           @if (gps(); as g) {
             <a [href]="g.url_mapa" target="_blank" rel="noopener noreferrer"
-              class="shrink-0 flex items-center gap-1 h-7 px-2.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[0.65rem] font-bold transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]">
+              class="btn-primary btn-sm shrink-0">
               <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
               </svg>
@@ -74,7 +74,7 @@ import { UbicacionSaliente } from '../models/discursos.models';
         @if (gps(); as g) {
           <div class="flex items-center gap-2 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20 px-3 py-2"
             [class.h-11]="size === 'md'" [class.min-h-10]="size === 'sm'">
-            <svg class="w-4 h-4 shrink-0 text-violet-600 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <svg class="w-4 h-4 shrink-0 text-brand-purple dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5m5.5-5.5l1.5-1.5a4 4 0 115.656 5.656l-3 3a4 4 0 01-5.656 0"/>
             </svg>
             <span class="flex-1 min-w-0 truncate font-mono text-slate-700 dark:text-slate-200"
@@ -82,7 +82,7 @@ import { UbicacionSaliente } from '../models/discursos.models';
               {{ (g.lat !== null && g.lon !== null) ? (g.lat + ', ' + g.lon) : 'Enlace de mapa' }}
             </span>
             <a [href]="g.url_mapa" target="_blank" rel="noopener noreferrer"
-              class="shrink-0 flex items-center gap-1 h-7 px-2.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[0.65rem] font-bold transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]">
+              class="btn-primary btn-sm shrink-0">
               <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
               </svg>
@@ -109,10 +109,10 @@ import { UbicacionSaliente } from '../models/discursos.models';
               [class]="(size === 'md' ? 'h-11 text-sm' : 'h-10 text-xs') + ' ' + (gpsError() ? 'border-red-300 dark:border-red-700 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:border-violet-500')">
           </div>
           @if (gpsError()) {
-            <p class="text-[0.65rem] text-red-500 px-1">No se reconoce como enlace ni como coordenadas (ej. 3.437654, -76.498410).</p>
+            <p class="text-xs text-red-500 px-1">No se reconoce como enlace ni como coordenadas (ej. 3.437654, -76.498410).</p>
           }
         }
-        <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 px-1">
+        <p class="text-xs text-slate-400 dark:text-slate-500 px-1">
           La dirección se guarda tal como la escribas. La ubicación GPS es opcional y solo sirve para el botón "Abrir".
         </p>
       </div>

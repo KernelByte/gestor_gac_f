@@ -40,7 +40,7 @@ import { CommonModule } from '@angular/common';
     }
 
     .rotulo {
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -71,7 +71,7 @@ import { CommonModule } from '@angular/common';
 
     .apostilla {
       font-family: var(--font-mono);
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       letter-spacing: -0.01em;
       color: var(--apostilla);
       margin-top: auto;

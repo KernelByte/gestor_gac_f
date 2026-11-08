@@ -31,14 +31,10 @@ const TABS_EXHIBIDORES: ExhibidoresTab[] = [
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200 dark:border-slate-800 transition-colors w-fit mb-6 flex-wrap"
-         role="tablist">
-      <button *ngFor="let tab of tabs" (click)="navegar(tab.key)"
+    <div class="tab-nav tab-compact mb-6" role="tablist">
+      <button *ngFor="let tab of tabs" type="button" (click)="navegar(tab.key)"
         role="tab" [attr.aria-selected]="active === tab.key"
-        class="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97]"
-        [class]="active === tab.key
-          ? 'bg-brand-blue text-white shadow-md shadow-blue-500/20'
-          : 'text-slate-500 dark:text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800/80'">
+        class="tab-item">
         <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
           <svg *ngIf="tab.key === 'programacion'" class="w-full h-full" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>

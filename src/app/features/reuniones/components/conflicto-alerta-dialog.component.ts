@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { ConflictoAsignacion } from '../services/conflictos.service';
 
 const TIPO_LABEL: Record<string, string> = {
@@ -15,7 +16,7 @@ const TIPO_LABEL: Record<string, string> = {
 };
 
 const TIPO_COLOR: Record<string, string> = {
-  entre_semana:     '#6D28D9',
+  entre_semana:     'var(--color-brand-purple)',
   fin_semana:       '#0369a1',
   logistica:        '#0891b2',
   discurso_saliente:'#7c3aed',
@@ -27,25 +28,15 @@ const TIPO_COLOR: Record<string, string> = {
 @Component({
   selector: 'app-conflicto-alerta-dialog',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- Overlay -->
-    <div
-      data-testid="dialogo-conflicto"
-      class="conflicto-overlay"
-      (click)="onAction(false)"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="conflicto-title"
-    >
-      <!-- Card -->
-      <div class="conflicto-card" (click)="$event.stopPropagation()">
+    <app-modal [open]="true" size="md" [padding]="false" [hasFooter]="true" [closeOnBackdrop]="true" (closed)="onAction(false)">
+      <div data-testid="dialogo-conflicto">
 
-        <!-- Header -->
+        <!-- Cabecera -->
         <div class="conflicto-header">
           <div class="conflicto-icon-badge">
-            <!-- Warning triangle -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round">
               <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
@@ -54,13 +45,10 @@ const TIPO_COLOR: Record<string, string> = {
             </svg>
           </div>
           <div class="conflicto-header-text">
-            <p class="conflicto-title" id="conflicto-title">{{ sinVerificar ? 'No se pudo comprobar la agenda' : soloAusencia ? 'Publicador ausente' : 'Conflicto de asignación' }}</p>
+            <h2 class="conflicto-title" id="conflicto-title">{{ sinVerificar ? 'No se pudo comprobar la agenda' : soloAusencia ? 'Publicador ausente' : 'Conflicto de asignación' }}</h2>
             <p class="conflicto-subtitle">{{ sinVerificar ? 'No hubo respuesta del servidor' : soloAusencia ? 'Tiene una ausencia registrada en esta fecha' : 'Se detectaron asignaciones existentes' }}</p>
           </div>
         </div>
-
-        <!-- Divider -->
-        <div class="conflicto-divider"></div>
 
         <!-- Body -->
         <div class="conflicto-body">
@@ -115,77 +103,23 @@ const TIPO_COLOR: Record<string, string> = {
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="conflicto-actions">
-          <button data-testid="conflicto-cancelar" class="conflicto-btn-cancel" (click)="onAction(false)">
-            Cancelar
-          </button>
-          <button data-testid="conflicto-aceptar" class="conflicto-btn-confirm" (click)="onAction(true)">
-            Asignar igualmente
-          </button>
-        </div>
-
       </div>
-    </div>
+      <ng-container slot="footer">
+        <button type="button" data-testid="conflicto-cancelar" class="btn-secondary" (click)="onAction(false)">Cancelar</button>
+        <button type="button" data-testid="conflicto-aceptar" class="btn-primary" (click)="onAction(true)">Asignar igualmente</button>
+      </ng-container>
+    </app-modal>
   `,
   styles: [`
-    :host {
-      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-      display: block;
-    }
-
-    @keyframes overlayIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-    @keyframes cardIn {
-      from { opacity: 0; transform: scale(0.94) translateY(12px); }
-      to   { opacity: 1; transform: scale(1)    translateY(0); }
-    }
-
-    .conflicto-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      animation: overlayIn 180ms ease;
-    }
-
-    .conflicto-card {
-      width: 100%;
-      max-width: 420px;
-      border-radius: 20px;
-      background: white;
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      box-shadow:
-        0 0 0 1px rgba(0,0,0,0.03),
-        0 8px 24px rgba(0,0,0,0.08),
-        0 32px 64px rgba(0,0,0,0.14);
-      animation: cardIn 240ms var(--ease-out-expo);
-      overflow: hidden;
-    }
-
-    :host-context(.dark) .conflicto-card {
-      background: #1a1b26;
-      border-color: rgba(255,255,255,0.08);
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.04),
-        0 8px 24px rgba(0,0,0,0.3),
-        0 32px 64px rgba(0,0,0,0.55);
-    }
+    :host { display: contents; }
 
     /* ── Header ── */
     .conflicto-header {
       display: flex;
       align-items: flex-start;
       gap: 0.875rem;
-      padding: 1.375rem 1.375rem 0;
+      padding: 1.375rem 1.375rem 1.125rem;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
     }
 
     .conflicto-icon-badge {
@@ -227,16 +161,6 @@ const TIPO_COLOR: Record<string, string> = {
       font-weight: 500;
     }
 
-    /* ── Divider ── */
-    .conflicto-divider {
-      height: 1px;
-      background: rgba(0,0,0,0.06);
-      margin: 1.125rem 0 0;
-    }
-    :host-context(.dark) .conflicto-divider {
-      background: rgba(255,255,255,0.06);
-    }
-
     /* ── Body ── */
     .conflicto-body {
       padding: 1.125rem 1.375rem;
@@ -244,7 +168,7 @@ const TIPO_COLOR: Record<string, string> = {
     }
 
     .conflicto-desc {
-      font-size: 0.82rem;
+      font-size: 0.875rem;
       line-height: 1.6;
       color: #475569;
     }
@@ -285,7 +209,7 @@ const TIPO_COLOR: Record<string, string> = {
 
     .conflicto-badge {
       flex-shrink: 0;
-      font-size: 0.68rem;
+      font-size: 0.75rem;
       font-weight: 700;
       padding: 2px 7px;
       border-radius: 6px;
@@ -306,7 +230,7 @@ const TIPO_COLOR: Record<string, string> = {
       display: inline-flex;
       align-items: center;
       gap: 0.375rem;
-      font-size: 0.68rem;
+      font-size: 0.75rem;
       font-weight: 800;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -315,14 +239,14 @@ const TIPO_COLOR: Record<string, string> = {
     :host-context(.dark) .conflicto-rol { color: #f1f5f9; }
 
     .conflicto-sala {
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0;
       text-transform: none;
       padding: 1px 6px;
       border-radius: 999px;
-      background: rgba(109, 40, 217, 0.1);
-      color: #6D28D9;
+      background: color-mix(in oklab, var(--color-brand-purple) 10%, transparent);
+      color: var(--color-brand-purple);
     }
     :host-context(.dark) .conflicto-sala {
       background: rgba(196, 181, 253, 0.16);
@@ -330,7 +254,7 @@ const TIPO_COLOR: Record<string, string> = {
     }
 
     .conflicto-item-text {
-      font-size: 0.8rem;
+      font-size: 0.875rem;
       font-weight: 500;
       color: #334155;
       line-height: 1.4;
@@ -344,83 +268,28 @@ const TIPO_COLOR: Record<string, string> = {
       gap: 0.5rem;
       padding: 0.7rem 0.875rem;
       border-radius: 10px;
-      background: rgba(109, 40, 217, 0.04);
-      border: 1px solid rgba(109, 40, 217, 0.1);
+      background: color-mix(in oklab, var(--color-brand-purple) 4%, transparent);
+      border: 1px solid color-mix(in oklab, var(--color-brand-purple) 10%, transparent);
     }
     :host-context(.dark) .conflicto-question {
-      background: rgba(109, 40, 217, 0.07);
-      border-color: rgba(109, 40, 217, 0.18);
+      background: color-mix(in oklab, var(--color-brand-purple) 7%, transparent);
+      border-color: color-mix(in oklab, var(--color-brand-purple) 18%, transparent);
     }
     .conflicto-question svg {
       flex-shrink: 0;
       width: 15px; height: 15px;
-      stroke: #6D28D9;
+      stroke: var(--color-brand-purple);
       margin-top: 1px;
     }
     :host-context(.dark) .conflicto-question svg { stroke: #a78bfa; }
     .conflicto-question p {
-      font-size: 0.78rem;
+      font-size: 0.8125rem;
       font-weight: 600;
-      color: #5b21b6;
+      color: var(--color-brand-purple);
       line-height: 1.5;
     }
     :host-context(.dark) .conflicto-question p { color: #a78bfa; }
 
-    /* ── Actions ── */
-    .conflicto-actions {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: flex-end;
-      padding: 0.875rem 1.375rem 1.375rem;
-      border-top: 1px solid rgba(0,0,0,0.05);
-    }
-    :host-context(.dark) .conflicto-actions {
-      border-top-color: rgba(255,255,255,0.05);
-    }
-
-    .conflicto-btn-cancel,
-    .conflicto-btn-confirm {
-      height: 38px;
-      padding: 0 1.125rem;
-      border-radius: 10px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 130ms cubic-bezier(0.16, 1, 0.3, 1);
-      border: 1px solid transparent;
-      white-space: nowrap;
-    }
-    .conflicto-btn-cancel:active,
-    .conflicto-btn-confirm:active {
-      transform: scale(0.96);
-    }
-
-    .conflicto-btn-cancel {
-      background: rgba(0,0,0,0.04);
-      border-color: rgba(0,0,0,0.08);
-      color: #475569;
-    }
-    .conflicto-btn-cancel:hover {
-      background: rgba(0,0,0,0.07);
-    }
-    :host-context(.dark) .conflicto-btn-cancel {
-      background: rgba(255,255,255,0.05);
-      border-color: rgba(255,255,255,0.1);
-      color: #94a3b8;
-    }
-    :host-context(.dark) .conflicto-btn-cancel:hover {
-      background: rgba(255,255,255,0.09);
-    }
-
-    .conflicto-btn-confirm {
-      background: #6D28D9;
-      color: white;
-      box-shadow: 0 2px 10px rgba(109,40,217,0.35), 0 1px 3px rgba(109,40,217,0.2);
-    }
-    .conflicto-btn-confirm:hover {
-      background: #5b21b6;
-      box-shadow: 0 4px 16px rgba(109,40,217,0.45), 0 2px 6px rgba(109,40,217,0.25);
-    }
   `],
 })
 export class ConflictoAlertaDialogComponent {
@@ -453,12 +322,12 @@ export class ConflictoAlertaDialogComponent {
   }
 
   badgeBg(tipo: string): string {
-    const hex = TIPO_COLOR[tipo] ?? '#6D28D9';
-    return `${hex}18`;
+    const color = TIPO_COLOR[tipo] ?? 'var(--color-brand-purple)';
+    return `color-mix(in oklab, ${color} 9%, transparent)`;
   }
 
   badgeColor(tipo: string): string {
-    return TIPO_COLOR[tipo] ?? '#6D28D9';
+    return TIPO_COLOR[tipo] ?? 'var(--color-brand-purple)';
   }
 
   onAction(accept: boolean): void {

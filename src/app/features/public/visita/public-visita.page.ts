@@ -47,7 +47,7 @@ interface VistaPublicaBasic {
         type="button"
         (click)="theme.toggleTheme()"
         [attr.aria-label]="theme.darkMode() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
-        class="grid place-items-center w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-violet-600 dark:hover:text-violet-300 transition-colors">
+        class="grid place-items-center w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-purple dark:hover:text-violet-300 transition-colors">
         @if (theme.darkMode()) {
           <!-- Sol -->
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -67,7 +67,7 @@ interface VistaPublicaBasic {
   @if (loadingMeta()) {
     <div class="flex-1 flex items-center justify-center p-6">
       <div class="text-center">
-        <div class="loading-spin mx-auto mb-4"></div>
+        <div class="spinner-lg text-brand-purple mx-auto mb-4"></div>
         <p class="text-sm text-slate-500 dark:text-slate-400">Verificando enlace…</p>
       </div>
     </div>
@@ -107,12 +107,6 @@ interface VistaPublicaBasic {
   `,
   styles: [`
     :host { display: block; }
-    .loading-spin {
-      width: 2.25rem; height: 2.25rem; border-radius: 50%;
-      border: 3px solid rgba(148,163,184,0.35); border-top-color: #7c3aed;
-      animation: spin 700ms linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
   `],
 })
 export class PublicVisitaPage implements OnInit {

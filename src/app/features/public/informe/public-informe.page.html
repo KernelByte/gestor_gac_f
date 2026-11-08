@@ -8,10 +8,7 @@
        role="status" aria-live="polite" aria-label="Cargando formulario"
        class="max-w-md w-full text-center py-12 px-6 animate-scale-in">
     <div class="flex justify-center mb-6" aria-hidden="true">
-      <div class="relative w-12 h-12">
-        <div class="absolute inset-0 border-2 border-slate-200 dark:border-slate-800 rounded-full"></div>
-        <div class="absolute inset-0 border-2 border-brand-purple rounded-full border-t-transparent animate-spin"></div>
-      </div>
+      <div class="spinner-lg text-brand-purple"></div>
     </div>
     <p class="text-base font-semibold text-slate-800 dark:text-slate-100">Verificando acceso...</p>
     <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Preparando tu formulario</p>
@@ -110,7 +107,7 @@
         {{ info()?.mes_nombre }}
       </div>
       <h1 class="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-2 informe-enter-1">
-        Hola, <span class="text-violet-700 dark:text-violet-400">{{ (info()?.publicador_nombre || '').split(' ')[0] }}</span>
+        Hola, <span class="text-brand-purple dark:text-violet-400">{{ (info()?.publicador_nombre || '').split(' ')[0] }}</span>
       </h1>
       <p class="text-slate-600 dark:text-slate-300 text-base informe-enter-2">
         Completa y envía tu informe de este mes
@@ -289,19 +286,10 @@
       <button type="submit"
               [disabled]="form.invalid || saving()"
               aria-label="Enviar informe mensual"
-              class="w-full h-14 bg-brand-purple text-white font-semibold text-base rounded-xl
-                     hover:bg-violet-700 hover:-translate-y-px
-                     transition-all duration-[150ms]
-                     active:scale-[0.97] active:translate-y-0 active:duration-[80ms]
-                     disabled:opacity-50 disabled:active:scale-100 disabled:hover:translate-y-0 disabled:cursor-not-allowed
-                     flex items-center justify-center gap-2 shadow-md
-                     focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:ring-offset-2">
+              class="w-full btn-primary">
 
         <ng-container *ngIf="saving()">
-          <svg class="animate-spin h-5 w-5 text-white/70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
+          <span class="spinner-sm" aria-hidden="true"></span>
           <span>Enviando...</span>
         </ng-container>
 

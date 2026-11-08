@@ -21,7 +21,7 @@ import type { EstadoPrecursor } from '../../../services/reportes.service';
       display: inline-flex;
       align-items: center;
       gap: 0.3125rem;
-      font-size: 0.625rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.07em;
       text-transform: uppercase;

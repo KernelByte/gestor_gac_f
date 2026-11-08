@@ -9,24 +9,31 @@ export interface TabItem {
 }
 
 /**
- * Color activo del tab según el módulo:
- *   orange → Publicadores / Secretario  (bg-orange-500)
- *   green  → Territorios               (bg-green-600)
- *   blue   → Exhibidores               (bg-exh-600)
- *   violet → Global / marca            (bg-violet-600)
+ * Color activo del tab. Por defecto (`auto`) usa el acento del módulo
+ * (`--accent`, ver `.tema-*` en styles.scss). Solo se fuerza un color cuando
+ * la pantalla no está dentro de un tema de módulo.
+ *   orange → Publicadores / Secretario
+ *   green  → Territorios
+ *   blue   → Exhibidores
+ *   violet → Global / marca
  */
-export type TabColor = 'orange' | 'green' | 'blue' | 'violet';
+export type TabColor = 'auto' | 'orange' | 'green' | 'blue' | 'violet';
 
 @Component({
   selector: 'app-tab-nav',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="tab-nav mb-6">
+    <div class="tab-nav mb-6" role="tablist" (keydown)="teclas($event)">
       <button
         *ngFor="let tab of tabs"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="tab.key === activeTab"
+        [attr.tabindex]="tab.key === activeTab ? 0 : -1"
         (click)="select(tab.key)"
         [class]="tab.key === activeTab ? activeClass : 'tab-item'"
+        [style.--accent]="tab.key === activeTab ? forzado?.accent : null"
       >
         <!-- Ícono proyectado por slot con nombre del tab -->
         <ng-content [select]="'[slot=' + tab.key + ']'" />
@@ -38,7 +45,7 @@ export type TabColor = 'orange' | 'green' | 'blue' | 'violet';
 export class TabNavComponent {
   @Input({ required: true }) tabs: TabItem[] = [];
   @Input() activeTab: string = '';
-  @Input() color: TabColor = 'orange';
+  @Input() color: TabColor = 'auto';
   @Output() tabChange = new EventEmitter<string>();
 
   select(key: string): void {
@@ -46,13 +53,30 @@ export class TabNavComponent {
     this.tabChange.emit(key);
   }
 
-  get activeClass(): string {
-    const colorMap: Record<TabColor, string> = {
-      orange: 'tab-item-active bg-orange-500',
-      green:  'tab-item-active bg-green-600',
-      blue:   'tab-item-active bg-exh-600',
-      violet: 'tab-item-active bg-violet-600',
+  get activeClass(): string { return 'tab-item-active'; }
+
+  /** Color forzado (sin tema de módulo); `auto` hereda --accent. */
+  get forzado(): { accent: string } | null {
+    const map: Record<Exclude<TabColor, 'auto'>, string> = {
+      orange: 'var(--color-orange-500)',
+      green:  'var(--color-green-600)',
+      blue:   'var(--color-exh-600)',
+      violet: 'var(--color-brand-purple)',
     };
-    return colorMap[this.color];
+    return this.color === 'auto' ? null : { accent: map[this.color] };
+  }
+
+  /** Flechas, Inicio y Fin cambian de pestaña (patrón WAI-ARIA tablist). */
+  teclas(e: KeyboardEvent): void {
+    const i = this.tabs.findIndex(t => t.key === this.activeTab);
+    let n = i;
+    if (e.key === 'ArrowRight') n = (i + 1) % this.tabs.length;
+    else if (e.key === 'ArrowLeft') n = (i - 1 + this.tabs.length) % this.tabs.length;
+    else if (e.key === 'Home') n = 0;
+    else if (e.key === 'End') n = this.tabs.length - 1;
+    else return;
+    e.preventDefault();
+    this.select(this.tabs[n].key);
+    queueMicrotask(() => (e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[role=tab]')[n]?.focus());
   }
 }

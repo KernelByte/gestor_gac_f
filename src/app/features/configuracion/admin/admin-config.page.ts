@@ -15,6 +15,7 @@ import { SeguridadComponent } from './components/seguridad.component';
 import { FestivosComponent } from './components/festivos.component';
 import { CambioHorarioComponent } from '../cambio-horario.component';
 import { camposHorarioCambiados } from '../horarios-reunion.service';
+import { ModalComponent, ConfirmDialogComponent, AvisoComponent, ToastService, ConfirmService } from '../../../shared/components';
 import { ImportPublicadoresModalComponent } from '../../../shared/components/import-publicadores/import-publicadores-modal.component';
 
 /**
@@ -102,7 +103,7 @@ interface SolicitudAcceso {
 @Component({
    selector: 'app-admin-config',
    standalone: true,
-   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent, ApiConfigComponent, SeguridadComponent, FestivosComponent, ImportPublicadoresModalComponent, CambioHorarioComponent],
+   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent, ApiConfigComponent, SeguridadComponent, FestivosComponent, ImportPublicadoresModalComponent, CambioHorarioComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
    templateUrl: './admin-config.page.html',
    styles: [`
      .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -142,7 +143,6 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
    private router = inject(Router);
    private route = inject(ActivatedRoute);
    private destroyRef = inject(DestroyRef);
-   private notificationTimer: ReturnType<typeof setTimeout> | null = null;
    private API_URL = `${environment.apiUrl}/configuracion/admin`;
 
    activeTab = signal<AdminTab>('congregaciones');
@@ -181,7 +181,8 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
    urlToDelete = signal<string | null>(null);
 
    // Notification Signal
-   notification = signal<{ message: string, type: 'success' | 'error' } | null>(null);
+   private toastSvc = inject(ToastService);
+   private confirm = inject(ConfirmService);
 
    // Export signal
    exportingId = signal<number | null>(null);
@@ -493,16 +494,17 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
       dia_reunion_fin_semana: '', hora_reunion_fin_semana: ''
    };
 
-   @HostListener('document:keydown.escape')
-   onEscape() {
-      if (this.urlToDelete()) this.urlToDelete.set(null);
-      else if (this.congregationToDelete()) this.closeDeleteModal();
-      else if (this.panelOpen()) this.requestClosePanel();
-   }
-
    /** Cierre por fondo/Escape: si hay cambios sin guardar, pregunta antes de descartarlos. */
-   requestClosePanel() {
-      if (this.congregationForm.dirty && !confirm('Hay cambios sin guardar. ¿Descartarlos?')) return;
+   async requestClosePanel() {
+      if (this.congregationForm.dirty) {
+         const descartar = await this.confirm.ask({
+            title: 'Hay cambios sin guardar',
+            message: '¿Descartarlos?',
+            confirmLabel: 'Descartar',
+            severity: 'warning',
+         });
+         if (!descartar) return;
+      }
       this.closePanel();
    }
 
@@ -573,9 +575,8 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
    }
 
    showNotification(message: string, type: 'success' | 'error') {
-      if (this.notificationTimer) clearTimeout(this.notificationTimer);
-      this.notification.set({ message, type });
-      this.notificationTimer = setTimeout(() => this.notification.set(null), 3000);
+      if (type === 'success') this.toastSvc.success(message);
+      else this.toastSvc.error(message);
    }
 
    // ===== Export Method =====

@@ -1,10 +1,11 @@
 import {
-  Component, EventEmitter, HostListener, Input, OnInit, Output, computed, signal,
+  Component, EventEmitter, Input, OnInit, Output, computed, signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { fechaIsoLocal, hoyIso } from '../../../core/utils/fecha.util';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import { ReunionesService } from '../services/reuniones.service';
@@ -46,8 +47,8 @@ interface GrupoAnotaciones {
 const GRUPOS_POR_PAGINA = 12;
 
 /** Clases que se repiten: el buscador de cada pestaña y los chips de filtro. */
-const INPUT_BUSCAR = 'h-10 pl-9 pr-3 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[0.875rem] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-colors';
-const CHIP_ON = 'bg-violet-50 dark:bg-violet-900/30 border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300';
+const INPUT_BUSCAR = 'h-10 pl-9 pr-3 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-colors';
+const CHIP_ON = 'bg-violet-50 dark:bg-violet-900/30 border-violet-300 dark:border-brand-purple text-brand-purple dark:text-violet-300';
 const CHIP_OFF = 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600';
 
 const TABS: { id: SubTab; label: string; ayuda: string }[] = [
@@ -85,17 +86,10 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
 @Component({
   selector: 'app-seguimiento-reuniones',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePickerComponent, SelectPickerComponent, SeguimientoAsignacionPanelComponent],
+  imports: [CommonModule, FormsModule, DatePickerComponent, SelectPickerComponent, SeguimientoAsignacionPanelComponent, ModalComponent],
   template: `
-    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm"
-      (click)="cerrar.emit()">
-      <div role="dialog" aria-modal="true" aria-labelledby="seg-hist-titulo"
-        class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-6xl h-[92vh] sm:h-[88vh] flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden"
-        (click)="$event.stopPropagation()">
-
-        <div class="flex justify-center pt-3 pb-1 sm:hidden">
-          <div class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></div>
-        </div>
+    <app-modal [open]="true" variant="sheet" size="3xl" [padding]="false" [dismissible]="!panelObjetivo()" (closed)="cerrar.emit()">
+      <div role="group" aria-labelledby="seg-hist-titulo" class="h-[80dvh] flex flex-col min-h-0">
 
         <!-- ═══ CABECERA ═══ -->
         <div class="shrink-0 px-5 pt-3 pb-4 sm:pt-5 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-4">
@@ -104,7 +98,7 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
               <h2 id="seg-hist-titulo" class="font-display text-lg font-bold text-slate-900 dark:text-white leading-tight">Seguimiento de partes</h2>
               <!-- Lo primero que alguien se pregunta antes de escribir sobre un
                    hermano: quién más lo va a leer. -->
-              <p class="flex items-center gap-1.5 text-[0.8125rem] text-slate-500 dark:text-slate-400 mt-1">
+              <p class="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 mt-1">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 Lo que anotas es privado: solo lo ves tú.
               </p>
@@ -118,36 +112,31 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
           <!-- Pestañas: texto llano y una línea que dice para qué sirve la
                activa. Se desplazan en horizontal en pantallas estrechas. -->
           <div class="flex flex-col gap-2">
-            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar -mx-1 px-1" role="tablist" aria-label="Vistas del seguimiento">
+            <div class="tab-nav" role="tablist" aria-label="Vistas del seguimiento">
               @for (t of TABS; track t.id) {
                 <button type="button" role="tab" [id]="'seg-tab-' + t.id"
                   [attr.aria-selected]="subTab() === t.id" [attr.aria-controls]="'seg-panel'"
                   (click)="cambiarTab(t.id)"
-                  class="shrink-0 flex items-center gap-1.5 px-3.5 h-10 rounded-xl text-[0.8125rem] font-semibold whitespace-nowrap transition-colors duration-150 active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500"
-                  [class]="subTab() === t.id
-                    ? 'bg-violet-600 text-white'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'">
+                  class="tab-item">
                   {{ t.label }}
                   @if (t.id === 'anotaciones' && datos(); as d) {
-                    <span class="min-w-[1.25rem] h-5 px-1.5 rounded-full text-[0.7rem] font-bold flex items-center justify-center tabular-nums"
-                      [class]="subTab() === t.id ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'">{{ d.total_con_seguimiento }}</span>
+                    <span class="tab-count tabular-nums">{{ d.total_con_seguimiento }}</span>
                   }
                   @if (t.id === 'anotar' && datos()?.total_pendientes) {
-                    <span class="min-w-[1.25rem] h-5 px-1.5 rounded-full text-[0.7rem] font-bold flex items-center justify-center tabular-nums"
-                      [class]="subTab() === t.id ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
+                    <span class="tab-count tabular-nums"
                       [attr.aria-label]="datos()!.total_pendientes + ' partes sin anotar'">{{ datos()!.total_pendientes }}</span>
                   }
                 </button>
               }
             </div>
-            <p class="text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400 max-w-[70ch]">{{ ayudaTab() }}</p>
+            <p class="text-sm leading-relaxed text-slate-500 dark:text-slate-400 max-w-[70ch]">{{ ayudaTab() }}</p>
           </div>
 
           <!-- Periodo: opciones con nombre en vez de dos calendarios. Las
                fechas exactas solo aparecen si se piden. -->
           <div class="flex flex-wrap items-end gap-3">
             <div class="flex flex-col gap-1">
-              <span id="seg-periodo-label" class="text-[0.75rem] font-semibold text-slate-500 dark:text-slate-400">Periodo</span>
+              <span id="seg-periodo-label" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Periodo</span>
               <div class="w-56">
                 <app-select-picker [ngModel]="periodo()" (ngModelChange)="cambiarPeriodo($event)"
                   [ngModelOptions]="{ standalone: true }"
@@ -157,13 +146,13 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
             </div>
             @if (periodo() === 'personalizado') {
               <div class="flex flex-col gap-1 min-w-[9.5rem] flex-1 sm:flex-none">
-                <label class="text-[0.75rem] font-semibold text-slate-500 dark:text-slate-400">Desde</label>
+                <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Desde</label>
                 <app-date-picker [(ngModel)]="rangoDesde" [ngModelOptions]="{ standalone: true }"
                   (ngModelChange)="cargar()" [maxDate]="rangoHasta || null" colorScheme="violet"
                   placeholder="El principio"></app-date-picker>
               </div>
               <div class="flex flex-col gap-1 min-w-[9.5rem] flex-1 sm:flex-none">
-                <label class="text-[0.75rem] font-semibold text-slate-500 dark:text-slate-400">Hasta</label>
+                <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Hasta</label>
                 <app-date-picker [(ngModel)]="rangoHasta" [ngModelOptions]="{ standalone: true }"
                   (ngModelChange)="cargar()" [minDate]="rangoDesde || null" colorScheme="violet"
                   placeholder="Hoy y lo programado"></app-date-picker>
@@ -179,14 +168,14 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
           @if (cargando()) {
             <div class="flex flex-col gap-3" aria-busy="true" aria-label="Cargando el seguimiento">
               @for (i of [0, 1, 2, 3]; track i) {
-                <div class="h-16 rounded-xl bg-slate-100 dark:bg-slate-800/60 animate-pulse"></div>
+                <div class="h-16 rounded-xl skeleton"></div>
               }
             </div>
           } @else if (error()) {
             <div role="alert" class="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 px-4 py-3 flex items-center gap-3">
-              <p class="flex-1 text-[0.8125rem] font-medium text-red-700 dark:text-red-400">{{ error() }}</p>
+              <p class="flex-1 text-sm font-medium text-red-700 dark:text-red-400">{{ error() }}</p>
               <button type="button" (click)="cargar()"
-                class="shrink-0 px-3 h-9 rounded-lg text-[0.8125rem] font-semibold text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">Reintentar</button>
+                class="shrink-0 px-3 h-9 rounded-lg text-sm font-semibold text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">Reintentar</button>
             </div>
           } @else if (datos(); as d) {
 
@@ -194,18 +183,18 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                  qué fechas hay datos y se ofrece saltar ahí de un clic. -->
             @if (d.total_apariciones === 0) {
               <div class="flex flex-col items-center justify-center py-14 text-center gap-2.5 max-w-sm mx-auto">
-                <p class="text-[0.9375rem] font-semibold text-slate-700 dark:text-slate-200">No hay partes asignadas en este periodo</p>
+                <p class="text-base font-semibold text-slate-700 dark:text-slate-200">No hay partes asignadas en este periodo</p>
                 @if (d.rango_disponible.desde && d.rango_disponible.hasta) {
-                  <p class="text-[0.8125rem] text-slate-500 dark:text-slate-400">
+                  <p class="text-sm text-slate-500 dark:text-slate-400">
                     Hay programación del {{ formatFecha(d.rango_disponible.desde) }}
                     al {{ formatFecha(d.rango_disponible.hasta) }}.
                   </p>
                   <button type="button" (click)="usarRangoDisponible(d)"
-                    class="mt-1 px-4 h-10 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[0.8125rem] font-semibold transition-colors active:scale-95">
+                    class="btn-primary mt-1">
                     Ver todo lo que hay
                   </button>
                 } @else {
-                  <p class="text-[0.8125rem] text-slate-500 dark:text-slate-400">Esta congregación aún no tiene programación asignada.</p>
+                  <p class="text-sm text-slate-500 dark:text-slate-400">Esta congregación aún no tiene programación asignada.</p>
                 }
               </div>
             }
@@ -216,12 +205,12 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
               @if (d.total_con_seguimiento === 0) {
                 <!-- Vacío que enseña: qué es una anotación y dónde se hace. -->
                 <div class="flex flex-col items-center justify-center py-14 text-center gap-2.5 max-w-sm mx-auto">
-                  <p class="text-[0.9375rem] font-semibold text-slate-700 dark:text-slate-200">Aún no has anotado nada en este periodo</p>
-                  <p class="text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400">
+                  <p class="text-base font-semibold text-slate-700 dark:text-slate-200">Aún no has anotado nada en este periodo</p>
+                  <p class="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                     Cuando anotes el tiempo de una parte, si la persona cumplió o una observación, aparecerá aquí.
                   </p>
                   <button type="button" (click)="cambiarTab('anotar')"
-                    class="mt-1 px-4 h-10 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[0.8125rem] font-semibold transition-colors active:scale-95">
+                    class="btn-primary mt-1">
                     Empezar a anotar
                   </button>
                 </div>
@@ -237,7 +226,7 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                   <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Mostrar">
                     @for (f of FILTROS; track f.id) {
                       <button type="button" (click)="filtroAnotacion.set(f.id)" [attr.aria-pressed]="filtroAnotacion() === f.id"
-                        class="px-3 h-9 rounded-full border text-[0.8125rem] font-medium transition-colors active:scale-95"
+                        class="px-3 h-9 rounded-full border text-sm font-medium transition-colors active:scale-95"
                         [class]="filtroAnotacion() === f.id ? CHIP_ON : CHIP_OFF">
                         {{ f.label }}
                       </button>
@@ -247,20 +236,20 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
 
                 @if (anotacionesAgrupadas().length === 0) {
                   <div class="flex flex-col items-center justify-center py-12 text-center gap-2">
-                    <p class="text-[0.9375rem] font-semibold text-slate-700 dark:text-slate-200">Ninguna anotación coincide</p>
+                    <p class="text-base font-semibold text-slate-700 dark:text-slate-200">Ninguna anotación coincide</p>
                     <button type="button" (click)="limpiarFiltros()"
-                      class="px-3 h-9 rounded-lg text-[0.8125rem] font-semibold text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors">
+                      class="px-3 h-9 rounded-lg text-sm font-semibold text-brand-purple dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors">
                       Quitar la búsqueda y los filtros
                     </button>
                   </div>
                 } @else {
-                  <p class="text-[0.8125rem] text-slate-500 dark:text-slate-400 mb-3" aria-live="polite">
+                  <p class="text-sm text-slate-500 dark:text-slate-400 mb-3" aria-live="polite">
                     {{ totalAnotacionesVisibles() }} anotación{{ totalAnotacionesVisibles() === 1 ? '' : 'es' }}
                   </p>
                   <div class="flex flex-col gap-6">
                     @for (g of gruposVisibles(); track g.fecha) {
                       <section [attr.aria-label]="g.titulo">
-                        <h3 class="font-display text-[0.875rem] font-bold text-slate-800 dark:text-slate-100 mb-2">
+                        <h3 class="font-display text-sm font-bold text-slate-800 dark:text-slate-100 mb-2">
                           {{ g.titulo }} <span class="font-normal text-slate-400 dark:text-slate-500">{{ g.anio }}</span>
                         </h3>
                         <ul class="rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
@@ -271,12 +260,12 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                                 class="group w-full text-left px-4 py-3 flex items-start gap-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-violet-500">
                                 <span class="flex-1 min-w-0 flex flex-col gap-1.5">
                                   <span class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                                    <span class="text-[0.9375rem] font-semibold text-slate-900 dark:text-slate-50">{{ o.nombre_completo }}</span>
-                                    <span class="text-[0.8125rem] text-slate-500 dark:text-slate-400">{{ o.detalle }}@if (o.papel) {<span> · {{ o.papel }}</span>}@if (o.sala) {<span> · {{ o.sala }}</span>}</span>
+                                    <span class="text-base font-semibold text-slate-900 dark:text-slate-50">{{ o.nombre_completo }}</span>
+                                    <span class="text-sm text-slate-500 dark:text-slate-400">{{ o.detalle }}@if (o.papel) {<span> · {{ o.papel }}</span>}@if (o.sala) {<span> · {{ o.sala }}</span>}</span>
                                   </span>
                                   <span class="flex flex-wrap items-center gap-1.5">
                                     @if (o.seguimiento?.duracion_real_seg != null) {
-                                      <span class="px-2 h-6 rounded-full text-[0.75rem] font-semibold flex items-center gap-1 tabular-nums" [class]="claseNivel(o.seguimiento!.nivel)">
+                                      <span class="px-2 h-6 rounded-full text-xs font-semibold flex items-center gap-1 tabular-nums" [class]="claseNivel(o.seguimiento!.nivel)">
                                         {{ formatSegundos(o.seguimiento!.duracion_real_seg!) }}
                                         @if (o.seguimiento!.nivel; as n) {
                                           <span class="font-normal">· {{ etiquetaNivel(n, o.seguimiento!.duracion_real_seg!, o.duracion_minutos) }}</span>
@@ -284,14 +273,14 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                                       </span>
                                     }
                                     @if (o.seguimiento?.asistio; as a) {
-                                      <span class="px-2 h-6 rounded-full text-[0.75rem] font-semibold flex items-center" [class]="asistencia(a).claseChip">{{ asistencia(a).texto }}</span>
+                                      <span class="px-2 h-6 rounded-full text-xs font-semibold flex items-center" [class]="asistencia(a).claseChip">{{ asistencia(a).texto }}</span>
                                     }
                                   </span>
                                   @if (o.seguimiento?.notas) {
-                                    <span class="text-[0.875rem] leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-line max-w-[70ch]">{{ o.seguimiento!.notas }}</span>
+                                    <span class="text-sm leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-line max-w-[70ch]">{{ o.seguimiento!.notas }}</span>
                                   }
                                 </span>
-                                <span class="shrink-0 mt-0.5 text-[0.8125rem] font-semibold text-violet-700 dark:text-violet-300 opacity-70 group-hover:opacity-100 transition-opacity">Cambiar</span>
+                                <span class="shrink-0 mt-0.5 text-sm font-semibold text-brand-purple dark:text-violet-300 opacity-70 group-hover:opacity-100 transition-opacity">Cambiar</span>
                               </button>
                             </li>
                           }
@@ -300,7 +289,7 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                     }
                     @if (gruposVisibles().length < anotacionesAgrupadas().length) {
                       <button type="button" (click)="limiteGrupos.set(limiteGrupos() + GRUPOS_POR_PAGINA)"
-                        class="self-center px-4 h-10 rounded-xl border border-slate-200 dark:border-slate-700 text-[0.8125rem] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-95">
+                        class="self-center px-4 h-10 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-95">
                         Ver reuniones anteriores
                       </button>
                     }
@@ -313,7 +302,7 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
             @else if (subTab() === 'anotar') {
 
               <div class="flex items-center gap-3 mb-4 flex-wrap">
-                <p class="text-[0.8125rem] text-slate-500 dark:text-slate-400 flex-1 min-w-[12rem]">
+                <p class="text-sm text-slate-500 dark:text-slate-400 flex-1 min-w-[12rem]">
                   {{ d.reuniones.length }} {{ d.reuniones.length === 1 ? 'reunión celebrada' : 'reuniones celebradas' }}
                   @if (d.total_pendientes > 0) {
                     · {{ d.total_pendientes }} {{ d.total_pendientes === 1 ? 'parte' : 'partes' }} sin anotar
@@ -321,10 +310,10 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                 </p>
                 <button type="button" (click)="soloPendientes.set(!soloPendientes())"
                   [attr.aria-pressed]="soloPendientes()"
-                  class="shrink-0 flex items-center gap-2 px-3 h-9 rounded-full border text-[0.8125rem] font-medium transition-colors active:scale-95"
+                  class="shrink-0 flex items-center gap-2 px-3 h-9 rounded-full border text-sm font-medium transition-colors active:scale-95"
                   [class]="soloPendientes() ? CHIP_ON : CHIP_OFF">
                   <span class="w-4 h-4 rounded border flex items-center justify-center"
-                    [class]="soloPendientes() ? 'bg-violet-600 border-violet-600 text-white' : 'border-slate-300 dark:border-slate-600'">
+                    [class]="soloPendientes() ? 'bg-brand-purple border-brand-purple text-white' : 'border-slate-300 dark:border-slate-600'">
                     @if (soloPendientes()) {
                       <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     }
@@ -335,8 +324,8 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
 
               @if (reunionesVisibles().length === 0) {
                 <div class="flex flex-col items-center justify-center py-14 text-center gap-2">
-                  <p class="text-[0.9375rem] font-semibold text-slate-700 dark:text-slate-200">Todo anotado</p>
-                  <p class="text-[0.8125rem] text-slate-500 dark:text-slate-400">Todas las reuniones celebradas de este periodo ya tienen sus anotaciones.</p>
+                  <p class="text-base font-semibold text-slate-700 dark:text-slate-200">Todo anotado</p>
+                  <p class="text-sm text-slate-500 dark:text-slate-400">Todas las reuniones celebradas de este periodo ya tienen sus anotaciones.</p>
                 </div>
               }
 
@@ -347,8 +336,8 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                       [attr.aria-expanded]="expandido('m|' + r.fecha)"
                       class="w-full flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-violet-500">
                       <span class="flex-1 min-w-0">
-                        <span class="block font-display text-[0.9375rem] font-bold text-slate-900 dark:text-slate-50">{{ formatFechaLarga(r.fecha) }}</span>
-                        <span class="block text-[0.8125rem] mt-0.5"
+                        <span class="block font-display text-base font-bold text-slate-900 dark:text-slate-50">{{ formatFechaLarga(r.fecha) }}</span>
+                        <span class="block text-sm mt-0.5"
                           [class]="r.registradas === r.total ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'">
                           @if (r.registradas === r.total) { Todo anotado } @else { {{ r.registradas }} de {{ r.total }} partes anotadas }
                         </span>
@@ -370,12 +359,12 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
 
                             <!-- Quién y qué -->
                             <div class="flex items-baseline gap-x-2 gap-y-0.5 flex-wrap min-w-0">
-                              <span class="text-[0.9375rem] font-semibold text-slate-900 dark:text-slate-50">{{ o.nombre_completo }}</span>
-                              <span class="text-[0.8125rem] text-slate-500 dark:text-slate-400 flex-1 min-w-0">
+                              <span class="text-base font-semibold text-slate-900 dark:text-slate-50">{{ o.nombre_completo }}</span>
+                              <span class="text-sm text-slate-500 dark:text-slate-400 flex-1 min-w-0">
                                 {{ o.detalle }}@if (o.papel) {<span> · {{ o.papel }}</span>}@if (o.sala) {<span> · {{ o.sala }}</span>}
                               </span>
                               @if (o.duracion_minutos) {
-                                <span class="shrink-0 text-[0.75rem] text-slate-500 dark:text-slate-400 tabular-nums">{{ o.duracion_minutos }} min previstos</span>
+                                <span class="shrink-0 text-xs text-slate-500 dark:text-slate-400 tabular-nums">{{ o.duracion_minutos }} min previstos</span>
                               }
                             </div>
 
@@ -383,15 +372,15 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                                  ocho partes no puede costar ocho diálogos. -->
                             <div class="flex items-end gap-x-3 gap-y-2.5 flex-wrap">
                               <div class="flex flex-col gap-1">
-                                <label [attr.for]="'t-' + o.id_asignacion" class="text-[0.75rem] font-medium text-slate-500 dark:text-slate-400">Duró</label>
+                                <label [attr.for]="'t-' + o.id_asignacion" class="text-xs font-medium text-slate-500 dark:text-slate-400">Duró</label>
                                 <div class="flex items-center gap-1.5">
                                   <input [id]="'t-' + o.id_asignacion" type="text" inputmode="numeric"
                                     [(ngModel)]="ed(o).tiempo" [ngModelOptions]="{ standalone: true }"
                                     (blur)="guardarFila(o)" (keydown.enter)="guardarFila(o)"
                                     placeholder="0:00" title="Minutos y segundos, por ejemplo 4:35"
-                                    class="w-[4.75rem] h-10 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[0.875rem] font-semibold text-center tabular-nums text-slate-800 dark:text-slate-100 placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-colors">
+                                    class="w-[4.75rem] h-10 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold text-center tabular-nums text-slate-800 dark:text-slate-100 placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-colors">
                                   @if (nivelFila(o); as n) {
-                                    <span class="shrink-0 px-2 h-7 rounded-full text-[0.75rem] font-semibold flex items-center whitespace-nowrap" [class]="claseNivel(n)">
+                                    <span class="shrink-0 px-2 h-7 rounded-full text-xs font-semibold flex items-center whitespace-nowrap" [class]="claseNivel(n)">
                                       {{ etiquetaNivel(n, segundosFila(o), o.duracion_minutos) }}
                                     </span>
                                   }
@@ -399,12 +388,12 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                               </div>
 
                               <div class="flex flex-col gap-1">
-                                <span [id]="'a-' + o.id_asignacion" class="text-[0.75rem] font-medium text-slate-500 dark:text-slate-400">¿Cumplió?</span>
+                                <span [id]="'a-' + o.id_asignacion" class="text-xs font-medium text-slate-500 dark:text-slate-400">¿Cumplió?</span>
                                 <div class="flex items-center gap-1" role="group" [attr.aria-labelledby]="'a-' + o.id_asignacion">
                                   @for (op of ASISTENCIAS; track op.valor) {
                                     <button type="button" (click)="marcarAsistencia(o, op.valor)"
                                       [attr.aria-pressed]="ed(o).asistio === op.valor"
-                                      class="shrink-0 px-3 h-10 rounded-lg text-[0.8125rem] font-semibold border transition-colors active:scale-95"
+                                      class="shrink-0 px-3 h-10 rounded-lg text-sm font-semibold border transition-colors active:scale-95"
                                       [class]="ed(o).asistio === op.valor ? op.claseBoton : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'">
                                       {{ op.boton }}
                                     </button>
@@ -413,21 +402,21 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                               </div>
 
                               <div class="flex flex-col gap-1 flex-1 min-w-[12rem]">
-                                <label [attr.for]="'n-' + o.id_asignacion" class="text-[0.75rem] font-medium text-slate-500 dark:text-slate-400">Observaciones</label>
+                                <label [attr.for]="'n-' + o.id_asignacion" class="text-xs font-medium text-slate-500 dark:text-slate-400">Observaciones</label>
                                 <input [id]="'n-' + o.id_asignacion" type="text"
                                   [(ngModel)]="ed(o).notas" [ngModelOptions]="{ standalone: true }"
                                   (blur)="guardarFila(o)" (keydown.enter)="guardarFila(o)"
                                   placeholder="Opcional"
-                                  class="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[0.875rem] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-colors">
+                                  class="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-colors">
                               </div>
 
                               <div class="flex items-center gap-1 h-10">
                                 <!-- Estado del guardado, en palabras: guardar solo
                                      sin decirlo sería un acto de fe. -->
-                                <span class="w-[5.5rem] text-[0.75rem] font-medium flex items-center gap-1" aria-live="polite">
+                                <span class="w-[5.5rem] text-xs font-medium flex items-center gap-1" aria-live="polite">
                                   @switch (ed(o).estado) {
                                     @case ('guardando') {
-                                      <span class="w-3.5 h-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 border-t-violet-500 animate-spin"></span>
+                                      <span class="spinner-xs"></span>
                                       <span class="text-slate-500">Guardando</span>
                                     }
                                     @case ('guardado') {
@@ -444,7 +433,7 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                                 <button type="button" (click)="abrirPanel(o)"
                                   title="Cronometrar esta parte"
                                   [attr.aria-label]="'Cronometrar la parte de ' + o.nombre_completo"
-                                  class="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-violet-700 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/25 transition-colors active:scale-95">
+                                  class="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand-purple dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/25 transition-colors active:scale-95">
                                   <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5l2.5 1.5M9.5 2h5"/></svg>
                                 </button>
                               </div>
@@ -471,8 +460,8 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
 
               @if (personasFiltradas().length === 0) {
                 <div class="flex flex-col items-center justify-center py-14 text-center gap-2">
-                  <p class="text-[0.9375rem] font-semibold text-slate-700 dark:text-slate-200">Nadie con ese nombre</p>
-                  <p class="text-[0.8125rem] text-slate-500 dark:text-slate-400">No hay partes de esa persona en este periodo.</p>
+                  <p class="text-base font-semibold text-slate-700 dark:text-slate-200">Nadie con ese nombre</p>
+                  <p class="text-sm text-slate-500 dark:text-slate-400">No hay partes de esa persona en este periodo.</p>
                 </div>
               }
 
@@ -483,8 +472,8 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                       [attr.aria-expanded]="expandido('p|' + p.id_publicador)"
                       class="w-full flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-violet-500">
                       <span class="flex-1 min-w-0">
-                        <span class="block text-[0.9375rem] font-semibold text-slate-900 dark:text-slate-50">{{ p.nombre_completo }}</span>
-                        <span class="block text-[0.8125rem] text-slate-500 dark:text-slate-400 mt-0.5">
+                        <span class="block text-base font-semibold text-slate-900 dark:text-slate-50">{{ p.nombre_completo }}</span>
+                        <span class="block text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                           {{ p.total }} parte{{ p.total === 1 ? '' : 's' }} ·
                           @if (p.dias_desde_ultima != null) {
                             la última {{ hace(p.dias_desde_ultima) | lowercase }}
@@ -492,7 +481,7 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                             todavía ninguna celebrada
                           }
                           @if (p.proxima_fecha) {
-                            <span class="text-violet-700 dark:text-violet-300"> · próxima el {{ formatFecha(p.proxima_fecha) }}</span>
+                            <span class="text-brand-purple dark:text-violet-300"> · próxima el {{ formatFecha(p.proxima_fecha) }}</span>
                           }
                         </span>
                       </span>
@@ -505,14 +494,14 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                             <span class="h-full bg-emerald-500" [style.width.%]="pct(p.tiempo.en_tiempo, p.tiempo.medidas)"></span>
                             <span class="h-full bg-red-500" [style.width.%]="pct(p.tiempo.pasado, p.tiempo.medidas)"></span>
                           </span>
-                          <span class="text-[0.75rem] text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
+                          <span class="text-xs text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
                             {{ p.tiempo.en_tiempo }} de {{ p.tiempo.medidas }} en tiempo
                           </span>
                         </span>
                       }
 
                       @if (p.sin_seguimiento > 0) {
-                        <span class="shrink-0 px-2 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[0.75rem] font-medium flex items-center whitespace-nowrap">{{ p.sin_seguimiento }} sin anotar</span>
+                        <span class="shrink-0 px-2 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium flex items-center whitespace-nowrap">{{ p.sin_seguimiento }} sin anotar</span>
                       }
                       <svg class="w-4 h-4 shrink-0 text-slate-400 transition-transform duration-200" [class.rotate-90]="expandido('p|' + p.id_publicador)"
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
@@ -521,7 +510,7 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                     @if (expandido('p|' + p.id_publicador)) {
                       <div class="border-t border-slate-100 dark:border-slate-800">
                         @if (p.tiempo && p.tiempo.medidas > 0) {
-                          <div class="px-4 py-2.5 bg-white dark:bg-slate-900 flex items-center gap-x-4 gap-y-1 flex-wrap text-[0.8125rem] border-b border-slate-100 dark:border-slate-800">
+                          <div class="px-4 py-2.5 bg-white dark:bg-slate-900 flex items-center gap-x-4 gap-y-1 flex-wrap text-sm border-b border-slate-100 dark:border-slate-800">
                             <span class="text-slate-500 dark:text-slate-400">De {{ p.tiempo.medidas }} cronometrada{{ p.tiempo.medidas === 1 ? '' : 's' }}:</span>
                             <span class="font-medium text-emerald-700 dark:text-emerald-400">{{ p.tiempo.en_tiempo }} en tiempo</span>
                             <span class="font-medium text-red-700 dark:text-red-400">{{ p.tiempo.pasado }} se pasó</span>
@@ -539,9 +528,9 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                               <button type="button" (click)="toggle('r|' + p.id_publicador + '|' + r.rol_key)"
                                 [attr.aria-expanded]="expandido('r|' + p.id_publicador + '|' + r.rol_key)"
                                 class="w-full flex items-center gap-2.5 px-4 py-2.5 text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/60 transition-colors">
-                                <span class="flex-1 min-w-0 text-[0.875rem] font-medium text-slate-800 dark:text-slate-200">{{ r.etiqueta }}</span>
-                                <span class="shrink-0 text-[0.75rem] text-slate-500 dark:text-slate-400 tabular-nums">{{ r.veces }} {{ r.veces === 1 ? 'vez' : 'veces' }}</span>
-                                <span class="shrink-0 text-[0.75rem] text-slate-500 dark:text-slate-400 hidden sm:inline">
+                                <span class="flex-1 min-w-0 text-sm font-medium text-slate-800 dark:text-slate-200">{{ r.etiqueta }}</span>
+                                <span class="shrink-0 text-xs text-slate-500 dark:text-slate-400 tabular-nums">{{ r.veces }} {{ r.veces === 1 ? 'vez' : 'veces' }}</span>
+                                <span class="shrink-0 text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">
                                   · {{ r.dias_desde_ultima != null ? hace(r.dias_desde_ultima) : 'solo programada' }}
                                 </span>
                                 <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-200" [class.rotate-90]="expandido('r|' + p.id_publicador + '|' + r.rol_key)"
@@ -553,30 +542,30 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                                   @for (o of r.ocurrencias; track o.id_asignacion) {
                                     <button type="button" (click)="abrirPanel(o)"
                                       class="w-full flex items-start gap-3 pl-6 pr-4 py-2 text-left hover:bg-white dark:hover:bg-slate-900/60 transition-colors">
-                                      <span class="shrink-0 w-24 text-[0.8125rem] font-medium text-slate-600 dark:text-slate-300 tabular-nums">{{ formatFecha(o.fecha) }}</span>
+                                      <span class="shrink-0 w-24 text-sm font-medium text-slate-600 dark:text-slate-300 tabular-nums">{{ formatFecha(o.fecha) }}</span>
                                       <span class="flex-1 min-w-0 flex flex-col gap-1">
                                         @if (o.seguimiento; as s) {
                                           <span class="flex items-center gap-1.5 flex-wrap">
                                             @if (s.duracion_real_seg != null) {
-                                              <span class="px-2 h-6 rounded-full text-[0.75rem] font-semibold flex items-center tabular-nums" [class]="claseNivel(s.nivel)">
+                                              <span class="px-2 h-6 rounded-full text-xs font-semibold flex items-center tabular-nums" [class]="claseNivel(s.nivel)">
                                                 {{ formatSegundos(s.duracion_real_seg) }}
                                               </span>
                                             }
                                             @if (s.asistio && s.asistio !== 'si') {
-                                              <span class="px-2 h-6 rounded-full text-[0.75rem] font-semibold flex items-center" [class]="asistencia(s.asistio).claseChip">{{ asistencia(s.asistio).texto }}</span>
+                                              <span class="px-2 h-6 rounded-full text-xs font-semibold flex items-center" [class]="asistencia(s.asistio).claseChip">{{ asistencia(s.asistio).texto }}</span>
                                             }
                                           </span>
                                           @if (s.notas) {
-                                            <span class="text-[0.8125rem] leading-relaxed text-slate-600 dark:text-slate-300">{{ s.notas }}</span>
+                                            <span class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ s.notas }}</span>
                                           }
                                         } @else if (o.fecha <= hoy) {
-                                          <span class="text-[0.8125rem] text-slate-500 dark:text-slate-400">Sin anotar · toca para anotar</span>
+                                          <span class="text-sm text-slate-500 dark:text-slate-400">Sin anotar · toca para anotar</span>
                                         } @else {
-                                          <span class="text-[0.8125rem] text-slate-500 dark:text-slate-400">Programada</span>
+                                          <span class="text-sm text-slate-500 dark:text-slate-400">Programada</span>
                                         }
                                       </span>
                                       @if (o.sala) {
-                                        <span class="shrink-0 text-[0.75rem] text-slate-500 dark:text-slate-400">{{ o.sala }}</span>
+                                        <span class="shrink-0 text-xs text-slate-500 dark:text-slate-400">{{ o.sala }}</span>
                                       }
                                     </button>
                                   }
@@ -605,8 +594,8 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
 
               @if (rolesFiltrados().length === 0) {
                 <div class="flex flex-col items-center justify-center py-14 text-center gap-2">
-                  <p class="text-[0.9375rem] font-semibold text-slate-700 dark:text-slate-200">Ninguna parte con ese nombre</p>
-                  <p class="text-[0.8125rem] text-slate-500 dark:text-slate-400">Prueba con otra palabra o amplía el periodo.</p>
+                  <p class="text-base font-semibold text-slate-700 dark:text-slate-200">Ninguna parte con ese nombre</p>
+                  <p class="text-sm text-slate-500 dark:text-slate-400">Prueba con otra palabra o amplía el periodo.</p>
                 </div>
               }
 
@@ -617,8 +606,8 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                       [attr.aria-expanded]="expandido('rol|' + r.rol_key)"
                       class="w-full flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-violet-500">
                       <span class="flex-1 min-w-0">
-                        <span class="block text-[0.9375rem] font-semibold text-slate-900 dark:text-slate-50">{{ r.etiqueta }}</span>
-                        <span class="block text-[0.8125rem] text-slate-500 dark:text-slate-400 mt-0.5">
+                        <span class="block text-base font-semibold text-slate-900 dark:text-slate-50">{{ r.etiqueta }}</span>
+                        <span class="block text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                           {{ r.total }} {{ r.total === 1 ? 'vez' : 'veces' }} · {{ r.personas.length }} persona{{ r.personas.length === 1 ? '' : 's' }}
                           @if (r.personas.length) {
                             <span class="sm:hidden"> · le toca a {{ r.personas[0].nombre_completo }}</span>
@@ -628,8 +617,8 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                       <!-- El dato por el que se abre esta pestaña, sin abrir la fila. -->
                       @if (r.personas.length) {
                         <span class="hidden sm:block shrink-0 text-right max-w-[13rem]">
-                          <span class="block text-[0.75rem] text-slate-500 dark:text-slate-400">Le toca a</span>
-                          <span class="block text-[0.875rem] font-semibold text-violet-700 dark:text-violet-300 truncate">{{ r.personas[0].nombre_completo }}</span>
+                          <span class="block text-xs text-slate-500 dark:text-slate-400">Le toca a</span>
+                          <span class="block text-sm font-semibold text-brand-purple dark:text-violet-300 truncate">{{ r.personas[0].nombre_completo }}</span>
                         </span>
                       }
                       <svg class="w-4 h-4 shrink-0 text-slate-400 transition-transform duration-200" [class.rotate-90]="expandido('rol|' + r.rol_key)"
@@ -640,16 +629,16 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
                       <ol class="border-t border-slate-100 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
                         @for (p of r.personas; track p.id_publicador; let i = $index) {
                           <li class="flex items-center gap-3 px-4 py-2.5 bg-slate-50/60 dark:bg-slate-800/30">
-                            <span class="shrink-0 w-5 text-[0.75rem] text-slate-400 tabular-nums text-right">{{ i + 1 }}</span>
-                            <span class="flex-1 min-w-0 text-[0.875rem] font-medium text-slate-800 dark:text-slate-200">{{ p.nombre_completo }}</span>
-                            <span class="shrink-0 text-[0.75rem] text-slate-500 dark:text-slate-400 tabular-nums">{{ p.veces }} {{ p.veces === 1 ? 'vez' : 'veces' }}</span>
-                            <span class="shrink-0 w-32 text-right text-[0.8125rem]">
+                            <span class="shrink-0 w-5 text-xs text-slate-400 tabular-nums text-right">{{ i + 1 }}</span>
+                            <span class="flex-1 min-w-0 text-sm font-medium text-slate-800 dark:text-slate-200">{{ p.nombre_completo }}</span>
+                            <span class="shrink-0 text-xs text-slate-500 dark:text-slate-400 tabular-nums">{{ p.veces }} {{ p.veces === 1 ? 'vez' : 'veces' }}</span>
+                            <span class="shrink-0 w-32 text-right text-sm">
                               @if (p.proxima_fecha) {
                                 <span class="text-slate-500 dark:text-slate-400">Ya la tiene el {{ formatFecha(p.proxima_fecha) }}</span>
                               } @else if (p.dias_desde_ultima == null) {
-                                <span class="font-medium text-violet-700 dark:text-violet-300">Nunca</span>
+                                <span class="font-medium text-brand-purple dark:text-violet-300">Nunca</span>
                               } @else {
-                                <span [class]="p.dias_desde_ultima >= 90 ? 'font-medium text-violet-700 dark:text-violet-300' : 'text-slate-500 dark:text-slate-400'">
+                                <span [class]="p.dias_desde_ultima >= 90 ? 'font-medium text-brand-purple dark:text-violet-300' : 'text-slate-500 dark:text-slate-400'">
                                   {{ hace(p.dias_desde_ultima) }}
                                 </span>
                               }
@@ -665,7 +654,7 @@ const PERIODOS: { id: Periodo; label: string; meses: number | null }[] = [
           }
         </div>
       </div>
-    </div>
+    </app-modal>
 
     @if (panelObjetivo(); as obj) {
       <app-seguimiento-asignacion-panel
@@ -710,14 +699,6 @@ export class SeguimientoReunionesComponent implements OnInit {
     { id: 'pasado', label: 'Se pasó de tiempo' },
     { id: 'faltas', label: 'No vino o lo sustituyeron' },
   ];
-
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    // Con el panel de una asignación abierto, Escape lo cierra a él primero:
-    // es el que está encima y el que tiene datos sin guardar.
-    if (this.panelObjetivo()) return;
-    this.cerrar.emit();
-  }
 
   subTab = signal<SubTab>('anotaciones');
   periodo = signal<Periodo>('12m');

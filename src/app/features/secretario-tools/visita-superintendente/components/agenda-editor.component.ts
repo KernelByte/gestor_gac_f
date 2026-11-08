@@ -29,7 +29,7 @@ import { CampoAutocompletable, SECCIONES_CONFIG, SeccionConfig, SeccionField } f
         <h3>Programación</h3>
         <p>Reuniones y actividades principales de la semana de visita.</p>
       </div>
-      <div class="hidden md:grid grid-cols-[1.4fr_0.75fr_0.75fr_1.4fr_1fr_1fr_auto] gap-2 px-2 text-[0.65rem] uppercase tracking-wider font-bold text-slate-400">
+      <div class="hidden md:grid grid-cols-[1.4fr_0.75fr_0.75fr_1.4fr_1fr_1fr_auto] gap-2 px-2 text-xs uppercase tracking-wider font-bold text-slate-400">
         <span>Fecha</span><span>Inicio</span><span>Fin</span><span>Actividad</span><span>Lugar</span><span>Responsable</span><span></span>
       </div>
       <div class="space-y-2" #agendaList>
@@ -37,11 +37,11 @@ import { CampoAutocompletable, SECCIONES_CONFIG, SeccionConfig, SeccionField } f
           <div class="agenda-row group" [style.--stagger]="i * 30 + 'ms'">
 
             <!-- Móvil: card vertical -->
-            <div class="md:hidden bg-slate-50 dark:bg-slate-800/40 rounded-xl p-3 space-y-2 border border-slate-200 dark:border-slate-700">
+            <div class="md:hidden bg-slate-50 dark:bg-slate-900/40 rounded-xl p-3 space-y-2 border border-slate-200 dark:border-slate-700">
               <div class="flex items-center justify-between gap-2">
-                <span class="text-[0.65rem] uppercase tracking-wider font-bold text-slate-400">Fila #{{ i + 1 }}</span>
-                <button (click)="eliminarFila(i)" class="btn-danger-ghost" aria-label="Quitar fila">
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
+                <span class="text-xs uppercase tracking-wider font-bold text-slate-400">Fila #{{ i + 1 }}</span>
+                <button (click)="eliminarFila(i)" class="btn-icon-sm tone-danger" aria-label="Quitar fila">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
                 </button>
               </div>
               <label class="form-label">
@@ -89,8 +89,8 @@ import { CampoAutocompletable, SECCIONES_CONFIG, SeccionConfig, SeccionField } f
                         [(ngModel)]="it.actividad" (ngModelChange)="emitChanged()"></textarea>
               <input class="field" placeholder="Lugar" [(ngModel)]="it.lugar" (ngModelChange)="emitChanged()" />
               <input class="field" placeholder="Responsable" [(ngModel)]="it.responsable" (ngModelChange)="emitChanged()" />
-              <button (click)="eliminarFila(i)" class="btn-danger-ghost self-center" aria-label="Quitar fila">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
+              <button (click)="eliminarFila(i)" class="btn-icon-sm tone-danger self-center" aria-label="Quitar fila">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
               </button>
             </div>
 
@@ -134,8 +134,8 @@ import { CampoAutocompletable, SECCIONES_CONFIG, SeccionConfig, SeccionField } f
                     @if (!sec.unica) {
                       <div class="sec-row-head">
                         <span class="sec-row-num">#{{ i + 1 }}</span>
-                        <button (click)="eliminarFilaSeccion(sec.id, i)" class="btn-danger-ghost" aria-label="Quitar fila">
-                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
+                        <button (click)="eliminarFilaSeccion(sec.id, i)" class="btn-icon-sm tone-danger" aria-label="Quitar fila">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
                         </button>
                       </div>
                     }
@@ -214,7 +214,7 @@ import { CampoAutocompletable, SECCIONES_CONFIG, SeccionConfig, SeccionField } f
     :host {
       display: block;
       --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-      --brand-purple: #6D28D9;
+      --brand-purple: var(--color-brand-purple);
       --border-light: #e2e8f0;
       --border-dark: #334155;
       --bg-light: #ffffff;
@@ -268,22 +268,6 @@ import { CampoAutocompletable, SECCIONES_CONFIG, SeccionConfig, SeccionField } f
     .form-label > span:first-child { display: flex; align-items: center; gap: 0.375rem; color: #475569; margin-bottom: 0.25rem; font-weight: 500; font-size: 0.8125rem; }
     :host-context(.dark) .form-label > span:first-child { color: #cbd5e1; }
 
-    /* ───── Botones ───── */
-    .btn-danger-ghost {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.375rem 0.625rem; font-size: 0.75rem; font-weight: 500;
-      border-radius: 0.625rem; color: #f43f5e;
-      transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out);
-      cursor: pointer; user-select: none;
-    }
-    @media (max-width: 767px) {
-      .btn-danger-ghost { min-height: 2.75rem; min-width: 2.75rem; justify-content: center; }
-    }
-    @media (hover: hover) and (pointer: fine) {
-      .btn-danger-ghost:hover { background: rgba(244,63,94,0.08); }
-    }
-    .btn-danger-ghost:active { transform: scale(0.97); }
-
     .add-row-btn {
       display: inline-flex; align-items: center; gap: 0.5rem;
       padding: 0.5rem 0.875rem; font-size: 0.8125rem; font-weight: 500;
@@ -301,7 +285,7 @@ import { CampoAutocompletable, SECCIONES_CONFIG, SeccionConfig, SeccionField } f
       margin-top: 0.3rem;
       display: inline-flex; align-items: center; gap: 0.3rem;
       padding: 0.15rem 0.1rem; background: transparent; border: none; cursor: pointer;
-      font-size: 0.6875rem; font-weight: 600; color: var(--brand-purple);
+      font-size: 0.75rem; font-weight: 600; color: var(--brand-purple);
       transition: color 140ms var(--ease-out);
     }
     .ver-tarjeta-btn:hover { color: #5b21b6; text-decoration: underline; }
@@ -363,7 +347,7 @@ import { CampoAutocompletable, SECCIONES_CONFIG, SeccionConfig, SeccionField } f
     }
     :host-context(.dark) .sec-label { color: #e2e8f0; }
     .sec-desc {
-      display: block; font-size: 0.6875rem; color: #94a3b8; margin-top: 0.125rem; line-height: 1.35;
+      display: block; font-size: 0.75rem; color: #94a3b8; margin-top: 0.125rem; line-height: 1.35;
     }
     :host-context(.dark) .sec-desc { color: #64748b; }
 
@@ -371,7 +355,7 @@ import { CampoAutocompletable, SECCIONES_CONFIG, SeccionConfig, SeccionField } f
       display: inline-flex; align-items: center; justify-content: center;
       min-width: 1.25rem; height: 1.25rem; padding: 0 0.375rem;
       border-radius: 9999px; background: var(--brand-purple); color: #fff;
-      font-size: 0.65rem; font-weight: 700; font-variant-numeric: tabular-nums;
+      font-size: 0.75rem; font-weight: 700; font-variant-numeric: tabular-nums;
     }
     :host-context(.dark) .sec-badge { background: #a78bfa; color: #1e293b; }
 
@@ -403,7 +387,7 @@ import { CampoAutocompletable, SECCIONES_CONFIG, SeccionConfig, SeccionField } f
       display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.375rem;
     }
     .sec-row-num {
-      font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em;
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
       font-weight: 700; color: #94a3b8;
     }
 

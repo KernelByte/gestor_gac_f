@@ -4,6 +4,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { zoomDe } from '../../zoom';
 
 type ColorScheme = 'orange' | 'violet' | 'rose' | 'emerald';
 
@@ -85,7 +86,8 @@ export interface PickerOption {
         </div>
 
         <div class="sp-list" #list>
-          <button *ngIf="clearable" type="button" class="sp-opt sp-opt-empty"
+          <!-- «Sin selección» no se muestra mientras se busca: no es un resultado -->
+          <button *ngIf="clearable && !query().trim()" type="button" class="sp-opt sp-opt-empty"
                   [class.sp-opt--on]="value() === null || value() === undefined"
                   (click)="select(null)">
             {{ placeholder || 'Sin selección' }}
@@ -106,8 +108,24 @@ export interface PickerOption {
             <span *ngIf="opt.hint" class="sp-opt-hint">{{ opt.hint }}</span>
           </button>
 
+          <!-- allowCustom: usar tal cual lo escrito en el buscador (alguien que
+               no está en la lista). Va al final y se navega como una opción más. -->
+          <button *ngIf="customText() as q" type="button" class="sp-opt sp-opt-custom"
+                  role="option" aria-selected="false"
+                  [class.sp-opt--active]="activeIndex() === filtered().length"
+                  (click)="selectCustom()">
+            <svg class="sp-custom-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+            <span class="sp-custom-text">
+              <span class="sp-opt-label">{{ customLabelFor(q) }}</span>
+              <span class="sp-opt-hint">No es de la congregación</span>
+            </span>
+          </button>
+
           <div *ngIf="filtered().length === 0" class="sp-empty-wrap">
-            <p class="sp-empty">Sin resultados</p>
+            <p *ngIf="!customText()" class="sp-empty">Sin resultados</p>
             <!-- Salida directa cuando la lista está vacía: sin esto había que
                  cerrar el desplegable y buscar aparte un enlace de "crear
                  nuevo" fuera del componente. -->
@@ -293,6 +311,23 @@ export interface PickerOption {
     :host-context(.dark) .sp-empty-action:hover { background: rgba(167,139,250,0.12); border-color: #7c3aed; }
     @media (max-width: 767px), (pointer: coarse) { .sp-empty-action { min-height: 3rem; font-size: 0.9375rem; } }
 
+    /* Opción «Usar «texto»»: separada de la lista y con acento, para que no se
+       confunda con una persona de la congregación. */
+    .sp-root .sp-opt.sp-opt-custom {
+      flex-direction: row; align-items: center; justify-content: flex-start; gap: 0.625rem;
+      margin-top: 0.25rem; border: 1px dashed #c4b5fd; background: rgba(124,58,237,0.05); color: #6d28d9;
+    }
+    .sp-root .sp-opt.sp-opt-custom:hover, .sp-root .sp-opt.sp-opt-custom.sp-opt--active {
+      background: rgba(124,58,237,0.11); border-color: #7c3aed; color: #5b21b6;
+    }
+    :host-context(.dark) .sp-root .sp-opt.sp-opt-custom { border-color: #4c1d95; background: rgba(167,139,250,0.06); color: #c4b5fd; }
+    :host-context(.dark) .sp-root .sp-opt.sp-opt-custom:hover,
+    :host-context(.dark) .sp-root .sp-opt.sp-opt-custom.sp-opt--active { background: rgba(167,139,250,0.14); border-color: #7c3aed; color: #ddd6fe; }
+    .sp-custom-icon { width: 1rem; height: 1rem; flex-shrink: 0; }
+    .sp-custom-text { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
+    /* Lo escrito se lee entero (puede ser largo): parte en renglones en vez de cortarse. */
+    .sp-custom-text .sp-opt-label { font-weight: 700; white-space: normal; overflow-wrap: anywhere; }
+
     /* ── Hoja inferior en táctil o pantalla estrecha: el menú flotante obliga a
          apuntar con precisión y queda lejos del pulgar. ── */
     @media (max-width: 767px), (pointer: coarse) {
@@ -344,6 +379,12 @@ export class SelectPickerComponent implements ControlValueAccessor, AfterViewIni
    *  quedar vacío, listo para otra opción. No se usa con ngModel. */
   @Input() resetOnSelect = false;
   @Output() picked = new EventEmitter<unknown>();
+  /** Permite usar el texto escrito en el buscador aunque no sea una opción
+   *  (p. ej. un responsable que no es de la congregación). Emite `custom`. */
+  @Input() allowCustom = false;
+  /** Texto de la opción libre; `{q}` se reemplaza por lo escrito. */
+  @Input() customLabel = 'Usar «{q}»';
+  @Output() custom = new EventEmitter<string>();
 
   @ViewChild('trigger') triggerRef?: ElementRef<HTMLButtonElement>;
   @ViewChild('popup') popupRef?: ElementRef<HTMLElement>;
@@ -362,7 +403,20 @@ export class SelectPickerComponent implements ControlValueAccessor, AfterViewIni
   value = signal<unknown>(null);
 
   /** Con más de 7 opciones buscar es más rápido que recorrer la lista. */
-  showSearch = computed(() => this.searchable ?? this.normalized().length > 7);
+  showSearch = computed(() => this.allowCustom || (this.searchable ?? this.normalized().length > 7));
+
+  /** Lo escrito, si se puede usar como opción libre: ≥2 letras y que no sea
+   *  ya una opción (sin distinguir tildes ni mayúsculas). */
+  customText = computed<string | null>(() => {
+    if (!this.allowCustom) return null;
+    const q = this.query().trim();
+    if (q.length < 2) return null;
+    const nq = sinTildes(q);
+    return this.normalized().some(o => sinTildes(o.label) === nq) ? null : q;
+  });
+
+  /** Filas navegables con el teclado: las filtradas más la opción libre. */
+  private navCount = computed(() => this.filtered().length + (this.customText() ? 1 : 0));
 
   filtered = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -451,24 +505,27 @@ export class SelectPickerComponent implements ControlValueAccessor, AfterViewIni
     }
 
     const r = trigger.getBoundingClientRect();
-    const alto = Math.min(popup.offsetHeight || 288, 288);
+    // Si una pantalla aplica `zoom` (2K/4K), el popup lo hereda: las coordenadas
+    // de la ventana hay que dividirlas por ese zoom o el menú se aleja del campo.
+    const z = zoomDe(popup);
+    const alto = Math.min(popup.offsetHeight || 288, 288) * z;
     const arriba = window.innerHeight - r.bottom < alto && r.top > window.innerHeight - r.bottom;
     this.openAbove.set(arriba);
 
-    popup.style.width = `${r.width}px`;
-    popup.style.left = `${r.left}px`;
+    popup.style.width = `${r.width / z}px`;
+    popup.style.left = `${r.left / z}px`;
     if (arriba) {
       popup.style.top = 'auto';
-      popup.style.bottom = `${window.innerHeight - r.top + 4}px`;
+      popup.style.bottom = `${(window.innerHeight - r.top + 4) / z}px`;
     } else {
       popup.style.bottom = 'auto';
-      popup.style.top = `${r.bottom + 4}px`;
+      popup.style.top = `${(r.bottom + 4) / z}px`;
     }
   }
 
   onQuery(q: string) {
     this.query.set(q);
-    this.activeIndex.set(this.filtered().length ? 0 : -1);
+    this.activeIndex.set(this.navCount() ? 0 : -1);
   }
 
   onTriggerKeydown(e: KeyboardEvent) {
@@ -479,22 +536,26 @@ export class SelectPickerComponent implements ControlValueAccessor, AfterViewIni
 
   onListKeydown(e: KeyboardEvent) {
     const list = this.filtered();
-    if (!list.length) return;
+    // La opción libre (si la hay) ocupa el índice list.length.
+    const total = this.navCount();
+    if (!total) return;
 
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       const paso = e.key === 'ArrowDown' ? 1 : -1;
-      const next = (this.activeIndex() + paso + list.length) % list.length;
+      const next = (this.activeIndex() + paso + total) % total;
       this.activeIndex.set(next);
       this.scrollActiveIntoView();
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const opt = list[this.activeIndex()];
+      const i = this.activeIndex();
+      if (i === list.length && this.customText()) { this.selectCustom(); return; }
+      const opt = list[i];
       if (opt) this.select(opt);
     } else if (e.key === 'Home') {
       e.preventDefault(); this.activeIndex.set(0); this.scrollActiveIntoView();
     } else if (e.key === 'End') {
-      e.preventDefault(); this.activeIndex.set(list.length - 1); this.scrollActiveIntoView();
+      e.preventDefault(); this.activeIndex.set(total - 1); this.scrollActiveIntoView();
     }
   }
 
@@ -520,6 +581,19 @@ export class SelectPickerComponent implements ControlValueAccessor, AfterViewIni
     this.select(null);
   }
 
+  customLabelFor(q: string): string {
+    return this.customLabel.replace('{q}', q);
+  }
+
+  /** Usa lo escrito tal cual. El valor del campo lo decide el padre al recibir `custom`. */
+  selectCustom() {
+    const q = this.customText();
+    if (!q) return;
+    this.custom.emit(q);
+    this.close();
+    this.triggerRef?.nativeElement.focus();
+  }
+
   onEmptyAction() {
     this.close();
     this.emptyAction.emit();
@@ -531,4 +605,8 @@ export class SelectPickerComponent implements ControlValueAccessor, AfterViewIni
   registerOnChange(fn: (v: unknown) => void): void { this.onChange = fn; }
   registerOnTouched(fn: () => void): void { this.onTouched = fn; }
   setDisabledState(isDisabled: boolean): void { this.disabled = isDisabled; }
+}
+
+function sinTildes(t: string): string {
+  return t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }

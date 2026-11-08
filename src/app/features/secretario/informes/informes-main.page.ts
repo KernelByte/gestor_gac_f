@@ -16,14 +16,17 @@ import { ResumenSucursalComponent } from './components/resumen-sucursal/resumen-
 
 import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
+import { ToastService } from '../../../shared/components/toast/toast.service';
+import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm.service';
 import { PrivilegiosService } from '../privilegios/infrastructure/privilegios.service';
 import { Privilegio } from '../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../privilegios/domain/models/publicador-privilegio';
+import { AvisoComponent } from '../../../shared/components/aviso/aviso.component';
 
 @Component({
   standalone: true,
   selector: 'app-informes-main',
-  imports: [CommonModule, FormsModule, InformesFiltersComponent, InformesTableComponent, InformesHistorialComponent, ResumenSucursalComponent],
+  imports: [CommonModule, FormsModule, InformesFiltersComponent, InformesTableComponent, InformesHistorialComponent, ResumenSucursalComponent, AvisoComponent],
   templateUrl: './informes-main.page.html',
   styles: [`:host { display: flex; flex-direction: column; height: 100%; overflow: hidden; }`]
 })
@@ -34,6 +37,8 @@ export class InformesMainPage implements OnInit {
   public authStore = inject(AuthStore);
   public congregacionContext = inject(CongregacionContextService);
   private http = inject(HttpClient);
+  private toast = inject(ToastService);
+  private confirmSvc = inject(ConfirmService);
 
   private privilegiosService = inject(PrivilegiosService);
 
@@ -87,7 +92,6 @@ export class InformesMainPage implements OnInit {
   saving = signal(false);
   autoSaveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
   vistaGrupo = signal(false);
-  toastMessage = signal<{ title: string, text?: string, type: 'success' | 'error' | 'info' } | null>(null);
 
   private autoSaveTimers = new Map<number, any>();
   private autoSavedClearTimer: any = null;
@@ -735,7 +739,7 @@ export class InformesMainPage implements OnInit {
     return this.failedSaves.size;
   }
 
-  tryChangeTab(tabId: string) {
+  async tryChangeTab(tabId: string) {
     if (this.activeTab() === tabId) return;
 
     // Adelantamos el debounce pendiente: las peticiones siguen en vuelo
@@ -745,11 +749,15 @@ export class InformesMainPage implements OnInit {
     // Solo hay riesgo real de perder datos si un autoguardado falló.
     const fallidos = this.retryFailedSaves();
     if (fallidos > 0) {
-      const ok = confirm(
-        `${fallidos} cambio${fallidos !== 1 ? 's' : ''} de la pestaña Entrada no se ` +
-        `pudo guardar${fallidos !== 1 ? 'n' : ''} (se está reintentando).\n\n` +
-        `¿Cambiar de pestaña de todos modos?`
-      );
+      const ok = await this.confirmSvc.ask({
+        title: '¿Cambiar de pestaña de todos modos?',
+        message:
+          `${fallidos} cambio${fallidos !== 1 ? 's' : ''} de la pestaña Entrada no se ` +
+          `pudo guardar${fallidos !== 1 ? 'n' : ''} (se está reintentando).`,
+        confirmLabel: 'Cambiar de pestaña',
+        cancelLabel: 'Quedarme',
+        severity: 'warning',
+      });
       if (!ok) return;
     }
 
@@ -757,8 +765,10 @@ export class InformesMainPage implements OnInit {
   }
 
   showToast(title: string, type: 'success' | 'error' | 'info' = 'success', text?: string) {
-    this.toastMessage.set({ title, type, text });
-    setTimeout(() => this.toastMessage.set(null), type === 'error' ? 8000 : 5000);
+    const duracion = type === 'error' ? 8000 : 5000;
+    if (type === 'error') this.toast.error(title, text, duracion);
+    else if (type === 'info') this.toast.info(title, text, duracion);
+    else this.toast.success(title, text, duracion);
   }
 
   loadUrlInformes() {

@@ -1,4 +1,4 @@
-﻿import { Component, signal, computed, inject, effect, OnInit, HostListener } from '@angular/core';
+﻿import { Component, signal, computed, inject, effect, untracked, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AsistenciaService, CongregacionConfig } from '../services/asistencia.service';
@@ -11,6 +11,7 @@ import {
 import { forkJoin, of, lastValueFrom } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { saveAs } from 'file-saver';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 type MeetingStatus = 'today' | 'next' | 'past' | 'future' | 'none';
 interface MeetingCardInfo {
@@ -31,30 +32,13 @@ interface CalendarWeek {
 @Component({
   standalone: true,
   selector: 'app-reuniones-asistencia',
+  host: { class: 'tema-reuniones' },
   imports: [CommonModule, FormsModule],
   template: `
     <div class="flex flex-col gap-2 md:gap-3 2xl:gap-4 h-full overflow-hidden">
 
-      <!-- Toast -->
-      @if (toast()) {
-        <div class="fixed bottom-24 left-1/2 -translate-x-1/2 md:bottom-auto md:top-6 md:left-auto md:right-6 md:translate-x-0 md:max-w-xs z-50 animate-toastIn flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-2xl backdrop-blur-xl"
-             [class]="toast()!.type === 'success'
-               ? 'bg-emerald-50/90 dark:bg-emerald-950/90 border-emerald-200/50 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-200'
-               : 'bg-red-50/90 dark:bg-red-950/90 border-red-200/50 dark:border-red-500/30 text-red-800 dark:text-red-200'">
-          <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-inner"
-               [class]="toast()!.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-500/20' : 'bg-red-100 dark:bg-red-500/20'">
-            @if (toast()!.type === 'success') {
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            } @else {
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            }
-          </div>
-          <span class="text-sm font-bold tracking-tight">{{ toast()!.message }}</span>
-        </div>
-      }
-
       <!-- Toolbar: month selector + desktop actions -->
-      <div class="shrink-0 relative z-20 flex items-center justify-between gap-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm px-3 sm:px-4 py-2">
+      <div class="shrink-0 relative z-20 flex items-center justify-between gap-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-3 sm:px-4 py-2">
         <div class="flex items-center gap-1 bg-slate-50 dark:bg-slate-950/50 rounded-xl p-0.5">
           <button (click)="prevMonth()" class="press-btn p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg text-slate-500">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
@@ -63,7 +47,7 @@ interface CalendarWeek {
           <div class="flex items-center">
             <!-- Year -->
             <div class="relative" (click)="$event.stopPropagation()">
-              <button (click)="toggleYearDrop()" class="dropdown-trigger flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-black text-slate-800 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-800">
+              <button (click)="toggleYearDrop()" class="dropdown-trigger flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-bold text-slate-800 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-800">
                 {{ selectedYear() }}
                 <svg class="w-3.5 h-3.5 text-slate-400 chevron" [class.rotate-180]="yearDropOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
               </button>
@@ -86,7 +70,7 @@ interface CalendarWeek {
             </div>
             <!-- Month -->
             <div class="relative" (click)="$event.stopPropagation()">
-              <button (click)="toggleMonthDrop()" class="dropdown-trigger flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-black text-slate-800 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-800">
+              <button (click)="toggleMonthDrop()" class="dropdown-trigger flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-bold text-slate-800 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-800">
                 {{ mesLabel() }}
                 <svg class="w-3.5 h-3.5 text-slate-400 chevron" [class.rotate-180]="monthDropOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
               </button>
@@ -117,38 +101,26 @@ interface CalendarWeek {
         <!-- Header Actions Desktop (md+) -->
         <div class="hidden md:flex items-center gap-2">
           <button (click)="onExportPdf()" [disabled]="!currentPeriodo() || loading()"
-                  class="press-btn h-10 px-4 flex items-center gap-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-black text-xs disabled:opacity-40">
+                  class="btn-secondary btn-sm">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
             PDF S-3-S
           </button>
           <button (click)="onSave()" *ngIf="hasEditPermission()" [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges() || !congregacionCtx.effectiveCongregacionId()"
                   [title]="!congregacionCtx.effectiveCongregacionId() ? 'Selecciona una congregación para guardar' : ''"
-                  class="press-btn h-10 px-6 bg-brand-purple hover:bg-purple-800 text-white rounded-xl font-black text-xs shadow-lg shadow-purple-900/20 disabled:opacity-50">
+                  class="btn-primary btn-sm">
             @if (saving()) { <span>Guardando...</span> } @else { <span>Guardar</span> }
           </button>
         </div>
       </div>
 
       <!-- Mobile Segmented Tabs (< md) -->
-      <div class="md:hidden shrink-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/60 dark:border-slate-800 rounded-2xl p-1 shadow-sm">
-        <div class="relative grid grid-cols-3">
-          <div class="absolute inset-y-0 left-0 w-1/3 bg-brand-purple rounded-xl shadow-md shadow-purple-900/25 segmented-indicator"
-               [style.transform]="'translateX(' + indicatorPosition() + '%)'"></div>
-          <button (click)="setMobileTab('registro')"
-                  class="relative z-10 h-9 flex items-center justify-center text-[0.65rem] font-black uppercase tracking-widest transition-colors duration-200"
-                  [class.text-white]="activeMobileTab() === 'registro'"
-                  [class.text-slate-500]="activeMobileTab() !== 'registro'"
-                  [class.dark:text-slate-400]="activeMobileTab() !== 'registro'">Registro</button>
-          <button (click)="setMobileTab('resumen')"
-                  class="relative z-10 h-9 flex items-center justify-center text-[0.65rem] font-black uppercase tracking-widest transition-colors duration-200"
-                  [class.text-white]="activeMobileTab() === 'resumen'"
-                  [class.text-slate-500]="activeMobileTab() !== 'resumen'"
-                  [class.dark:text-slate-400]="activeMobileTab() !== 'resumen'">Resumen</button>
-          <button (click)="setMobileTab('historial')"
-                  class="relative z-10 h-9 flex items-center justify-center text-[0.65rem] font-black uppercase tracking-widest transition-colors duration-200"
-                  [class.text-white]="activeMobileTab() === 'historial'"
-                  [class.text-slate-500]="activeMobileTab() !== 'historial'"
-                  [class.dark:text-slate-400]="activeMobileTab() !== 'historial'">Historial</button>
+      <div class="md:hidden shrink-0">
+        <div class="segmented w-full" role="tablist" aria-label="Sección de asistencia">
+          @for (t of mobileTabs; track t.id) {
+            <button type="button" role="tab" (click)="setMobileTab(t.id)"
+                    class="segmented-item flex-1 !text-xs !font-bold uppercase tracking-widest"
+                    [attr.aria-selected]="activeMobileTab() === t.id">{{ t.label }}</button>
+          }
         </div>
       </div>
 
@@ -161,14 +133,14 @@ interface CalendarWeek {
                   pb-24 md:pb-0">
 
         <!-- REGISTRO CARD — md: row1 col2 · xl: col2 (wider) -->
-        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-3 lg:p-4 relative overflow-hidden min-h-0 md:order-2 xl:order-2"
+        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-3 lg:p-4 relative overflow-hidden min-h-0 md:order-2 xl:order-2"
              [class.flex]="activeMobileTab() === 'registro'"
              [class.hidden]="activeMobileTab() !== 'registro'">
 
           @if (!currentPeriodo() && !loading()) {
-            <div class="absolute inset-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-6 text-center">
+            <div class="absolute inset-0 z-20 bg-white/90 dark:bg-slate-900/90 flex items-center justify-center p-6 text-center">
               <div class="max-w-xs animate-fadeIn">
-                <p class="text-lg font-black text-slate-800 dark:text-white mb-2">Período no disponible</p>
+                <p class="text-lg font-bold text-slate-800 dark:text-white mb-2">Período no disponible</p>
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Selecciona un mes configurado en el sistema para comenzar el registro.</p>
               </div>
             </div>
@@ -181,25 +153,35 @@ interface CalendarWeek {
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </div>
               <div>
-                <h3 class="text-base lg:text-lg font-black text-slate-900 dark:text-white tracking-tight">Registro de Asistencia</h3>
-                <p class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mt-0.5">{{ mesLabel() }} {{ selectedYear() }}</p>
+                <h3 class="text-base lg:text-lg font-bold text-slate-900 dark:text-white tracking-tight">Registro de Asistencia</h3>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ mesLabel() }} {{ selectedYear() }}</p>
               </div>
             </div>
 
-            <div class="flex gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-2xl w-full sm:w-auto">
+            <div class="segmented w-full sm:w-auto" role="tablist" aria-label="Semana del mes">
               @for (week of weeksArray(); track week) {
-                <button (click)="selectWeek(week)"
-                        class="press-btn flex-1 sm:flex-none sm:min-w-[3.1rem] h-9 px-1 rounded-xl relative flex flex-col items-center justify-center gap-0.5"
+                <button type="button" role="tab" (click)="selectWeek(week)"
+                        class="segmented-item flex-1 sm:flex-none sm:min-w-[3.1rem] !px-1 relative !flex-col !gap-0.5"
                         [title]="chipTitle(week)"
-                        [ngClass]="selectedWeek() === week ? 'bg-white dark:bg-slate-700 text-brand-purple shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-500'">
-                  <span class="text-xs font-black leading-none">S{{ week }}</span>
+                        [attr.aria-selected]="selectedWeek() === week">
+                  <span class="text-xs font-bold leading-none">S{{ week }}</span>
                   @if (formatChipDates(week)) {
-                    <span class="text-[0.48rem] font-bold tabular-nums leading-none opacity-60 whitespace-nowrap">{{ formatChipDates(week) }}</span>
+                    <span class="text-xs font-bold tabular-nums leading-none opacity-60 whitespace-nowrap">{{ formatChipDates(week) }}</span>
                   }
                   @if (weekHasData(week)) { <span class="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500"></span> }
                 </button>
               }
             </div>
+          </div>
+
+          <!-- Selector de reunión (solo móvil: allí se ve una a la vez) -->
+          <div class="md:hidden segmented w-full mb-2 shrink-0" role="tablist" aria-label="Tipo de reunión">
+            <button type="button" role="tab" (click)="meetingSectionOverride.set('midweek')"
+                    class="segmented-item flex-1 !text-xs !font-bold"
+                    [attr.aria-selected]="activeMeetingSection() === 'midweek'">Entre semana</button>
+            <button type="button" role="tab" (click)="meetingSectionOverride.set('weekend')"
+                    class="segmented-item flex-1 !text-xs !font-bold"
+                    [attr.aria-selected]="activeMeetingSection() === 'weekend'">Fin de semana</button>
           </div>
 
           <!-- Entry Fields: side-by-side on md+, one at a time on mobile -->
@@ -217,10 +199,10 @@ interface CalendarWeek {
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-brand-purple shrink-0"></div>
-                    <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-500 uppercase tracking-[0.15em] whitespace-nowrap">Entre Semana</span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-500 uppercase tracking-[0.15em] whitespace-nowrap">Entre Semana</span>
                   </div>
                   @if (midweekCardInfo(); as info) {
-                    <p class="text-sm font-black tracking-tight mt-0.5 pl-4"
+                    <p class="text-sm font-bold tracking-tight mt-0.5 pl-4"
                        [class]="info.status === 'past' ? 'text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-white'">
                       {{ info.longLabel }}
                     </p>
@@ -229,14 +211,14 @@ interface CalendarWeek {
                 @if (midweekCardInfo(); as info) {
                   @switch (info.status) {
                     @case ('today') {
-                      <span class="text-[0.6rem] font-black px-2 py-0.5 rounded-lg bg-emerald-500 text-white shrink-0">HOY</span>
+                      <span class="text-xs font-bold px-2 py-0.5 rounded-lg bg-emerald-500 text-white shrink-0">HOY</span>
                     }
                     @case ('next') {
-                      <span class="text-[0.6rem] font-black px-2 py-0.5 rounded-lg border border-brand-purple/40 bg-brand-purple/10 text-brand-purple shrink-0">PRÓXIMA</span>
+                      <span class="text-xs font-bold px-2 py-0.5 rounded-lg border border-brand-purple/40 bg-brand-purple/10 text-brand-purple shrink-0">PRÓXIMA</span>
                     }
                   }
                 } @else if (midweekFallbackBadge(); as badge) {
-                  <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg border shrink-0"
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-lg border shrink-0"
                         [class]="badge.isToday
                           ? 'bg-emerald-500 border-emerald-500 text-white'
                           : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'">
@@ -248,12 +230,12 @@ interface CalendarWeek {
               @if (canEditMidweekWeek()) {
                 <div class="flex flex-col gap-2">
                   <div>
-                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
+                    <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
                     <input type="number" min="0" inputmode="numeric" [ngModel]="currentMidweekPres()" (ngModelChange)="updateMidweekWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
                   </div>
                   @if (congregacionConfig()?.usa_zoom !== 0) {
                     <div>
-                      <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
+                      <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
                       <input type="number" min="0" inputmode="numeric" [ngModel]="currentMidweekZoom()" (ngModelChange)="updateMidweekZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
                     </div>
                   }
@@ -261,15 +243,15 @@ interface CalendarWeek {
               } @else {
                 <div class="flex flex-col items-center justify-center gap-1.5 py-6 text-center">
                   <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/><line x1="14" y1="14" x2="10" y2="18"/></svg>
-                  <p class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Sin reunión entre semana</p>
-                  <p class="text-[0.6rem] font-bold text-slate-400/70 dark:text-slate-500">Esta semana no tiene reunión de este tipo</p>
+                  <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sin reunión entre semana</p>
+                  <p class="text-xs font-bold text-slate-400/70 dark:text-slate-500">Esta semana no tiene reunión de este tipo</p>
                 </div>
               }
 
               @if (canEditMidweekWeek() && currentMidweekPres() !== null) {
                 <div class="flex items-center justify-between pt-2 mt-auto border-t border-brand-purple/10">
-                  <span class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest">Total</span>
-                  <span class="text-sm font-black text-brand-purple tabular-nums">{{ currentMidweekTotal() }}</span>
+                  <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total</span>
+                  <span class="text-sm font-bold text-brand-purple tabular-nums">{{ currentMidweekTotal() }}</span>
                 </div>
               }
             </div>
@@ -286,10 +268,10 @@ interface CalendarWeek {
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div>
-                    <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-500 uppercase tracking-[0.15em] whitespace-nowrap">Fin de Semana</span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-500 uppercase tracking-[0.15em] whitespace-nowrap">Fin de Semana</span>
                   </div>
                   @if (weekendCardInfo(); as info) {
-                    <p class="text-sm font-black tracking-tight mt-0.5 pl-4"
+                    <p class="text-sm font-bold tracking-tight mt-0.5 pl-4"
                        [class]="info.status === 'past' ? 'text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-white'">
                       {{ info.longLabel }}
                     </p>
@@ -298,14 +280,14 @@ interface CalendarWeek {
                 @if (weekendCardInfo(); as info) {
                   @switch (info.status) {
                     @case ('today') {
-                      <span class="text-[0.6rem] font-black px-2 py-0.5 rounded-lg bg-emerald-500 text-white shrink-0">HOY</span>
+                      <span class="text-xs font-bold px-2 py-0.5 rounded-lg bg-emerald-500 text-white shrink-0">HOY</span>
                     }
                     @case ('next') {
-                      <span class="text-[0.6rem] font-black px-2 py-0.5 rounded-lg border border-orange-500/40 bg-orange-500/10 text-orange-500 shrink-0">PRÓXIMA</span>
+                      <span class="text-xs font-bold px-2 py-0.5 rounded-lg border border-orange-500/40 bg-orange-500/10 text-orange-500 shrink-0">PRÓXIMA</span>
                     }
                   }
                 } @else if (weekendFallbackBadge(); as badge) {
-                  <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg border shrink-0"
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-lg border shrink-0"
                         [class]="badge.isToday
                           ? 'bg-emerald-500 border-emerald-500 text-white'
                           : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'">
@@ -317,12 +299,12 @@ interface CalendarWeek {
               @if (canEditWeekendWeek()) {
                 <div class="flex flex-col gap-2">
                   <div>
-                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
+                    <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
                     <input type="number" min="0" inputmode="numeric" [ngModel]="currentWeekendPres()" (ngModelChange)="updateWeekendWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
                   </div>
                   @if (congregacionConfig()?.usa_zoom !== 0) {
                     <div>
-                      <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
+                      <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
                       <input type="number" min="0" inputmode="numeric" [ngModel]="currentWeekendZoom()" (ngModelChange)="updateWeekendZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
                     </div>
                   }
@@ -330,15 +312,15 @@ interface CalendarWeek {
               } @else {
                 <div class="flex flex-col items-center justify-center gap-1.5 py-6 text-center">
                   <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/><line x1="14" y1="14" x2="10" y2="18"/></svg>
-                  <p class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Sin reunión fin de semana</p>
-                  <p class="text-[0.6rem] font-bold text-slate-400/70 dark:text-slate-500">Esta semana no tiene reunión de este tipo</p>
+                  <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sin reunión fin de semana</p>
+                  <p class="text-xs font-bold text-slate-400/70 dark:text-slate-500">Esta semana no tiene reunión de este tipo</p>
                 </div>
               }
 
               @if (canEditWeekendWeek() && currentWeekendPres() !== null) {
                 <div class="flex items-center justify-between pt-2 mt-auto border-t border-orange-500/10">
-                  <span class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest">Total</span>
-                  <span class="text-sm font-black text-orange-500 tabular-nums">{{ currentWeekendTotal() }}</span>
+                  <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total</span>
+                  <span class="text-sm font-bold text-orange-500 tabular-nums">{{ currentWeekendTotal() }}</span>
                 </div>
               }
             </div>
@@ -346,7 +328,7 @@ interface CalendarWeek {
         </div>
 
         <!-- RESUMEN MENSUAL CARD — md: row1 col1 · xl: col1 -->
-        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-3 lg:p-4 min-h-0 overflow-hidden md:order-1 xl:order-1"
+        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-3 lg:p-4 min-h-0 overflow-hidden md:order-1 xl:order-1"
              [class.flex]="activeMobileTab() === 'resumen'"
              [class.hidden]="activeMobileTab() !== 'resumen'">
           <div class="flex items-center gap-2 mb-3 shrink-0">
@@ -354,8 +336,8 @@ interface CalendarWeek {
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
             <div>
-              <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Resumen Mensual</h3>
-              <p class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mt-0.5">{{ mesLabel() }} {{ selectedYear() }}</p>
+              <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Resumen Mensual</h3>
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ mesLabel() }} {{ selectedYear() }}</p>
             </div>
           </div>
 
@@ -364,8 +346,8 @@ interface CalendarWeek {
               <div class="flex items-center justify-between px-3 py-2 rounded-xl stagger-row"
                    [style.--row-index]="i"
                    [ngClass]="weekHasData(week) ? 'bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800/40 text-slate-400'">
-                <span class="text-[0.65rem] font-black uppercase tracking-widest">Semana {{ week }}</span>
-                <div class="flex items-center gap-1.5 tabular-nums text-xs font-black">
+                <span class="text-xs font-bold uppercase tracking-widest">Semana {{ week }}</span>
+                <div class="flex items-center gap-1.5 tabular-nums text-xs font-bold">
                   @if (weekData(week).midweek) {
                     <span class="text-brand-purple">{{ weekData(week).midweek }}</span>
                   } @else {
@@ -389,38 +371,38 @@ interface CalendarWeek {
 
           <div class="grid grid-cols-2 gap-2 mt-3 shrink-0">
             <div class="bg-brand-purple/5 dark:bg-brand-purple/10 rounded-xl p-2.5 border border-brand-purple/10 text-center">
-              <p class="text-[0.55rem] font-black text-brand-purple uppercase tracking-widest mb-1">M. Semana</p>
-              <p class="text-lg font-black text-slate-900 dark:text-white tabular-nums leading-none">{{ midweekMonthTotal() }}</p>
+              <p class="text-xs font-bold text-brand-purple uppercase tracking-widest mb-1">M. Semana</p>
+              <p class="text-lg font-bold text-slate-900 dark:text-white tabular-nums leading-none">{{ midweekMonthTotal() }}</p>
             </div>
             <div class="bg-orange-500/5 dark:bg-orange-500/10 rounded-xl p-2.5 border border-orange-500/10 text-center">
-              <p class="text-[0.55rem] font-black text-orange-500 uppercase tracking-widest mb-1">F. Semana</p>
-              <p class="text-lg font-black text-slate-900 dark:text-white tabular-nums leading-none">{{ weekendMonthTotal() }}</p>
+              <p class="text-xs font-bold text-orange-500 uppercase tracking-widest mb-1">F. Semana</p>
+              <p class="text-lg font-bold text-slate-900 dark:text-white tabular-nums leading-none">{{ weekendMonthTotal() }}</p>
             </div>
           </div>
         </div>
 
         <!-- DESGLOSE ANUAL CARD — md: row2 full-width · xl: col3 (narrower) -->
-        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm overflow-hidden md:col-span-2 md:order-3 xl:col-span-1 xl:order-3 min-h-0"
+        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden md:col-span-2 md:order-3 xl:col-span-1 xl:order-3 min-h-0"
              [class.flex]="activeMobileTab() === 'historial'"
              [class.hidden]="activeMobileTab() !== 'historial'">
           <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/20 shrink-0">
             <div>
-              <h4 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Desglose Anual</h4>
+              <h4 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Desglose Anual</h4>
               <div class="flex items-center gap-1 mt-0.5">
                 <button (click)="prevResumenYear()" class="press-btn p-1 -ml-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-400">
                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
                 </button>
-                <p class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest tabular-nums">Año {{ resumenServiceYear() }}</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest tabular-nums">Año {{ resumenServiceYear() }}</p>
                 <button (click)="nextResumenYear()" class="press-btn p-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-400">
                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
                 </button>
               </div>
             </div>
-            <button (click)="onExportS88Pdf()" class="press-btn h-8 px-3 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-[0.65rem] font-black shadow-lg shadow-indigo-500/20 shrink-0">PDF S-88</button>
+            <button (click)="onExportS88Pdf()" class="press-btn h-8 px-3 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold shadow-lg shadow-indigo-500/20 shrink-0">PDF S-88</button>
           </div>
 
           <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-            <table class="w-full text-[0.7rem] font-black">
+            <table class="w-full text-xs font-bold">
               <thead class="bg-slate-50 dark:bg-slate-950 sticky top-0 z-10 text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                 <tr>
                   <th class="px-4 py-2.5 text-left">Mes</th>
@@ -446,7 +428,7 @@ interface CalendarWeek {
           </div>
 
           @if (resumenAnualHistorico().length > 0) {
-            <div class="shrink-0 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 px-4 py-2.5 flex items-center justify-between text-[0.7rem] font-black">
+            <div class="shrink-0 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 px-4 py-2.5 flex items-center justify-between text-xs font-bold">
               <span class="text-slate-400 uppercase tracking-widest">Promedio anual</span>
               <div class="flex items-center gap-3 tabular-nums text-sm">
                 <span class="text-brand-purple">{{ midweekPromedioAnual() ?? '–' }}</span>
@@ -459,13 +441,13 @@ interface CalendarWeek {
       </div>
 
       <!-- Mobile Sticky Action Bar (< md) -->
-      <div class="md:hidden fixed bottom-4 left-4 right-4 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-800/80 p-2.5 flex gap-2.5 animate-fadeIn">
+      <div class="md:hidden fixed bottom-4 left-4 right-4 z-40 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-2.5 flex gap-2.5 animate-fadeIn">
         <button (click)="onExportPdf()" [disabled]="!currentPeriodo() || loading()"
-                class="press-btn flex-1 h-12 flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-500 rounded-xl font-black text-sm">
+                class="btn-secondary flex-1">
           PDF S-3-S
         </button>
         <button (click)="onSave()" *ngIf="hasEditPermission() && activeMobileTab() === 'registro'" [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges() || !congregacionCtx.effectiveCongregacionId()"
-                class="press-btn flex-[2.5] h-12 bg-brand-purple text-white rounded-xl font-black text-sm shadow-xl shadow-purple-950/30">
+                class="flex-[2.5] btn-primary">
           {{ saving() ? 'Guardando...' : 'Guardar Registro' }}
         </button>
       </div>
@@ -481,20 +463,6 @@ interface CalendarWeek {
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
-    }
-
-    .animate-toastIn {
-      animation: toastIn 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-    }
-    @keyframes toastIn {
-      from { opacity: 0; transform: translate(-50%, 12px) scale(0.95); }
-      to { opacity: 1; transform: translate(-50%, 0) scale(1); }
-    }
-    @media (min-width: 768px) {
-      @keyframes toastIn {
-        from { opacity: 0; transform: translate(0, -12px) scale(0.95); }
-        to { opacity: 1; transform: translate(0, 0) scale(1); }
-      }
     }
 
     /* Shared press feedback — Emil's scale(0.97) rule applied consistently */
@@ -531,12 +499,6 @@ interface CalendarWeek {
     @keyframes itemFadeIn {
       from { opacity: 0; transform: translateX(-4px); }
       to { opacity: 1; transform: translateX(0); }
-    }
-
-    /* Mobile segmented control indicator — clip-path-like slide */
-    .segmented-indicator {
-      transition: transform 250ms cubic-bezier(0.23, 1, 0.32, 1);
-      will-change: transform;
     }
 
     /* Stagger animation for data-rich rows (Resumen + Desglose) */
@@ -627,7 +589,6 @@ interface CalendarWeek {
     /* Respect user's motion preference — keep opacity/color, remove transforms */
     @media (prefers-reduced-motion: reduce) {
       .animate-fadeIn,
-      .animate-toastIn,
       .dropdown-panel,
       .dropdown-item,
       .stagger-row {
@@ -637,7 +598,6 @@ interface CalendarWeek {
       .press-btn,
       .dropdown-trigger,
       .chevron,
-      .segmented-indicator,
       .attendance-input {
         transition-duration: 0.01ms !important;
       }
@@ -647,10 +607,16 @@ interface CalendarWeek {
 })
 export class ReunionesAsistenciaComponent implements OnInit {
   private asistenciaService = inject(AsistenciaService);
+  private toast = inject(ToastService);
   protected congregacionCtx = inject(CongregacionContextService);
   private store = inject(AuthStore);
 
-  hasEditPermission = computed(() => this.store.hasPermission('reuniones.asistencia'));
+  // Igual que _ROLES_PRIVILEGIADOS del backend (asistencia_router.py): estos
+  // roles escriben sin el permiso fino.
+  hasEditPermission = computed(() =>
+    this.store.hasPermission('reuniones.asistencia')
+    || this.store.hasRole('Secretario')
+    || this.store.hasRole('Coordinador'));
 
   // Lunes de la semana calendario a la que pertenece una fecha ISO, como YYYY-MM-DD.
   private mondayKey(iso: string): string {
@@ -731,6 +697,11 @@ export class ReunionesAsistenciaComponent implements OnInit {
 
   // ── Mobile tab state ──
   activeMobileTab = signal<'registro' | 'resumen' | 'historial'>('registro');
+  readonly mobileTabs: { id: 'registro' | 'resumen' | 'historial'; label: string }[] = [
+    { id: 'registro', label: 'Registro' },
+    { id: 'resumen', label: 'Resumen' },
+    { id: 'historial', label: 'Historial' },
+  ];
   indicatorPosition = computed(() => {
     const tab = this.activeMobileTab();
     return tab === 'registro' ? 0 : tab === 'resumen' ? 100 : 200;
@@ -757,7 +728,6 @@ export class ReunionesAsistenciaComponent implements OnInit {
   // ── UI state ──
   loading = signal(false);
   saving = signal(false);
-  toast = signal<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // ── Dirty tracking ──
   private savedSnapshot = signal<{
@@ -784,7 +754,16 @@ export class ReunionesAsistenciaComponent implements OnInit {
   yearDropOpen = signal(false);
 
   // Which meeting type is coming up soonest — used to focus mobile view
+  // Elección manual en móvil (null = automática). Se limpia al cambiar de mes.
+  meetingSectionOverride = signal<'midweek' | 'weekend' | null>(null);
+
   activeMeetingSection = computed<'midweek' | 'weekend'>(() => {
+    const override = this.meetingSectionOverride();
+    if (override) return override;
+    // Si la semana elegida solo tiene un tipo de reunión, mostrar ese.
+    const hasMw = this.canEditMidweekWeek();
+    const hasWe = this.canEditWeekendWeek();
+    if (hasMw !== hasWe) return hasMw ? 'midweek' : 'weekend';
     const cfg = this.congregacionConfig();
     if (!cfg?.dia_reunion_entre_semana || !cfg?.dia_reunion_fin_semana) return 'midweek';
     const mw = this.daysUntilDay(cfg.dia_reunion_entre_semana);
@@ -989,8 +968,9 @@ export class ReunionesAsistenciaComponent implements OnInit {
       const month = this.selectedMonth();
       const congId = this.congregacionCtx.effectiveCongregacionId();
       const _periodos = this.periodos();
+      untracked(() => this.meetingSectionOverride.set(null));
       if (congId && _periodos.length > 0) {
-        this.loadData(+year, +month, congId);
+        untracked(() => this.loadData(+year, +month, congId));
       }
     });
 
@@ -1043,7 +1023,12 @@ export class ReunionesAsistenciaComponent implements OnInit {
     // totalWeeksInMonth usa fechasReuniones como fallback.
   }
 
-  private loadData(year: number, month: number, congId: number): void {
+  // Solo la última petición de loadData aplica su respuesta: al cambiar de mes
+  // rápido, una respuesta lenta de otro mes no debe pisar el mes visible.
+  private loadSeq = 0;
+
+  private loadData(year: number, month: number, congId: number, autoSelect = true): void {
+    const seq = ++this.loadSeq;
     this.loading.set(true);
 
     const periodo = this.periodos().find(p => p.codigo_ano === year && p.codigo_mes === month);
@@ -1059,6 +1044,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
 
     forkJoin({ fechas: fechas$, items: asistencias$ }).subscribe({
       next: ({ fechas, items }) => {
+        if (seq !== this.loadSeq) return;
         this.fechasReuniones.set(fechas.semanas);
         if (items === null) {
           if (periodo) this.showToast('error', 'Error al cargar los datos de asistencia');
@@ -1071,9 +1057,10 @@ export class ReunionesAsistenciaComponent implements OnInit {
           this.updateWeekArrays(mw, we);
         }
         this.loading.set(false);
-        this.autoSelectCurrentWeek();
+        if (autoSelect) this.autoSelectCurrentWeek();
       },
       error: () => {
+        if (seq !== this.loadSeq) return;
         this.resetWeekArrays();
         this.loading.set(false);
       }
@@ -1153,32 +1140,40 @@ export class ReunionesAsistenciaComponent implements OnInit {
     this.weekendRecord.set(null);
   }
 
+  // El input number deja escribir negativos y decimales; el backend exige
+  // enteros >= 0 (conint(ge=0)) y rechazaría todo el guardado.
+  private toCount(val: number | string | null): number | null {
+    if (val === null || val === '') return null;
+    const n = Number(val);
+    return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : null;
+  }
+
   updateMidweekWeek(val: number): void {
     const slot = this.selectedMidweekSlot();
     if (slot === null) return;
     const arr = [...this.midweekWeeks()];
-    arr[slot] = val;
+    arr[slot] = this.toCount(val);
     this.midweekWeeks.set(arr);
   }
   updateMidweekZoomWeek(val: number): void {
     const slot = this.selectedMidweekSlot();
     if (slot === null) return;
     const arr = [...this.midweekZoomWeeks()];
-    arr[slot] = val;
+    arr[slot] = this.toCount(val);
     this.midweekZoomWeeks.set(arr);
   }
   updateWeekendWeek(val: number): void {
     const slot = this.selectedWeekendSlot();
     if (slot === null) return;
     const arr = [...this.weekendWeeks()];
-    arr[slot] = val;
+    arr[slot] = this.toCount(val);
     this.weekendWeeks.set(arr);
   }
   updateWeekendZoomWeek(val: number): void {
     const slot = this.selectedWeekendSlot();
     if (slot === null) return;
     const arr = [...this.weekendZoomWeeks()];
-    arr[slot] = val;
+    arr[slot] = this.toCount(val);
     this.weekendZoomWeeks.set(arr);
   }
 
@@ -1246,7 +1241,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
       await lastValueFrom(this.asistenciaService.upsertAsistencia(weData));
 
       this.showToast('success', 'Asistencia guardada correctamente');
-      this.loadData(+this.selectedYear(), +this.selectedMonth(), congId);
+      this.loadData(+this.selectedYear(), +this.selectedMonth(), congId, false);
       this.loadResumenHistorico(this.resumenServiceYear(), congId);
     } catch {
       this.showToast('error', 'Error al guardar asistencia');
@@ -1275,8 +1270,8 @@ export class ReunionesAsistenciaComponent implements OnInit {
   }
 
   private showToast(type: 'success' | 'error', message: string): void {
-    this.toast.set({ type, message });
-    setTimeout(() => this.toast.set(null), 3000);
+    if (type === 'success') this.toast.success(message);
+    else this.toast.error(message);
   }
 
   private defaultYear(): number { return new Date().getFullYear(); }
@@ -1370,4 +1365,5 @@ export class ReunionesAsistenciaComponent implements OnInit {
      };
   }
 }
+
 

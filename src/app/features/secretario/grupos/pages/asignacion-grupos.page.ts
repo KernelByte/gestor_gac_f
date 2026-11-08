@@ -2,6 +2,9 @@ import { Component, computed, inject, OnDestroy, AfterViewInit, signal, Renderer
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { lastValueFrom, forkJoin } from 'rxjs';
 import { PrivilegiosService } from '../../privilegios/infrastructure/privilegios.service';
 import { Privilegio } from '../../privilegios/domain/models/privilegio';
@@ -125,7 +128,7 @@ const PRIVILEGIO_CONFIG: { [key: string]: { label: string; class: string } } = {
   },
   'precursor regular': {
     label: 'Precursor Regular',
-    class: 'text-purple-700 bg-purple-100/90 border border-purple-200/60 dark:bg-purple-900/40 dark:text-purple-200 dark:border-purple-500/40 rounded-full'
+    class: 'text-brand-purple bg-purple-100/90 border border-purple-200/60 dark:bg-purple-900/40 dark:text-purple-200 dark:border-brand-purple/40 rounded-full'
   },
   'precursor auxiliar': {
     label: 'Precursor Auxiliar',
@@ -136,7 +139,7 @@ const PRIVILEGIO_CONFIG: { [key: string]: { label: string; class: string } } = {
 @Component({
   standalone: true,
   selector: 'app-asignacion-grupos',
-  imports: [CommonModule, NuevoPublicadorWizardComponent],
+  imports: [CommonModule, NuevoPublicadorWizardComponent, ModalComponent, ConfirmDialogComponent],
   templateUrl: './asignacion-grupos.page.html',
   styles: [`
     :host { display: block; height: 100vh; height: 100dvh; }
@@ -315,6 +318,7 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
 
   private http = inject(HttpClient);
   private router = inject(Router);
+  private toast = inject(ToastService);
   private privilegiosService = inject(PrivilegiosService);
   private renderer = inject(Renderer2);
   private document = inject(DOCUMENT);
@@ -353,7 +357,6 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
   isDraggingOver = signal<'unassigned' | number | null>(null);
   draggedPublishers: Publicador[] = []; // Changed from single item to array
   isSaving = signal(false);
-  showSuccessMessage = signal(false);
   showExitConfirmation = signal(false); // Modal state
   isFullScreen = signal(false);
   showInactivePublishers = signal(true);
@@ -820,7 +823,6 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
   private avisoTimer: ReturnType<typeof setTimeout> | null = null;
   errorMsg = signal<string | null>(null);
   errorRecargar = signal(false);
-  exito = signal<{ titulo: string; texto: string }>({ titulo: '', texto: '' });
 
   private registrarHistorial(): void {
     this.historial.update(h => [...h.slice(-49), { publicadores: this.publicadores(), grupos: this.grupos(), eliminados: this.gruposEliminados() }]);
@@ -851,9 +853,10 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
 
   /** Con `recargar` el aviso ofrece traer la versión del servidor y no se cierra solo. */
   private mostrarError(texto: string, recargar = false): void {
+    if (!recargar) { this.toast.error(texto, undefined, 6000); return; }
+    // Con «Recargar» hace falta un botón de acción, que ToastService aún no ofrece.
     this.errorMsg.set(texto);
-    this.errorRecargar.set(recargar);
-    if (!recargar) setTimeout(() => { if (this.errorMsg() === texto) this.errorMsg.set(null); }, 6000);
+    this.errorRecargar.set(true);
   }
 
   /** Descarta lo local y vuelve a cargar borrador y congregación del servidor. */
@@ -863,12 +866,8 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
     await this.loadData();
   }
 
-  private exitoTimer: ReturnType<typeof setTimeout> | null = null;
   private mostrarExito(titulo: string, texto: string): void {
-    this.exito.set({ titulo, texto });
-    this.showSuccessMessage.set(true);
-    if (this.exitoTimer) clearTimeout(this.exitoTimer);
-    this.exitoTimer = setTimeout(() => this.showSuccessMessage.set(false), 4000);
+    this.toast.success(titulo, texto);
   }
 
   /** Ctrl/Cmd+Z deshace, salvo si se está escribiendo en un campo. Escape cierra lo que esté abierto. */
@@ -885,12 +884,10 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
 
   /** Cierra el modal o menú más alto. Devuelve true si había algo que cerrar. */
   private cerrarCapaAbierta(): boolean {
-    if (this.showExitConfirmation()) { this.cancelExit(); return true; }
-    if (this.wizardAbierto()) return true; // el asistente gestiona su propio Escape
+    // Los modales y diálogos se cierran solos con Esc; aquí solo se marca la pulsación como gastada.
+    if (this.showExitConfirmation() || this.wizardAbierto() || this.publicarAbierto() || this.descartarAbierto()
+        || this.deleteGroupConfirm() !== null || this.deleteGroupBlockReason()) return true;
     if (this.borradorInfoAbierto()) { this.borradorInfoAbierto.set(false); return true; }
-    if (this.publicarAbierto()) { this.cerrarPublicar(); return true; }
-    if (this.descartarAbierto()) { if (!this.isDiscarding()) this.descartarAbierto.set(false); return true; }
-    if (this.deleteGroupConfirm() !== null || this.deleteGroupBlockReason()) { this.cancelDeleteGroup(); return true; }
     // El navegador cierra el popover con Escape antes o después de que llegue aquí:
     // si se acaba de cerrar, esta pulsación ya se gastó en eso.
     if (this.cerrarMenus() || Date.now() - this.menuCerradoEn < 80) return true;

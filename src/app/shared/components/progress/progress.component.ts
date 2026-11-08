@@ -11,10 +11,10 @@ export type ProgressColor = 'violet' | 'orange' | 'green' | 'blue' | 'red';
     <!-- Linear -->
     <div *ngIf="variant === 'linear'" class="w-full">
       <div *ngIf="label" class="flex items-center justify-between mb-1.5">
-        <span class="text-xs font-medium text-gray-600">{{ label }}</span>
-        <span class="text-xs font-semibold tabular-num text-gray-900">{{ percent() }}%</span>
+        <span class="text-xs font-medium text-slate-600">{{ label }}</span>
+        <span class="text-xs font-semibold tabular-num text-slate-900">{{ percent() }}%</span>
       </div>
-      <div class="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+      <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
         <div
           class="h-full rounded-full transition-all duration-500 ease-out"
           [ngClass]="barClass()"
@@ -41,7 +41,7 @@ export type ProgressColor = 'violet' | 'orange' | 'green' | 'blue' | 'red';
           class="transition-all duration-500 ease-out"
         />
       </svg>
-      <span class="absolute text-sm font-bold tabular-num text-gray-900">{{ percent() }}%</span>
+      <span class="absolute text-sm font-bold tabular-num text-slate-900">{{ percent() }}%</span>
     </div>
   `,
 })

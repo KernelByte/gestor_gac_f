@@ -81,8 +81,7 @@ import { GeoJSONPoint, PuntoSacada, UbicacionExhibidor } from '../models/exhibid
       <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fadeIn"
            (click)="cancelar()"></div>
 
-      <div class="panel-mapa relative flex flex-col w-full max-w-5xl rounded-2xl overflow-hidden
-                  bg-white dark:bg-slate-800 shadow-2xl animate-scale-in">
+      <div class="panel-mapa relative flex flex-col w-full max-w-5xl rounded-2xl overflow-hidden bg-white dark:bg-slate-900 shadow-2xl animate-scale-in">
 
         <!-- Cabecera -->
         <div class="flex items-start justify-between gap-4 px-5 py-3.5 shrink-0

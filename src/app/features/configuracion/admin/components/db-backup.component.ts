@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
+import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../../../shared/components';
 import {
    BackupService,
    BackupHistorial,
@@ -17,7 +18,7 @@ interface CongregacionOption {
 @Component({
    selector: 'app-db-backup',
    standalone: true,
-   imports: [CommonModule, FormsModule],
+   imports: [CommonModule, FormsModule, ModalComponent, ConfirmDialogComponent, AvisoComponent],
    styles: [`
       .custom-scrollbar::-webkit-scrollbar { width: 5px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -47,8 +48,8 @@ interface CongregacionOption {
                      d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                </svg>
                <div>
-                  <h2 class="text-base font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">Respaldo de Base de Datos</h2>
-                  <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium leading-tight">Copias de seguridad y programación automática</p>
+                  <h2 class="text-base font-display font-bold text-slate-900 dark:text-white tracking-tight leading-tight">Respaldo de Base de Datos</h2>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 font-medium leading-tight">Copias de seguridad y programación automática</p>
                </div>
             </div>
          </div>
@@ -106,7 +107,7 @@ interface CongregacionOption {
             <div *ngIf="activeSection() === 'backup'" class="animate-slideIn space-y-4">
 
                <!-- Tipo de Backup -->
-               <div class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
+               <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
                   <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white mb-4">Tipo de Respaldo</h3>
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -155,7 +156,7 @@ interface CongregacionOption {
                   <div *ngIf="tipoBackup() === 'congregacion'" class="mt-4 animate-slideIn">
                      <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Seleccionar Congregaci&oacute;n</label>
                      <select [(ngModel)]="congregacionSeleccionada"
-                        class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors">
+                        class="form-select w-full">
                         <option [ngValue]="null" disabled>-- Selecciona una congregaci&oacute;n --</option>
                         <option *ngFor="let c of congregaciones()" [ngValue]="c.id_congregacion">
                            {{ c.nombre_congregacion }}
@@ -165,7 +166,7 @@ interface CongregacionOption {
                </div>
 
                <!-- Email Options -->
-               <div class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
+               <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
                   <div class="flex items-center justify-between">
                      <div>
                         <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white">Enviar por correo</h3>
@@ -185,7 +186,7 @@ interface CongregacionOption {
                   <div *ngIf="enviarEmail()" class="mt-4 animate-slideIn">
                      <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Correo electr&oacute;nico</label>
                      <input [(ngModel)]="emailDestino" type="email" list="correos-admin" placeholder="ejemplo@correo.com"
-                        class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors">
+                        class="form-control w-full">
                      <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Puedes escribir cualquier correo. Los respaldos programados solo se envían a correos de administradores.</p>
                   </div>
                </div>
@@ -193,14 +194,11 @@ interface CongregacionOption {
                <!-- Action Button -->
                <button (click)="ejecutarBackup()" type="button"
                   [disabled]="ejecutando() || (tipoBackup() === 'congregacion' && !congregacionSeleccionada())"
-                  class="w-full bg-brand-purple hover:bg-purple-700 active:bg-purple-800 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3.5 rounded-xl font-bold text-sm shadow-md shadow-brand-purple/20 transition-all flex items-center justify-center gap-2.5">
+                  class="w-full btn-primary">
                   <svg *ngIf="!ejecutando()" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  <svg *ngIf="ejecutando()" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                  </svg>
+                  <span *ngIf="ejecutando()" class="spinner" aria-hidden="true"></span>
                   {{ ejecutando() ? 'Generando respaldo...' : 'Crear Respaldo' }}
                </button>
 
@@ -233,7 +231,7 @@ interface CongregacionOption {
 
                <!-- Empty State -->
                <div *ngIf="!loadingHistorial() && historial().length === 0"
-                  class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-8 text-center">
+                  class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-8 text-center">
                   <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-4">
                      <svg class="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -246,15 +244,12 @@ interface CongregacionOption {
 
                <!-- Loading -->
                <div *ngIf="loadingHistorial()" class="flex items-center justify-center py-12">
-                  <svg class="w-6 h-6 animate-spin text-brand-purple" fill="none" viewBox="0 0 24 24">
-                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                  </svg>
+                  <span class="spinner text-brand-purple" aria-hidden="true"></span>
                </div>
 
                <!-- Backup List -->
                <div *ngFor="let backup of historial()"
-                  class="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-4 flex items-center gap-3">
+                  class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-4 flex items-center gap-3">
 
                   <!-- Status Icon -->
                   <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
@@ -269,20 +264,17 @@ interface CongregacionOption {
                      <svg *ngIf="backup.estado === 'error'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                      </svg>
-                     <svg *ngIf="backup.estado === 'en_progreso'" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                     </svg>
+                     <span *ngIf="backup.estado === 'en_progreso'" class="spinner-sm" aria-hidden="true"></span>
                   </div>
 
                   <!-- Info -->
                   <div class="min-w-0 flex-1">
                      <div class="flex items-center gap-2">
                         <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ backup.nombre_archivo }}</p>
-                        <span class="px-2 py-0.5 rounded-full text-[0.625rem] font-bold uppercase shrink-0"
+                        <span class="px-2 py-0.5 rounded-full text-xs font-bold uppercase shrink-0"
                            [ngClass]="backup.tipo === 'completo'
                               ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400'
-                              : 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400'">
+                              : 'bg-violet-100 dark:bg-violet-900/40 text-brand-purple dark:text-violet-400'">
                            {{ backup.tipo === 'completo' ? 'Completo' : backup.nombre_congregacion || 'Congregaci\u00f3n' }}
                         </span>
                         <span *ngIf="backup.cifrado" class="px-2 py-0.5 rounded-full text-xs font-bold shrink-0 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
@@ -298,17 +290,17 @@ interface CongregacionOption {
                   </div>
 
                   <!-- Actions -->
-                  <div class="flex items-center gap-1 shrink-0">
+                  <div class="row-actions shrink-0">
                      <button *ngIf="backup.estado === 'completado'" (click)="descargarBackup(backup)" type="button"
-                        class="p-2 rounded-lg text-slate-400 hover:text-brand-purple hover:bg-brand-purple/5 dark:hover:bg-brand-purple/10 transition-colors" title="Descargar">
-                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        aria-label="Descargar" class="btn-icon-sm" title="Descargar">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
                      </button>
                      <button (click)="confirmarEliminar(backup)" type="button"
-                        class="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Eliminar">
-                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        aria-label="Eliminar" class="btn-icon-sm tone-danger" title="Eliminar">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                      </button>
                   </div>
@@ -319,7 +311,7 @@ interface CongregacionOption {
             <div *ngIf="activeSection() === 'programacion'" class="animate-slideIn space-y-4">
 
                <!-- Enable Toggle -->
-               <div class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
+               <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
                   <div class="flex items-center justify-between">
                      <div>
                         <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white">Respaldo autom&aacute;tico</h3>
@@ -338,13 +330,13 @@ interface CongregacionOption {
                <div *ngIf="scheduleHabilitado()" class="animate-slideIn space-y-4">
 
                   <!-- Horarios -->
-                  <div class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
+                  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
                      <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Horarios (hora de Colombia)</label>
                      <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">El respaldo corre cada d&iacute;a a estas horas. M&iacute;nimo 2.</p>
                      <div class="space-y-2">
                         <div *ngFor="let h of scheduleHorarios(); let i = index; trackBy: trackByIndex" class="flex items-center gap-2">
                            <input type="time" [ngModel]="h" (ngModelChange)="updateHorario(i, $event)"
-                              class="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors">
+                              class="form-control flex-1">
                            <button type="button" (click)="removeHorario(i)" [disabled]="scheduleHorarios().length <= 2"
                               class="shrink-0 w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-red-500 hover:border-red-300 disabled:opacity-30 transition-colors flex items-center justify-center">
                               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -352,17 +344,17 @@ interface CongregacionOption {
                         </div>
                      </div>
                      <button type="button" (click)="addHorario()"
-                        class="mt-3 text-xs font-bold text-brand-purple hover:text-purple-700 flex items-center gap-1.5">
+                        class="mt-3 text-xs font-bold text-brand-purple hover:text-brand-purple flex items-center gap-1.5">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                         Agregar horario
                      </button>
                   </div>
 
                   <!-- Type -->
-                  <div class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
+                  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
                      <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Tipo de respaldo</label>
                      <select [(ngModel)]="scheduleTipo"
-                        class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors">
+                        class="form-select w-full">
                         <option value="completo">Base de datos completa</option>
                         <option value="congregacion">Por congregaci&oacute;n</option>
                      </select>
@@ -370,7 +362,7 @@ interface CongregacionOption {
                      <div *ngIf="scheduleTipo() === 'congregacion'" class="mt-3 animate-slideIn">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Congregaci&oacute;n</label>
                         <select [(ngModel)]="scheduleCongregacion"
-                           class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors">
+                           class="form-select w-full">
                            <option [ngValue]="null" disabled>-- Seleccionar --</option>
                            <option *ngFor="let c of congregaciones()" [ngValue]="c.id_congregacion">
                               {{ c.nombre_congregacion }}
@@ -380,7 +372,7 @@ interface CongregacionOption {
                   </div>
 
                   <!-- Schedule Email -->
-                  <div class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
+                  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
                      <div class="flex items-center justify-between">
                         <div>
                            <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white">Enviar por correo</h3>
@@ -395,21 +387,18 @@ interface CongregacionOption {
                      </div>
                      <div *ngIf="scheduleEmail()" class="mt-4 animate-slideIn">
                         <input [(ngModel)]="scheduleEmailDestino" type="email" list="correos-admin" placeholder="ejemplo@correo.com"
-                           class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors">
+                           class="form-control w-full">
                      </div>
                   </div>
 
                   <!-- Save Button -->
                   <button (click)="guardarProgramacion()" type="button"
                      [disabled]="guardandoProgramacion()"
-                     class="w-full bg-brand-purple hover:bg-purple-700 active:bg-purple-800 disabled:opacity-50 text-white px-6 py-3.5 rounded-xl font-bold text-sm shadow-md shadow-brand-purple/20 transition-all flex items-center justify-center gap-2.5">
+                     class="w-full btn-primary">
                      <svg *ngIf="!guardandoProgramacion()" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                      </svg>
-                     <svg *ngIf="guardandoProgramacion()" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                     </svg>
+                     <span *ngIf="guardandoProgramacion()" class="spinner" aria-hidden="true"></span>
                      {{ guardandoProgramacion() ? 'Guardando...' : 'Guardar Programaci\u00f3n' }}
                   </button>
                </div>
@@ -458,7 +447,7 @@ interface CongregacionOption {
                </div>
 
                <!-- Upload from file -->
-               <div class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
+               <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
                   <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white mb-1">Subir archivo de respaldo</h3>
                   <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Acepta archivos <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">.bin</code> (cifrado), <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">.dump</code> (backup completo) o <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">.sql</code> (backup por congregaci&oacute;n)</p>
 
@@ -480,7 +469,7 @@ interface CongregacionOption {
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400">{{ archivoSubir()!.name }}</span>
-                        <span class="text-[0.625rem] text-slate-400">{{ formatTamano(archivoSubir()!.size) }} &middot; clic para cambiar</span>
+                        <span class="text-xs text-slate-400">{{ formatTamano(archivoSubir()!.size) }} &middot; clic para cambiar</span>
                      </ng-container>
                   </label>
 
@@ -491,10 +480,7 @@ interface CongregacionOption {
                      </button>
                      <button (click)="confirmarRestaurarArchivo()" type="button" [disabled]="subiendoArchivo()"
                         class="flex-1 px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5">
-                        <svg *ngIf="subiendoArchivo()" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                        </svg>
+                        <span *ngIf="subiendoArchivo()" class="spinner-sm" aria-hidden="true"></span>
                         {{ subiendoArchivo() ? 'Restaurando...' : 'Restaurar este archivo' }}
                      </button>
                   </div>
@@ -509,7 +495,7 @@ interface CongregacionOption {
 
                <!-- Empty State -->
                <div *ngIf="!loadingHistorial() && backupsRestaurables().length === 0"
-                  class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-8 text-center">
+                  class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-8 text-center">
                   <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-4">
                      <svg class="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -521,15 +507,12 @@ interface CongregacionOption {
 
                <!-- Loading -->
                <div *ngIf="loadingHistorial()" class="flex items-center justify-center py-12">
-                  <svg class="w-6 h-6 animate-spin text-brand-purple" fill="none" viewBox="0 0 24 24">
-                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                  </svg>
+                  <span class="spinner text-brand-purple" aria-hidden="true"></span>
                </div>
 
                <!-- Backup list -->
                <div *ngFor="let backup of backupsRestaurables()"
-                  class="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-4 flex items-center gap-3">
+                  class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-4 flex items-center gap-3">
 
                   <!-- Icon -->
                   <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600">
@@ -542,10 +525,10 @@ interface CongregacionOption {
                   <div class="min-w-0 flex-1">
                      <div class="flex items-center gap-2">
                         <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ backup.nombre_archivo }}</p>
-                        <span class="px-2 py-0.5 rounded-full text-[0.625rem] font-bold uppercase shrink-0"
+                        <span class="px-2 py-0.5 rounded-full text-xs font-bold uppercase shrink-0"
                            [ngClass]="backup.tipo === 'completo'
                               ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400'
-                              : 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400'">
+                              : 'bg-violet-100 dark:bg-violet-900/40 text-brand-purple dark:text-violet-400'">
                            {{ backup.tipo === 'completo' ? 'Completo' : backup.nombre_congregacion || 'Congregaci\u00f3n' }}
                         </span>
                         <span *ngIf="backup.cifrado" class="px-2 py-0.5 rounded-full text-xs font-bold shrink-0 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
@@ -568,10 +551,7 @@ interface CongregacionOption {
                            ? 'opacity-40 cursor-not-allowed border-slate-200 dark:border-slate-600 text-slate-400'
                            : 'border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'">
                      <span *ngIf="restoringId() === backup.id_backup" class="flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                        </svg>
+                        <span class="spinner-sm" aria-hidden="true"></span>
                         Restaurando...
                      </span>
                      <span *ngIf="restoringId() !== backup.id_backup">Restaurar</span>
@@ -583,134 +563,84 @@ interface CongregacionOption {
          </div>
       </div>
 
-      <!-- Delete Confirmation Modal -->
-      <div *ngIf="backupAEliminar()" class="fixed inset-0 z-50 flex items-center justify-center p-4"
-         (click)="backupAEliminar.set(null)">
-         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
-         <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 max-w-sm w-full animate-slideIn"
-            (click)="$event.stopPropagation()">
-            <div class="w-12 h-12 mx-auto rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center mb-4">
-               <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-               </svg>
-            </div>
-            <h3 class="text-center text-base font-display font-bold text-slate-900 dark:text-white mb-2">Eliminar respaldo</h3>
-            <p class="text-center text-sm text-slate-500 dark:text-slate-400 mb-6">
-               Se eliminar&aacute; permanentemente el archivo<br>
-               <span class="font-medium text-slate-700 dark:text-slate-300">{{ backupAEliminar()!.nombre_archivo }}</span>
-            </p>
-            <div class="flex gap-3">
-               <button (click)="backupAEliminar.set(null)" type="button"
-                  class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                  Cancelar
-               </button>
-               <button (click)="eliminarBackup()" type="button" [disabled]="eliminando()"
-                  class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold shadow-sm transition-colors">
-                  Eliminar
-               </button>
-            </div>
-         </div>
-      </div>
+      <!-- Eliminar respaldo -->
+      @if (backupAEliminar(); as b) {
+         <app-confirm-dialog
+            [open]="true"
+            title="Eliminar respaldo"
+            [message]="'Se eliminará permanentemente el archivo\n' + b.nombre_archivo"
+            confirmLabel="Eliminar"
+            severity="danger"
+            [busy]="eliminando()"
+            (confirmed)="eliminarBackup()"
+            (openChange)="$event || backupAEliminar.set(null)"
+         ></app-confirm-dialog>
+      }
 
-      <!-- Restore Confirmation Modal -->
-      <div *ngIf="showRestoreConfirm()" class="fixed inset-0 z-50 flex items-center justify-center p-4"
-         (click)="showRestoreConfirm.set(null)">
-         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
-         <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 max-w-sm w-full animate-slideIn"
-            (click)="$event.stopPropagation()">
-            <div class="w-12 h-12 mx-auto rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center mb-4">
-               <svg class="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-               </svg>
-            </div>
-            <h3 class="text-center text-base font-display font-bold text-slate-900 dark:text-white mb-2">Restaurar respaldo</h3>
-            <p class="text-center text-sm text-slate-500 dark:text-slate-400 mb-2">
-               Se restaurar&aacute; el archivo:<br>
-               <span class="font-medium text-slate-700 dark:text-slate-300">{{ showRestoreConfirm()!.nombre_archivo }}</span>
+      <!-- Restaurar un respaldo del historial -->
+      @if (showRestoreConfirm(); as r) {
+         <app-modal [open]="true" size="sm" title="Restaurar respaldo" [hasFooter]="true" (closed)="showRestoreConfirm.set(null)">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+               Se restaurará el archivo:<br>
+               <span class="font-semibold text-slate-800 dark:text-slate-200">{{ r.nombre_archivo }}</span>
             </p>
-            <p class="text-center text-xs text-amber-600 dark:text-amber-400 mb-6">
-               <span *ngIf="showRestoreConfirm()!.tipo === 'completo'">
-                  Esto reemplazar&aacute; <strong>toda</strong> la base de datos con el estado del respaldo.
-               </span>
-               <span *ngIf="showRestoreConfirm()!.tipo !== 'completo'">
-                  Se sobrescribir&aacute;n los datos de la congregaci&oacute;n <strong>{{ showRestoreConfirm()!.nombre_congregacion }}</strong> con los del respaldo.
-               </span>
-            </p>
-            <div *ngIf="showRestoreConfirm()!.cifrado" class="mb-5 space-y-3 text-left">
-               <p class="text-xs text-slate-600 dark:text-slate-300">Este respaldo est&aacute; cifrado. Sube el archivo de llave y escribe su frase.</p>
-               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Archivo de llave (.gacllave)
+            <app-aviso tone="warning" [dense]="true" class="block mt-3">
+               @if (r.tipo === 'completo') {
+                  Esto reemplazará <strong>toda</strong> la base de datos con el estado del respaldo.
+               } @else {
+                  Se sobrescribirán los datos de la congregación <strong>{{ r.nombre_congregacion }}</strong> con los del respaldo.
+               }
+            </app-aviso>
+            @if (r.cifrado) {
+            <div class="mt-4 space-y-3 text-left">
+               <p class="text-sm text-slate-600 dark:text-slate-300">Este respaldo está cifrado. Sube el archivo de llave y escribe su frase.</p>
+               <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Archivo de llave (.gacllave)
                   <input type="file" accept=".gacllave,application/json" (change)="onLlaveSeleccionada($event)"
-                     class="mt-1 block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-slate-100 dark:file:bg-slate-700 file:font-bold">
+                     class="mt-1 block w-full text-sm text-slate-600 dark:text-slate-300 file:mr-3 file:px-3 file:py-2 file:rounded-xl file:border-0 file:bg-slate-100 dark:file:bg-slate-800 file:font-semibold">
                </label>
-               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Frase
-                  <input type="password" [value]="fraseRestaurar()" (input)="fraseRestaurar.set($any($event.target).value)" autocomplete="off"
-                     class="mt-1 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple">
+               <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Frase
+                  <input type="password" [value]="fraseRestaurar()" (input)="fraseRestaurar.set($any($event.target).value)" autocomplete="off" class="form-control mt-1">
                </label>
             </div>
-            <div class="flex gap-3">
-               <button (click)="showRestoreConfirm.set(null)" type="button"
-                  class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                  Cancelar
-               </button>
-               <button (click)="ejecutarRestaurar(showRestoreConfirm()!)" type="button"
-                  [disabled]="showRestoreConfirm()!.cifrado && !llaveLista()"
-                  class="disabled:opacity-50 disabled:cursor-not-allowed flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-sm transition-colors">
-                  S&iacute;, restaurar
-               </button>
-            </div>
-         </div>
-      </div>
+            }
+            <ng-container slot="footer">
+               <button type="button" class="btn-secondary" (click)="showRestoreConfirm.set(null)">Cancelar</button>
+               <button type="button" class="btn-primary" style="--accent:#b45309;--accent-hover:#92400e" (click)="ejecutarRestaurar(r)" [disabled]="r.cifrado && !llaveLista()">Sí, restaurar</button>
+            </ng-container>
+         </app-modal>
+      }
 
-      <!-- Restore from File Confirmation Modal -->
-      <div *ngIf="showRestoreArchivoConfirm()" class="fixed inset-0 z-50 flex items-center justify-center p-4"
-         (click)="showRestoreArchivoConfirm.set(false)">
-         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
-         <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 max-w-sm w-full animate-slideIn"
-            (click)="$event.stopPropagation()">
-            <div class="w-12 h-12 mx-auto rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center mb-4">
-               <svg class="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-               </svg>
-            </div>
-            <h3 class="text-center text-base font-display font-bold text-slate-900 dark:text-white mb-2">Restaurar desde archivo</h3>
-            <p class="text-center text-sm text-slate-500 dark:text-slate-400 mb-2">
-               <span class="font-medium text-slate-700 dark:text-slate-300">{{ archivoSubir()?.name }}</span>
-            </p>
-            <p class="text-center text-xs text-amber-600 dark:text-amber-400 mb-6">
-               <span *ngIf="archivoSubir()?.name?.endsWith('.dump')">
-                  Esto reemplazar&aacute; <strong>toda</strong> la base de datos con el contenido de este archivo.
-               </span>
-               <span *ngIf="archivoSubir()?.name?.endsWith('.sql')">
-                  Se sobrescribir&aacute;n los datos de la congregaci&oacute;n contenidos en este archivo.
-               </span>
-               <span *ngIf="archivoSubir()?.name?.endsWith('.bin')">
-                  Si es un respaldo completo, reemplazar&aacute; <strong>toda</strong> la base de datos.
-               </span>
-            </p>
-            <div *ngIf="archivoSubir()?.name?.endsWith('.bin')" class="mb-5 space-y-3 text-left">
-               <p class="text-xs text-slate-600 dark:text-slate-300">Este respaldo est&aacute; cifrado. Sube el archivo de llave y escribe su frase.</p>
-               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Archivo de llave (.gacllave)
+      <!-- Restaurar desde un archivo subido -->
+      @if (showRestoreArchivoConfirm()) {
+         <app-modal [open]="true" size="sm" title="Restaurar desde archivo" [hasFooter]="true" (closed)="showRestoreArchivoConfirm.set(false)">
+            <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ archivoSubir()?.name }}</p>
+            <app-aviso tone="warning" [dense]="true" class="block mt-3">
+               @if (archivoSubir()?.name?.endsWith('.dump')) {
+                  Esto reemplazará <strong>toda</strong> la base de datos con el contenido de este archivo.
+               } @else if (archivoSubir()?.name?.endsWith('.sql')) {
+                  Se sobrescribirán los datos de la congregación contenidos en este archivo.
+               } @else if (archivoSubir()?.name?.endsWith('.bin')) {
+                  Si es un respaldo completo, reemplazará <strong>toda</strong> la base de datos.
+               }
+            </app-aviso>
+            @if (archivoSubir()?.name?.endsWith('.bin')) {
+            <div class="mt-4 space-y-3 text-left">
+               <p class="text-sm text-slate-600 dark:text-slate-300">Este respaldo está cifrado. Sube el archivo de llave y escribe su frase.</p>
+               <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Archivo de llave (.gacllave)
                   <input type="file" accept=".gacllave,application/json" (change)="onLlaveSeleccionada($event)"
-                     class="mt-1 block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-slate-100 dark:file:bg-slate-700 file:font-bold">
+                     class="mt-1 block w-full text-sm text-slate-600 dark:text-slate-300 file:mr-3 file:px-3 file:py-2 file:rounded-xl file:border-0 file:bg-slate-100 dark:file:bg-slate-800 file:font-semibold">
                </label>
-               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Frase
-                  <input type="password" [value]="fraseRestaurar()" (input)="fraseRestaurar.set($any($event.target).value)" autocomplete="off"
-                     class="mt-1 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple">
+               <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Frase
+                  <input type="password" [value]="fraseRestaurar()" (input)="fraseRestaurar.set($any($event.target).value)" autocomplete="off" class="form-control mt-1">
                </label>
             </div>
-            <div class="flex gap-3">
-               <button (click)="showRestoreArchivoConfirm.set(false)" type="button"
-                  class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                  Cancelar
-               </button>
-               <button (click)="ejecutarRestaurarArchivo()" type="button"
-                  [disabled]="!!archivoSubir()?.name?.endsWith('.bin') && !llaveLista()"
-                  class="disabled:opacity-50 disabled:cursor-not-allowed flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-sm transition-colors">
-                  S&iacute;, restaurar
-               </button>
-            </div>
-         </div>
-      </div>
+            }
+            <ng-container slot="footer">
+               <button type="button" class="btn-secondary" (click)="showRestoreArchivoConfirm.set(false)">Cancelar</button>
+               <button type="button" class="btn-primary" style="--accent:#b45309;--accent-hover:#92400e" (click)="ejecutarRestaurarArchivo()" [disabled]="!!archivoSubir()?.name?.endsWith('.bin') && !llaveLista()">Sí, restaurar</button>
+            </ng-container>
+         </app-modal>
+      }
    `
 })
 export class DbBackupComponent implements OnInit {

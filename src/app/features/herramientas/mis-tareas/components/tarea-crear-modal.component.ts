@@ -9,6 +9,7 @@ import { ToastService } from '../../../../shared/components/toast/toast.service'
 import { ActaService } from '../../../secretario-tools/services/acta.service';
 import { Tarea, UsuarioAsignable } from '../../../secretario-tools/models/acta.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
+import { mensajeError } from '../../../../shared/mensaje-error';
 
 /**
  * Alta de una tarea desde Mis tareas. Cualquier usuario puede crearla para sí
@@ -50,10 +51,10 @@ import { AuthStore } from '../../../../core/auth/auth.store';
 
           <div>
             <span class="etiqueta">Prioridad</span>
-            <div class="segmentos" role="radiogroup" aria-label="Prioridad">
+            <div class="segmented w-full" role="radiogroup" aria-label="Prioridad">
               @for (p of prioridades; track p.value) {
-                <button type="button" role="radio" class="segmento" [attr.aria-checked]="prioridad === p.value"
-                        [attr.data-prio]="p.value" [class.segmento--on]="prioridad === p.value" (click)="prioridad = p.value">
+                <button type="button" role="radio" class="segmented-item flex-1" [attr.aria-checked]="prioridad === p.value"
+                        [attr.data-prio]="p.value" (click)="prioridad = p.value">
                   <span class="punto"></span>{{ p.label }}
                 </button>
               }
@@ -107,20 +108,21 @@ import { AuthStore } from '../../../../core/auth/auth.store';
             <input #pasoEl type="text" name="nuevoPaso" maxlength="255" [(ngModel)]="nuevoPaso" autocomplete="off"
                    (keydown.enter)="agregarPaso(); $event.preventDefault()"
                    placeholder="Añadir un paso" class="campo flex-1" aria-label="Nuevo paso"/>
-            <button type="button" (click)="agregarPaso()" [disabled]="!nuevoPaso.trim()" class="btn-sec shrink-0">Añadir</button>
+            <button type="button" (click)="agregarPaso()" [disabled]="!nuevoPaso.trim()" class="btn-secondary shrink-0">Añadir</button>
           </div>
         </div>
       </form>
 
       <ng-container slot="footer">
-        <button type="button" class="btn-sec flex-1 sm:flex-none" (click)="cerrar(false)">Cancelar</button>
-        <button type="button" class="btn-primario flex-1 sm:flex-none" [disabled]="guardando()" (click)="crear()">
+        <button type="button" class="btn-secondary flex-1 sm:flex-none" (click)="cerrar(false)">Cancelar</button>
+        <button type="button" class="btn-primary flex-1 sm:flex-none" [disabled]="guardando()" (click)="crear()">
           {{ guardando() ? 'Creando…' : (hayOtros() ? 'Crear y asignar' : 'Crear tarea') }}
         </button>
       </ng-container>
     </app-modal>
   `,
   styles: [`
+    :host { --accent: #e11d48; --accent-hover: #be123c; --accent-focus: #e11d48; --accent-ring: color-mix(in oklab, #e11d48 20%, transparent); --accent-shadow: 0 6px 16px -8px rgb(225 29 72 / 0.6); }
     :host { --ease: cubic-bezier(0.23, 1, 0.32, 1); }
     .etiqueta { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: rgb(55 65 81); }
     :host-context(.dark) .etiqueta { color: rgb(203 213 225); }
@@ -138,18 +140,9 @@ import { AuthStore } from '../../../../core/auth/auth.store';
     .campo:focus { outline: none; border-color: rgb(253 164 175); box-shadow: 0 0 0 4px rgb(244 63 94 / 0.1); }
     .campo--titulo { min-height: 52px; font-size: 17px; font-weight: 600; }
     .campo--error, .campo--error:focus { border-color: rgb(239 68 68); box-shadow: 0 0 0 4px rgb(239 68 68 / 0.1); }
-    :host-context(.dark) .campo { background: rgb(15 23 42); border-color: rgb(51 65 85); color: rgb(241 245 249); }
+    :host-context(.dark) .campo { background: rgb(15 23 42); border-color: rgb(30 41 59); color: rgb(241 245 249); }
     :host-context(.dark) .campo:focus { border-color: rgb(159 18 57); }
 
-    .segmentos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 3px; border-radius: 12px; background: rgb(243 244 246); }
-    :host-context(.dark) .segmentos { background: rgb(15 23 42); }
-    .segmento { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; border-radius: 9px; font-size: 13px; font-weight: 600; color: rgb(107 114 128); transition: background-color 160ms var(--ease), color 160ms ease, transform 160ms var(--ease); }
-    .segmento:hover { color: rgb(17 24 39); }
-    .segmento:active { transform: scale(0.97); }
-    .segmento--on { background: #fff; color: rgb(17 24 39); box-shadow: 0 1px 2px rgb(15 23 42 / 0.08); }
-    :host-context(.dark) .segmento { color: rgb(148 163 184); }
-    :host-context(.dark) .segmento:hover, :host-context(.dark) .segmento--on { color: #fff; }
-    :host-context(.dark) .segmento--on { background: rgb(51 65 85); box-shadow: none; }
     .punto { width: 8px; height: 8px; border-radius: 999px; background: rgb(156 163 175); }
     [data-prio="alta"] .punto { background: rgb(239 68 68); }
     [data-prio="media"] .punto { background: rgb(245 158 11); }
@@ -158,7 +151,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
     .rapida:hover { border-color: rgb(209 213 219); color: rgb(17 24 39); }
     .rapida:active { transform: scale(0.97); }
     .rapida--on, .rapida--on:hover { background: rgb(255 241 242); border-color: rgb(253 164 175); color: rgb(190 18 60); }
-    :host-context(.dark) .rapida { background: rgb(15 23 42); border-color: rgb(51 65 85); color: rgb(203 213 225); }
+    :host-context(.dark) .rapida { background: rgb(15 23 42); border-color: rgb(30 41 59); color: rgb(203 213 225); }
     :host-context(.dark) .rapida--on { background: rgb(136 19 55 / 0.3); border-color: rgb(159 18 57); color: rgb(253 164 175); }
 
     .mas { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 4px; font-size: 13px; font-weight: 600; color: rgb(190 18 60); border-radius: 8px; }
@@ -174,22 +167,10 @@ import { AuthStore } from '../../../../core/auth/auth.store';
     .paso-quitar svg { width: 15px; height: 15px; }
     .paso-quitar:hover { color: rgb(220 38 38); background: rgb(254 242 242); }
 
-    .btn-sec, .btn-primario {
-      display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; border-radius: 12px;
-      font-size: 14px; font-weight: 600; transition: background-color 150ms ease, transform 160ms var(--ease);
-    }
-    .btn-sec { border: 1px solid rgb(229 231 235); background: #fff; color: rgb(55 65 81); }
-    .btn-sec:hover:not(:disabled) { background: rgb(249 250 251); }
-    .btn-sec:disabled { opacity: 0.45; }
-    :host-context(.dark) .btn-sec { background: rgb(30 41 59); border-color: rgb(51 65 85); color: rgb(226 232 240); }
-    .btn-primario { background: rgb(225 29 72); color: #fff; box-shadow: 0 6px 16px -8px rgb(225 29 72 / 0.6); }
-    .btn-primario:hover:not(:disabled) { background: rgb(190 18 60); }
-    .btn-primario:disabled { opacity: 0.6; }
-    .btn-sec:active:not(:disabled), .btn-primario:active:not(:disabled) { transform: scale(0.97); }
-    .btn-sec:focus-visible, .btn-primario:focus-visible, .segmento:focus-visible, .rapida:focus-visible, .mas:focus-visible, .paso-quitar:focus-visible {
+    .rapida:focus-visible, .mas:focus-visible, .paso-quitar:focus-visible {
       outline: 2px solid rgb(244 63 94); outline-offset: 2px;
     }
-    @media (prefers-reduced-motion: reduce) { .segmento, .rapida, .btn-sec, .btn-primario { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .rapida { transition: none; } }
   `],
 })
 export class TareaCrearModalComponent implements OnChanges {
@@ -244,7 +225,7 @@ export class TareaCrearModalComponent implements OnChanges {
     const ya = new Set(this.asignados());
     const lista = this.asignables();
     const opciones: PickerOption[] = [];
-    if (yo != null && !ya.has(yo)) opciones.push({ value: yo, label: 'Yo', hint: lista.find(u => u.id_usuario === yo)?.nombre });
+    if (yo != null && !ya.has(yo)) opciones.push({ value: yo, label: 'Mí', hint: lista.find(u => u.id_usuario === yo)?.nombre });
     for (const u of lista) if (u.id_usuario !== yo && !ya.has(u.id_usuario)) opciones.push({ value: u.id_usuario, label: u.nombre });
     return opciones;
   });
@@ -262,7 +243,7 @@ export class TareaCrearModalComponent implements OnChanges {
   chipsAsignados = computed<ChipItem[]>(() => this.asignados().map(id => ({ id, label: this.nombreDe(id) })));
 
   nombreDe(id: number): string {
-    if (id === this.miId) return 'Yo';
+    if (id === this.miId) return 'Mí';
     return this.asignables().find(u => u.id_usuario === id)?.nombre ?? 'Cargando…';
   }
 
@@ -351,7 +332,7 @@ export class TareaCrearModalComponent implements OnChanges {
       },
       error: (err) => {
         this.guardando.set(false);
-        this.toast.error('No se pudo crear la tarea', err?.error?.detail ?? 'Revisa tu conexión e inténtalo de nuevo.');
+        this.toast.error('No se pudo crear la tarea', mensajeError(err, 'Revisa tu conexión e inténtalo de nuevo.'));
       },
     });
   }

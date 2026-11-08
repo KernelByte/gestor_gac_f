@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { DiscursosService } from '../services/discursos.service';
 import {
@@ -23,7 +24,7 @@ import {
 @Component({
   selector: 'app-catalogo-discursos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent],
   template: `
     <div class="flex-1 min-h-0 flex flex-col overflow-y-auto simple-scrollbar animate-fadeIn pb-6">
     <div class="flex items-start justify-between gap-3 mb-4">
@@ -50,8 +51,8 @@ import {
           class="w-full flex flex-col items-center justify-center gap-3 px-6 py-10 text-center disabled:cursor-wait">
           <div class="w-14 h-14 rounded-2xl flex items-center justify-center"
             [class]="arrastrando()
-              ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300'
-              : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 shadow-sm'">
+              ? 'bg-violet-100 dark:bg-violet-900/40 text-brand-purple dark:text-violet-300'
+              : 'bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 shadow-sm'">
             <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0-12l-4 4m4-4l4 4"/>
             </svg>
@@ -72,7 +73,7 @@ import {
               <div class="h-full rounded-full bg-violet-500 transition-[width] duration-200 ease-out"
                 [style.width.%]="progreso()"></div>
             </div>
-            <p class="mt-2 text-[0.7rem] text-slate-500 dark:text-slate-400 text-center">
+            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400 text-center">
               {{ progreso() >= 100 ? 'Leyendo los bosquejos del archivo…' : 'Subiendo… ' + progreso() + '%' }}
             </p>
           </div>
@@ -104,12 +105,12 @@ import {
       <div class="flex flex-wrap items-center gap-3 mb-4">
         @if (publicacion(); as p) {
           <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-            <span class="shrink-0 px-2 h-6 rounded-md bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[0.65rem] font-black flex items-center">
+            <span class="shrink-0 px-2 h-6 rounded-md bg-violet-100 dark:bg-violet-900/40 text-brand-purple dark:text-violet-300 text-xs font-bold flex items-center">
               {{ p.simbolo ?? 'S-34' }}
             </span>
             <div class="min-w-0">
               <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{{ p.titulo_publicacion ?? 'Bosquejos de discursos públicos' }}</p>
-              <p class="text-[0.7rem] text-slate-400">
+              <p class="text-xs text-slate-400">
                 {{ discursos().length }} discursos<span *ngIf="p.ano"> · edición {{ p.ano }}</span>
                 <span *ngIf="p.importado_en"> · importado el {{ p.importado_en | date:'d MMM y, HH:mm' }}</span>
               </p>
@@ -139,7 +140,7 @@ import {
         <div class="max-h-[48vh] overflow-y-auto custom-scrollbar divide-y divide-slate-50 dark:divide-slate-800/60">
           @for (d of filtrados(); track d.numero) {
             <div class="flex items-center gap-3 px-4 py-2.5">
-              <span class="shrink-0 min-w-[2.25rem] h-6 px-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[0.65rem] font-black flex items-center justify-center">
+              <span class="shrink-0 min-w-[2.25rem] h-6 px-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold flex items-center justify-center">
                 {{ d.numero }}
               </span>
               <div class="flex-1 min-w-0">
@@ -154,7 +155,7 @@ import {
                 }
               </div>
               @if (d.no_disponible) {
-                <span class="shrink-0 px-2 h-6 rounded-md bg-amber-100 dark:bg-amber-900/40 text-[0.65rem] font-bold text-amber-800 dark:text-amber-200 flex items-center">No disponible</span>
+                <span class="shrink-0 px-2 h-6 rounded-md bg-amber-100 dark:bg-amber-900/40 text-xs font-bold text-amber-800 dark:text-amber-200 flex items-center">No disponible</span>
               }
               <button type="button" (click)="d.no_disponible ? habilitar(d) : abrirMarcar(d)"
                 class="shrink-0 h-8 px-3 rounded-lg text-xs font-bold transition-[background-color] duration-150 ease-out active:scale-[0.97]"
@@ -176,7 +177,7 @@ import {
     <!-- ===== HISTORIAL DE CARGUES ===== -->
     @if (importaciones().length > 0) {
       <div class="mt-8">
-        <h3 class="text-sm font-black text-slate-800 dark:text-slate-100">Historial de cargues</h3>
+        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Historial de cargues</h3>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-3 max-w-xl">
           Cada archivo que se carga queda guardado. Así se sabe qué decía cada número en cada edición,
           aunque después cambie su número o su título.
@@ -198,7 +199,7 @@ import {
                   </p>
                 </div>
                 @if (imp.total_cambios > 0) {
-                  <span class="shrink-0 px-2 h-6 rounded-md bg-violet-100 dark:bg-violet-900/40 text-[0.65rem] font-bold text-violet-700 dark:text-violet-300 flex items-center">
+                  <span class="shrink-0 px-2 h-6 rounded-md bg-violet-100 dark:bg-violet-900/40 text-xs font-bold text-brand-purple dark:text-violet-300 flex items-center">
                     {{ imp.total_cambios }} {{ imp.total_cambios === 1 ? 'cambio' : 'cambios' }}
                   </span>
                 }
@@ -218,7 +219,7 @@ import {
                       <div>
                         <p class="font-bold mb-1">Títulos que cambiaron</p>
                         @for (t of c.titulos; track t.numero) {
-                          <p class="leading-snug mb-1"><span class="font-black">{{ t.numero }}.</span> <span class="line-through text-slate-400">{{ t.antes }}</span> → {{ t.despues }}</p>
+                          <p class="leading-snug mb-1"><span class="font-bold">{{ t.numero }}.</span> <span class="line-through text-slate-400">{{ t.antes }}</span> → {{ t.despues }}</p>
                         }
                       </div>
                     }
@@ -226,7 +227,7 @@ import {
                       <div>
                         <p class="font-bold mb-1">Números que ya no vienen en el archivo</p>
                         @for (t of c.retirados; track t.numero) {
-                          <p class="leading-snug mb-1"><span class="font-black">{{ t.numero }}.</span> {{ t.titulo }}</p>
+                          <p class="leading-snug mb-1"><span class="font-bold">{{ t.numero }}.</span> {{ t.titulo }}</p>
                         }
                       </div>
                     }
@@ -234,7 +235,7 @@ import {
                       <div>
                         <p class="font-bold mb-1 text-amber-700 dark:text-amber-300">Marcas «no disponible» que se quitaron (el número ahora es otro discurso)</p>
                         @for (t of c.marcas_retiradas; track t.numero) {
-                          <p class="leading-snug mb-1"><span class="font-black">{{ t.numero }}.</span> {{ t.titulo }} <span class="text-slate-400">— {{ t.motivo || 'sin razón' }}</span></p>
+                          <p class="leading-snug mb-1"><span class="font-bold">{{ t.numero }}.</span> {{ t.titulo }} <span class="text-slate-400">— {{ t.motivo || 'sin razón' }}</span></p>
                         }
                       </div>
                     }
@@ -251,36 +252,26 @@ import {
 
     <!-- ===== MARCAR NO DISPONIBLE ===== -->
     @if (marcando(); as m) {
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm"
-        (click)="marcando.set(null)">
-        <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md border border-slate-200/60 dark:border-slate-700/60 overflow-hidden"
-          (click)="$event.stopPropagation()">
-          <div class="px-5 pt-5 pb-3">
-            <h3 class="text-base font-black text-slate-800 dark:text-slate-100">Marcar como no disponible</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-300 mt-1.5">{{ m.numero }}. {{ m.titulo }}</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
-              Solo es un aviso: en las pantallas donde se usa este discurso se verá la razón,
-              pero no se cambia nada de lo ya programado.
-            </p>
-            <label class="block mt-3 text-xs font-bold text-slate-600 dark:text-slate-300" for="motivo-no-disp">
-              ¿Por qué no se debe dar este discurso?
-            </label>
-            <textarea id="motivo-no-disp" rows="3" [ngModel]="motivo()" (ngModelChange)="motivo.set($event)"
-              placeholder="Ejemplo: El bosquejo fue retirado por la organización."
-              class="mt-1.5 w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 resize-none"></textarea>
-          </div>
-          <div class="flex gap-2 px-5 pb-6 sm:pb-5 pt-1">
-            <button (click)="marcando.set(null)"
-              class="flex-1 h-11 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-[background-color] duration-150 ease-out active:scale-[0.97]">
-              Cancelar
-            </button>
-            <button (click)="confirmarMarca()" [disabled]="guardandoMarca() || !motivo().trim()"
-              class="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-sm font-bold text-white transition-[background-color] duration-150 ease-out active:scale-[0.97]">
-              {{ guardandoMarca() ? 'Guardando…' : 'Marcar' }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <app-modal [open]="true" variant="sheet" size="md" title="Marcar como no disponible"
+        [hasFooter]="true" [dismissible]="!guardandoMarca()" (closed)="marcando.set(null)">
+        <p class="text-sm text-slate-600 dark:text-slate-300">{{ m.numero }}. {{ m.titulo }}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+          Solo es un aviso: en las pantallas donde se usa este discurso se verá la razón,
+          pero no se cambia nada de lo ya programado.
+        </p>
+        <label class="form-label mt-3" for="motivo-no-disp">
+          ¿Por qué no se debe dar este discurso?
+        </label>
+        <textarea id="motivo-no-disp" rows="3" [ngModel]="motivo()" (ngModelChange)="motivo.set($event)"
+          placeholder="Ejemplo: El bosquejo fue retirado por la organización."
+          class="form-control resize-none"></textarea>
+        <ng-container slot="footer">
+          <button type="button" class="btn-secondary" (click)="marcando.set(null)">Cancelar</button>
+          <button type="button" class="btn-primary" (click)="confirmarMarca()" [disabled]="guardandoMarca() || !motivo().trim()">
+            {{ guardandoMarca() ? 'Guardando…' : 'Marcar' }}
+          </button>
+        </ng-container>
+      </app-modal>
     }
   `,
 })

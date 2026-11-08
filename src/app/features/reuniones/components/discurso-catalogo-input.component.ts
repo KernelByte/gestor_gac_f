@@ -77,7 +77,7 @@ import { partirBosquejo } from '../utils/bosquejo';
 
     <!-- Solo avisa: el bosquejo se puede guardar igual (lo ya programado no cambia). -->
     @if (avisoNoDisponible(); as a) {
-      <p role="status" class="mt-1 flex items-start gap-1.5 text-[0.7rem] font-semibold leading-snug text-amber-700 dark:text-amber-300">
+      <p role="status" class="mt-1 flex items-start gap-1.5 text-xs font-semibold leading-snug text-amber-700 dark:text-amber-300">
         <svg class="w-3.5 h-3.5 mt-px shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>
         </svg>
@@ -93,7 +93,7 @@ import { partirBosquejo } from '../utils/bosquejo';
           <!-- Bosquejos que el orador tiene preparados: van primero y aparte
                del catálogo, porque normalmente se elige entre ellos. -->
           @if (propios().length > 0) {
-            <p role="presentation" class="px-2.5 pt-1.5 pb-1 text-[0.6rem] font-bold uppercase tracking-wider text-teal-700/80 dark:text-teal-300/70">
+            <p role="presentation" class="px-2.5 pt-1.5 pb-1 text-xs font-bold uppercase tracking-wider text-teal-700/80 dark:text-teal-300/70">
               {{ sugeridosTitulo || 'Bosquejos del orador' }}
             </p>
             @for (b of propios(); track b.texto; let j = $index) {
@@ -105,7 +105,7 @@ import { partirBosquejo } from '../utils/bosquejo';
                 (mouseenter)="resaltado.set(j)"
                 class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-[background-color] duration-100 ease-out"
                 [class]="j === resaltado() ? 'bg-teal-50 dark:bg-teal-400/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'">
-                <span class="shrink-0 min-w-[2rem] h-6 px-1.5 rounded-md text-[0.65rem] font-black flex items-center justify-center bg-teal-100 dark:bg-teal-400/15 text-teal-700 dark:text-teal-300">
+                <span class="shrink-0 min-w-[2rem] h-6 px-1.5 rounded-md text-xs font-bold flex items-center justify-center bg-teal-100 dark:bg-teal-400/15 text-teal-700 dark:text-teal-300">
                   {{ b.numero ?? '—' }}
                 </span>
                 <span class="flex-1 min-w-0 text-sm font-medium leading-snug"
@@ -113,15 +113,15 @@ import { partirBosquejo } from '../utils/bosquejo';
                   {{ b.titulo }}
                 </span>
                 @if (svc.bosquejoDe(b.texto)?.no_disponible) {
-                  <span class="shrink-0 px-1.5 h-5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-[0.6rem] font-bold text-amber-800 dark:text-amber-200 flex items-center">No disponible</span>
+                  <span class="shrink-0 px-1.5 h-5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-xs font-bold text-amber-800 dark:text-amber-200 flex items-center">No disponible</span>
                 }
                 @if (b.esActual) {
-                  <span class="shrink-0 text-[0.6rem] font-bold text-teal-700 dark:text-teal-300">Actual</span>
+                  <span class="shrink-0 text-xs font-bold text-teal-700 dark:text-teal-300">Actual</span>
                 }
               </button>
             }
             @if (sugerencias().length > 0) {
-              <p role="presentation" class="mt-1 px-2.5 pt-2 pb-1 border-t border-slate-100 dark:border-slate-800 text-[0.6rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <p role="presentation" class="mt-1 px-2.5 pt-2 pb-1 border-t border-slate-100 dark:border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Catálogo
               </p>
             }
@@ -138,7 +138,7 @@ import { partirBosquejo } from '../utils/bosquejo';
               [class]="i === resaltado()
                 ? 'bg-amber-50 dark:bg-amber-900/20'
                 : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'">
-              <span class="shrink-0 min-w-[2rem] h-6 px-1.5 rounded-md text-[0.65rem] font-black flex items-center justify-center transition-colors duration-100"
+              <span class="shrink-0 min-w-[2rem] h-6 px-1.5 rounded-md text-xs font-bold flex items-center justify-center transition-colors duration-100"
                 [class]="i === resaltado()
                   ? 'bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-200'
                   : 'bg-slate-100 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400'">
@@ -152,19 +152,19 @@ import { partirBosquejo } from '../utils/bosquejo';
                   {{ d.titulo }}
                 </span>
                 @if (d.no_disponible) {
-                  <span class="block text-[0.7rem] leading-snug text-amber-700 dark:text-amber-300">
+                  <span class="block text-xs leading-snug text-amber-700 dark:text-amber-300">
                     {{ d.motivo_no_disponible || 'Sin razón indicada' }}
                   </span>
                 }
               </span>
               @if (d.no_disponible) {
-                <span class="shrink-0 px-1.5 h-5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-[0.6rem] font-bold text-amber-800 dark:text-amber-200 flex items-center">No disponible</span>
+                <span class="shrink-0 px-1.5 h-5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-xs font-bold text-amber-800 dark:text-amber-200 flex items-center">No disponible</span>
               }
             </button>
           }
         </div>
         @if (totalCoincidencias() > sugerencias().length) {
-          <div class="px-3 py-1.5 border-t border-slate-100 dark:border-slate-800 text-[0.65rem] text-slate-400">
+          <div class="px-3 py-1.5 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400">
             {{ totalCoincidencias() - sugerencias().length }} coincidencias más. Sigue escribiendo para afinar.
           </div>
         }

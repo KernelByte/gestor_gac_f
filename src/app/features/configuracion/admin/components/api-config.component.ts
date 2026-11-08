@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
+import { ModalComponent, ConfirmDialogComponent } from '../../../../shared/components';
+import { LucideAngularModule } from 'lucide-angular';
 import {
   ApiCliente,
   ApiClientePayload,
@@ -43,7 +45,7 @@ const FORMULARIO_VACIO: FormularioCredencial = {
 @Component({
   selector: 'app-api-config',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, ModalComponent, ConfirmDialogComponent],
   styles: [`
     .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -92,15 +94,15 @@ const FORMULARIO_VACIO: FormularioCredencial = {
               d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
           </svg>
           <div class="min-w-0">
-            <h2 class="text-base font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">Integraciones API</h2>
-            <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium leading-tight truncate">
+            <h2 class="text-base font-display font-bold text-slate-900 dark:text-white tracking-tight leading-tight">Integraciones API</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-medium leading-tight truncate">
               Credenciales de acceso para sistemas externos
             </p>
           </div>
         </div>
 
         <button type="button" (click)="abrirCreacion()"
-          class="group inline-flex items-center gap-2 min-h-[40px] px-4 rounded-xl bg-brand-purple hover:bg-purple-700 text-white text-sm font-bold shadow-sm transition-all duration-200 active:translate-y-px touch-manipulation">
+          class="group min-h-[40px] touch-manipulation btn-primary">
           <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
@@ -131,7 +133,7 @@ const FORMULARIO_VACIO: FormularioCredencial = {
             </svg>
             <input type="search" [(ngModel)]="busqueda" (ngModelChange)="filtrar()"
               placeholder="Buscar por nombre o client_id..."
-              class="w-full min-h-[44px] ps-10 pe-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all">
+              class="form-control w-full">
           </div>
 
           <!-- Carga: esqueletos con la forma de las filas reales -->
@@ -180,13 +182,13 @@ const FORMULARIO_VACIO: FormularioCredencial = {
                   <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white truncate">{{ c.nombre }}</h3>
-                      <span class="text-[0.625rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                      <span class="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
                         [ngClass]="estadoChip(c)">{{ estadoTexto(c) }}</span>
                     </div>
 
                     <p *ngIf="c.descripcion" class="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{{ c.descripcion }}</p>
 
-                    <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.6875rem]">
+                    <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                       <button type="button" (click)="copiar(c.client_id, 'client_id')"
                         class="group inline-flex items-center gap-1.5 font-mono text-slate-500 dark:text-slate-400 hover:text-brand-purple transition-colors"
                         title="Copiar client_id">
@@ -205,60 +207,60 @@ const FORMULARIO_VACIO: FormularioCredencial = {
                 <!-- Permisos -->
                 <div class="flex flex-wrap gap-1.5 mbp:w-[280px] mbp16:w-[340px] shrink-0">
                   <span *ngFor="let s of c.scopes"
-                    class="text-[0.625rem] font-semibold px-2 py-0.5 rounded-md"
+                    class="text-xs font-semibold px-2 py-0.5 rounded-md"
                     [ngClass]="esEscritura(s)
                       ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">
                     {{ etiquetaScope(s) }}
                   </span>
-                  <span *ngIf="c.scopes.length === 0" class="text-[0.6875rem] text-slate-400 italic">Sin permisos asignados</span>
+                  <span *ngIf="c.scopes.length === 0" class="text-xs text-slate-400 italic">Sin permisos asignados</span>
                 </div>
 
                 <!-- Métricas -->
                 <div class="flex items-center gap-5 shrink-0 mbp:w-[150px]">
                   <div>
-                    <p class="text-[0.5625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Último uso</p>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Último uso</p>
                     <p class="text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums">{{ ultimoUso(c) }}</p>
                   </div>
                   <div>
-                    <p class="text-[0.5625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Límite</p>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Límite</p>
                     <p class="text-xs font-semibold text-slate-700 dark:text-slate-300 font-mono">{{ c.rate_limit_minuto }}/min</p>
                   </div>
                 </div>
 
                 <!-- Acciones -->
-                <div class="flex items-center gap-1 shrink-0">
+                <div class="row-actions shrink-0">
                   <button type="button" (click)="abrirEdicion(c)" title="Editar permisos y límites"
-                    class="w-10 h-10 grid place-items-center rounded-lg text-slate-400 hover:text-brand-purple hover:bg-brand-purple/5 transition-colors touch-manipulation">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                    aria-label="Editar permisos y límites" class="btn-icon-sm">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
                   <button type="button" (click)="confirmar('rotar', c)" title="Rotar el secreto"
-                    class="w-10 h-10 grid place-items-center rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-500/5 transition-colors touch-manipulation">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                    aria-label="Rotar el secreto" class="btn-icon-sm tone-warning">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                   </button>
                   <button *ngIf="c.revocado || !c.activo" type="button" (click)="reactivar(c)" title="Reactivar el acceso"
-                    class="w-10 h-10 grid place-items-center rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-500/5 transition-colors touch-manipulation">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 13l4 4L19 7" />
+                    aria-label="Reactivar el acceso" class="btn-icon-sm tone-success">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M5 13l4 4L19 7" />
                     </svg>
                   </button>
                   <button *ngIf="!c.revocado && c.activo" type="button" (click)="confirmar('revocar', c)" title="Revocar el acceso"
-                    class="w-10 h-10 grid place-items-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-500/5 transition-colors touch-manipulation">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                    aria-label="Revocar el acceso" class="btn-icon-sm tone-danger">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
                         d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                     </svg>
                   </button>
                   <button type="button" (click)="confirmar('eliminar', c)" title="Eliminar definitivamente"
-                    class="w-10 h-10 grid place-items-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-500/5 transition-colors touch-manipulation">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                    aria-label="Eliminar definitivamente" class="btn-icon-sm tone-danger">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
@@ -274,31 +276,31 @@ const FORMULARIO_VACIO: FormularioCredencial = {
           <!-- Métricas: sin tarjetas, separadas por líneas -->
           <div class="grid grid-cols-2 mbp:grid-cols-4 gap-px bg-slate-200 dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/60">
             <div *ngFor="let m of tarjetasMetricas()" class="bg-white dark:bg-slate-900 px-4 py-4">
-              <p class="text-[0.5625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{{ m.etiqueta }}</p>
-              <p class="mt-1 text-2xl font-display font-black tabular-nums leading-none" [ngClass]="m.tono">{{ m.valor }}</p>
-              <p class="mt-1 text-[0.625rem] text-slate-400 dark:text-slate-500">{{ m.nota }}</p>
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{{ m.etiqueta }}</p>
+              <p class="mt-1 text-2xl font-display font-bold tabular-nums leading-none" [ngClass]="m.tono">{{ m.valor }}</p>
+              <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ m.nota }}</p>
             </div>
           </div>
 
           <!-- Filtros -->
           <div class="flex flex-wrap items-end gap-3">
             <div class="flex-1 min-w-[180px]">
-              <label for="filtro-cliente" class="block text-[0.625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Integración</label>
+              <label for="filtro-cliente" class="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Integración</label>
               <select id="filtro-cliente" [(ngModel)]="filtro.id_api_cliente" (ngModelChange)="recargarLogs()"
-                class="w-full min-h-[40px] px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all">
+                class="form-select w-full">
                 <option [ngValue]="null">Todas</option>
                 <option *ngFor="let c of svc.clientes()" [ngValue]="c.id_api_cliente">{{ c.nombre }}</option>
               </select>
             </div>
             <div>
-              <label for="filtro-desde" class="block text-[0.625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Desde</label>
+              <label for="filtro-desde" class="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Desde</label>
               <input id="filtro-desde" type="date" [(ngModel)]="filtro.desde" (ngModelChange)="recargarLogs()"
-                class="min-h-[40px] px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all">
+                class="form-control">
             </div>
             <div>
-              <label for="filtro-hasta" class="block text-[0.625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Hasta</label>
+              <label for="filtro-hasta" class="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Hasta</label>
               <input id="filtro-hasta" type="date" [(ngModel)]="filtro.hasta" (ngModelChange)="recargarLogs()"
-                class="min-h-[40px] px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all">
+                class="form-control">
             </div>
             <button type="button" (click)="alternarSoloErrores()"
               class="min-h-[40px] px-4 rounded-xl text-sm font-bold border transition-colors touch-manipulation"
@@ -335,14 +337,14 @@ const FORMULARIO_VACIO: FormularioCredencial = {
                   </p>
                   <span class="shrink-0 text-xs font-bold font-mono tabular-nums" [ngClass]="tonoEstado(l.status_code)">{{ l.status_code }}</span>
                 </div>
-                <div class="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6875rem] text-slate-500 dark:text-slate-400">
+                <div class="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
                   <span class="tabular-nums">{{ l.creado_en | date:'dd MMM HH:mm:ss' }}</span>
                   <span class="text-slate-300 dark:text-slate-700" aria-hidden="true">·</span>
                   <span class="font-mono tabular-nums">{{ l.duracion_ms }} ms</span>
                   <span *ngIf="l.cliente" class="text-slate-300 dark:text-slate-700" aria-hidden="true">·</span>
                   <span *ngIf="l.cliente" class="truncate max-w-[150px]">{{ l.cliente }}</span>
                 </div>
-                <p *ngIf="l.error_code" class="mt-1 text-[0.6875rem] font-mono text-amber-600 dark:text-amber-400">{{ l.error_code }}</p>
+                <p *ngIf="l.error_code" class="mt-1 text-xs font-mono text-amber-600 dark:text-amber-400">{{ l.error_code }}</p>
               </li>
             </ul>
 
@@ -350,11 +352,11 @@ const FORMULARIO_VACIO: FormularioCredencial = {
               <table class="w-full min-w-[720px] text-left">
                 <thead>
                   <tr class="border-b border-slate-200 dark:border-slate-800">
-                    <th scope="col" class="px-4 py-2.5 text-[0.5625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Cuándo</th>
-                    <th scope="col" class="px-4 py-2.5 text-[0.5625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Integración</th>
-                    <th scope="col" class="px-4 py-2.5 text-[0.5625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Petición</th>
-                    <th scope="col" class="px-4 py-2.5 text-[0.5625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Resultado</th>
-                    <th scope="col" class="px-4 py-2.5 text-[0.5625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 text-right">Duración</th>
+                    <th scope="col" class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Cuándo</th>
+                    <th scope="col" class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Integración</th>
+                    <th scope="col" class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Petición</th>
+                    <th scope="col" class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Resultado</th>
+                    <th scope="col" class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 text-right">Duración</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -362,12 +364,12 @@ const FORMULARIO_VACIO: FormularioCredencial = {
                     <td class="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap tabular-nums">{{ l.creado_en | date:'dd MMM HH:mm:ss' }}</td>
                     <td class="px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 max-w-[160px] truncate">{{ l.cliente || '—' }}</td>
                     <td class="px-4 py-2.5">
-                      <span class="text-[0.625rem] font-bold font-mono me-1.5" [ngClass]="tonoMetodo(l.metodo)">{{ l.metodo }}</span>
+                      <span class="text-xs font-bold font-mono me-1.5" [ngClass]="tonoMetodo(l.metodo)">{{ l.metodo }}</span>
                       <span class="text-xs font-mono text-slate-600 dark:text-slate-400">{{ l.ruta }}</span>
                     </td>
                     <td class="px-4 py-2.5 whitespace-nowrap">
                       <span class="text-xs font-bold font-mono tabular-nums" [ngClass]="tonoEstado(l.status_code)">{{ l.status_code }}</span>
-                      <span *ngIf="l.error_code" class="ms-2 text-[0.625rem] font-mono text-slate-400 dark:text-slate-500">{{ l.error_code }}</span>
+                      <span *ngIf="l.error_code" class="ms-2 text-xs font-mono text-slate-400 dark:text-slate-500">{{ l.error_code }}</span>
                     </td>
                     <td class="px-4 py-2.5 text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400 text-right">{{ l.duracion_ms }} ms</td>
                   </tr>
@@ -403,7 +405,7 @@ const FORMULARIO_VACIO: FormularioCredencial = {
         <div *ngIf="seccion() === 'guia'" class="animate-fadeUp max-w-[75ch] space-y-6">
 
           <section>
-            <h3 class="text-sm font-display font-black text-slate-900 dark:text-white">Cómo se conecta un sistema externo</h3>
+            <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white">Cómo se conecta un sistema externo</h3>
             <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
               Entrega al integrador el <span class="font-mono text-slate-700 dark:text-slate-300">client_id</span> y el
               <span class="font-mono text-slate-700 dark:text-slate-300">client_secret</span>. La credencial ya sabe sobre qué
@@ -420,9 +422,9 @@ const FORMULARIO_VACIO: FormularioCredencial = {
             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{{ paso.titulo }}</h4>
             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{{ paso.detalle }}</p>
             <div class="mt-2 relative group">
-              <pre class="overflow-x-auto custom-scrollbar rounded-xl bg-slate-900 dark:bg-slate-950 border border-slate-800 p-4 text-[0.6875rem] leading-relaxed font-mono text-slate-300"><code>{{ paso.codigo }}</code></pre>
+              <pre class="overflow-x-auto custom-scrollbar rounded-xl bg-slate-900 dark:bg-slate-950 border border-slate-800 p-4 text-xs leading-relaxed font-mono text-slate-300"><code>{{ paso.codigo }}</code></pre>
               <button type="button" (click)="copiar(paso.codigo, 'ejemplo')"
-                class="absolute top-2 end-2 min-h-[32px] px-2.5 rounded-lg bg-slate-800/90 text-[0.625rem] font-bold text-slate-300 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity touch-manipulation">
+                class="absolute top-2 end-2 min-h-[32px] px-2.5 rounded-lg bg-slate-800/90 text-xs font-bold text-slate-300 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity touch-manipulation">
                 Copiar
               </button>
             </div>
@@ -434,66 +436,58 @@ const FORMULARIO_VACIO: FormularioCredencial = {
               Todo fallo devuelve la misma forma. El integrador debe programar contra
               <span class="font-mono text-slate-700 dark:text-slate-300">error.code</span>, que es estable; el mensaje puede reformularse.
             </p>
-            <pre class="mt-2 overflow-x-auto custom-scrollbar rounded-xl bg-slate-900 dark:bg-slate-950 border border-slate-800 p-4 text-[0.6875rem] leading-relaxed font-mono text-slate-300"><code>{{ ejemploError }}</code></pre>
+            <pre class="mt-2 overflow-x-auto custom-scrollbar rounded-xl bg-slate-900 dark:bg-slate-950 border border-slate-800 p-4 text-xs leading-relaxed font-mono text-slate-300"><code>{{ ejemploError }}</code></pre>
           </section>
         </div>
       </div>
 
       <!-- ═══ Panel lateral: alta / edición ═══ -->
-      <div *ngIf="panelAbierto()" class="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="titulo-panel">
-        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" (click)="cerrarPanel()" aria-hidden="true"></div>
-
-        <div class="animate-slidePanel relative w-full sm:max-w-md h-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col">
-
-          <div class="shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-200 dark:border-slate-800">
-            <h3 id="titulo-panel" class="text-base font-display font-black text-slate-900 dark:text-white">
-              {{ editando() ? 'Editar integración' : 'Nueva integración' }}
-            </h3>
-            <button type="button" (click)="cerrarPanel()" aria-label="Cerrar"
-              class="w-10 h-10 grid place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-manipulation">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5">
+      <app-modal
+        [open]="panelAbierto()"
+        (closed)="cerrarPanel()"
+        variant="drawer"
+        size="md"
+        [padding]="false"
+        [hasFooter]="true"
+        [title]="editando() ? 'Editar integración' : 'Nueva integración'"
+      >
+        <div class="p-6 space-y-5">
 
             <div class="flex flex-col gap-2">
               <label for="f-nombre" class="text-xs font-bold text-slate-600 dark:text-slate-300">Nombre <span class="text-red-500">*</span></label>
               <input id="f-nombre" type="text" [(ngModel)]="form.nombre" maxlength="120"
                 placeholder="Ej. Portal de Circuito VAL-06"
-                class="min-h-[44px] px-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all">
-              <p *ngIf="errores().nombre" class="text-[0.6875rem] font-medium text-red-600 dark:text-red-400">{{ errores().nombre }}</p>
+                class="form-control">
+              <p *ngIf="errores().nombre" class="text-xs font-medium text-red-600 dark:text-red-400">{{ errores().nombre }}</p>
             </div>
 
             <div class="flex flex-col gap-2">
               <label for="f-descripcion" class="text-xs font-bold text-slate-600 dark:text-slate-300">Descripción</label>
               <textarea id="f-descripcion" [(ngModel)]="form.descripcion" rows="2" maxlength="500"
                 placeholder="Para qué se usa esta credencial"
-                class="px-3 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all resize-none"></textarea>
+                class="form-control resize-none"></textarea>
             </div>
 
             <div class="flex flex-col gap-2">
               <label for="f-congregacion" class="text-xs font-bold text-slate-600 dark:text-slate-300">Congregación <span class="text-red-500">*</span></label>
               <select id="f-congregacion" [(ngModel)]="form.id_congregacion" [disabled]="editando() !== null"
-                class="min-h-[44px] px-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all disabled:opacity-60">
+                class="form-select disabled:opacity-60">
                 <option [ngValue]="null" disabled>Selecciona una congregación</option>
                 <option *ngFor="let c of congregaciones()" [ngValue]="c.id_congregacion">{{ c.nombre_congregacion }}</option>
               </select>
-              <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 leading-relaxed">
+              <p class="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">
                 {{ editando()
                   ? 'La congregación no se puede cambiar: crearía acceso retroactivo a datos de otra.'
                   : 'La credencial sólo verá y modificará datos de esta congregación.' }}
               </p>
-              <p *ngIf="errores().congregacion" class="text-[0.6875rem] font-medium text-red-600 dark:text-red-400">{{ errores().congregacion }}</p>
+              <p *ngIf="errores().congregacion" class="text-xs font-medium text-red-600 dark:text-red-400">{{ errores().congregacion }}</p>
             </div>
 
             <fieldset class="flex flex-col gap-2">
               <legend class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">Permisos <span class="text-red-500">*</span></legend>
 
               <div *ngFor="let grupo of scopesPorGrupo()" class="mb-1">
-                <p class="text-[0.625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">{{ grupo.nombre }}</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">{{ grupo.nombre }}</p>
                 <div class="space-y-1.5">
                   <label *ngFor="let s of grupo.scopes"
                     class="flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-colors"
@@ -501,18 +495,18 @@ const FORMULARIO_VACIO: FormularioCredencial = {
                       ? 'border-brand-purple/40 bg-brand-purple/5 dark:bg-brand-purple/10'
                       : 'border-slate-200 dark:border-slate-700/70 hover:bg-slate-50 dark:hover:bg-slate-800/60'">
                     <input type="checkbox" [checked]="form.scopes.includes(s.codigo)" (change)="alternarScope(s.codigo)"
-                      class="mt-0.5 w-4 h-4 rounded accent-[#6d28d9] shrink-0">
+                      class="mt-0.5 w-4 h-4 rounded shrink-0">
                     <span class="min-w-0">
                       <span class="flex items-center gap-1.5">
                         <span class="text-xs font-bold text-slate-800 dark:text-slate-100">{{ s.nombre }}</span>
-                        <span *ngIf="s.escritura" class="text-[0.5625rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400">Escritura</span>
+                        <span *ngIf="s.escritura" class="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400">Escritura</span>
                       </span>
-                      <span class="block mt-0.5 text-[0.6875rem] text-slate-500 dark:text-slate-400 leading-relaxed">{{ s.descripcion }}</span>
+                      <span class="block mt-0.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{{ s.descripcion }}</span>
                     </span>
                   </label>
                 </div>
               </div>
-              <p *ngIf="errores().scopes" class="text-[0.6875rem] font-medium text-red-600 dark:text-red-400">{{ errores().scopes }}</p>
+              <p *ngIf="errores().scopes" class="text-xs font-medium text-red-600 dark:text-red-400">{{ errores().scopes }}</p>
             </fieldset>
 
             <details class="rounded-xl border border-slate-200 dark:border-slate-700/70">
@@ -524,122 +518,83 @@ const FORMULARIO_VACIO: FormularioCredencial = {
                 <div class="flex flex-col gap-2 pt-3">
                   <label for="f-limite" class="text-xs font-bold text-slate-600 dark:text-slate-300">Peticiones por minuto</label>
                   <input id="f-limite" type="number" min="1" max="6000" [(ngModel)]="form.rate_limit_minuto"
-                    class="min-h-[44px] px-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-xl text-sm font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all">
+                    class="form-control font-mono">
                 </div>
 
                 <div class="flex flex-col gap-2">
                   <label for="f-ips" class="text-xs font-bold text-slate-600 dark:text-slate-300">IPs autorizadas</label>
                   <input id="f-ips" type="text" [(ngModel)]="form.ip_whitelist"
                     placeholder="192.0.2.10, 203.0.113.0/24"
-                    class="min-h-[44px] px-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-xl text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all">
-                  <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500">Separadas por comas. Admite rangos CIDR. En blanco, sin restricción de origen.</p>
+                    class="form-control font-mono">
+                  <p class="text-xs text-slate-400 dark:text-slate-500">Separadas por comas. Admite rangos CIDR. En blanco, sin restricción de origen.</p>
                 </div>
 
                 <div class="flex flex-col gap-2">
                   <label for="f-expira" class="text-xs font-bold text-slate-600 dark:text-slate-300">Caduca el</label>
                   <input id="f-expira" type="date" [(ngModel)]="form.expira_en"
-                    class="min-h-[44px] px-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all">
-                  <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500">En blanco, sin caducidad.</p>
+                    class="form-control">
+                  <p class="text-xs text-slate-400 dark:text-slate-500">En blanco, sin caducidad.</p>
                 </div>
               </div>
             </details>
-          </div>
-
-          <div class="shrink-0 flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800">
-            <button type="button" (click)="cerrarPanel()"
-              class="min-h-[44px] px-4 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-manipulation">
-              Cancelar
-            </button>
-            <button type="button" (click)="guardar()" [disabled]="svc.guardando()"
-              class="min-h-[44px] px-5 rounded-xl bg-brand-purple hover:bg-purple-700 text-white text-sm font-bold shadow-sm transition-all active:translate-y-px disabled:opacity-40 disabled:pointer-events-none touch-manipulation inline-flex items-center gap-2">
-              <span *ngIf="svc.guardando()" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true"></span>
-              {{ editando() ? 'Guardar cambios' : 'Crear y generar secreto' }}
-            </button>
-          </div>
         </div>
-      </div>
+        <ng-container slot="footer">
+          <button type="button" class="btn-secondary" (click)="cerrarPanel()">Cancelar</button>
+          <button type="button" class="btn-primary" [class.btn-loading]="svc.guardando()" (click)="guardar()" [disabled]="svc.guardando()">
+            {{ editando() ? 'Guardar cambios' : 'Crear y generar secreto' }}
+          </button>
+        </ng-container>
+      </app-modal>
 
-      <!-- ═══ Secreto recién generado ═══ -->
-      <div *ngIf="secretoNuevo()" class="fixed inset-0 z-[60] grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-secreto">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" aria-hidden="true"></div>
-
-        <div class="animate-fadeUp relative w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 shadow-2xl overflow-hidden">
-          <div class="px-5 sm:px-6 py-5 border-b border-slate-100 dark:border-slate-800">
-            <h3 id="titulo-secreto" class="text-base font-display font-black text-slate-900 dark:text-white">Guarda estas credenciales ahora</h3>
-            <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              El secreto se guarda cifrado y no se puede volver a consultar. Si lo pierdes, tendrás que rotarlo y
-              actualizar el sistema externo.
-            </p>
-          </div>
-
-          <div class="px-5 sm:px-6 py-5 space-y-4">
+      <!-- ═══ Secreto recién generado (no se cierra con Esc ni con el velo) ═══ -->
+      @if (secretoNuevo(); as sn) {
+        <app-modal [open]="true" size="lg" title="Guarda estas credenciales ahora" [dismissible]="false" [hasFooter]="true">
+          <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-5">
+            El secreto se guarda cifrado y no se puede volver a consultar. Si lo pierdes, tendrás que rotarlo y
+            actualizar el sistema externo.
+          </p>
+          <div class="space-y-4">
             <div class="flex flex-col gap-1.5">
-              <span class="text-[0.625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">client_id</span>
+              <span class="eyebrow">client_id</span>
               <div class="flex items-center gap-2">
-                <code class="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 text-xs font-mono text-slate-800 dark:text-slate-200 break-all">{{ secretoNuevo()!.cliente.client_id }}</code>
-                <button type="button" (click)="copiar(secretoNuevo()!.cliente.client_id, 'client_id')"
-                  class="shrink-0 min-h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-700/70 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors touch-manipulation">
-                  Copiar
-                </button>
+                <code class="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 break-all">{{ sn.cliente.client_id }}</code>
+                <button type="button" class="btn-secondary btn-sm shrink-0" (click)="copiar(sn.cliente.client_id, 'client_id')">Copiar</button>
               </div>
             </div>
-
             <div class="flex flex-col gap-1.5">
-              <span class="text-[0.625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">client_secret</span>
+              <span class="eyebrow">client_secret</span>
               <div class="flex items-center gap-2">
-                <code class="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-800/50 text-xs font-mono text-amber-900 dark:text-amber-200 break-all">
-                  {{ secretoVisible() ? secretoNuevo()!.client_secret : enmascarado(secretoNuevo()!.client_secret) }}
+                <code class="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 text-xs font-mono text-amber-900 dark:text-amber-200 break-all">
+                  {{ secretoVisible() ? sn.client_secret : enmascarado(sn.client_secret) }}
                 </code>
-                <button type="button" (click)="secretoVisible.set(!secretoVisible())"
+                <button type="button" class="btn-icon shrink-0 border-slate-200 dark:border-slate-800"
                   [attr.aria-label]="secretoVisible() ? 'Ocultar secreto' : 'Mostrar secreto'"
-                  class="shrink-0 w-11 h-11 grid place-items-center rounded-xl border border-slate-200 dark:border-slate-700/70 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors touch-manipulation">
-                  <svg *ngIf="!secretoVisible()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  <svg *ngIf="secretoVisible()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  </svg>
+                  (click)="secretoVisible.set(!secretoVisible())">
+                  <lucide-icon [name]="secretoVisible() ? 'eye-off' : 'eye'" [size]="18"></lucide-icon>
                 </button>
-                <button type="button" (click)="copiar(secretoNuevo()!.client_secret, 'client_secret')"
-                  class="shrink-0 min-h-[44px] px-3 rounded-xl bg-brand-purple hover:bg-purple-700 text-white text-xs font-bold transition-colors touch-manipulation">
-                  Copiar
-                </button>
+                <button type="button" class="btn-primary btn-sm shrink-0" (click)="copiar(sn.client_secret, 'client_secret')">Copiar</button>
               </div>
             </div>
           </div>
-
-          <div class="flex items-center justify-end gap-2 px-5 sm:px-6 py-4 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800">
-            <button type="button" (click)="cerrarSecreto()"
-              class="min-h-[44px] px-5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold transition-all active:translate-y-px touch-manipulation">
-              Ya las guardé
-            </button>
-          </div>
-        </div>
-      </div>
+          <ng-container slot="footer">
+            <button type="button" class="btn-primary" (click)="cerrarSecreto()">Ya las guardé</button>
+          </ng-container>
+        </app-modal>
+      }
 
       <!-- ═══ Confirmación ═══ -->
-      <div *ngIf="confirmacion()" class="fixed inset-0 z-[60] grid place-items-center p-4" role="alertdialog" aria-modal="true" aria-labelledby="titulo-confirmacion">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" (click)="confirmacion.set(null)" aria-hidden="true"></div>
-
-        <div class="animate-fadeUp relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 shadow-2xl p-6">
-          <h3 id="titulo-confirmacion" class="text-base font-display font-black text-slate-900 dark:text-white">{{ confirmacion()!.titulo }}</h3>
-          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{{ confirmacion()!.mensaje }}</p>
-
-          <div class="mt-6 flex items-center justify-end gap-2">
-            <button type="button" (click)="confirmacion.set(null)"
-              class="min-h-[44px] px-4 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-manipulation">
-              Cancelar
-            </button>
-            <button type="button" (click)="ejecutarConfirmacion()" [disabled]="svc.guardando()"
-              class="min-h-[44px] px-5 rounded-xl text-white text-sm font-bold transition-all active:translate-y-px disabled:opacity-40 disabled:pointer-events-none touch-manipulation"
-              [ngClass]="confirmacion()!.destructivo ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'">
-              {{ confirmacion()!.accionTexto }}
-            </button>
-          </div>
-        </div>
-      </div>
+      @if (confirmacion(); as c) {
+        <app-confirm-dialog
+          [open]="true"
+          [title]="c.titulo"
+          [message]="c.mensaje"
+          [confirmLabel]="c.accionTexto"
+          [severity]="c.destructivo ? 'danger' : 'warning'"
+          [busy]="svc.guardando()"
+          (confirmed)="ejecutarConfirmacion()"
+          (openChange)="$event || confirmacion.set(null)"
+        ></app-confirm-dialog>
+      }
     </div>
   `,
 })

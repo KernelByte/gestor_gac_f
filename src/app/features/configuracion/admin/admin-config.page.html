@@ -2,7 +2,7 @@
    <!-- Encabezado: en móvil/tablet la barra superior del shell ya muestra el título,
         así que aquí solo queda para lectores de pantalla y se recupera desde lg. -->
    <header class="sr-only lg:not-sr-only lg:mb-3 lg:shrink-0">
-      <h1 class="text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+      <h1 class="page-title">
          Administración del Sistema
       </h1>
       <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -15,17 +15,15 @@
       [class.fade-start]="tabFade().start" [class.fade-end]="tabFade().end">
       <div #tabsScroller role="tablist" aria-label="Secciones de administración"
          (keydown)="onTabKeydown($event)" (scroll)="updateTabFade()"
-         class="flex items-center gap-1 w-max max-w-full overflow-x-auto scrollbar-hide scroll-smooth p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm transition-colors duration-300">
+         class="tab-nav scroll-smooth">
          <button *ngFor="let t of tabs" type="button" role="tab"
             [id]="'admin-tab-' + t.id"
             [attr.aria-selected]="activeTab() === t.id"
             [attr.tabindex]="activeTab() === t.id ? 0 : -1"
             (click)="setTab(t.id)"
-            class="shrink-0 inline-flex items-center gap-2 h-10 px-3 rounded-lg text-sm font-bold whitespace-nowrap transition-colors duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
-            [ngClass]="activeTab() === t.id
-               ? (t.danger ? 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300' : 'bg-brand-purple/10 text-brand-purple dark:bg-brand-purple/25 dark:text-purple-200')
-               : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800'">
-            <svg class="w-[1.125rem] h-[1.125rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            class="tab-item shrink-0"
+            [ngClass]="{ 'is-active': activeTab() === t.id }">
+            <svg class="w-[1.125rem] h-[1.125rem] shrink-0" [class.text-red-500]="t.danger && activeTab() !== t.id" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                <path *ngFor="let d of t.paths" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="d" />
             </svg>
             {{ t.label }}
@@ -49,7 +47,7 @@
                   </svg>
                </div>
                <input [(ngModel)]="searchTerm" type="search" aria-label="Buscar congregaciones"
-                  class="w-full h-11 pl-10 pr-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple focus:bg-white dark:focus:bg-slate-800 transition-colors"
+                  class="form-control w-full pl-10 pr-3"
                   placeholder="Buscar por nombre, ciudad o circuito...">
             </div>
 
@@ -58,7 +56,7 @@
             </span>
 
             <button (click)="openCreatePanel()" type="button" aria-label="Nueva congregación" title="Nueva congregación"
-               class="shrink-0 inline-flex items-center justify-center gap-2 h-11 w-11 sm:w-auto sm:px-4 bg-brand-purple hover:bg-purple-700 active:bg-purple-800 text-white rounded-xl font-bold text-sm shadow-sm shadow-brand-purple/20 transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+               class="shrink-0 inline-flex items-center justify-center gap-2 h-11 w-11 sm:w-auto sm:px-4 bg-brand-purple hover:bg-[#5b21b6] active:bg-purple-800 text-white rounded-xl font-bold text-sm shadow-sm shadow-brand-purple/20 transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
                <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                </svg>
@@ -130,13 +128,7 @@
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        <svg *ngIf="exportingId() === cong.id_congregacion" class="animate-spin w-[1.125rem] h-[1.125rem] shrink-0" fill="none"
-                           viewBox="0 0 24 24" aria-hidden="true">
-                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                           <path class="opacity-75" fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                           </path>
-                        </svg>
+                        <span *ngIf="exportingId() === cong.id_congregacion" class="spinner-sm shrink-0" aria-hidden="true"></span>
                         Exportar
                      </button>
                      <button (click)="confirmDeleteCongregation(cong)" type="button"
@@ -211,36 +203,36 @@
                      </td>
 
                      <td class="px-4 xl:px-6 py-3 text-right align-middle">
-                        <div class="flex items-center justify-end gap-0.5 xl:gap-1 opacity-80 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <div class="row-actions opacity-80 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                            <button (click)="editCongregation(cong.id_congregacion)" type="button"
-                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand-purple hover:bg-purple-50 dark:hover:bg-purple-900/30 dark:hover:text-purple-300 transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
+                              class="btn-icon-sm"
                               title="Editar" [attr.aria-label]="'Editar: ' + cong.nombre_congregacion">
-                              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
                                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
                            </button>
                            <button (click)="openImportModalForCongregacion(cong.id_congregacion, cong.nombre_congregacion)" type="button"
-                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-300 transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
+                              class="btn-icon-sm"
                               title="Cargar plantilla Excel" [attr.aria-label]="'Cargar plantilla Excel: ' + cong.nombre_congregacion">
-                              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
                                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                               </svg>
                            </button>
                            <button (click)="exportCongregation(cong.id_congregacion, cong.nombre_congregacion)" type="button"
-                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-300 transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
+                              class="btn-icon-sm"
                               [class.animate-pulse]="exportingId() === cong.id_congregacion" title="Exportar Excel" [attr.aria-label]="'Exportar Excel: ' + cong.nombre_congregacion">
-                              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                               </svg>
                            </button>
                            <button (click)="confirmDeleteCongregation(cong)" type="button"
-                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 dark:hover:text-red-300 transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
+                              class="btn-icon-sm tone-danger"
                               title="Eliminar" [attr.aria-label]="'Eliminar: ' + cong.nombre_congregacion">
-                              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                            </button>
@@ -252,14 +244,14 @@
 
             <!-- Cargando -->
             <div *ngIf="loading() && congregaciones().length === 0" class="py-20 flex justify-center">
-               <div class="w-8 h-8 border-[3px] border-brand-purple/10 border-t-brand-purple rounded-full animate-spin"></div>
+               <div class="spinner-lg text-brand-purple"></div>
             </div>
 
             <!-- Error al cargar -->
             <div *ngIf="loadError() && !loading()" role="alert" class="py-16 flex flex-col items-center text-center">
                <h3 class="text-slate-900 dark:text-white font-bold text-lg mb-1">No se pudieron cargar las congregaciones</h3>
                <p class="text-slate-500 dark:text-slate-400 font-medium">Revisa la conexión e inténtalo de nuevo.</p>
-               <button type="button" (click)="loadCongregaciones()" class="mt-4 px-4 min-h-[2.75rem] rounded-xl bg-brand-purple text-white font-bold text-sm">Reintentar</button>
+               <button type="button" (click)="loadCongregaciones()" class="mt-4 min-h-[2.75rem] btn-primary">Reintentar</button>
             </div>
 
             <!-- Sin resultados / lista vacía -->
@@ -317,7 +309,7 @@
                      (click)="setSolicitudFilter(f.val)" type="button"
                      class="px-3.5 min-h-[2.25rem] rounded-lg text-xs font-bold transition-colors whitespace-nowrap active:scale-[0.97]"
                      [ngClass]="solicitudFilter() === f.val 
-                        ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20' 
+                        ? 'bg-brand-purple text-white shadow-md shadow-brand-purple/20' 
                         : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'">
                      {{ f.label }}
                   </button>
@@ -339,7 +331,7 @@
 
          <!-- Loading -->
          <div *ngIf="solicitudesLoading()" class="flex-1 flex items-center justify-center py-20">
-            <div class="w-8 h-8 border-[3px] border-brand-purple/10 border-t-brand-purple rounded-full animate-spin"></div>
+            <div class="spinner-lg text-brand-purple"></div>
          </div>
 
          <!-- List -->
@@ -384,23 +376,23 @@
                   </div>
 
                   <!-- Action Buttons -->
-                  <div *ngIf="s.estado === 'pendiente'" class="flex items-center gap-1.5 ms-2 ps-3 border-s border-slate-100 dark:border-slate-800/60">
+                  <div *ngIf="s.estado === 'pendiente'" class="row-actions ms-2 ps-3 border-s border-slate-100 dark:border-slate-800/60">
                      <button (click)="cambiarEstadoSolicitud(s.id_solicitud, 'aprobada')" type="button"
                         [disabled]="updatingSolicitudId() === s.id_solicitud"
                         [attr.aria-label]="'Aprobar solicitud de ' + s.nombre"
-                        class="w-10 h-10 rounded-lg flex items-center justify-center text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all active:scale-90 disabled:opacity-50"
+                        class="btn-icon-sm tone-success"
                         title="Aprobar">
-                        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M5 13l4 4L19 7" />
                         </svg>
                      </button>
                      <button (click)="cambiarEstadoSolicitud(s.id_solicitud, 'rechazada')" type="button"
                         [disabled]="updatingSolicitudId() === s.id_solicitud"
                         [attr.aria-label]="'Rechazar solicitud de ' + s.nombre"
-                        class="w-10 h-10 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all active:scale-90 disabled:opacity-50"
+                        class="btn-icon-sm tone-danger"
                         title="Rechazar">
-                        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                      </button>
                   </div>
@@ -447,65 +439,26 @@
    </div>
 
    <!-- MODAL CONFIRMAR ELIMINAR CONGREGACIÓN -->
-   <div *ngIf="congregationToDelete()"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/60 backdrop-blur-sm animate-fadeIn"
-      (click)="closeDeleteModal()">
-      <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700 transition-colors duration-300"
-         (click)="$event.stopPropagation()"
-         role="dialog"
-         aria-labelledby="delete-modal-title"
-         aria-modal="true">
-         <!-- Header -->
-         <div class="bg-gradient-to-r from-red-500 to-red-600 px-6 py-5 flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-               <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-               </svg>
-            </div>
-            <div class="min-w-0 flex-1">
-               <h2 id="delete-modal-title" class="text-lg font-bold text-white">Eliminar congregación</h2>
-               <p class="text-white/90 text-sm mt-0.5 truncate">{{ congregationToDelete()?.nombre_congregacion }}</p>
-               <p class="text-white/70 text-xs font-medium">ID #{{ congregationToDelete()?.id_congregacion }}</p>
-            </div>
-            <button type="button" (click)="closeDeleteModal()" [disabled]="deletingCongregation()"
-               class="w-9 h-9 rounded-lg flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50">
-               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-               </svg>
-            </button>
-         </div>
-         <!-- Body -->
-         <div class="px-6 py-5">
-            <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
-               Se borrarán en cascada <strong class="text-slate-900 dark:text-white">todos los datos asociados</strong>:
-               grupos, publicadores, informes, contactos de emergencia y asistencias.
-            </p>
-            <p class="text-red-600 dark:text-red-400 text-sm font-semibold mt-3">
-               Esta acción no se puede deshacer.
-            </p>
-            <label class="block mt-4 text-sm font-bold text-slate-700 dark:text-slate-200">
-               Para confirmar, escribe el nombre: <span class="font-black">{{ congregationToDelete()?.nombre_congregacion }}</span>
-               <input type="text" autocomplete="off" [value]="deleteConfirmText()"
-                  (input)="deleteConfirmText.set($any($event.target).value)"
-                  (keydown.enter)="executeDeleteCongregation()"
-                  class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500">
-            </label>
-         </div>
-         <!-- Footer -->
-         <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-end gap-3">
-            <button type="button" (click)="closeDeleteModal()" [disabled]="deletingCongregation()"
-               class="px-5 py-2.5 rounded-xl font-bold text-sm border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50">
-               Cancelar
-            </button>
-            <button type="button" (click)="executeDeleteCongregation()" [disabled]="deletingCongregation() || !deleteConfirmed()"
-               class="px-5 py-2.5 rounded-xl font-bold text-sm bg-red-500 hover:bg-red-600 text-white shadow-md shadow-red-500/25 transition-all disabled:opacity-50 flex items-center gap-2">
-               <span *ngIf="deletingCongregation()" class="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span>
-               <span>{{ deletingCongregation() ? 'Eliminando...' : 'Eliminar' }}</span>
-            </button>
-         </div>
-      </div>
-   </div>
+   @if (congregationToDelete(); as cd) {
+      <app-modal [open]="true" size="sm" [title]="'Eliminar congregación'" [subtitle]="cd.nombre_congregacion + ' · ID #' + cd.id_congregacion"
+         [dismissible]="!deletingCongregation()" [hasFooter]="true" (closed)="closeDeleteModal()">
+         <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Se borrarán en cascada <strong class="text-slate-900 dark:text-white">todos los datos asociados</strong>:
+            grupos, publicadores, informes, contactos de emergencia y asistencias.
+         </p>
+         <app-aviso tone="danger" [dense]="true" class="block mt-3">Esta acción no se puede deshacer.</app-aviso>
+         <label class="form-label mt-4" for="del-cong">
+            Para confirmar, escribe el nombre: <span class="font-extrabold">{{ cd.nombre_congregacion }}</span>
+         </label>
+         <input id="del-cong" type="text" autocomplete="off" class="form-control" [value]="deleteConfirmText()"
+            (input)="deleteConfirmText.set($any($event.target).value)" (keydown.enter)="executeDeleteCongregation()">
+         <ng-container slot="footer">
+            <button type="button" class="btn-secondary" (click)="closeDeleteModal()" [disabled]="deletingCongregation()">Cancelar</button>
+            <button type="button" class="btn-danger" [class.btn-loading]="deletingCongregation()" (click)="executeDeleteCongregation()"
+               [disabled]="deletingCongregation() || !deleteConfirmed()">Eliminar</button>
+         </ng-container>
+      </app-modal>
+   }
 
    <!-- IMPORT MODAL — componente compartido con flujo de dos fases -->
    <app-import-publicadores-modal
@@ -515,44 +468,19 @@
       (imported)="onImportDone()">
    </app-import-publicadores-modal>
 
-   <!-- SLIDING PANEL (Create/Edit) -->
-   <div *ngIf="panelOpen()" class="fixed inset-0 z-50 flex justify-end">
-      <!-- Backdrop -->
-      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="requestClosePanel()"></div>
-
-      <!-- Slide-over Panel (full width on mobile) -->
-      <div @slidePanel
-         class="relative w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-100 dark:border-slate-700 max-h-[100dvh] overflow-hidden transition-colors duration-300">
-
-         <!-- Header -->
-         <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0 z-10">
-            <div class="flex items-center gap-4">
-               <div
-                  class="h-12 w-12 rounded-2xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center text-brand-purple dark:text-purple-300 border border-purple-100 dark:border-purple-800">
-                  <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-               </div>
-               <div>
-                  <h2 class="text-xl font-display font-black text-slate-900 dark:text-white tracking-tight">
-                     {{ editingCongregation() ? 'Editar Congregación' : 'Nueva Congregación' }}
-                  </h2>
-                  <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                     {{ editingCongregation() ? 'Modificar datos existentes' : 'Registrar una nueva congregación' }}
-                  </p>
-               </div>
-            </div>
-            <button (click)="closePanel()"
-               class="p-2 rounded-full text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-               <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-               </svg>
-            </button>
-         </div>
-
-         <!-- Body -->
-         <div class="flex-1 overflow-y-auto p-4 md:p-8 bg-white dark:bg-slate-900 relative transition-colors duration-300">
+   <!-- PANEL LATERAL (crear / editar congregación) -->
+   <app-modal
+      [open]="panelOpen()"
+      [controlled]="true"
+      (closed)="requestClosePanel()"
+      variant="drawer"
+      size="lg"
+      [padding]="false"
+      [hasFooter]="true"
+      [title]="editingCongregation() ? 'Editar congregación' : 'Nueva congregación'"
+      [subtitle]="editingCongregation() ? 'Modificar datos existentes' : 'Registrar una nueva congregación'"
+   >
+      <div class="p-4 md:p-6">
             <form [formGroup]="congregationForm" (ngSubmit)="saveCongregation()"
                class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
 
@@ -562,7 +490,7 @@
                      Congregación</label>
                   <div class="relative">
                      <input type="text" formControlName="nombre_congregacion"
-                        class="peer w-full rounded-xl border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3.5 text-slate-900 dark:text-slate-100 font-bold focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 transition-colors outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal"
+                        class="form-control peer w-full placeholder:font-normal"
                         placeholder="Ej: Central">
                   </div>
                   <p *ngIf="congregationForm.get('nombre_congregacion')?.touched && congregationForm.get('nombre_congregacion')?.invalid"
@@ -575,7 +503,7 @@
                      Completa</label>
                   <div class="relative">
                      <textarea formControlName="direccion" rows="3"
-                        class="w-full rounded-xl border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-slate-100 text-sm font-medium resize-none focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        class="form-control w-full resize-none"
                         placeholder="Dirección, Barrio, Ciudad..."></textarea>
                   </div>
                   <p *ngIf="congregationForm.get('direccion')?.touched && congregationForm.get('direccion')?.invalid"
@@ -587,7 +515,7 @@
                   <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Circuito</label>
                   <div class="relative">
                      <input type="text" formControlName="circuito"
-                        class="peer w-full rounded-xl border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3.5 text-slate-900 dark:text-slate-100 font-bold focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 transition-colors outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal"
+                        class="form-control peer w-full placeholder:font-normal"
                         placeholder="Ej: CO-01">
                   </div>
                   <p *ngIf="congregationForm.get('circuito')?.touched && congregationForm.get('circuito')?.invalid"
@@ -600,7 +528,7 @@
                      Seguridad</label>
                   <div class="relative">
                      <input type="text" formControlName="codigo_seguridad"
-                        class="peer w-full rounded-xl border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3.5 text-slate-900 dark:text-slate-100 font-bold focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 transition-colors outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal"
+                        class="form-control peer w-full placeholder:font-normal"
                         placeholder="Opcional">
                   </div>
                </div>
@@ -614,7 +542,7 @@
                      </label>
                      <div>
                         <span class="block text-xs font-bold text-slate-700 dark:text-slate-200">¿Tiene Sala B?</span>
-                        <span class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-medium leading-tight">Habilita asignaciones para sala secundaria.</span>
+                        <span class="text-xs text-slate-400 dark:text-slate-500 font-medium leading-tight">Habilita asignaciones para sala secundaria.</span>
                      </div>
                   </div>
                </div>
@@ -628,7 +556,7 @@
                      </label>
                      <div>
                         <span class="block text-xs font-bold text-slate-700 dark:text-slate-200">¿Reuniones por Zoom?</span>
-                        <span class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-medium leading-tight">Muestra los campos de asistencia virtual.</span>
+                        <span class="text-xs text-slate-400 dark:text-slate-500 font-medium leading-tight">Muestra los campos de asistencia virtual.</span>
                      </div>
                   </div>
                </div>
@@ -637,18 +565,18 @@
                <div class="md:col-span-2 pt-2">
                   <div class="flex items-center gap-2 mb-4">
                      <div class="h-px flex-1 bg-slate-100 dark:bg-slate-700"></div>
-                     <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2">Horarios de Reunión</span>
+                     <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2">Horarios de Reunión</span>
                      <div class="h-px flex-1 bg-slate-100 dark:bg-slate-700"></div>
                   </div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                      <!-- Entre Semana -->
                      <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 p-4 space-y-3">
-                        <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Entre Semana</p>
+                        <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Entre Semana</p>
                         <div class="space-y-2">
                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 ml-0.5">Día</label>
                            <select formControlName="dia_reunion_entre_semana"
-                              class="w-full rounded-lg border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/20 outline-none transition-colors">
+                              class="form-select w-full">
                               <option value="">— Sin asignar —</option>
                               <option value="Lunes">Lunes</option>
                               <option value="Martes">Martes</option>
@@ -660,17 +588,17 @@
                         <div class="space-y-2">
                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 ml-0.5">Hora</label>
                            <input type="time" formControlName="hora_reunion_entre_semana"
-                              class="w-full rounded-lg border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/20 outline-none transition-colors">
+                              class="form-control w-full">
                         </div>
                      </div>
 
                      <!-- Fin de Semana -->
                      <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 p-4 space-y-3">
-                        <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Fin de Semana</p>
+                        <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Fin de Semana</p>
                         <div class="space-y-2">
                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 ml-0.5">Día</label>
                            <select formControlName="dia_reunion_fin_semana"
-                              class="w-full rounded-lg border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/20 outline-none transition-colors">
+                              class="form-select w-full">
                               <option value="">— Sin asignar —</option>
                               <option value="Sabado">Sábado</option>
                               <option value="Domingo">Domingo</option>
@@ -679,7 +607,7 @@
                         <div class="space-y-2">
                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 ml-0.5">Hora</label>
                            <input type="time" formControlName="hora_reunion_fin_semana"
-                              class="w-full rounded-lg border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/20 outline-none transition-colors">
+                              class="form-control w-full">
                         </div>
                      </div>
 
@@ -699,7 +627,7 @@
                <div class="flex items-center justify-between mb-4">
                   <div>
                      <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Enlaces Externos</h3>
-                     <p class="text-[0.6875rem] text-slate-500 dark:text-slate-400 mt-0.5">URLs configurables asociadas (ej. informes, recursos)</p>
+                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">URLs configurables asociadas (ej. informes, recursos)</p>
                   </div>
                   <button type="button" (click)="openUrlForm()" *ngIf="!showUrlForm()"
                      class="px-3 py-1.5 bg-brand-purple/10 text-brand-purple hover:bg-brand-purple hover:text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 touch-manipulation">
@@ -712,7 +640,7 @@
 
                <!-- Loading URLs -->
                <div *ngIf="loadingUrls()" class="py-6 flex justify-center">
-                  <div class="w-6 h-6 border-2 border-brand-purple/20 border-t-brand-purple rounded-full animate-spin"></div>
+                  <div class="spinner text-brand-purple"></div>
                </div>
 
                <!-- URLs List -->
@@ -720,19 +648,19 @@
                   <div *ngFor="let u of congregacionUrls()" class="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700 flex flex-col gap-2 transition-colors">
                      <div class="flex justify-between items-start gap-2">
                         <div class="min-w-0">
-                           <span class="inline-block px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-[10px] font-bold uppercase tracking-wider mb-1">{{ u.clave }}</span>
+                           <span class="inline-block px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-xs font-bold uppercase tracking-wider mb-1">{{ u.clave }}</span>
                            <h4 class="text-xs font-bold text-slate-900 dark:text-white truncate" [title]="u.url">{{ u.url }}</h4>
-                           <p *ngIf="u.descripcion" class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 italic truncate">{{ u.descripcion }}</p>
+                           <p *ngIf="u.descripcion" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 italic truncate">{{ u.descripcion }}</p>
                         </div>
-                        <div class="flex items-center gap-1 shrink-0">
-                           <button type="button" (click)="openUrlForm(u)" class="p-1.5 text-slate-400 hover:text-brand-purple hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-md transition-colors" title="Editar">
-                              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        <div class="row-actions shrink-0">
+                           <button type="button" (click)="openUrlForm(u)" aria-label="Editar" class="btn-icon-sm" title="Editar">
+                              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
                            </button>
-                           <button type="button" (click)="deleteUrl(u.clave)" [disabled]="deletingUrlKey() === u.clave" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors disabled:opacity-50" title="Eliminar">
-                              <svg *ngIf="deletingUrlKey() !== u.clave" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                           <button type="button" (click)="deleteUrl(u.clave)" [disabled]="deletingUrlKey() === u.clave" aria-label="Eliminar" class="btn-icon-sm tone-danger" title="Eliminar">
+                              <svg *ngIf="deletingUrlKey() !== u.clave" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                               <div *ngIf="deletingUrlKey() === u.clave" class="w-3.5 h-3.5 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin"></div>
                            </button>
@@ -753,100 +681,55 @@
                      
                      <!-- Clave -->
                      <div>
-                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Clave (Identificador)</label>
-                        <input type="text" formControlName="clave" class="w-full rounded-lg border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 text-xs font-bold focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/20 outline-none disabled:opacity-60 disabled:bg-slate-100 dark:disabled:bg-slate-900 transition-colors" placeholder="ej: url_informes">
-                        <p *ngIf="urlForm.get('clave')?.touched && urlForm.get('clave')?.invalid" class="text-red-500 text-[10px] mt-1 font-bold">Respetar formato, ej: palabra_clave</p>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Clave (Identificador)</label>
+                        <input type="text" formControlName="clave" class="form-control w-full disabled:opacity-60 disabled:bg-slate-100" placeholder="ej: url_informes">
+                        <p *ngIf="urlForm.get('clave')?.touched && urlForm.get('clave')?.invalid" class="text-red-500 text-xs mt-1 font-bold">Respetar formato, ej: palabra_clave</p>
                      </div>
 
                      <!-- URL -->
                      <div>
-                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">URL Completa</label>
-                        <input type="url" formControlName="url" class="w-full rounded-lg border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 text-xs font-medium focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/20 outline-none transition-colors" placeholder="https://...">
-                        <p *ngIf="urlForm.get('url')?.touched && urlForm.get('url')?.invalid" class="text-red-500 text-[10px] mt-1 font-bold">Ingrese una URL válida (con http/s)</p>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">URL Completa</label>
+                        <input type="url" formControlName="url" class="form-control w-full" placeholder="https://...">
+                        <p *ngIf="urlForm.get('url')?.touched && urlForm.get('url')?.invalid" class="text-red-500 text-xs mt-1 font-bold">Ingrese una URL válida (con http/s)</p>
                      </div>
 
                      <!-- Description -->
                      <div>
-                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Descripción (Opcional)</label>
-                        <input type="text" formControlName="descripcion" class="w-full rounded-lg border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 text-xs focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/20 outline-none transition-colors" placeholder="...">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Descripción (Opcional)</label>
+                        <input type="text" formControlName="descripcion" class="form-control w-full" placeholder="...">
                      </div>
 
                      <div class="flex items-center justify-end gap-2 pt-2">
                         <button type="button" (click)="closeUrlForm()" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
-                        <button type="button" (click)="saveUrl()" [disabled]="urlForm.invalid || savingUrl()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-purple text-white hover:bg-purple-700 transition-colors disabled:opacity-50">
-                           <span *ngIf="savingUrl()" class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        <button type="button" (click)="saveUrl()" [disabled]="urlForm.invalid || savingUrl()" class="btn-primary btn-sm">
+                           <span *ngIf="savingUrl()" class="spinner-xs text-white"></span>
                            <span>Guardar</span>
                         </button>
                      </div>
                   </form>
                </div>
             </div>
-         </div>
-
-         <!-- Footer (safe area on mobile) -->
-         <div
-            class="p-4 sm:p-6 md:p-8 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex items-center gap-3 shrink-0 backdrop-blur-sm z-10 pb-[env(safe-area-inset-bottom)] transition-colors duration-300">
-            <button (click)="closePanel()"
-               class="flex-1 py-3.5 px-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-colors shadow-sm">
-               Cancelar
-            </button>
-            <button (click)="saveCongregation()" [disabled]="congregationForm.invalid || creating()"
-               class="flex-[2] py-3.5 px-6 bg-brand-purple hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg shadow-purple-900/20 hover:shadow-purple-900/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95">
-               <span *ngIf="creating()"
-                  class="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full"></span>
-               <span *ngIf="!creating()">{{ editingCongregation() ? 'Guardar Cambios' : 'Crear Congregación' }}</span>
-            </button>
-         </div>
       </div>
-   </div>
-
-   <!-- MODAL CONFIRMAR ELIMINAR URL -->
-   <div *ngIf="urlToDelete()" class="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      (click)="urlToDelete.set(null)">
-      <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-slate-200 dark:border-slate-700"
-         (click)="$event.stopPropagation()">
-         <h3 class="text-lg font-bold text-slate-900 dark:text-white">¿Eliminar la URL «{{ urlToDelete() }}»?</h3>
-         <p class="text-sm text-slate-600 dark:text-slate-300">Esta acción no se puede deshacer.</p>
-         <div class="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
-            <button type="button" (click)="urlToDelete.set(null)" class="min-h-[2.75rem] px-4 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-300">Cancelar</button>
-            <button type="button" (click)="confirmDeleteUrl()" [disabled]="deletingUrlKey() !== null"
-               class="min-h-[2.75rem] px-4 rounded-xl bg-red-600 text-white font-bold text-sm disabled:opacity-50">Eliminar</button>
-         </div>
-      </div>
-   </div>
-
-   <!-- TOAST NOTIFICATION (responsive position) -->
-   <div *ngIf="notification()" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 max-w-sm sm:max-w-md z-[60]" @slidePanel>
-      <div [ngClass]="{
-            'bg-emerald-50 text-emerald-800 border-emerald-100': notification()?.type === 'success',
-            'bg-red-50 text-red-800 border-red-100': notification()?.type === 'error'
-         }" class="flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl border backdrop-blur-md">
-
-         <div [ngClass]="{
-               'bg-emerald-100 text-emerald-600': notification()?.type === 'success',
-               'bg-red-100 text-red-600': notification()?.type === 'error'
-            }" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0">
-            <svg *ngIf="notification()?.type === 'success'" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
-               stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <svg *ngIf="notification()?.type === 'error'" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
-               stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-         </div>
-
-         <div>
-            <h4 class="font-bold text-sm">{{ notification()?.type === 'success' ? 'Éxito' : 'Error' }}</h4>
-            <p class="text-sm font-medium opacity-90">{{ notification()?.message }}</p>
-         </div>
-
-         <button (click)="notification.set(null)" class="ml-2 p-1 rounded-full hover:bg-black/5 transition-colors">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+      <ng-container slot="footer">
+         <button type="button" class="btn-secondary flex-1" (click)="closePanel()">Cancelar</button>
+         <button type="button" class="btn-primary flex-[2]" [class.btn-loading]="creating()" (click)="saveCongregation()"
+            [disabled]="congregationForm.invalid || creating()">
+            {{ editingCongregation() ? 'Guardar cambios' : 'Crear congregación' }}
          </button>
-      </div>
-   </div>
+      </ng-container>
+   </app-modal>
+
+   <!-- CONFIRMAR ELIMINAR URL -->
+   @if (urlToDelete(); as u) {
+      <app-confirm-dialog
+         [open]="true"
+         [title]="'¿Eliminar la URL «' + u + '»?'"
+         message="Esta acción no se puede deshacer."
+         confirmLabel="Eliminar"
+         severity="danger"
+         [busy]="deletingUrlKey() !== null"
+         (confirmed)="confirmDeleteUrl()"
+         (openChange)="$event || urlToDelete.set(null)"
+      ></app-confirm-dialog>
+   }
 </div>

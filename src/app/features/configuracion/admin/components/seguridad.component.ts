@@ -4,6 +4,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { etiquetaRol } from '../../../../core/auth/rol-label';
 
@@ -34,7 +35,7 @@ interface UsuarioDosPasos {
 @Component({
   selector: 'app-seguridad',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ConfirmDialogComponent],
   template: `
   <div class="h-full overflow-y-auto overscroll-contain">
    <div class="px-4 sm:px-6 lg:px-7 py-5 lg:py-6 max-w-6xl space-y-8">
@@ -54,7 +55,7 @@ interface UsuarioDosPasos {
       <ul class="grid gap-2 md:grid-cols-2">
         <li *ngFor="let p of puntos()" class="flex items-start gap-3 p-4 rounded-2xl border"
           [ngClass]="p.ok ? 'border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-900/10' : 'border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-900/10'">
-          <span class="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white text-xs font-black"
+          <span class="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white text-xs font-bold"
             [ngClass]="p.ok ? 'bg-emerald-500' : 'bg-amber-500'" aria-hidden="true">{{ p.ok ? '✓' : '!' }}</span>
           <div class="min-w-0">
             <p class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ p.titulo }}</p>
@@ -132,7 +133,7 @@ interface UsuarioDosPasos {
         </p>
       </div>
 
-      <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 space-y-4">
+      <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4">
         <div>
           <p class="text-sm font-bold text-slate-800 dark:text-slate-100">Llave de respaldos</p>
           <p *ngIf="e.respaldos.llave_configurada" class="text-sm text-slate-600 dark:text-slate-300 mt-1">
@@ -144,7 +145,7 @@ interface UsuarioDosPasos {
         </div>
 
         <button *ngIf="!formLlave()" type="button" (click)="formLlave.set(true)"
-          class="w-full min-h-[3rem] rounded-xl bg-brand-purple text-white font-bold text-sm hover:bg-purple-700 transition-colors">
+          class="w-full min-h-[3rem] btn-primary">
           {{ e.respaldos.llave_configurada ? 'Cambiar la llave' : 'Crear la llave' }}
         </button>
 
@@ -158,24 +159,24 @@ interface UsuarioDosPasos {
             Los respaldos ya hechos seguirán necesitando la llave anterior.
           </div>
           <label class="block text-sm font-bold text-slate-700 dark:text-slate-200">Frase
-            <input #f1 type="password" minlength="12" required autocomplete="new-password" class="campo mt-1">
+            <input #f1 type="password" minlength="12" required autocomplete="new-password" class="form-control mt-1">
           </label>
           <label class="block text-sm font-bold text-slate-700 dark:text-slate-200">Repite la frase
-            <input #f2 type="password" minlength="12" required autocomplete="new-password" class="campo mt-1">
+            <input #f2 type="password" minlength="12" required autocomplete="new-password" class="form-control mt-1">
           </label>
           <label class="block text-sm font-bold text-slate-700 dark:text-slate-200">Tu contraseña
-            <input #pw type="password" required autocomplete="current-password" class="campo mt-1">
+            <input #pw type="password" required autocomplete="current-password" class="form-control mt-1">
           </label>
           <div class="flex gap-2">
             <button type="button" (click)="formLlave.set(false)" class="flex-1 min-h-[3rem] rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-sm text-slate-700 dark:text-slate-200">Cancelar</button>
-            <button type="submit" [disabled]="trabajando()" class="flex-1 min-h-[3rem] rounded-xl bg-brand-purple text-white font-bold text-sm disabled:opacity-50">
+            <button type="submit" [disabled]="trabajando()" class="flex-1 min-h-[3rem] btn-primary">
               {{ trabajando() ? 'Creando…' : 'Crear y descargar' }}
             </button>
           </div>
         </form>
       </div>
 
-      <div class="p-5 rounded-2xl border bg-white dark:bg-slate-800/40 space-y-3"
+      <div class="p-5 rounded-2xl border bg-white dark:bg-slate-900 space-y-3"
         [ngClass]="e.respaldos.sin_cifrar ? 'border-amber-200 dark:border-amber-900/50' : 'border-slate-200 dark:border-slate-700'">
         <p class="text-sm font-bold text-slate-800 dark:text-slate-100">Respaldos antiguos sin cifrar</p>
         <p class="text-sm text-slate-600 dark:text-slate-300">
@@ -199,38 +200,33 @@ interface UsuarioDosPasos {
   </div>
 
   <!-- Confirmar restablecer -->
-  <div *ngIf="aRestablecer() as u" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" (click)="aRestablecer.set(null)">
-    <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4 border border-slate-200 dark:border-slate-800" (click)="$event.stopPropagation()">
-      <h3 class="text-lg font-bold text-slate-900 dark:text-white">¿Restablecer la verificación de {{ u.nombre }}?</h3>
-      <p class="text-sm text-slate-600 dark:text-slate-300">Se cerrará su sesión y tendrá que volver a configurarla con su teléfono. Hazlo solo si confirmaste con esa persona que perdió el teléfono.</p>
-      <div class="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
-        <button type="button" (click)="aRestablecer.set(null)" class="min-h-[2.75rem] px-4 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-300">Cancelar</button>
-        <button type="button" (click)="restablecer(u)" [disabled]="trabajando()" class="min-h-[2.75rem] px-4 rounded-xl bg-red-600 text-white font-bold text-sm disabled:opacity-50">Sí, restablecer</button>
-      </div>
-    </div>
-  </div>
+  @if (aRestablecer(); as u) {
+    <app-confirm-dialog
+      [open]="true"
+      [title]="'¿Restablecer la verificación de ' + u.nombre + '?'"
+      message="Se cerrará su sesión y tendrá que volver a configurarla con su teléfono. Hazlo solo si confirmaste con esa persona que perdió el teléfono."
+      confirmLabel="Sí, restablecer"
+      severity="danger"
+      [busy]="trabajando()"
+      (confirmed)="restablecer(u)"
+      (openChange)="$event || aRestablecer.set(null)"
+    ></app-confirm-dialog>
+  }
 
   <!-- Confirmar borrado de respaldos sin cifrar -->
-  <div *ngIf="confirmarBorrado()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" (click)="confirmarBorrado.set(false)">
-    <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4 border border-slate-200 dark:border-slate-800" (click)="$event.stopPropagation()">
-      <h3 class="text-lg font-bold text-slate-900 dark:text-white">¿Eliminar {{ estado()?.respaldos?.sin_cifrar }} respaldos sin cifrar?</h3>
-      <p class="text-sm text-slate-600 dark:text-slate-300">
-        Se borran del servidor y no se pueden recuperar.
-        <b *ngIf="!estado()?.respaldos?.llave_configurada">Todavía no hay llave: después de esto no quedará ningún respaldo hasta que se haga uno nuevo.</b>
-      </p>
-      <div class="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
-        <button type="button" (click)="confirmarBorrado.set(false)" class="min-h-[2.75rem] px-4 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-300">Cancelar</button>
-        <button type="button" (click)="eliminarSinCifrar()" [disabled]="trabajando()" class="min-h-[2.75rem] px-4 rounded-xl bg-red-600 text-white font-bold text-sm disabled:opacity-50">Sí, eliminar</button>
-      </div>
-    </div>
-  </div>
+  @if (confirmarBorrado()) {
+    <app-confirm-dialog
+      [open]="true"
+      [title]="'¿Eliminar ' + estado()?.respaldos?.sin_cifrar + ' respaldos sin cifrar?'"
+      [message]="'Se borran del servidor y no se pueden recuperar.' + (estado()?.respaldos?.llave_configurada ? '' : '\nTodavía no hay llave: después de esto no quedará ningún respaldo hasta que se haga uno nuevo.')"
+      confirmLabel="Sí, eliminar"
+      severity="danger"
+      [busy]="trabajando()"
+      (confirmed)="eliminarSinCifrar()"
+      (openChange)="$event || confirmarBorrado.set(false)"
+    ></app-confirm-dialog>
+  }
   `,
-  styles: [`
-    .campo { width: 100%; height: 2.75rem; border-radius: .75rem; border: 1px solid rgb(226 232 240); background: rgb(248 250 252);
-      padding: 0 .875rem; font-size: .9375rem; font-weight: 500; color: rgb(15 23 42); }
-    .campo:focus { outline: none; border-color: #6d28d9; box-shadow: 0 0 0 3px rgb(109 40 217 / .15); }
-    :host-context(.dark) .campo { border-color: rgb(51 65 85); background: rgb(15 23 42); color: #fff; }
-  `],
 })
 export class SeguridadComponent implements OnInit {
   private http = inject(HttpClient);
