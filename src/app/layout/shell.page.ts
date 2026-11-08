@@ -1151,6 +1151,8 @@ export class ShellPage implements OnInit, OnDestroy {
       this.pageTitle.set({ title: 'Territorios', subtitle: 'Gestión de mapas y asignaciones.' });
     } else if (url.includes('/exhibidores')) {
       this.pageTitle.set({ title: 'Exhibidores', subtitle: 'Gestión de puntos de predicación pública.' });
+    } else if (url.includes('/administracion/reuniones-teocraticas')) {
+      this.pageTitle.set({ title: 'Reuniones teocráticas', subtitle: 'Programa, convocatoria y puntos propuestos.' });
     } else if (url.includes('/reuniones/programacion') || url.includes('/reuniones/entre-semana') || url.includes('/reuniones/fin-semana')) {
       this.pageTitle.set({ title: 'Programación de Reuniones', subtitle: 'Programa y asignaciones por congregación.' });
     } else if (url.includes('/reuniones/asistencia')) {
@@ -1171,8 +1173,6 @@ export class ShellPage implements OnInit, OnDestroy {
       this.pageTitle.set({ title: 'Reportes', subtitle: 'Análisis e indicadores de la congregación.' });
     } else if (url === '/agenda' || url.startsWith('/agenda?')) {
       this.pageTitle.set({ title: 'Mi Agenda', subtitle: 'Lo que tiene por fecha y sus tareas, en un solo lugar.' });
-    } else if (url.includes('/administracion/reuniones-teocraticas')) {
-      this.pageTitle.set({ title: 'Reuniones teocráticas', subtitle: 'Programa, convocatoria y puntos propuestos.' });
     } else if (url.includes('/administracion/visita-superintendente')) {
       this.pageTitle.set({ title: 'Visita del Superintendente', subtitle: 'Documentos y agenda para la visita del SC.' });
     } else if (url.includes('/administracion/actas-reunion')) {

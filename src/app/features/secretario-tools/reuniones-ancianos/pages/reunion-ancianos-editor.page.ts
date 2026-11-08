@@ -1575,7 +1575,7 @@ export class ReunionAncianosEditorPage implements OnInit {
   ayudaEstado(r: ReunionOut): string {
     if (r.estado === 'borrador') return 'Los convocados todavía no la ven. Cuando esté lista, use «Convocar».';
     if (r.estado === 'convocada' && !r.avisada_en) return 'Está confirmada, pero los convocados todavía no recibieron aviso.';
-    if (r.estado === 'convocada') return `Los convocados ya recibieron el aviso${r.convocada_en ? ' el ' + this.convocadaTexto(r.convocada_en) : ''}.`;
+    if (r.estado === 'convocada') return `Los convocados ya recibieron el aviso${r.avisada_en ? ' el ' + this.convocadaTexto(r.avisada_en) : ''}.`;
     return 'Esta reunión ya se realizó y se pasó a acta.';
   }
 
