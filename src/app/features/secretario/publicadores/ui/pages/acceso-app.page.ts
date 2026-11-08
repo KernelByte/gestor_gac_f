@@ -6,9 +6,11 @@ import { lastValueFrom } from 'rxjs';
 import {
   AccesoAppItem, AccesoAppService, EstadoAcceso, InvitacionGenerada,
 } from '../../services/acceso-app.service';
+import { SelectPickerComponent, PickerOption } from '../../../../../shared/components/select-picker/select-picker.component';
 import { ModalComponent } from '../../../../../shared/components/modal/modal.component';
 import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ToastService } from '../../../../../shared/components/toast/toast.service';
+import { ConfirmService } from '../../../../../shared/components/confirm-dialog/confirm.service';
 import { whatsappUrl } from '../../../../../shared/whatsapp';
 
 interface OpcionEstado {
@@ -19,8 +21,9 @@ interface OpcionEstado {
 }
 
 /**
- * Los seis estados en el orden en que avanza una persona: desde no tener
- * acceso hasta estar usando la app. "Usuario del sistema" es su propio carril
+ * Los estados en el orden en que avanza una persona: desde no tener acceso
+ * hasta estar usando la app, y el que la usó pero ya no (sin actividad en 30
+ * días, o cerró sesión/desinstaló). "Usuario del sistema" es su propio carril
  * -no un paso más- porque esas personas no usan PIN en absoluto: entran con
  * su cuenta de correo y contraseña. La franja de color por fila permite
  * barrer la lista y ver de un vistazo a quién le falta algo.
@@ -32,6 +35,7 @@ const ESTADOS: OpcionEstado[] = [
   { id: 'invitacion_activa',  label: 'Invitación activa', tono: 'sky' },
   { id: 'invitacion_vencida', label: 'Invitación vencida', tono: 'rose' },
   { id: 'activo',             label: 'Usando la app',     tono: 'emerald' },
+  { id: 'inactivo_app',       label: 'Dejó de usarla',    tono: 'orange' },
 ];
 
 /** Un envío de WhatsApp pendiente de que el usuario lo dispare. */
@@ -43,7 +47,7 @@ interface PendienteWhatsapp {
 @Component({
   standalone: true,
   selector: 'app-acceso-app',
-  imports: [CommonModule, FormsModule, ModalComponent, ConfirmDialogComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, ConfirmDialogComponent, SelectPickerComponent],
   templateUrl: './acceso-app.page.html',
   styles: [`
     /* Esta pantalla ya no lleva su propio sistema de superficies/color: usa
@@ -101,6 +105,10 @@ interface PendienteWhatsapp {
       outline-offset: 2px;
     }
 
+    /* El desplegable de grupo mide lo mismo que los chips de la barra (36 px);
+       por defecto el selector de la app es de formulario (44 px). */
+    .filtro-grupo ::ng-deep .sp-trigger { min-height: 2.25rem; padding-top: 0; padding-bottom: 0; border-radius: 0.5rem; }
+
     /* Chips en móvil: ruedan en horizontal sin barra a la vista. */
     .sin-barra { scrollbar-width: none; -ms-overflow-style: none; }
     .sin-barra::-webkit-scrollbar { display: none; }
@@ -114,6 +122,7 @@ interface PendienteWhatsapp {
 export class AccesoAppComponent implements OnInit {
   private api = inject(AccesoAppService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
   private sanitizer = inject(DomSanitizer);
 
   readonly estados = ESTADOS;
@@ -152,13 +161,19 @@ export class AccesoAppComponent implements OnInit {
       .sort((a, b) => a.nombre.localeCompare(b.nombre));
   });
 
+  opcionesGrupo = computed<PickerOption[]>(() =>
+    this.grupos().map((g) => ({ value: g.id, label: g.nombre })),
+  );
+
   filtrados = computed(() => {
     const q = this.busqueda().trim().toLowerCase();
     const grupo = this.filtroGrupo();
     const estado = this.filtroEstado();
     return this.items().filter((it) => {
       if (grupo != null && it.id_grupo !== grupo) return false;
-      if (estado && it.estado_acceso !== estado) return false;
+      // Los publicadores inactivos solo aparecen en "Todos": la app no los
+      // deja entrar, así que en un filtro de estado serían ruido.
+      if (estado && (it.estado_acceso !== estado || it.publicador_inactivo)) return false;
       if (q && !it.nombre.toLowerCase().includes(q) &&
           !(it.codigo_pin ?? '').toLowerCase().includes(q)) return false;
       return true;
@@ -168,8 +183,21 @@ export class AccesoAppComponent implements OnInit {
   conteos = computed(() => {
     const base: Record<string, number> = {};
     for (const e of ESTADOS) base[e.id] = 0;
-    for (const it of this.items()) base[it.estado_acceso]++;
+    for (const it of this.items()) {
+      if (!it.publicador_inactivo) base[it.estado_acceso]++;
+    }
     return base;
+  });
+
+  /** Versión más nueva de la app vista en la congregación: la referencia para
+   *  marcar a quien tiene una vieja sin tener que configurar nada. */
+  versionMasNueva = computed(() => {
+    let max: number[] | null = null;
+    for (const it of this.items()) {
+      const v = AccesoAppComponent.partesVersion(it.app_version);
+      if (v && (!max || AccesoAppComponent.compararVersion(v, max) > 0)) max = v;
+    }
+    return max;
   });
 
   idsSeleccionados = computed(() => [...this.seleccion()]);
@@ -427,13 +455,51 @@ export class AccesoAppComponent implements OnInit {
 
   cerrarInvitacion(): void { this.invitacionAbierta.set(null); }
 
-  async copiar(texto: string | null | undefined, etiqueta: string): Promise<void> {
-    if (!texto) return;
+  /** Devuelve si de verdad quedó en el portapapeles. */
+  async copiar(texto: string | null | undefined, etiqueta: string): Promise<boolean> {
+    if (!texto) return false;
     try {
       await navigator.clipboard.writeText(texto);
       this.toast.success(`${etiqueta} copiado`);
+      return true;
     } catch {
       this.toast.error(`No se pudo copiar el ${etiqueta.toLowerCase()}`);
+      return false;
+    }
+  }
+
+  /** Copiar el enlace casi siempre es para pegarlo en algún chat: cuenta como
+   *  enviado, o la fila se quedaría en "sin enviar" para siempre. */
+  async copiarEnlace(inv: InvitacionGenerada): Promise<void> {
+    if (!(await this.copiar(inv.url, 'Enlace'))) return;
+    this.api.marcarEnviada(inv.id_invitacion, 'enlace').subscribe({
+      next: () => void this.cargar(),
+      error: () => {},
+    });
+  }
+
+  /** Anula un enlace ya repartido (se mandó a otra persona, se perdió el
+   *  teléfono...). El PIN sigue sirviendo. */
+  async anularEnlace(idInvitacion: number, nombre: string): Promise<void> {
+    if (this.trabajando()) return;
+    const ok = await this.confirm.ask({
+      title: `¿Anular el enlace de ${nombre}?`,
+      message: 'El enlace dejará de funcionar. Su PIN sigue sirviendo, y puedes generar otro enlace cuando quieras.',
+      confirmLabel: 'Sí, anular',
+      cancelLabel: 'Cancelar',
+      severity: 'danger',
+    });
+    if (!ok) return;
+    this.trabajando.set(true);
+    try {
+      await lastValueFrom(this.api.revocar(idInvitacion));
+      if (this.invitacionAbierta()?.id_invitacion === idInvitacion) this.invitacionAbierta.set(null);
+      this.toast.success('Enlace anulado', nombre);
+      await this.cargar();
+    } catch (e: any) {
+      this.toast.error('No se pudo anular', e?.error?.detail ?? undefined);
+    } finally {
+      this.trabajando.set(false);
     }
   }
 
@@ -457,6 +523,7 @@ export class AccesoAppComponent implements OnInit {
     rose: 'bg-rose-400',
     emerald: 'bg-emerald-400',
     violet: 'bg-violet-400',
+    orange: 'bg-orange-400',
   };
 
   /**
@@ -473,6 +540,7 @@ export class AccesoAppComponent implements OnInit {
     rose: 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-100 dark:border-rose-800/50',
     emerald: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/50',
     violet: 'bg-violet-50 dark:bg-violet-900/30 text-brand-purple dark:text-violet-300 border border-violet-100 dark:border-violet-800/50',
+    orange: 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-100 dark:border-orange-800/50',
   };
 
   claseFondo(tono: string): string { return AccesoAppComponent.FONDO[tono] ?? AccesoAppComponent.FONDO['slate']; }
@@ -493,35 +561,110 @@ export class AccesoAppComponent implements OnInit {
   }
 
   /**
-   * Segunda línea de la fila: qué le falta o desde cuándo la usa. Es la
-   * información que hace falta para decidir la siguiente acción.
+   * Segunda línea de la fila: qué le falta o cuándo usó la app por última vez
+   * y en qué dispositivo. Es la información que hace falta para decidir la
+   * siguiente acción.
    */
   detalleEstado(it: AccesoAppItem): string {
     switch (it.estado_acceso) {
-      case 'usuario_sistema':
-        return it.correo ? `Entra con ${it.correo} y su contraseña` : 'Entra con su correo y contraseña';
+      case 'usuario_sistema': {
+        const base = it.correo ? `Entra con ${it.correo}` : 'Entra con su correo y contraseña';
+        if (it.ultima_actividad_app) return `${base} · ${this.resumenUso(it)}`;
+        return `${base} · aún no ha usado la app`;
+      }
       case 'sin_acceso':
         return 'El ingreso por PIN está apagado';
       case 'sin_invitacion':
         return 'Habilitado, pero nunca se le envió el enlace';
       case 'invitacion_activa': {
         const inv = it.invitacion!;
-        const vence = new Date(inv.fecha_expiracion).toLocaleDateString('es-CO', {
-          day: 'numeric', month: 'short',
-        });
+        const vence = this.fechaCorta(inv.fecha_expiracion);
         if (!inv.fecha_envio) return `Enlace listo, sin enviar · vence el ${vence}`;
         if (!inv.fecha_primer_uso) return `Enviado, aún sin abrir · vence el ${vence}`;
         return `Abrió el enlace, aún sin entrar · vence el ${vence}`;
       }
       case 'invitacion_vencida':
         return 'El último enlace venció sin usarse';
-      case 'activo': {
-        const f = it.ultimo_ingreso_app;
-        if (!f) return 'Ya entró a la app';
-        return `Último ingreso: ${new Date(f).toLocaleDateString('es-CO', {
-          day: 'numeric', month: 'short', year: 'numeric',
-        })}`;
+      case 'activo':
+        return this.resumenUso(it) + this.enlacePendiente(it);
+      case 'inactivo_app': {
+        const f = it.ultima_actividad_app;
+        const desde = f ? ` · última vez el ${this.fechaCorta(f, true)}` : '';
+        const motivo = it.app_desinstalada
+          ? 'Cerró sesión o desinstaló la app'
+          : f ? `Sin usar la app desde hace ${this.diasDesde(f)} días` : 'Hace tiempo que no usa la app';
+        return motivo + (it.app_desinstalada ? desde : '') + this.enlacePendiente(it);
       }
     }
+  }
+
+  /** "Usó la app hace 3 días · iOS 18.1 · v2.15.0 (desactualizada) · sin avisos" */
+  private resumenUso(it: AccesoAppItem): string {
+    const f = it.ultima_actividad_app;
+    const partes = [f ? `Usó la app ${this.haceCuanto(f)}` : 'Ya entró a la app'];
+    const disp = this.dispositivo(it.app_plataforma);
+    if (disp) partes.push(disp);
+    const v = AccesoAppComponent.partesVersion(it.app_version);
+    if (v) {
+      const max = this.versionMasNueva();
+      const vieja = max && AccesoAppComponent.compararVersion(v, max) < 0;
+      partes.push(`v${v.join('.')}${vieja ? ' (desactualizada)' : ''}`);
+    }
+    if (!it.avisos_activos) partes.push('sin avisos');
+    return partes.join(' · ');
+  }
+
+  /** Un enlace vivo más nuevo que su última actividad: le mandaron uno (otro
+   *  teléfono, se le cerró la sesión...) y todavía no lo ha usado. */
+  private enlacePendiente(it: AccesoAppItem): string {
+    const inv = it.invitacion;
+    if (!inv || inv.estado_invitacion !== 'activa') return '';
+    const act = it.ultima_actividad_app ? new Date(it.ultima_actividad_app).getTime() : 0;
+    if (new Date(inv.fecha_creacion).getTime() <= act) return '';
+    return ` · enlace nuevo sin usar, vence el ${this.fechaCorta(inv.fecha_expiracion)}`;
+  }
+
+  private dispositivo(plataforma: string | null): string | null {
+    if (!plataforma) return null;
+    const [so, ver] = plataforma.trim().split(/\s+/, 2);
+    if (so?.toLowerCase() === 'ios') return ver ? `iOS ${ver}` : 'iOS';
+    // En Android, Platform.Version es el nivel de API (34), no la versión que
+    // la gente reconoce: mejor no mostrarlo.
+    if (so?.toLowerCase() === 'android') return 'Android';
+    return so || null;
+  }
+
+  private haceCuanto(fecha: string): string {
+    const ms = Date.now() - new Date(fecha).getTime();
+    const min = Math.round(ms / 60000);
+    if (min < 60) return 'hace un momento';
+    const rtf = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
+    const horas = Math.round(min / 60);
+    if (horas < 24) return rtf.format(-horas, 'hour');
+    return rtf.format(-Math.round(horas / 24), 'day');
+  }
+
+  private diasDesde(fecha: string): number {
+    return Math.max(1, Math.round((Date.now() - new Date(fecha).getTime()) / 86400000));
+  }
+
+  private fechaCorta(fecha: string, conAnio = false): string {
+    return new Date(fecha).toLocaleDateString('es-CO', {
+      day: 'numeric', month: 'short', ...(conAnio ? { year: 'numeric' } : {}),
+    });
+  }
+
+  /** "2.15.0 (77)" → [2, 15, 0]. */
+  private static partesVersion(v: string | null): number[] | null {
+    const m = v?.match(/^\s*(\d+(?:\.\d+)*)/);
+    return m ? m[1].split('.').map(Number) : null;
+  }
+
+  private static compararVersion(a: number[], b: number[]): number {
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      const d = (a[i] ?? 0) - (b[i] ?? 0);
+      if (d) return d;
+    }
+    return 0;
   }
 }

@@ -18,15 +18,13 @@
              class="campo w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-700 border border-transparent dark:border-slate-600 rounded-lg text-base sm:text-sm text-slate-700 dark:text-slate-100 font-medium placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-700 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none" />
     </div>
 
-    <!-- Grupo -->
-    <select [ngModel]="filtroGrupo()" (ngModelChange)="filtroGrupo.set($event === 'null' ? null : +$event)"
-            aria-label="Filtrar por grupo"
-            class="campo h-9 px-3 bg-slate-50 dark:bg-slate-700 border border-transparent dark:border-slate-600 rounded-lg text-base sm:text-sm text-slate-700 dark:text-slate-100 font-medium focus:bg-white dark:focus:bg-slate-700 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none sm:w-44 shrink-0">
-      <option [ngValue]="null">Todos los grupos</option>
-      @for (g of grupos(); track g.id) {
-        <option [ngValue]="g.id">{{ g.nombre }}</option>
-      }
-    </select>
+    <!-- Grupo: desplegable propio de la app; el <select> nativo abre el menú
+         del sistema, que no se puede estilizar. Sin elección = todos. -->
+    <div class="filtro-grupo sm:w-48 shrink-0">
+      <app-select-picker [ngModel]="filtroGrupo()" (ngModelChange)="filtroGrupo.set($event ?? null)"
+                         [options]="opcionesGrupo()" [clearable]="true" [searchable]="false"
+                         colorScheme="orange" placeholder="Todos los grupos" ariaLabel="Filtrar por grupo" />
+    </div>
 
     <!-- Chips de estado: mismo patrón que los filtros rápidos del listado -->
     <div class="flex items-center gap-1 overflow-x-auto sin-barra w-full lg:w-auto order-last lg:order-none" role="group" aria-label="Filtrar por estado de acceso">
@@ -81,10 +79,16 @@
       </label>
 
       @if (codigoSeguridad()) {
+        <!-- El código es lo que cada persona necesita junto a su PIN: se pinta
+             como una pieza propia que se copia de un toque, no como texto de
+             apoyo. -->
         <button type="button" (click)="copiar(codigoSeguridad(), 'Código de congregación')"
-                class="btn-txt ml-auto shrink-0 h-9 px-2 -mr-1 rounded-lg text-xs text-slate-400 dark:text-slate-500">
-          <span class="hidden sm:inline">Código de congregación </span>
-          <span class="font-mono font-semibold tabular-nums text-slate-500 dark:text-slate-400">{{ codigoSeguridad() }}</span>
+                class="btn-secondary btn-sm ml-auto shrink-0 gap-2"
+                title="Copiar el código de congregación"
+                [attr.aria-label]="'Copiar el código de congregación ' + codigoSeguridad()">
+          <span class="hidden sm:inline text-slate-500 dark:text-slate-400 font-medium">Código de congregación</span>
+          <span class="font-mono font-bold tabular-nums tracking-wider text-sm text-slate-900 dark:text-slate-50">{{ codigoSeguridad() }}</span>
+          <svg class="w-4 h-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
         </button>
       }
     </div>
@@ -92,12 +96,13 @@
     <!-- Cabecera de columnas: solo en escritorio, con el mismo tratamiento
          que el <thead> pegajoso del listado de Publicadores. -->
     @if (!cargando() && filtrados().length) {
-      <div class="shrink-0 hidden md:flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md shadow-sm text-xs font-bold text-slate-400 uppercase tracking-wider"
+      <div class="shrink-0 hidden md:flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-[#1d283d] backdrop-blur-md shadow-sm text-xs font-bold text-slate-400 uppercase tracking-wider"
            aria-hidden="true">
         <span class="w-11 -ml-2 shrink-0"></span>
         <span class="w-[30%] shrink-0">Publicador</span>
         <span class="flex-1 min-w-0">Estado</span>
         <span class="hidden sm:block w-32 shrink-0">Acceso</span>
+        <span class="hidden sm:block w-9 shrink-0"></span>
         <span class="w-[6.5rem] shrink-0"></span>
       </div>
     }
@@ -162,7 +167,15 @@
 
           <!-- Identidad -->
           <div class="min-w-0 flex-1 md:flex-none md:w-[30%]">
-            <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ it.nombre }}</p>
+            <div class="flex items-center gap-2 min-w-0">
+              <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ it.nombre }}</p>
+              @if (it.publicador_inactivo) {
+                <!-- La app no deja entrar a un publicador inactivo, tenga o no
+                     el acceso habilitado: se dice aquí para no perseguirlo. -->
+                <span class="insignia shrink-0" [ngClass]="claseBadge('slate')"
+                      title="Publicador inactivo: la app no lo deja entrar">Inactivo</span>
+              }
+            </div>
             <p class="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">
               {{ it.grupo || 'Sin grupo' }}@if (it.privilegio) { · {{ it.privilegio }} }
             </p>
@@ -201,6 +214,18 @@
               <span class="font-mono text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-300 truncate">{{ it.codigo_pin || '—' }}</span>
             </button>
           }
+
+          <!-- Anular el enlace vivo: mismo hueco en todas las filas para que
+               las columnas no bailen. -->
+          <div class="hidden sm:flex w-9 shrink-0 self-center justify-center">
+            @if (it.invitacion?.estado_invitacion === 'activa') {
+              <button type="button" class="btn-icon-sm tone-danger"
+                      (click)="anularEnlace(it.invitacion!.id_invitacion, it.nombre)" [disabled]="trabajando()"
+                      [attr.aria-label]="'Anular el enlace de ' + it.nombre" title="Anular el enlace">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17H7A5 5 0 0 1 7 7"/><path d="M15 7h2a5 5 0 0 1 4 8"/><line x1="8" x2="12" y1="12" y2="12"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+              </button>
+            }
+          </div>
 
           <button type="button" (click)="invitarUno(it)" [disabled]="trabajando()"
                   [attr.title]="it.tiene_usuario_sistema ? 'Enviar contraseña temporal por correo' : 'Generar enlace de invitación'"
@@ -312,7 +337,7 @@
              [innerHTML]="qrSeguro(inv.qr_svg)" role="img" [attr.aria-label]="'Código QR de la invitación de ' + inv.nombre"></div>
 
         <div class="divide-y divide-slate-200 dark:divide-slate-700 border-t border-slate-200 dark:border-slate-700">
-          <button type="button" (click)="copiar(inv.url, 'Enlace')"
+          <button type="button" (click)="copiarEnlace(inv)"
                   class="btn-txt w-full flex items-center gap-3 py-3 text-left">
             <span class="w-20 shrink-0 text-xs text-slate-400 dark:text-slate-500">Enlace</span>
             <span class="flex-1 min-w-0 text-xs text-slate-600 dark:text-slate-300 truncate">{{ inv.url }}</span>
@@ -336,10 +361,16 @@
                 class="btn-primary w-full">
           {{ inv.telefono ? 'Enviar por WhatsApp' : 'Compartir por WhatsApp' }}
         </button>
-        <button type="button" (click)="cerrarInvitacion()"
-                class="btn-ghost w-full">
-          Cerrar
-        </button>
+        <div class="flex gap-2">
+          <button type="button" (click)="anularEnlace(inv.id_invitacion, inv.nombre)" [disabled]="trabajando()"
+                  class="btn-ghost-danger flex-1">
+            Anular enlace
+          </button>
+          <button type="button" (click)="cerrarInvitacion()"
+                  class="btn-ghost flex-1">
+            Cerrar
+          </button>
+        </div>
       </div>
   </app-modal>
 }

@@ -9,7 +9,8 @@ export type EstadoAcceso =
   | 'sin_invitacion'
   | 'invitacion_activa'
   | 'invitacion_vencida'
-  | 'activo';
+  | 'activo'
+  | 'inactivo_app';
 
 export type CanalEnvio = 'whatsapp' | 'correo' | 'qr' | 'enlace' | 'manual';
 
@@ -36,6 +37,18 @@ export interface AccesoAppItem {
   permite_login_simple: boolean;
   codigo_pin: string | null;
   ultimo_ingreso_app: string | null;
+  /** Última vez que la app habló con el servidor (login, renovación o avisos). */
+  ultima_actividad_app: string | null;
+  /** Lo manda la app: "ios 18.1", "android 34". */
+  app_plataforma: string | null;
+  /** Lo manda la app: "2.15.0 (77)". */
+  app_version: string | null;
+  /** Algún dispositivo suyo tiene los avisos activos. */
+  avisos_activos: boolean;
+  /** Cerró sesión o desinstaló la app y no ha vuelto a entrar. */
+  app_desinstalada: boolean;
+  /** Estado "Inactivo" del publicador: la app no lo deja entrar. */
+  publicador_inactivo: boolean;
   estado_acceso: EstadoAcceso;
   invitacion: InvitacionResumen | null;
   /** Ya tiene correo+contraseña: su camino de entrada es esa cuenta, no el PIN. */
