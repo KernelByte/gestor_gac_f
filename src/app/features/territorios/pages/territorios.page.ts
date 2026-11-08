@@ -1061,7 +1061,8 @@ import {
         
       <!-- Editor cartográfico: pantalla completa, mapa + panel lateral -->
       @if (showMapEditModal() && selectedTerritorio()) {
-      <div class="fixed inset-0 z-[100] flex flex-col bg-white dark:bg-slate-900 animate-fadeIn">
+      <!-- z 59: tapa el shell (≤ 50) pero queda bajo --z-modal (60), así el «¿Cerrar sin guardar?» de ConfirmService se ve encima. -->
+      <div class="fixed inset-0 z-[59] flex flex-col bg-white dark:bg-slate-900 animate-fadeIn">
 
         <div class="px-3 sm:px-5 h-14 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0 bg-white dark:bg-slate-900">
           <div class="flex items-center gap-3 min-w-0">

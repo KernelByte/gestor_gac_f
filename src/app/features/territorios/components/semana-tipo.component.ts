@@ -76,6 +76,8 @@ import {
     </app-modal>
 
     @if (editando(); as e) {
+      <!-- El cajón (z drawer) iría debajo de este diálogo (z modal): la capa lo sube por encima. -->
+      <div class="relative" style="z-index: calc(var(--z-modal) + 1)">
       <app-salida-editor
         modo="plantilla"
         [titulo]="e.fila ? 'Editar salida' : 'Nueva salida'"
@@ -91,6 +93,7 @@ import {
         (guardar)="aplicar($event)"
         (eliminar)="quitar()"
         (cancelar)="editando.set(null)" />
+      </div>
     }
   `,
 })

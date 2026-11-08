@@ -191,7 +191,8 @@ interface TarjetaElegible {
 
     <!-- ═══ Editor de barrio: panel con pasos + mapa ═══ -->
     @if (editor(); as e) {
-      <div class="fixed inset-0 z-[100] flex flex-col lg:flex-row bg-white dark:bg-slate-950" role="dialog" aria-modal="true" aria-labelledby="tituloBarrio">
+      <!-- z 59: tapa el shell (≤ 50) pero queda bajo --z-modal (60), así el «¿Cerrar sin guardar?» de ConfirmService se ve encima. -->
+      <div class="fixed inset-0 z-[59] flex flex-col lg:flex-row bg-white dark:bg-slate-950" role="dialog" aria-modal="true" aria-labelledby="tituloBarrio">
 
         <!-- Mapa: se dibuja directamente aquí -->
         <div class="relative order-first lg:order-last flex-1 min-h-[38dvh] bg-slate-100 dark:bg-slate-900">
