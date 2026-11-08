@@ -54,3 +54,7 @@ Thumbs.db
 
 # Resultados de Playwright
 test-results/
+
+# Capturas y logs del navegador de pruebas (Playwright MCP)
+.playwright-mcp/
+playwright-report/
