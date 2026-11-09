@@ -348,6 +348,7 @@ interface EntradaIndice { id: string; num: string; titulo: string; }
                 <ol class="pasos">
                   <li>Use una contraseña distinta de las que usa en otros sitios.</li>
                   <li>Active la verificación en dos pasos en su perfil.</li>
+                  <li>Marque un dispositivo como de confianza solo si es suyo y personal.</li>
                   <li>No comparta su PIN ni su contraseña, ni siquiera con familiares.</li>
                   <li>Si pierde su teléfono, avise al secretario para que cierre su sesión.</li>
                 </ol>

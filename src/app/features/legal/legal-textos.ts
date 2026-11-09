@@ -38,10 +38,14 @@ export const FINALIDADES: { modulo: string; finalidad: string }[] = [
 export const MEDIDAS_SEGURIDAD: { titulo: string; texto: string; icono: string }[] = [
   { titulo: 'Conexión cifrada', texto: 'La información que viaja entre su equipo y el servidor va cifrada, de modo que nadie puede leerla en el trayecto.', icono: 'lock' },
   { titulo: 'Contraseñas que nadie puede ver', texto: 'Las contraseñas se guardan con un cifrado irreversible. Ni los administradores ni los desarrolladores pueden conocerlas.', icono: 'key-round' },
-  { titulo: 'Verificación en dos pasos', texto: 'Puede activar un código adicional para ingresar. Para los administradores es obligatoria.', icono: 'smartphone' },
+  { titulo: 'Verificación en dos pasos', texto: 'Puede activar un código adicional para ingresar y, en un dispositivo personal, marcarlo como de confianza para no escribirlo cada vez. Para los administradores es obligatoria y siempre lo escriben.', icono: 'smartphone' },
+  { titulo: 'Pausa ante intentos fallidos', texto: 'Si alguien intenta adivinar una contraseña, la cuenta se pausa durante unos minutos.', icono: 'timer-reset' },
+  { titulo: 'Aviso de ingresos nuevos', texto: 'Si su cuenta se abre desde un dispositivo que no había usado, recibe un aviso por correo para que pueda reaccionar a tiempo.', icono: 'bell' },
+  { titulo: 'Archivos protegidos', texto: 'Los consentimientos firmados, las fotos y los documentos adjuntos se guardan cifrados en el servidor.', icono: 'folder' },
   { titulo: 'Cada congregación ve solo lo suyo', texto: 'La información de cada congregación se mantiene separada de la de las demás.', icono: 'building-2' },
   { titulo: 'Cada persona ve solo lo que necesita', texto: 'El acceso depende de la responsabilidad de cada persona. Un publicador solo ve su propia información.', icono: 'users' },
-  { titulo: 'Sesiones que caducan', texto: 'La sesión se cierra automáticamente después de un tiempo, y puede cerrarse a distancia si pierde su teléfono.', icono: 'timer-reset' },
+  { titulo: 'Sesiones que caducan', texto: 'La sesión se cierra automáticamente después de un tiempo, y puede cerrarse a distancia si pierde su teléfono.', icono: 'clock' },
+  { titulo: 'Enlaces de un solo uso', texto: 'Los enlaces para restablecer una contraseña o activar el acceso sirven una sola vez y tienen una vigencia limitada.', icono: 'link' },
   { titulo: 'Copias de seguridad', texto: 'Se hacen copias automáticas para no perder información en caso de falla.', icono: 'database-backup' },
   { titulo: 'Sin publicidad ni rastreadores', texto: 'GAC no muestra anuncios ni usa herramientas de analítica, y no vende datos a nadie.', icono: 'ban' },
 ];
