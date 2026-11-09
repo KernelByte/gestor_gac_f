@@ -55,7 +55,7 @@ import { lastValueFrom } from 'rxjs';
                 <input [type]="showPassword() ? 'text' : 'password'" formControlName="nueva_contrasena"
                   class="form-control pl-9 pr-10"
                   [class.border-red-300]="form.get('nueva_contrasena')?.invalid && form.get('nueva_contrasena')?.touched"
-                  placeholder="Mínimo 6 caracteres">
+                  placeholder="Mínimo 7 caracteres">
                 <button type="button" (click)="showPassword.set(!showPassword())"
                   class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                   <svg *ngIf="!showPassword()" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -69,7 +69,7 @@ import { lastValueFrom } from 'rxjs';
                 </button>
               </div>
               <p *ngIf="form.get('nueva_contrasena')?.errors?.['minlength'] && form.get('nueva_contrasena')?.touched"
-                class="text-xs text-red-500 ml-1 font-bold">Mínimo 6 caracteres</p>
+                class="text-xs text-red-500 ml-1 font-bold">Mínimo 7 caracteres</p>
               <app-password-strength [password]="form.get('nueva_contrasena')?.value || ''" />
             </div>
 
@@ -135,7 +135,7 @@ export class ForcePasswordChangeComponent {
   showPassword = signal(false);
 
   form = this.fb.group({
-    nueva_contrasena: ['', [Validators.required, Validators.minLength(6)]],
+    nueva_contrasena: ['', [Validators.required, Validators.minLength(7)]],
     confirmar: ['', Validators.required]
   }, { validators: this.passwordMatchValidator });
 

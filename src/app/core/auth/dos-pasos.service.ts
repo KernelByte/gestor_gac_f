@@ -11,6 +11,10 @@ export interface EstadoDosPasos {
   activado_en: string | null;
   obligatorio: boolean;
   codigos_restantes: number;
+  /** Puede marcar dispositivos de confianza (todos menos el Administrador). */
+  puede_recordar?: boolean;
+  /** Navegadores o teléfonos donde no se le pide el código (vigentes). */
+  dispositivos_confianza?: number;
 }
 
 export interface InicioDosPasos {
@@ -43,6 +47,11 @@ export class DosPasosService {
 
   desactivar(password: string, codigo: string) {
     return this.http.post<{ detail: string }>(`${API}/desactivar`, { password, codigo });
+  }
+
+  /** Deja de confiar en todos sus dispositivos: vuelve a pedirse el código en cada uno. */
+  quitarDispositivosConfianza() {
+    return this.http.delete<{ revocados: number }>(`${API}/dispositivos-confianza`, { withCredentials: true });
   }
 
   regenerarCodigos(codigo: string) {

@@ -53,6 +53,8 @@ export interface AccesoAppItem {
   invitacion: InvitacionResumen | null;
   /** Ya tiene correo+contraseña: su camino de entrada es esa cuenta, no el PIN. */
   tiene_usuario_sistema: boolean;
+  /** Puede anotar la asistencia del mes en curso desde Mi Reunión (PIN o correo). */
+  registra_asistencia?: boolean;
 }
 
 export interface AccesoAppLista {
@@ -134,6 +136,13 @@ export class AccesoAppService {
   habilitar(ids: number[], habilitar: boolean): Observable<ResultadoLote> {
     return this.http.post<ResultadoLote>(`${this.baseUrl}/habilitar`, {
       ids_publicadores: ids, habilitar,
+    });
+  }
+
+  /** Permitir o quitar anotar la asistencia del mes en curso. */
+  fijarAsistencia(ids: number[], activo: boolean): Observable<ResultadoLote> {
+    return this.http.post<ResultadoLote>(`${this.baseUrl}/asistencia`, {
+      ids_publicadores: ids, activo,
     });
   }
 

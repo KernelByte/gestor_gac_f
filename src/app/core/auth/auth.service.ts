@@ -14,6 +14,8 @@ export interface RespuestaLogin {
   token_type?: string;
   requiere_2fa?: boolean;
   desafio?: string;
+  /** Puede marcar este navegador como de confianza (no el Administrador). */
+  puede_recordar?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -39,10 +41,12 @@ export class AuthService {
   }
 
   /** Segundo paso del login: código de la app de verificación o de recuperación. */
-  verificarDosPasos(desafio: string, codigo: string) {
+  verificarDosPasos(desafio: string, codigo: string, recordarDispositivo = false) {
     return this.http.post<{ access_token: string }>(
       `${API}/auth/2fa/verificar`,
-      { desafio, codigo },
+      // recordar_dispositivo: el servidor deja la cookie gac_confianza y no
+      // vuelve a pedir el código en este navegador durante 90 días.
+      { desafio, codigo, recordar_dispositivo: recordarDispositivo },
       { withCredentials: true },
     ).pipe(tap(res => this.tokens.setAccess(res.access_token)));
   }

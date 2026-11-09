@@ -10,10 +10,11 @@ import { AuthService } from '../../core/auth/auth.service';
 // login. La libreria se carga con import() dinamico al montar la vista, y solo
 // si el usuario no ha pedido reducir el movimiento.
 import type * as THREE from 'three';
+import { AuthPieComponent } from './auth-pie.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthPieComponent],
   templateUrl: './login.page.html'
 })
 export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
@@ -31,6 +32,9 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   desafio = signal<string | null>(null);
   codigo = signal('');
   usarRecuperacion = signal(false);
+  /** El servidor permite marcar este navegador como de confianza (no al Administrador). */
+  puedeRecordar = signal(false);
+  recordarDispositivo = signal(false);
   showPassword = signal(false);
 
   // Hacker / AI text animation
@@ -436,6 +440,8 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
         if (res.requiere_2fa && res.desafio) {
           this.loading.set(false);
           this.desafio.set(res.desafio);
+          this.puedeRecordar.set(!!res.puede_recordar);
+          this.recordarDispositivo.set(false);
           this.codigo.set('');
           return;
         }
@@ -452,14 +458,15 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     const desafio = this.desafio();
     if (!desafio || this.codigo().trim().length < 6) return;
     this.loading.set(true); this.error.set(null);
-    this.auth.verificarDosPasos(desafio, this.codigo().trim()).subscribe({
+    const recordar = this.puedeRecordar() && this.recordarDispositivo();
+    this.auth.verificarDosPasos(desafio, this.codigo().trim(), recordar).subscribe({
       next: () => this.entrar(),
       error: (err) => {
         this.loading.set(false);
         this.codigo.set('');
         this.error.set(err?.error?.detail ?? 'No se pudo verificar el código');
         // Desafío vencido o agotado: de vuelta al primer paso.
-        if (err?.status === 401) this.cancelarDosPasos(err?.error?.detail);
+        if (err?.status === 401 || err?.status === 423) this.cancelarDosPasos(err?.error?.detail);
       }
     });
   }

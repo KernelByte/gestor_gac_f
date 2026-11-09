@@ -4,11 +4,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { lastValueFrom } from 'rxjs';
+import { AuthPieComponent } from '../auth-pie.component';
 
 @Component({
    selector: 'app-forgot-password',
    standalone: true,
-   imports: [CommonModule, ReactiveFormsModule, RouterLink],
+   imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthPieComponent],
    templateUrl: './forgot-password.page.html',
 })
 export class ForgotPasswordPage {

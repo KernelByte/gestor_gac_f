@@ -4,6 +4,8 @@ import { lastValueFrom } from 'rxjs';
 import { DosPasosService, EstadoDosPasos } from '../../core/auth/dos-pasos.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/activar-dos-pasos.component';
+import { ConfirmService } from '../../shared/components/confirm-dialog/confirm.service';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 /**
  * Verificación en dos pasos del propio usuario. Tarjeta de ancho completo en el Perfil:
@@ -78,6 +80,14 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
                   </p>
                 </div>
                 <button type="button" class="btn-secondary" (click)="abrir('codigos')">Generar nuevos</button>
+              </li>
+              <li class="fila" *ngIf="e.puede_recordar">
+                <div class="min-w-0">
+                  <p class="fila-titulo">Dispositivos de confianza</p>
+                  <p class="fila-desc">{{ textoConfianza(e.dispositivos_confianza ?? 0) }}</p>
+                </div>
+                <button type="button" class="btn-secondary" [disabled]="!e.dispositivos_confianza || trabajando()"
+                  (click)="quitarConfianza()">Quitar todos</button>
               </li>
               <li class="fila" *ngIf="!e.obligatorio">
                 <div class="min-w-0">
@@ -207,6 +217,8 @@ import { ActivarDosPasosComponent } from '../../shared/components/dos-pasos/acti
 export class PerfilDosPasosComponent implements OnInit {
   private svc = inject(DosPasosService);
   private auth = inject(AuthService);
+  private confirm = inject(ConfirmService);
+  private toast = inject(ToastService);
 
   estado = signal<EstadoDosPasos | null>(null);
   modo = signal<'ver' | 'codigos' | 'desactivar'>('ver');
@@ -227,6 +239,31 @@ export class PerfilDosPasosComponent implements OnInit {
   textoCodigos(n: number) {
     if (n <= 0) return 'No te quedan códigos sin usar. Genera nuevos.';
     return n === 1 ? 'Te queda 1 código sin usar.' : `Te quedan ${n} códigos sin usar.`;
+  }
+
+  textoConfianza(n: number) {
+    if (n <= 0) return 'Ninguno. Al entrar puedes marcar «Confiar en este dispositivo» para no escribir el código durante 90 días.';
+    return n === 1
+      ? 'En 1 dispositivo no se te pide el código.'
+      : `En ${n} dispositivos no se te pide el código.`;
+  }
+
+  async quitarConfianza() {
+    const ok = await this.confirm.ask({
+      title: '¿Quitar todos los dispositivos de confianza?',
+      message: 'La próxima vez que entres desde cualquiera de ellos se te pedirá el código. Hazlo si perdiste un equipo o un teléfono.',
+      confirmLabel: 'Quitar todos',
+      severity: 'warning',
+    });
+    if (!ok) return;
+    this.trabajando.set(true); this.error.set(null);
+    try {
+      await lastValueFrom(this.svc.quitarDispositivosConfianza());
+      this.toast.success('Dispositivos de confianza quitados');
+      this.cargar();
+    } catch (e: any) {
+      this.error.set(e?.error?.detail ?? 'No se pudieron quitar.');
+    } finally { this.trabajando.set(false); }
   }
 
   abrir(m: 'codigos' | 'desactivar') { this.error.set(null); this.modo.set(m); }

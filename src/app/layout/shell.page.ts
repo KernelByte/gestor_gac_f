@@ -15,6 +15,7 @@ import { NotificacionesService } from '../core/notificaciones/notificaciones.ser
 import { Notificacion } from '../core/notificaciones/notificacion.model';
 import { ForcePasswordChangeComponent } from '../core/components/force-password-change.component';
 import { ForceTwoFactorComponent } from '../core/components/force-two-factor.component';
+import { AceptarTerminosComponent } from '../core/components/aceptar-terminos.component';
 import { ModalBackdropService } from '../core/services/modal-backdrop.service';
 import { ToastContainerComponent } from '../shared/components/toast/toast-container.component';
 import { ConfirmDialogComponent } from '../shared/components/confirm-dialog/confirm-dialog.component';
@@ -43,13 +44,14 @@ export class TimeAgoPipe implements PipeTransform {
 @Component({
   standalone: true,
   selector: 'app-shell',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, TimeAgoPipe, ForcePasswordChangeComponent, ForceTwoFactorComponent, ToastContainerComponent, ConfirmHostComponent, ConfirmDialogComponent, CommandPaletteComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, TimeAgoPipe, ForcePasswordChangeComponent, ForceTwoFactorComponent, AceptarTerminosComponent, ToastContainerComponent, ConfirmHostComponent, ConfirmDialogComponent, CommandPaletteComponent],
   template: `
     <div class="flex h-screen overflow-hidden bg-app-bg dark:bg-slate-950 transition-colors duration-300" [class.dark]="themeService.darkMode()">
 
       <!-- Cambio de Contraseña Obligatorio (Overlay) -->
       <app-force-password-change *ngIf="mustChangePassword()"></app-force-password-change>
       <app-force-two-factor *ngIf="!mustChangePassword() && mustEnableTwoFactor()"></app-force-two-factor>
+      <app-aceptar-terminos *ngIf="!mustChangePassword() && !mustEnableTwoFactor() && mustAcceptTerms()"></app-aceptar-terminos>
       
       <!-- Mobile Overlay -->
       <div 
@@ -1069,6 +1071,7 @@ export class ShellPage implements OnInit, OnDestroy {
   user = computed(() => this.store.user());
   mustChangePassword = computed(() => this.store.user()?.debe_cambiar_contrasena === true);
   mustEnableTwoFactor = computed(() => this.store.user()?.mfa_pendiente === true);
+  mustAcceptTerms = computed(() => this.store.user()?.terminos_pendientes === true);
 
   // SSE de notificaciones: con la verificación en dos pasos pendiente el
   // backend lo rechaza (403) y reintentaría en bucle; se abre al activarla.

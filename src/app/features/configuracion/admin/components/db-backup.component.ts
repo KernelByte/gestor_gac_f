@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../../../shared/components';
@@ -18,7 +19,7 @@ interface CongregacionOption {
 @Component({
    selector: 'app-db-backup',
    standalone: true,
-   imports: [CommonModule, FormsModule, ModalComponent, ConfirmDialogComponent, AvisoComponent],
+   imports: [CommonModule, FormsModule, RouterLink, ModalComponent, ConfirmDialogComponent, AvisoComponent],
    styles: [`
       .custom-scrollbar::-webkit-scrollbar { width: 5px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -103,6 +104,13 @@ interface CongregacionOption {
                {{ notification()!.message }}
             </div>
 
+            <!-- Sin llave: los respaldos quedan en claro y no salen por correo -->
+            <app-aviso *ngIf="llaveConfigurada() === false" tone="warning" title="Falta la llave de respaldos" class="block">
+               Los respaldos se están guardando sin cifrar y no se envían por correo hasta que cree la llave.
+               <a routerLink="/admin/configuracion" [queryParams]="{ tab: 'seguridad' }"
+                  class="font-bold underline underline-offset-2">Crear la llave en Seguridad</a>
+            </app-aviso>
+
             <!-- ===== CREAR RESPALDO ===== -->
             <div *ngIf="activeSection() === 'backup'" class="animate-slideIn space-y-4">
 
@@ -170,7 +178,7 @@ interface CongregacionOption {
                   <div class="flex items-center justify-between">
                      <div>
                         <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white">Enviar por correo</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Enviar copia del respaldo al correo indicado</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Enviar copia del respaldo al correo indicado. Solo se envían respaldos cifrados.</p>
                      </div>
                      <button (click)="enviarEmail.set(!enviarEmail())" type="button"
                         class="relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none"
@@ -376,7 +384,7 @@ interface CongregacionOption {
                      <div class="flex items-center justify-between">
                         <div>
                            <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white">Enviar por correo</h3>
-                           <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Enviar copia autom&aacute;ticamente</p>
+                           <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Enviar copia autom&aacute;ticamente. Solo se env&iacute;an respaldos cifrados.</p>
                         </div>
                         <button (click)="scheduleEmail.set(!scheduleEmail())" type="button"
                            class="relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none"
@@ -694,7 +702,14 @@ export class DbBackupComponent implements OnInit {
 
    backupsRestaurables = () => this.historial().filter(b => b.estado === 'completado');
 
+   /** null mientras carga: así el aviso no parpadea. */
+   llaveConfigurada = signal<boolean | null>(null);
+
    ngOnInit() {
+      this.http.get<{ llave_configurada: boolean }>(`${environment.apiUrl}/seguridad/estado`).subscribe({
+         next: e => this.llaveConfigurada.set(!!e.llave_configurada),
+         error: () => { },
+      });
       // Correos permitidos para enviar respaldos (el backend rechaza cualquier otro).
       this.http.get<{ correo: string; rol: string }[]>(`${environment.apiUrl}/seguridad/usuarios`).subscribe({
          next: us => this.correosAdmin.set(us.filter(u => u.rol?.toLowerCase() === 'administrador').map(u => u.correo)),

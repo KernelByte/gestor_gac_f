@@ -276,6 +276,7 @@ export class AccesoAppComponent implements OnInit {
   masHabilitar(): void    { this.desdeMenuMas(() => void this.habilitar(true)); }
   masNuevoPin(): void     { this.desdeMenuMas(() => void this.regenerarPines()); }
   masQuitarAcceso(): void { this.desdeMenuMas(() => this.confirmarQuitar.set(true)); }
+  masAsistencia(activo: boolean): void { this.desdeMenuMas(() => void this.fijarAsistencia(activo)); }
 
   async confirmarQuitarAcceso(): Promise<void> {
     this.confirmarQuitar.set(false);
@@ -295,6 +296,19 @@ export class AccesoAppComponent implements OnInit {
       }
       if (r.detalle.length) {
         this.toast.info('Sin cambios para algunos', r.detalle.join(' '), 6000);
+      }
+    });
+  }
+
+  /** Anotar asistencia desde Mi Reunión: solo el mes en curso, entre con PIN o con correo. */
+  async fijarAsistencia(activo: boolean): Promise<void> {
+    await this.enLote(async (ids) => {
+      const r = await lastValueFrom(this.api.fijarAsistencia(ids, activo));
+      const quien = r.afectados === 1 ? '1 publicador' : `${r.afectados} publicadores`;
+      if (r.afectados) {
+        this.toast.success(activo ? 'Ya puede anotar la asistencia' : 'Ya no anota la asistencia', quien);
+      } else {
+        this.toast.info('Sin cambios', activo ? 'Ya podían anotar la asistencia.' : 'No anotaban la asistencia.');
       }
     });
   }

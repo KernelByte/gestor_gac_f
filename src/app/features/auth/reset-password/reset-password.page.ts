@@ -5,11 +5,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PasswordStrengthComponent } from '../../../shared/components/password-strength/password-strength.component';
 import { lastValueFrom } from 'rxjs';
+import { AuthPieComponent } from '../auth-pie.component';
 
 @Component({
    selector: 'app-reset-password',
    standalone: true,
-   imports: [CommonModule, ReactiveFormsModule, RouterLink, PasswordStrengthComponent],
+   imports: [CommonModule, ReactiveFormsModule, RouterLink, PasswordStrengthComponent, AuthPieComponent],
    templateUrl: './reset-password.page.html',
 })
 export class ResetPasswordPage implements OnInit {
@@ -21,7 +22,7 @@ export class ResetPasswordPage implements OnInit {
    token = '';
 
    form = this.fb.group({
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(7)]],
       confirmPassword: ['', [Validators.required]]
    });
 

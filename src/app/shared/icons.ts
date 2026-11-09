@@ -19,6 +19,8 @@ import {
   Sparkles, Clock, ImagePlus, Smartphone,
   // reuniones de ancianos
   Send, Lightbulb, ArrowUp, ArrowDown, Save, BookOpen, BellOff,
+  // páginas legales (/legal)
+  KeyRound, ShieldCheck, Building2, DatabaseBackup, Ban, Printer, Sun, Moon, Scale, TimerReset,
 } from 'lucide-angular';
 
 export const APP_ICONS = {
@@ -36,6 +38,8 @@ export const APP_ICONS = {
   Sparkles, Clock, ImagePlus, Smartphone,
   // reuniones de ancianos
   Send, Lightbulb, ArrowUp, ArrowDown, Save, BookOpen, BellOff,
+  // páginas legales (/legal)
+  KeyRound, ShieldCheck, Building2, DatabaseBackup, Ban, Printer, Sun, Moon, Scale, TimerReset,
 };
 
 /** Para usar en app.config.ts:  importProvidersFrom(LucideAngularModule.pick(APP_ICONS)) */

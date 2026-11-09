@@ -638,7 +638,7 @@ export class UsuariosPage implements OnInit {
       this.userForm = this.fb.group({
          nombre: ['', Validators.required],
          correo: ['', [Validators.required, Validators.email]],
-         contrasena: ['', [Validators.required, Validators.minLength(6)]],
+         contrasena: ['', [Validators.required, Validators.minLength(7)]],
          confirmPassword: ['', Validators.required],
          id_rol_usuario: [null, Validators.required],
          id_congregacion: [null],
@@ -1057,7 +1057,7 @@ export class UsuariosPage implements OnInit {
       });
 
       // Re-enable password validators for new users
-      this.userForm.get('contrasena')?.setValidators([Validators.required, Validators.minLength(6)]);
+      this.userForm.get('contrasena')?.setValidators([Validators.required, Validators.minLength(7)]);
       this.userForm.get('confirmPassword')?.setValidators([Validators.required]);
 
       try {
