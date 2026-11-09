@@ -12,6 +12,7 @@ import { forkJoin, of, lastValueFrom } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { saveAs } from 'file-saver';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { anoServicioDe } from '../../../core/utils/fecha.util';
 
 type MeetingStatus = 'today' | 'next' | 'past' | 'future' | 'none';
 interface MeetingCardInfo {
@@ -1276,10 +1277,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
 
   private defaultYear(): number { return new Date().getFullYear(); }
   private defaultMonth(): number { return new Date().getMonth() + 1; }
-  private defaultResumenServiceYear(): number {
-    const now = new Date();
-    return now.getMonth() >= 8 ? now.getFullYear() + 1 : now.getFullYear();
-  }
+  private defaultResumenServiceYear(): number { return anoServicioDe(); }
 
   prevMonth(): void {
     let m = +this.selectedMonth() - 1;

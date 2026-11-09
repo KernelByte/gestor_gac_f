@@ -6,8 +6,9 @@ import { CongregacionContextService } from '../../../core/congregacion-context/c
 import { EventoAgenda, Festivo, ModoAgenda, Recordatorio, RecordatorioForm, Sugerencia } from '../models/agenda.model';
 
 /**
- * Agenda del secretario (/secretario/agenda) o agenda personal del coordinador y
- * los ancianos (/agenda). La página se provee su propia instancia y fija el modo;
+ * Agenda del secretario (/secretario/agenda), personal del coordinador y los ancianos
+ * (/agenda) o la de quien solo participa en exhibidores (/agenda/exhibidor: solo lectura,
+ * con eventos, próximos y festivos). La página se provee su propia instancia y fija el modo;
  * la de raíz se queda en el del secretario (la usa Festivos).
  */
 @Injectable({ providedIn: 'root' })
@@ -19,7 +20,9 @@ export class AgendaService {
 
   usarModo(modo: ModoAgenda) {
     this.modo = modo;
-    this.url = modo === 'personal' ? `${environment.apiUrl}/agenda` : `${environment.apiUrl}/secretario/agenda`;
+    this.url = modo === 'personal' ? `${environment.apiUrl}/agenda`
+      : modo === 'exhibidor' ? `${environment.apiUrl}/agenda/exhibidor`
+      : `${environment.apiUrl}/secretario/agenda`;
   }
 
   /** Solo el Administrador manda la congregación; el resto la toma el backend. La personal siempre es la propia. */

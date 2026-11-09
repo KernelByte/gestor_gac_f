@@ -16,6 +16,7 @@ const MAX_FILAS = 4;
 const ETIQUETA_TIPO: Record<TipoEvento, string> = {
   tarea: 'Tarea', recordatorio: 'Recordatorio', visita: 'Visita del superintendente',
   transferencia: 'Traslado', informes: 'Informes', bautismo: 'Bautismo', reunion_ancianos: 'Reunión de ancianos',
+  exhibidor: 'Exhibidor',
 };
 
 interface Pendiente {
@@ -123,7 +124,7 @@ export class PendientesPanelComponent implements OnInit {
   ngOnInit() { this.fuente.cargar(); }
 
   private cargarPendientes(): Observable<Pendiente[]> {
-    if (this.modo === 'secretaria' || this.modo === 'personal') {
+    if (this.modo === 'secretaria' || this.modo === 'personal' || this.modo === 'exhibidor') {
       this.agenda.usarModo(this.modo);
       const hoy = isoLocal(new Date());
       return this.agenda.proximos().pipe(map(lista => lista

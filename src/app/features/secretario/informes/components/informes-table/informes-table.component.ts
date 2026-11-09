@@ -98,13 +98,17 @@ export class InformesTableComponent implements OnChanges {
       const roles: RolEtiqueta[] = [];
       if (!pub) return roles;
 
-      // 1. Try to get from loaded map (accurate assignments)
+      // 1. Privilegios vigentes en el mes del resumen (los calcula el backend).
+      //    Si no vienen, el mapa cargado aparte (vigentes HOY, no en el mes).
       const assignedIds = this.publicadorPrivilegiosMap.get(pub.id_publicador);
       const catalog = this.privilegios || [];
+      const delMes = Array.isArray(pub.privilegios_mes) ? pub.privilegios_mes : null;
 
-      if (assignedIds && assignedIds.length > 0 && catalog.length > 0) {
+      if (delMes || (assignedIds && assignedIds.length > 0 && catalog.length > 0)) {
          // Map Ids to Names
-         const roleNames = assignedIds.map(id => catalog.find(pr => pr.id_privilegio === id)?.nombre_privilegio?.toLowerCase() || '').filter(Boolean);
+         const roleNames = delMes
+            ? delMes.map(n => (n || '').toLowerCase()).filter(Boolean)
+            : assignedIds!.map(id => catalog.find(pr => pr.id_privilegio === id)?.nombre_privilegio?.toLowerCase() || '').filter(Boolean);
 
          if (roleNames.some(r => r.includes('regular'))) {
             roles.push({ label: 'PRECURSOR REGULAR', class: ROL_CLASES.regular });
@@ -165,7 +169,8 @@ export class InformesTableComponent implements OnChanges {
          if (field === 'es_paux') return local.es_paux_mes ?? pub.es_paux_mes ?? false;
          if (field === 'cursos') return local.cursos_biblicos ?? pub.cursos_biblicos ?? 0;
          if (field === 'horas') return local.horas ?? pub.horas ?? 0;
-         if (field === 'notas') return local.observaciones ?? pub.observaciones ?? '';
+         // La nota local vacía (null) es un borrado: no volver a la del servidor.
+         if (field === 'notas') return (local.observaciones !== undefined ? local.observaciones : pub.observaciones) ?? '';
       }
       if (field === 'participo') return pub.participo ?? false;
       if (field === 'es_paux') return pub.es_paux_mes ?? false;
@@ -227,9 +232,21 @@ export class InformesTableComponent implements OnChanges {
       return bonus > 0 ? bonus : null;
    }
 
+   /** Auxiliar continuo: apagarlo aquí no borraría nada, se cambia en Privilegios. */
+   pauxBloqueado(pub: InformeConPublicador): boolean {
+      return !!pub?.paux_continuo;
+   }
+
+   pauxTitulo(pub: InformeConPublicador): string {
+      return this.pauxBloqueado(pub)
+         ? 'Precursor auxiliar continuo: se cambia en Privilegios'
+         : 'Precursor auxiliar este mes';
+   }
+
    togglePaux(pub: InformeConPublicador) {
       if (!this.canEdit) return;
       if (!pub || !this.getInformeValue(pub, 'participo')) return;
+      if (this.pauxBloqueado(pub)) return;
 
       const current = this.getInformeValue(pub, 'es_paux');
       const newValue = !current;

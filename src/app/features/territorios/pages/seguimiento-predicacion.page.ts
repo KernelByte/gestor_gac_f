@@ -127,7 +127,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
                           <div class="flex items-center gap-2">
                             <span class="text-sm text-red-700 dark:text-red-400 font-semibold mr-auto">¿Eliminar la salida del {{ s.fecha_salida | date:'d MMM':'':'es' }}?</span>
                             <button type="button" (click)="confirmarEliminarId.set(null)" class="btn-ghost btn-sm">No</button>
-                            <button type="button" (click)="confirmarEliminarSalida(s.id_salida)" class="btn-danger">Sí, eliminar</button>
+                            <button type="button" (click)="confirmarEliminarSalida(s.id_salida)" [disabled]="eliminandoId() === s.id_salida" class="btn-danger">Sí, eliminar</button>
                           </div>
                         } @else {
                           <div class="flex items-center gap-3">
@@ -279,6 +279,7 @@ export class SeguimientoPredicacionPage implements OnInit {
 
   // Fix #2: confirmación inline de eliminación
   confirmarEliminarId = signal<number | null>(null);
+  eliminandoId = signal<number | null>(null);
 
   // Modal salida
   showSalidaModal = signal(false);
@@ -306,25 +307,30 @@ export class SeguimientoPredicacionPage implements OnInit {
     this.confirmarEliminarId.set(null);
     this.puntos.set([]);
     this.noVisitar.set([]);
-    this.territoriosService.getAvisos(t.id_territorio).subscribe({ next: (l) => this.noVisitar.set(l) });
-    this.territoriosService.getPuntos(t.id_territorio).subscribe({ next: (l) => this.puntos.set(l) });
+    // Si el usuario cambia de tarjeta antes de que llegue la respuesta, se descarta (no pisa la nueva).
+    this.territoriosService.getAvisos(t.id_territorio).subscribe({ next: (l) => { if (this.esLaElegida(t.id_territorio)) this.noVisitar.set(l); } });
+    this.territoriosService.getPuntos(t.id_territorio).subscribe({ next: (l) => { if (this.esLaElegida(t.id_territorio)) this.puntos.set(l); } });
     this.loadSalidas(t.id_territorio);
     this.loadProgreso(t.id_territorio);
+  }
+
+  private esLaElegida(idTerritorio: number): boolean {
+    return this.territorioSeleccionado()?.id_territorio === idTerritorio;
   }
 
   private loadSalidas(idTerritorio: number): void {
     this.salidasLoading.set(true);
     this.territoriosService.getSalidas(idTerritorio).subscribe({
-      next: (list) => { this.salidas.set(list); this.salidasLoading.set(false); },
-      error: () => this.salidasLoading.set(false),
+      next: (list) => { if (!this.esLaElegida(idTerritorio)) return; this.salidas.set(list); this.salidasLoading.set(false); },
+      error: () => { if (this.esLaElegida(idTerritorio)) this.salidasLoading.set(false); },
     });
   }
 
   private loadProgreso(idTerritorio: number): void {
     this.progresoLoading.set(true);
     this.territoriosService.getSalidaProgreso(idTerritorio).subscribe({
-      next: (p) => { this.progreso.set(p); this.progresoLoading.set(false); },
-      error: () => this.progresoLoading.set(false),
+      next: (p) => { if (!this.esLaElegida(idTerritorio)) return; this.progreso.set(p); this.progresoLoading.set(false); },
+      error: () => { if (this.esLaElegida(idTerritorio)) this.progresoLoading.set(false); },
     });
   }
 
@@ -384,15 +390,18 @@ export class SeguimientoPredicacionPage implements OnInit {
   // Fix #2: flujo de dos pasos — primero pide confirmación, luego ejecuta
   confirmarEliminarSalida(idSalida: number): void {
     const t = this.territorioSeleccionado();
-    if (!t) return;
+    if (!t || this.eliminandoId() != null) return;
+    this.eliminandoId.set(idSalida);
     this.territoriosService.deleteSalida(t.id_territorio, idSalida).subscribe({
       next: () => {
+        this.eliminandoId.set(null);
         this.confirmarEliminarId.set(null);
         this.loadSalidas(t.id_territorio);
         this.loadProgreso(t.id_territorio);
         this.loadResumen();
         this.mapaTarjeta()?.recargarTodo(); // la fecha, el capitán o el borrado cambian el mapa, «Por registrar» y el programa
       },
+      error: () => this.eliminandoId.set(null),
     });
   }
 

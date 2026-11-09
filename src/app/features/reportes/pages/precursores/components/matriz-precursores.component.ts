@@ -70,7 +70,7 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
     }
     .barra-orden label {
       flex: none;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -84,7 +84,7 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
       border: 1px solid var(--linea);
       border-radius: 0.5rem;
       background: var(--superficie);
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
       color: var(--txt-1);
     }
     .barra-orden select:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
@@ -107,7 +107,7 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 0.875rem;
+      font-size: 0.9375rem;
       font-weight: 600;
       letter-spacing: -0.006em;
       color: var(--txt-1);
@@ -125,7 +125,7 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
       column-gap: 0.625rem;
       row-gap: 0.0625rem;
       font-family: var(--font-mono);
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       color: var(--txt-3);
     }
     .meta-item { display: inline-flex; align-items: center; gap: 0.1875rem; white-space: nowrap; }
@@ -151,16 +151,16 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
       color: var(--txt-1);
     }
     .mes-lbl {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 500;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--txt-2);
     }
-    .mes-val { font-size: 0.8125rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; }
+    .mes-val { font-size: 0.875rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; }
     .mes-val sup {
       margin-left: 0.0625rem;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       letter-spacing: 0;
       color: var(--credito);
       vertical-align: super;
@@ -176,15 +176,15 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
     .col-total, .col-balance, .col-estado { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
     .lbl {
       display: block;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 500;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--txt-2);
     }
     .total-linea { display: flex; align-items: baseline; gap: 0.3125rem; }
-    .total-num { font-size: 0.9375rem; font-weight: 700; letter-spacing: -0.02em; color: var(--txt-1); }
-    .meta { font-size: 0.75rem; letter-spacing: -0.01em; color: var(--txt-2); }
+    .total-num { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; color: var(--txt-1); }
+    .meta { font-size: 0.8125rem; letter-spacing: -0.01em; color: var(--txt-2); }
     .meta.parcial { color: var(--credito); }
     .meta.parcial-consid { color: var(--exento); }
     .meta.sin-meta { font-style: italic; }
@@ -203,7 +203,7 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
     .fila-atencion .barra { --relleno: var(--aviso); }
     .fila-riesgo .barra { --relleno: var(--neg); }
 
-    .col-balance { font-size: 0.8125rem; color: var(--txt-2); }
+    .col-balance { font-size: 0.875rem; color: var(--txt-2); }
     .col-balance .valor { font-weight: 600; }
     .c-pos { color: var(--pos); }
     .c-neg { color: var(--neg); }
@@ -224,8 +224,8 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
     }
 
     tfoot tr { border-top: 1px solid var(--linea); background: var(--superficie-alt); }
-    .rotulo-total { font-size: 0.75rem; font-weight: 600; color: var(--txt-1); }
-    .celda-pie { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.75rem; color: var(--txt-2); text-align: center; }
+    .rotulo-total { font-size: 0.8125rem; font-weight: 600; color: var(--txt-1); }
+    .celda-pie { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.8125rem; color: var(--txt-2); text-align: center; }
 
     /* ══ Tarjeta (contenedor < 60 rem) ═════════════════════════════════
        Se construye sobre una cuadrícula de 12 columnas: nombre y estado en
@@ -296,7 +296,7 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
         background: var(--superficie-alt);
       }
       .matriz-table thead th {
-        font-size: 0.75rem;
+        font-size: 0.8125rem;
         font-weight: 600;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -318,7 +318,32 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
     @container matriz (min-width: 90rem) {
       .matriz-table tr { column-gap: 0.375rem; padding-inline: 1.25rem; }
       .celda-mes { min-height: 2.5rem; }
-      .mes-val { font-size: 0.875rem; }
+      .mes-val { font-size: 0.9375rem; }
+    }
+
+    /* Monitores 2K/4K: más alto de fila, cifras y nombre un peldaño arriba,
+       y columnas finales más anchas para que Total/meta y Estado respiren. */
+    @container matriz (min-width: 100rem) {
+      .matriz-table tr {
+        grid-template-columns:
+          minmax(14rem, 2.4fr)
+          repeat(12, minmax(2.5rem, 1fr))
+          8rem 5.5rem 12.5rem;
+        padding: 0.625rem 1.5rem;
+      }
+      .celda-mes { min-height: 2.875rem; border-radius: 0.4375rem; }
+      .mes-val { font-size: 1rem; }
+      .nombre-txt { font-size: 1rem; }
+      .linea-meta, .meta, .celda-pie, .rotulo-total { font-size: 0.875rem; }
+      .total-num { font-size: 1rem; }
+      .col-balance { font-size: 0.9375rem; }
+      .matriz-table thead th { font-size: 0.875rem; }
+      .barra { height: 0.3125rem; }
+    }
+
+    /* Pantallas de dedo: el botón del nombre alcanza los 44 px en tarjeta. */
+    @media (pointer: coarse) {
+      .nombre-btn { min-height: 2.75rem; display: flex; align-items: center; }
     }
 
     /* ── Orden en cabecera (solo tabla) ────────────────────────────── */
@@ -459,7 +484,8 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
               }
 
               <td role="cell" class="col-total" [title]="tituloMeta(f) + ' Promedio: ' + (f.promedio | number:'1.0-1') + ' h/mes.'">
-                <span class="lbl">Horas / meta</span>
+                <span class="sr-only">{{ tituloMeta(f) }} Promedio: {{ f.promedio | number:'1.0-1' }} h por mes.</span>
+                <span class="lbl" aria-hidden="true">Horas / meta</span>
                 <div class="total-linea">
                   <span class="total-num">{{ f.total_anual }}</span>
                   @if (!f.exento) {
@@ -476,8 +502,9 @@ const OPCIONES_ORDEN: { valor: ColumnaOrden; texto: string }[] = [
               </td>
 
               <td role="cell" class="col-balance" [title]="f.exento ? 'No se le aplica el requisito de horas (consideración especial)' : tituloAcu(f.acu, 'en lo que va del año de servicio')">
-                <span class="lbl">Balance</span>
-                <span class="valor" [ngClass]="f.exento ? 'c-apagado-txt' : claseAcu(f.acu)">{{ f.exento ? '–' : acuTexto(f.acu) }}</span>
+                <span class="sr-only">{{ f.exento ? 'No se le aplica el requisito de horas por consideración especial.' : tituloAcu(f.acu, 'en lo que va del año de servicio') }}</span>
+                <span class="lbl" aria-hidden="true">Balance</span>
+                <span class="valor" aria-hidden="true" [ngClass]="f.exento ? 'c-apagado-txt' : claseAcu(f.acu)">{{ f.exento ? '–' : acuTexto(f.acu) }}</span>
               </td>
 
               <td role="cell" class="col-estado"><app-estado-badge [estado]="f.estado" [motivo]="f.consideracion?.motivo_label" /></td>

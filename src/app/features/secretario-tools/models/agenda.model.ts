@@ -1,8 +1,8 @@
-export type TipoEvento = 'tarea' | 'recordatorio' | 'visita' | 'transferencia' | 'informes' | 'bautismo' | 'reunion_ancianos';
+export type TipoEvento = 'tarea' | 'recordatorio' | 'visita' | 'transferencia' | 'informes' | 'bautismo' | 'reunion_ancianos' | 'exhibidor';
 export type EstadoEvento = 'pendiente' | 'hecho' | 'vencido';
 export type Frecuencia = 'unica' | 'periodica';
-/** Agenda del secretario o la de cada persona (coordinador y ancianos). */
-export type ModoAgenda = 'secretaria' | 'personal';
+/** Agenda del secretario, la de cada persona (coordinador y ancianos) o la de quien solo participa en exhibidores. */
+export type ModoAgenda = 'secretaria' | 'personal' | 'exhibidor';
 /** Dónde sale un recordatorio: agenda del secretario, solo la de su dueño, o la de cada anciano. */
 export type AlcanceRecordatorio = 'secretaria' | 'personal' | 'ancianos';
 
@@ -61,7 +61,7 @@ export interface Sugerencia extends RecordatorioForm {
  * sin abrir el menú (las píldoras solo llevan color, el nombre está en el menú de tipos y en el panel):
  *   rosado (tareas) · violeta (periódicas, la marca) · naranja (informes, color de Secretaría) ·
  *   azul (visita del SC) · esmeralda (bautismos) · gris (transferencias, que son trámites sin urgencia) ·
- *   ámbar (reuniones de ancianos).
+ *   ámbar (reuniones de ancianos) · cian (salidas de exhibidor).
  * El rojo queda reservado a lo atrasado, y por eso las tareas usan rosado y no rosa-rojizo.
  */
 export const TIPOS_EVENTO: Record<TipoEvento, { label: string; pill: string; dot: string }> = {
@@ -71,5 +71,6 @@ export const TIPOS_EVENTO: Record<TipoEvento, { label: string; pill: string; dot
   visita:        { label: 'Visita del SC',  pill: 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-900/60',             dot: 'bg-blue-500' },
   bautismo:      { label: 'Bautismos',      pill: 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900/60', dot: 'bg-emerald-500' },
   reunion_ancianos: { label: 'Reuniones de ancianos', pill: 'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900/60', dot: 'bg-amber-400' },
+  exhibidor:     { label: 'Exhibidores',    pill: 'bg-cyan-50 text-cyan-900 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-200 dark:border-cyan-900/60',             dot: 'bg-cyan-500' },
   transferencia: { label: 'Transferencias', pill: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-900/70 dark:text-slate-200 dark:border-slate-600',        dot: 'bg-slate-500' },
 };

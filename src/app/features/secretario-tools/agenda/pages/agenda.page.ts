@@ -16,6 +16,7 @@ type Vista = 'calendario' | 'tareas';
  *
  * - Secretario / Administrador: calendario de la secretaría + sus tareas.
  * - Coordinador y ancianos: su agenda personal + sus tareas.
+ * - Participante de exhibidores: calendario de solo lectura con sus salidas + sus tareas (si tiene acceso).
  * - Quien solo tiene acceso a Tareas: solo la lista de tareas, sin pestañas.
  *
  * La pestaña va en ?vista=tareas para que los enlaces (y /herramientas/mis-tareas) lleguen directo.
@@ -45,7 +46,8 @@ type Vista = 'calendario' | 'tareas';
           </button>
         </div>
       }
-      @if (conTareas) {
+      <!-- En el calendario de quien solo participa en exhibidores no se crean tareas: no saldrían ahí. -->
+      @if (conTareas && (modo !== 'exhibidor' || vista() === 'tareas')) {
         <button type="button" class="btn-nueva ml-auto" data-testid="btn-nueva-tarea" aria-label="Nueva tarea" (click)="nuevaTarea()">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14m-7-7h14"/></svg>
           Nueva<span class="hidden sm:inline -ml-0.5">tarea</span>
@@ -85,9 +87,9 @@ export class AgendaPage {
   private router = inject(Router);
   private svc = inject(AgendaService);
 
-  private readonly modo = modoAgenda(this.auth);
+  readonly modo = modoAgenda(this.auth);
   /** Quien solo tiene Tareas no tiene calendario (no hay /agenda para él en el backend). */
-  readonly conCalendario = this.modo === 'secretaria' || this.modo === 'personal';
+  readonly conCalendario = this.modo === 'secretaria' || this.modo === 'personal' || this.modo === 'exhibidor';
   readonly conTareas = this.auth.hasPermission('tareas.ver');
   /** Pestañas solo si hay dos vistas: una pestaña sola no aporta nada. */
   readonly conPestanas = this.conCalendario && this.conTareas;
@@ -105,7 +107,7 @@ export class AgendaPage {
   private tareas = viewChild(TareasListaComponent);
 
   constructor() {
-    if (this.modo === 'personal') this.svc.usarModo('personal');
+    if (this.modo === 'personal' || this.modo === 'exhibidor') this.svc.usarModo(this.modo);
   }
 
   cambiarVista(v: Vista) {

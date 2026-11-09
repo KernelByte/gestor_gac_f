@@ -94,6 +94,7 @@ interface FilaSemana { clave: string; fecha: string; t1: string; t2: string; mia
     .pie-item { flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.75rem;
       border-radius: 0.75rem; background: var(--color-gray-50, #f9fafb); color: inherit; transition: background-color 150ms ease; }
     :host-context(.dark) .pie-item { background: rgb(30 41 59 / 0.7); }
+    .pie-item .t2 { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .pie-ic { width: 1.75rem; height: 1.75rem; flex-shrink: 0; display: grid; place-items: center; border-radius: 999px; }
     .pie-ic svg { width: 1rem; height: 1rem; }
     .pie-item.ok .pie-ic { background: var(--estado-ok-bg); color: var(--estado-ok-punto); }

@@ -1,12 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError, shareReplay } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import {
   CandidatosSlotResponse, ConflictoResponse, ExhibidorAsignacion,
   FechaBloqueada, HistorialParticipante, MesDisponible, MiTurno,
   ParametroAlgoritmo, Participante, ParticipanteUpdate, PerfilAlgoritmo,
-  PreferenciasResponse, ProgramacionMes, PuntoSacada, Quincena, TurnoExhibidor,
+  PreferenciasResponse, ProgramacionMes, PuntoSacada, Quincena, TerritorioLimite, TurnoExhibidor,
   UbicacionExhibidor, Vinculo,
 } from '../models/exhibidor.model';
 
@@ -46,6 +47,43 @@ export class ExhibidoresService {
   geocodificarInverso(lat: number, lon: number): Observable<{ direccion: string | null }> {
     const params = new HttpParams().set('lat', lat).set('lon', lon);
     return this.http.get<{ direccion: string | null }>(`${this.base}/geocodificar-inverso`, { params });
+  }
+
+  /**
+   * Límite del territorio de la congregación (KML de Territorios). Lo pide
+   * cada mapa del módulo, incluidos los de los modales, así que se comparte
+   * una sola petición por congregación. Un fallo vale como «sin KML» y no se
+   * cachea, para reintentar en el próximo mapa.
+   *
+   * Se renueva solo en dos casos, para que un KML nuevo se vea sin recargar:
+   *   · Territorios lo sube o lo edita en esta pestaña → invalidarTerritorioLimite().
+   *   · Lo cambió otra persona u otra pestaña → la caché caduca a los 2 min.
+   */
+  private static readonly VIDA_LIMITE_MS = 2 * 60 * 1000;
+  private limites = new Map<string, { obs: Observable<TerritorioLimite[]>; hasta: number }>();
+
+  getTerritorioLimite(idCong: number | null): Observable<TerritorioLimite[]> {
+    const clave = String(idCong);
+    const guardado = this.limites.get(clave);
+    if (guardado && guardado.hasta > Date.now()) return guardado.obs;
+
+    const obs: Observable<TerritorioLimite[]> = this.http
+      .get<TerritorioLimite[]>(`${this.base}/territorio-limite`, { params: this.congParams(idCong) })
+      .pipe(
+        catchError(() => {
+          // Solo borra su propia entrada: otra más nueva no se toca.
+          if (this.limites.get(clave)?.obs === obs) this.limites.delete(clave);
+          return of([]);
+        }),
+        shareReplay(1),
+      );
+    this.limites.set(clave, { obs, hasta: Date.now() + ExhibidoresService.VIDA_LIMITE_MS });
+    return obs;
+  }
+
+  /** Olvida el límite guardado: el próximo mapa que se abra lo pide de nuevo. */
+  invalidarTerritorioLimite(): void {
+    this.limites.clear();
   }
 
   // ── Ubicaciones y turnos ───────────────────────────────────

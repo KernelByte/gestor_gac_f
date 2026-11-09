@@ -54,7 +54,4 @@ export function graficoInformes(puntos: PuntoInformes[]): EChartsOption {
   };
 }
 
-/** Año de servicio que contiene `d` (septiembre → agosto; se nombra por el año en que termina). */
-export function anoServicioDe(d = new Date()): number {
-  return d.getMonth() + 1 >= 9 ? d.getFullYear() + 1 : d.getFullYear();
-}
+

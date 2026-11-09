@@ -17,6 +17,7 @@ import { PuntoSacadaPickerComponent } from '../components/punto-sacada-picker.co
 import { SelectorUbicacionComponent } from '../components/selector-ubicacion.component';
 import { ExhibidoresService } from '../services/exhibidores.service';
 import { Hora12Pipe } from '../../../shared/pipes/hora12.pipe';
+import { LucideAngularModule } from '../../../shared/icons';
 import {
   ComposicionPareja, DIAS_SEMANA, DIAS_SEMANA_CORTO, GeoJSONPoint, PuntoSacada,
   TurnoExhibidor, UbicacionExhibidor,
@@ -65,12 +66,12 @@ interface SacadaForm {
     CommonModule, FormsModule, PageHeaderComponent, ModalComponent,
     ConfirmDialogComponent, EmptyStateComponent, TimePickerComponent,
     ExhibidoresTabsComponent, ExhibidorMapComponent, PuntoSacadaPickerComponent,
-    SelectorUbicacionComponent, Hora12Pipe,
+    SelectorUbicacionComponent, Hora12Pipe, LucideAngularModule,
   ],
   template: `
     <app-page-header
       title="Exhibidores"
-      subtitle="Puntos de exhibición, turnos semanales y puntos de sacada.">
+      subtitle="Dónde se pone el exhibidor y qué días y horas sale. La programación se arma con estos turnos.">
       <button class="btn-secondary" (click)="abrirSacadas()">Puntos de sacada</button>
       <button class="btn-primary-blue" (click)="nuevaUbicacion()">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -114,6 +115,10 @@ interface SacadaForm {
           <span class="inline-flex items-center gap-1.5">
             <span class="w-2.5 h-2.5 rounded-full bg-slate-500 inline-block"></span> Punto de sacada
           </span>
+          <span *ngIf="tieneTerritorio()" class="inline-flex items-center gap-1.5">
+            <span class="w-4 border-t-2 border-dashed border-teal-700 dark:border-teal-500 inline-block"></span>
+            Territorio de la congregación
+          </span>
         </div>
       </div>
 
@@ -134,11 +139,12 @@ interface SacadaForm {
           accent="blue"
           icon="map-pin"
           title="Sin ubicaciones"
-          description="Crea el primer punto de exhibición para empezar a programar turnos."
+          description="Crea el primer lugar donde se pone el exhibidor y dile qué días y horas sale. Con eso ya se puede programar."
           actionLabel="Nueva ubicación"
           (action)="nuevaUbicacion()" />
 
         <div *ngFor="let u of ubicaciones()"
+             [attr.data-ubicacion-id]="u.id_ubicacion_exhibidor"
              class="card-elevated p-4 cursor-pointer transition-all"
              [class.ring-2]="seleccionada()?.id_ubicacion_exhibidor === u.id_ubicacion_exhibidor"
              [class.ring-exh-500]="seleccionada()?.id_ubicacion_exhibidor === u.id_ubicacion_exhibidor"
@@ -147,11 +153,12 @@ interface SacadaForm {
             <div class="min-w-0">
               <div class="flex items-center gap-2">
                 <h3 class="font-semibold text-slate-900 dark:text-slate-100 truncate">{{ u.nombre }}</h3>
-                <span *ngIf="u.estado === 'mantenimiento'" class="badge-warning shrink-0">Mantenimiento</span>
+                <span *ngIf="u.estado === 'mantenimiento'" class="badge-warning shrink-0"
+                      title="No sale en la programación mientras esté así">En pausa</span>
               </div>
               <p class="text-sm text-slate-500 dark:text-slate-400 truncate">{{ u.direccion || 'Sin dirección' }}</p>
-              <p *ngIf="u.punto_sacada" class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                Sacada: {{ u.punto_sacada.nombre }}
+              <p *ngIf="u.punto_sacada" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                El carrito se guarda en: {{ u.punto_sacada.nombre }}
               </p>
               <div class="flex flex-wrap gap-1.5 mt-2">
                 <span *ngIf="u.composicion === 'solo_varones'" class="badge-neutral">Solo varones</span>
@@ -164,17 +171,13 @@ interface SacadaForm {
                  y un ícono de 16px el botón quedaba en ~28px, difícil de acertar
                  para alguien con menos precisión motriz o poca práctica con pantallas. -->
             <div class="row-actions shrink-0">
-              <button class="btn-icon-sm"
+              <button type="button" class="btn-icon-sm" title="Editar ubicación"
                       (click)="editarUbicacion(u); $event.stopPropagation()" aria-label="Editar ubicación">
-                <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487Z"/>
-                </svg>
+                <lucide-icon name="square-pen"></lucide-icon>
               </button>
-              <button class="btn-icon-sm tone-danger"
+              <button type="button" class="btn-icon-sm tone-danger" title="Eliminar ubicación"
                       (click)="pedirEliminar(u); $event.stopPropagation()" aria-label="Eliminar ubicación">
-                <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673A2.25 2.25 0 0 1 15.916 21.75H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397M4.75 5.75c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916"/>
-                </svg>
+                <lucide-icon name="trash-2"></lucide-icon>
               </button>
             </div>
           </div>
@@ -182,18 +185,22 @@ interface SacadaForm {
           <!-- Turnos de la ubicación -->
           <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60">
             <div class="flex items-center justify-between mb-1.5">
-              <span class="eyebrow">Turnos semanales</span>
-              <button class="text-xs font-semibold text-exh-600 dark:text-exh-400 hover:underline"
+              <span class="eyebrow">Días y horas</span>
+              <button type="button" class="btn-link text-xs"
                       (click)="nuevoTurno(u); $event.stopPropagation()">+ Añadir turno</button>
             </div>
-            <p *ngIf="u.turnos.length === 0" class="text-xs text-slate-400 italic">Sin turnos configurados.</p>
+            <!-- Sin turnos el punto no entra en la programación: decirlo, porque
+                 si no parece configurado y luego «no sale» sin razón aparente. -->
+            <p *ngIf="u.turnos.length === 0" class="text-xs text-amber-700 dark:text-amber-400">
+              Todavía no tiene días ni horas, así que no saldrá en la programación.
+            </p>
             <div class="flex flex-wrap gap-1.5">
               <button *ngFor="let t of u.turnos"
                       class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium
                              bg-exh-50 text-exh-700 hover:bg-exh-100
                              dark:bg-exh-950/60 dark:text-exh-300 dark:hover:bg-exh-900/60 transition-colors"
                       (click)="editarTurno(u, t); $event.stopPropagation()">
-                {{ t.dia_nombre }} · <span class="data-num whitespace-nowrap">{{ t.hora_inicio | hora12 }} – {{ t.hora_fin | hora12 }}</span> · {{ t.capacidad }}p
+                {{ t.dia_nombre }} · <span class="data-num whitespace-nowrap">{{ t.hora_inicio | hora12 }} – {{ t.hora_fin | hora12 }}</span> · {{ t.capacidad }} personas
               </button>
             </div>
           </div>
@@ -281,7 +288,7 @@ interface SacadaForm {
             <label class="form-label">Estado</label>
             <select class="form-select" [(ngModel)]="formUbicacion.estado">
               <option value="activo">Activo</option>
-              <option value="mantenimiento">En mantenimiento (no genera turnos)</option>
+              <option value="mantenimiento">En pausa (no sale en la programación)</option>
             </select>
           </div>
 
@@ -298,14 +305,14 @@ interface SacadaForm {
                  fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
-            {{ avanzadoAbierto() ? 'Menos opciones' : 'Más opciones (composición, fluidez, notas)' }}
+            {{ avanzadoAbierto() ? 'Menos opciones' : 'Más opciones (quiénes salen, fluidez, notas)' }}
           </button>
 
           <div *ngIf="avanzadoAbierto()" class="space-y-4 animate-fadeIn">
             <div>
-              <label class="form-label">Composición del turno</label>
+              <label class="form-label">Quiénes pueden salir aquí</label>
               <select class="form-select" [(ngModel)]="formUbicacion.composicion">
-                <option value="indistinto">Indistinto</option>
+                <option value="indistinto">Hermanos o hermanas</option>
                 <option value="solo_varones">Solo varones</option>
                 <option value="solo_mujeres">Solo hermanas</option>
               </select>
@@ -390,11 +397,11 @@ interface SacadaForm {
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="form-label">Hora inicio</label>
+            <label class="form-label">Desde</label>
             <app-time-picker [(ngModel)]="formTurno.hora_inicio" colorScheme="blue" />
           </div>
           <div>
-            <label class="form-label">Hora fin</label>
+            <label class="form-label">Hasta</label>
             <app-time-picker [(ngModel)]="formTurno.hora_fin" colorScheme="blue" />
           </div>
         </div>
@@ -421,7 +428,7 @@ interface SacadaForm {
                            bg-exh-50 text-exh-700 hover:bg-exh-100
                            dark:bg-exh-950/60 dark:text-exh-300 dark:hover:bg-exh-900/60 transition-colors"
                     (click)="editarTurno(ubicacionTurno()!, t)">
-              {{ t.dia_nombre }} · <span class="data-num whitespace-nowrap">{{ t.hora_inicio | hora12 }} – {{ t.hora_fin | hora12 }}</span> · {{ t.capacidad }}p
+              {{ t.dia_nombre }} · <span class="data-num whitespace-nowrap">{{ t.hora_inicio | hora12 }} – {{ t.hora_fin | hora12 }}</span> · {{ t.capacidad }} personas
             </button>
           </div>
         </div>
@@ -481,15 +488,13 @@ interface SacadaForm {
               <p *ngIf="p.referencia" class="text-xs text-slate-400 dark:text-slate-500 truncate">{{ p.referencia }}</p>
             </div>
             <div class="row-actions shrink-0">
-              <button class="btn-icon-sm" (click)="editarSacada(p)" aria-label="Editar punto">
-                <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487Z"/>
-                </svg>
+              <button type="button" class="btn-icon-sm" (click)="editarSacada(p)"
+                      aria-label="Editar punto de sacada" title="Editar">
+                <lucide-icon name="square-pen"></lucide-icon>
               </button>
-              <button class="btn-icon-sm tone-danger" (click)="pedirEliminarSacada(p)" aria-label="Eliminar punto">
-                <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-                </svg>
+              <button type="button" class="btn-icon-sm tone-danger" (click)="pedirEliminarSacada(p)"
+                      aria-label="Eliminar punto de sacada" title="Eliminar">
+                <lucide-icon name="trash-2"></lucide-icon>
               </button>
             </div>
           </div>
@@ -556,7 +561,7 @@ interface SacadaForm {
           <button class="btn-secondary" (click)="resetSacada()">Cancelar</button>
           <button class="btn-primary-blue" [disabled]="!formSacada.nombre.trim() || guardando()"
                   (click)="guardarSacada()">
-            {{ guardando() ? 'Guardando…' : (editandoSacada() ? 'Actualizar' : 'Crear punto') }}
+            {{ guardando() ? 'Guardando…' : (editandoSacada() ? 'Guardar cambios' : 'Crear punto') }}
           </button>
         </div>
       </div>
@@ -572,7 +577,7 @@ interface SacadaForm {
     <app-confirm-dialog
       [open]="confirmEliminar()" (openChange)="confirmEliminar.set($event)"
       title="¿Eliminar ubicación?"
-      [message]="'Se eliminará «' + (ubicacionAEliminar()?.nombre ?? '') + '» y sus turnos. Si tiene historial, solo se desactivará.'"
+      [message]="'Se eliminará «' + (ubicacionAEliminar()?.nombre ?? '') + '» con sus días y horas. Si ya tuvo salidas programadas, se guarda oculta para no perder ese historial.'"
       confirmLabel="Eliminar"
       (confirmed)="eliminarUbicacion()" />
   `,
@@ -654,6 +659,9 @@ export class UbicacionesExhibidoresPage implements OnInit {
     return this.puntosSacada().filter(p => p.id_punto_sacada !== editando.id_punto_sacada);
   });
 
+  /** Hay KML del territorio subido en Territorios (el mapa lo dibuja solo). */
+  tieneTerritorio = signal(false);
+
   confirmEliminar = signal(false);
   ubicacionAEliminar = signal<UbicacionExhibidor | null>(null);
 
@@ -686,6 +694,8 @@ export class UbicacionesExhibidoresPage implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+    // Una vez: el límite no cambia al crear o editar ubicaciones.
+    this.svc.getTerritorioLimite(this.idCong).subscribe(u => this.tieneTerritorio.set(u.length > 0));
   }
 
   private cargar(): void {
@@ -694,6 +704,11 @@ export class UbicacionesExhibidoresPage implements OnInit {
       next: data => {
         this.ubicaciones.set(data);
         this.cargando.set(false);
+        // Mantener fresca la tarjeta seleccionada (o soltarla si ya no existe).
+        const sel = this.seleccionada();
+        if (sel) {
+          this.seleccionada.set(data.find(x => x.id_ubicacion_exhibidor === sel.id_ubicacion_exhibidor) ?? null);
+        }
         // El modal de turnos puede seguir abierto tras crear (ver guardarTurno):
         // su "lista viva" de turnos necesita la versión fresca de la ubicación,
         // no la que tenía cuando se abrió.
@@ -729,6 +744,16 @@ export class UbicacionesExhibidoresPage implements OnInit {
   seleccionarPorId(id: number): void {
     const u = this.ubicaciones().find(x => x.id_ubicacion_exhibidor === id) ?? null;
     this.seleccionada.set(u);
+    // Clic en el marcador del mapa: llevar la lista hasta su tarjeta. Sin
+    // esto la tarjeta se resaltaba pero podía quedar fuera de la vista de la
+    // columna con scroll. Se espera al siguiente frame para que el ring ya
+    // esté pintado; 'nearest' no mueve nada si la tarjeta ya se ve.
+    if (u) {
+      requestAnimationFrame(() =>
+        document
+          .querySelector(`[data-ubicacion-id="${id}"]`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+    }
   }
 
   // ── Dirección autocompletada desde el mapa ─────────────────
@@ -741,7 +766,12 @@ export class UbicacionesExhibidoresPage implements OnInit {
    */
   onCoordenadaSeleccionada(punto: GeoJSONPoint | null): void {
     this.formUbicacion.coordenadas = punto;
-    if (!punto) return;
+    if (!punto) {
+      // Sin punto no hay dirección que esperar: si había una búsqueda en
+      // vuelo, su respuesta se descarta (ver aplicarDireccionDelMapa).
+      if (this.direccionEstado() === 'buscando') this.direccionEstado.set('inactivo');
+      return;
+    }
     this.direccionSugerida.set(null);
     this.direccionEstado.set('buscando');
     this.puntoAGeocodificar.next(punto);
@@ -753,6 +783,9 @@ export class UbicacionesExhibidoresPage implements OnInit {
    * tocado. En cualquier otro caso la ofrecemos como sugerencia.
    */
   private aplicarDireccionDelMapa(direccion: string | null): void {
+    // Respuesta tardía: el modal se cerró/reabrió o se quitó el punto mientras
+    // la consulta volaba; escribirla ahora pisaría otro formulario.
+    if (this.direccionEstado() !== 'buscando') return;
     if (!direccion) {
       this.direccionEstado.set(this.formUbicacion.direccion.trim() ? 'inactivo' : 'sin-resultado');
       return;
@@ -891,7 +924,12 @@ export class UbicacionesExhibidoresPage implements OnInit {
     const u = this.ubicacionAEliminar();
     if (!u) return;
     this.svc.eliminarUbicacion(u.id_ubicacion_exhibidor, this.idCong).subscribe({
-      next: () => { this.toast.success('Ubicación eliminada'); this.cargar(); },
+      next: () => {
+        this.toast.success('Ubicación eliminada');
+        if (this.seleccionada()?.id_ubicacion_exhibidor === u.id_ubicacion_exhibidor) this.seleccionada.set(null);
+        if (this.ubicacionTurno()?.id_ubicacion_exhibidor === u.id_ubicacion_exhibidor) this.ubicacionTurno.set(null);
+        this.cargar();
+      },
       error: err => this.toast.error('Error', err?.error?.detail ?? 'No se pudo eliminar.'),
     });
   }
@@ -1074,6 +1112,7 @@ export class UbicacionesExhibidoresPage implements OnInit {
     this.svc.eliminarPuntoSacada(p.id_punto_sacada, this.idCong).subscribe({
       next: () => {
         this.toast.success('Punto eliminado');
+        this.cargar(); // las ubicaciones que lo usaban quedan sin punto
         this.svc.getPuntosSacada(this.idCong).subscribe({ next: d => this.puntosSacada.set(d) });
       },
       error: err => this.toast.error('Error', err?.error?.detail ?? 'No se pudo eliminar.'),

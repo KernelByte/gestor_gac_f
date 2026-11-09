@@ -30,6 +30,10 @@ export interface InformeConPublicador {
    horas: number | null;
    observaciones: string | null;
    es_paux_mes: boolean; // Managed by frontend toggle
+   /** Auxiliar sin fecha de fin o con otro rango: el interruptor del mes no lo quita. */
+   paux_continuo?: boolean;
+   /** Privilegios vigentes en el mes consultado (calculados por el backend). */
+   privilegios_mes?: string[];
    tiene_informe: boolean;
    notificaciones_enviadas?: number;
 }
@@ -66,7 +70,8 @@ export interface InformeLoteResult {
    procesados: number;
    creados: number;
    actualizados: number;
-   errores: { id_publicador: number; error: string }[];
+   errores: string[];
+   advertencias?: string[];
 }
 
 export interface InformeMensualDetalle {

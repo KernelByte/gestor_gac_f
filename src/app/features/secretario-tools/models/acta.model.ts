@@ -68,6 +68,8 @@ export interface Tarea {
   fecha_limite?: string | null;
   origen_tipo?: string | null;
   origen_id?: number | null;
+  /** Solo en tareas nacidas de un seguimiento de precursor: a quién se refieren. */
+  origen_publicador?: number | null;
   creado_por?: number | null;
   creado_por_nombre?: string | null;
   creado_en: string;

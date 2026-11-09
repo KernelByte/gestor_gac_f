@@ -1,5 +1,8 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { unirLista } from '../../../core/utils/lista.util';
+import { AvisoComponent } from '../../../shared/components/aviso/aviso.component';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { ToastService } from '../../../shared/components/toast/toast.service';
@@ -21,6 +24,8 @@ interface EventoDia {
   hora: string;
   horaFin: string;
   personas: string[];
+  /** Puestos del turno que siguen sin nadie (ausencia sin reemplazo, hueco). */
+  faltan: number;
   esMio: boolean;
 }
 
@@ -50,9 +55,9 @@ const MAX_PILDORAS_CELDA = 3;
   selector: 'app-calendario-exhibidores-page',
   host: { class: 'tema-exhibidores' },
   standalone: true,
-  imports: [CommonModule, PageHeaderComponent, EmptyStateComponent, ExhibidoresTabsComponent, Hora12Pipe, ModalComponent],
+  imports: [CommonModule, PageHeaderComponent, EmptyStateComponent, ExhibidoresTabsComponent, Hora12Pipe, ModalComponent, AvisoComponent],
   template: `
-    <app-page-header
+    <app-page-header class="block mb-4" spacing="none"
       title="Calendario de exhibidores"
       subtitle="Todo el mes de un vistazo. Cada color es un lugar de salida distinto.">
       <button *ngIf="mesData()?.generado" class="btn-secondary" (click)="descargarPdf()">
@@ -71,29 +76,36 @@ const MAX_PILDORAS_CELDA = 3;
          texto ("Hoy", "Mañana", "En 3 días"), así que no hace falta una
          insignia ni un borde especial encima para señalarlo. -->
     <ng-template #turnoCard let-t>
-      <div class="px-4 py-3 rounded-2xl bg-exh-700 text-white" style="box-shadow: var(--shadow-blue)">
+      <button type="button" (click)="verEnCalendario(t)"
+              [attr.aria-label]="'Ver en el calendario: ' + t.dia_nombre + ' ' + formatearFecha(t.fecha) + ', ' + t.ubicacion_nombre"
+              class="w-full text-left px-3 py-2 rounded-xl bg-exh-700 hover:bg-exh-800 text-white transition
+                     active:scale-[0.98] focus-ring-blue cursor-pointer"
+              style="box-shadow: var(--shadow-blue)">
         <p class="text-xs font-bold uppercase tracking-wide text-exh-100">
-          {{ t.dia_nombre }} · {{ relativoTexto(t.fecha) }}
+          {{ t.dia_nombre }} {{ formatearFecha(t.fecha) }} · {{ relativoTexto(t.fecha) }}
         </p>
-        <p class="font-display font-extrabold text-xl leading-tight text-white">{{ formatearFecha(t.fecha) }}</p>
-        <p class="text-sm font-semibold text-white mt-0.5">{{ t.ubicacion_nombre }}</p>
-        <p class="text-sm text-exh-100 font-medium whitespace-nowrap">{{ t.hora_inicio | hora12 }} – {{ t.hora_fin | hora12 }}</p>
-      </div>
+        <p class="text-sm font-semibold text-white">
+          {{ t.ubicacion_nombre }}
+          <span class="text-exh-100 font-medium whitespace-nowrap">· {{ t.hora_inicio | hora12 }} – {{ t.hora_fin | hora12 }}</span>
+        </p>
+      </button>
     </ng-template>
 
     <!-- ── Mis próximos turnos · tira horizontal ────────────────────
          Lo primero que busca el publicador es "cuándo me toca a mí".
          Desde 1680px se muda al raíl derecho: en un portátil esta tira
          come 130px de alto y empuja media cuadrícula fuera de pantalla. -->
-    <section *ngIf="misTurnos().length > 0" class="mb-6 mbp16:hidden" aria-label="Mis próximos turnos">
-      <h2 class="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100 mb-2.5">
-        <svg class="w-5 h-5 text-exh-600 dark:text-exh-400" fill="currentColor" viewBox="0 0 24 24">
+    <section *ngIf="misTurnos().length > 0"
+             class="mb-3 mbp16:hidden flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3"
+             aria-label="Mis próximos turnos">
+      <h2 class="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-slate-100 shrink-0">
+        <svg class="w-4 h-4 text-exh-600 dark:text-exh-400" fill="currentColor" viewBox="0 0 24 24">
           <path d="M11.48 3.5a.56.56 0 0 1 1.04 0l2.12 4.6 5.02.62c.47.06.66.65.31.97l-3.7 3.42.97 4.96c.09.47-.4.83-.82.6L12 16.2l-4.42 2.47c-.42.23-.91-.13-.82-.6l.97-4.96-3.7-3.42c-.35-.32-.16-.91.31-.97l5.02-.62 2.12-4.6Z"/>
         </svg>
         Mis próximos turnos
       </h2>
-      <div class="flex gap-3 overflow-x-auto pb-1.5">
-        <div *ngFor="let t of misTurnos()" class="shrink-0 min-w-48">
+      <div class="flex gap-2 overflow-x-auto min-w-0 flex-1 pb-1">
+        <div *ngFor="let t of misTurnos()" class="shrink-0">
           <ng-container *ngTemplateOutlet="turnoCard; context: { $implicit: t }" />
         </div>
       </div>
@@ -105,30 +117,28 @@ const MAX_PILDORAS_CELDA = 3;
          280px, con lo que el mes entero entra sin hacer scroll. En 14"
          (1440-1679px) no hay ancho para el raíl sin estrechar las celdas
          por debajo de lo legible, así que se mantiene una sola columna. -->
-    <div [ngClass]="misTurnos().length > 0
-          ? 'mbp16:grid mbp16:grid-cols-[minmax(0,1fr)_280px] mbp16:gap-6 mbp16:items-start'
-          : ''">
-    <div class="min-w-0">
+    <div class="cal-pagina" [class.con-riel]="misTurnos().length > 0">
+    <div class="cal-columna">
 
     <!-- ── Barra de control ─────────────────────────────────────────
          Navegación de mes, botón Hoy y cambio de vista. Los botones son
          de 44px reales: el público de esta pantalla incluye personas
          mayores y punteros poco precisos. -->
-    <div class="card-elevated p-3 sm:p-4 mbp:p-3 mb-4 mbp:mb-3">
+    <div class="card-elevated p-2.5 sm:p-3 mb-3">
       <div class="flex flex-wrap items-center gap-2.5">
         <div class="flex items-center gap-2">
           <button type="button" (click)="cambiarMes(-1)" aria-label="Ver el mes anterior"
-                  class="w-11 h-11 flex items-center justify-center rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95 focus-ring-blue">
+                  class="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95 focus-ring-blue">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/>
             </svg>
           </button>
-          <h2 class="font-display font-extrabold text-xl sm:text-2xl text-slate-900 dark:text-slate-50 min-w-44 sm:min-w-52 text-center"
+          <h2 class="font-display font-extrabold text-xl text-slate-900 dark:text-slate-50 min-w-40 sm:min-w-44 text-center"
               aria-live="polite">
             {{ nombreMes() }} {{ ano() }}
           </h2>
           <button type="button" (click)="cambiarMes(1)" aria-label="Ver el mes siguiente"
-                  class="w-11 h-11 flex items-center justify-center rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95 focus-ring-blue">
+                  class="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95 focus-ring-blue">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
             </svg>
@@ -195,7 +205,7 @@ const MAX_PILDORAS_CELDA = 3;
            enteras sin recortar la última. El texto de ayuda se mueve al
            aria-label del grupo — sigue anunciándose por teclado/lector de
            pantalla, sin gastar una línea visible. -->
-      <div *ngIf="lugares().length > 0" class="mt-2.5 pt-2.5 mbp:mt-2 mbp:pt-2 border-t border-slate-200 dark:border-slate-700">
+      <div *ngIf="lugares().length > 0" class="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
         <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5"
              role="group" aria-label="Lugares de salida. Toca uno para ver solo ese lugar.">
           <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 mr-0.5 shrink-0">
@@ -209,7 +219,9 @@ const MAX_PILDORAS_CELDA = 3;
                   [class.loc-chip-apagado]="lugarFiltro() !== null && lugarFiltro() !== l.id">
             <span class="loc-dot"></span>
             {{ l.nombre }}
-            <span class="opacity-70 font-medium">{{ l.salidas }}</span>
+            <!-- Con la palabra: un número suelto junto al nombre no se
+                 entendía (¿un código?, ¿personas?). -->
+            <span class="opacity-70 font-medium">· {{ l.salidas }} {{ l.salidas === 1 ? 'salida' : 'salidas' }}</span>
           </button>
           <button *ngIf="lugarFiltro() !== null" type="button" (click)="lugarFiltro.set(null)"
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
@@ -223,33 +235,49 @@ const MAX_PILDORAS_CELDA = 3;
     </div>
 
     <!-- Skeleton -->
-    <div *ngIf="cargando()" class="skeleton h-[32rem] rounded-2xl"></div>
+    <div *ngIf="cargando()" class="skeleton cal-mes min-h-96 rounded-2xl"></div>
 
+    <!-- Quien programa ve el camino para hacerlo; el resto, que espere. -->
     <app-empty-state *ngIf="!cargando() && mesData() && !mesData()!.generado"
       accent="blue"
       icon="calendar-off"
       title="Todavía no hay programación para este mes"
-      description="El coordinador aún no la ha generado. Usa las flechas de arriba para mirar otro mes." />
+      [description]="puedeProgramar()
+        ? 'Prepárala en la pestaña Programación. Cuando la confirmes, aquí la verán todos.'
+        : 'Quien organiza los exhibidores todavía no la ha preparado. Usa las flechas de arriba para mirar otro mes.'"
+      [actionLabel]="puedeProgramar() ? 'Ir a Programación' : ''"
+      (action)="irAProgramacion()" />
+
+    <!-- El backend solo manda borradores a quien programa (obtener_mes con
+         solo_confirmadas): a él se le recuerda que el resto aún no lo ve. -->
+    <app-aviso *ngIf="!cargando() && mesData()?.generado && !mesData()!.confirmado"
+               tone="warning" [dense]="true" class="block mb-3">
+      <strong>En preparación:</strong> este mes aún no está confirmado y solo lo ven quienes organizan.
+      Confírmalo en Programación.
+    </app-aviso>
 
     <!-- ═══ Vista MES ═══════════════════════════════════════════════ -->
-    <div *ngIf="!cargando() && mesData()?.generado && vista() === 'mes'" class="card-elevated overflow-hidden">
+    <div *ngIf="!cargando() && mesData()?.generado && vista() === 'mes'" class="card-elevated overflow-hidden cal-mes">
       <!-- Cabecera de días. Nombre completo desde md: "Miércoles" se lee
            sin esfuerzo, "Mié" hay que descifrarlo. -->
       <div class="grid grid-cols-7 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700">
         <div *ngFor="let d of diasCorto; let i = index"
-             class="py-2.5 text-center text-sm font-bold uppercase tracking-wide"
+             class="py-2 text-center text-sm font-bold uppercase tracking-wide"
              [ngClass]="i >= 5 ? 'text-exh-700 dark:text-exh-300' : 'text-slate-700 dark:text-slate-300'">
           <span class="md:hidden">{{ d }}</span>
           <span class="hidden md:inline">{{ diasLargos[i] }}</span>
         </div>
       </div>
 
-      <div *ngFor="let semana of semanas()" class="grid grid-cols-7">
+      <div class="cal-semanas">
+      <div *ngFor="let semana of semanas()" class="grid grid-cols-7 cal-semana">
         <button *ngFor="let celda of semana" type="button"
                 (click)="abrirDia(celda)"
+                [attr.data-fecha]="celda.fecha"
+                [class.cal-resaltada]="resaltada() === celda.fecha"
                 [disabled]="celda.otroMes || (celda.eventos.length === 0 && !celda.bloqueado)"
                 [attr.aria-label]="etiquetaDia(celda)"
-                class="relative text-left min-h-28 md:min-h-32 mbp16:min-h-36 border-b border-r border-slate-200 dark:border-slate-700 p-2 mbp:p-2.5 last:border-r-0 transition-colors
+                class="relative text-left min-h-20 sm:min-h-24 md:min-h-[6.5rem] border-b border-r border-slate-200 dark:border-slate-700 p-1.5 md:p-2 last:border-r-0 transition-colors
                        enabled:hover:bg-exh-50/60 dark:enabled:hover:bg-exh-950/30 disabled:cursor-default focus-ring-blue"
                 [ngClass]="celda.otroMes
                   ? 'bg-slate-100/70 dark:bg-slate-900/50'
@@ -257,8 +285,8 @@ const MAX_PILDORAS_CELDA = 3;
                 [class.dia-bloqueado]="!!celda.bloqueado">
 
           <!-- Barra superior: número de día + marca de turno propio -->
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="min-w-7 h-7 px-1.5 flex items-center justify-center rounded-lg text-base font-bold"
+          <div class="flex items-center justify-between mb-1">
+            <span class="min-w-6 h-6 px-1 flex items-center justify-center rounded-lg text-sm font-bold"
                   [ngClass]="celda.esHoy
                     ? 'bg-exh-600 text-white'
                     : celda.otroMes
@@ -281,7 +309,7 @@ const MAX_PILDORAS_CELDA = 3;
             {{ celda.bloqueado }}
           </p>
 
-          <div class="space-y-1">
+          <div class="space-y-0.5">
             <div *ngFor="let e of celda.eventos | slice:0:maxPildoras"
                  [class]="'loc-pill loc-' + e.color"
                  [class.opacity-25]="estaApagado(e)"
@@ -300,8 +328,8 @@ const MAX_PILDORAS_CELDA = 3;
               <span *ngFor="let p of e.personas" class="block text-xs mbp:text-sm truncate opacity-85">
                 {{ p }}
               </span>
-              <span *ngIf="e.personas.length === 0" class="block text-xs mbp:text-sm italic opacity-70">
-                Sin asignar
+              <span *ngIf="e.faltan" class="block text-xs mbp:text-sm italic opacity-70">
+                {{ textoFaltan(e.faltan) }}
               </span>
             </div>
             <p *ngIf="celda.eventos.length > maxPildoras"
@@ -310,6 +338,7 @@ const MAX_PILDORAS_CELDA = 3;
             </p>
           </div>
         </button>
+      </div>
       </div>
     </div>
 
@@ -321,22 +350,24 @@ const MAX_PILDORAS_CELDA = 3;
       </div>
 
       <div *ngFor="let celda of diasConSalida()"
-           class="flex gap-4 p-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0"
+           [attr.data-fecha]="celda.fecha"
+           [class.cal-resaltada]="resaltada() === celda.fecha"
+           class="flex gap-3 p-3 border-b border-slate-200 dark:border-slate-700 last:border-b-0"
            [ngClass]="celda.esHoy ? 'bg-exh-50 dark:bg-exh-950/30' : ''">
         <!-- Columna de fecha, ancho fijo para que todo el listado se alinee -->
-        <div class="w-16 shrink-0 text-center">
+        <div class="w-14 shrink-0 text-center">
           <p class="text-xs font-bold uppercase tracking-wide"
              [ngClass]="celda.esHoy ? 'text-exh-700 dark:text-exh-300' : 'text-slate-500 dark:text-slate-400'">
             {{ celda.diaNombre }}
           </p>
-          <p class="font-display font-extrabold text-3xl leading-none"
+          <p class="font-display font-extrabold text-2xl leading-none"
              [ngClass]="celda.esHoy ? 'text-exh-700 dark:text-exh-300' : 'text-slate-900 dark:text-slate-100'">
             {{ celda.dia }}
           </p>
           <p *ngIf="celda.esHoy" class="text-xs font-bold uppercase text-exh-700 dark:text-exh-300 mt-0.5">Hoy</p>
         </div>
 
-        <div class="flex-1 min-w-0 space-y-2">
+        <div class="flex-1 min-w-0 space-y-1.5">
           <p *ngIf="celda.bloqueado"
              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -353,7 +384,9 @@ const MAX_PILDORAS_CELDA = 3;
               <span>{{ e.ubicacion }}</span>
               <span *ngIf="e.esMio" class="px-2 py-0.5 rounded-full text-xs font-bold bg-exh-600 text-white">Te toca</span>
             </p>
-            <p class="text-sm mt-0.5 opacity-90">{{ e.personas.join(' y ') || 'Sin asignar' }}</p>
+            <p class="text-sm mt-0.5 opacity-90">
+              {{ unirNombres(e.personas) }}<span *ngIf="e.faltan" class="italic">{{ e.personas.length ? ' · ' : '' }}{{ textoFaltan(e.faltan) }}</span>
+            </p>
           </div>
         </div>
       </div>
@@ -361,14 +394,14 @@ const MAX_PILDORAS_CELDA = 3;
     </div><!-- /columna principal -->
 
     <!-- Raíl de 16": mis turnos en vertical, junto al mes y no encima -->
-    <aside *ngIf="misTurnos().length > 0" class="hidden mbp16:block" aria-label="Mis próximos turnos">
-      <h2 class="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100 mb-2.5">
-        <svg class="w-5 h-5 text-exh-600 dark:text-exh-400" fill="currentColor" viewBox="0 0 24 24">
+    <aside *ngIf="misTurnos().length > 0" class="cal-riel hidden mbp16:block" aria-label="Mis próximos turnos">
+      <h2 class="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-slate-100 mb-2">
+        <svg class="w-4 h-4 text-exh-600 dark:text-exh-400" fill="currentColor" viewBox="0 0 24 24">
           <path d="M11.48 3.5a.56.56 0 0 1 1.04 0l2.12 4.6 5.02.62c.47.06.66.65.31.97l-3.7 3.42.97 4.96c.09.47-.4.83-.82.6L12 16.2l-4.42 2.47c-.42.23-.91-.13-.82-.6l.97-4.96-3.7-3.42c-.35-.32-.16-.91.31-.97l5.02-.62 2.12-4.6Z"/>
         </svg>
         Mis próximos turnos
       </h2>
-      <div class="space-y-3">
+      <div class="space-y-2">
         <ng-container *ngFor="let t of misTurnos()">
           <ng-container *ngTemplateOutlet="turnoCard; context: { $implicit: t }" />
         </ng-container>
@@ -404,19 +437,60 @@ const MAX_PILDORAS_CELDA = 3;
             <p class="text-base font-semibold">{{ e.ubicacion }}</p>
             <ul class="mt-1.5 space-y-0.5">
               <li *ngFor="let p of e.personas" class="text-base">{{ p }}</li>
-              <li *ngIf="e.personas.length === 0" class="text-base italic opacity-80">Sin asignar</li>
+              <li *ngIf="e.faltan" class="text-base italic opacity-80">{{ textoFaltan(e.faltan) }}</li>
             </ul>
           </div>
         </div>
       </app-modal>
     }
   `,
+  styles: [`
+    /* Aprovechar el alto de la pantalla.
+       El shell ya hace de esta página una columna a todo el alto con su propio
+       scroll. Aquí los bloques solo CRECEN (flex-grow, nunca flex-shrink): en
+       una pantalla alta las semanas se reparten el espacio que sobra; en una
+       baja, cada celda mantiene su alto mínimo y la página hace scroll, sin
+       recortar nada. Por eso no hay min-height:0 ni overflow en esta cadena. */
+    .cal-pagina { flex: 1 0 auto; display: flex; flex-direction: column; }
+    .cal-columna { flex: 1 0 auto; display: flex; flex-direction: column; min-width: 0; }
+    .cal-mes { flex: 1 0 auto; display: flex; flex-direction: column; }
+    .cal-semanas { flex: 1 0 auto; display: flex; flex-direction: column; }
+    .cal-semana { flex: 1 0 auto; }
+
+    /* Día señalado desde «Mis próximos turnos»: aro del color del módulo que
+       se afina dos veces (atrae la mirada sin brincos) y se queda fijo hasta
+       que lo quita el temporizador. Con movimiento reducido, solo el aro. */
+    .cal-resaltada {
+      position: relative;
+      z-index: 1;
+      box-shadow: inset 0 0 0 3px var(--color-exh-600);
+      animation: cal-aro 0.9s var(--ease-out-strong, ease-out) 2;
+    }
+    @keyframes cal-aro {
+      from { box-shadow: inset 0 0 0 8px var(--color-exh-600); }
+      to   { box-shadow: inset 0 0 0 3px var(--color-exh-600); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .cal-resaltada { animation: none; }
+    }
+
+    /* 16" y más: «mis turnos» pasa a un raíl a la derecha. */
+    @media (min-width: 1680px) {
+      .cal-pagina.con-riel {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 280px;
+        column-gap: 1.5rem;
+      }
+      .cal-riel { align-self: start; }
+    }
+  `],
 })
-export class CalendarioExhibidoresPage implements OnInit {
+export class CalendarioExhibidoresPage implements OnInit, OnDestroy {
   private svc = inject(ExhibidoresService);
   private ctx = inject(CongregacionContextService);
   private auth = inject(AuthStore);
   private toast = inject(ToastService);
+  private router = inject(Router);
 
   readonly diasCorto = DIAS_SEMANA_CORTO;
   readonly diasLargos = DIAS_SEMANA;
@@ -429,6 +503,10 @@ export class CalendarioExhibidoresPage implements OnInit {
   vista = signal<'mes' | 'lista'>('mes');
   lugarFiltro = signal<number | null>(null);
   diaAbierto = signal<CeldaCalendario | null>(null);
+  /** Día (ISO) que se acaba de señalar desde «Mis próximos turnos». */
+  resaltada = signal<string | null>(null);
+  private cargaSeq = 0;
+  private temporizadorResalte: ReturnType<typeof setTimeout> | null = null;
 
   ano = signal(new Date().getFullYear());
   mes = signal(new Date().getMonth() + 1);
@@ -442,6 +520,21 @@ export class CalendarioExhibidoresPage implements OnInit {
   private get idPublicador(): number | null {
     return this.auth.user()?.id_usuario_publicador ?? null;
   }
+
+  /** Mismo criterio que la pestaña Programación (exhibidores-tabs). */
+  puedeProgramar = computed(() => this.auth.hasPermission('exhibidores.programacion'));
+
+  irAProgramacion(): void {
+    this.router.navigate(['/exhibidores/programacion'], {
+      queryParams: { ano: this.ano(), mes: this.mes() },
+    });
+  }
+
+  textoFaltan(n: number): string {
+    return n === 1 ? 'Falta 1 persona' : `Faltan ${n} personas`;
+  }
+
+  readonly unirNombres = unirLista;
 
   tengoTurnos = computed(() => {
     const id = this.idPublicador;
@@ -553,9 +646,14 @@ export class CalendarioExhibidoresPage implements OnInit {
               color: colores.get(turno!.id_ubicacion_exhibidor) ?? 1,
               hora: turno!.hora_inicio,
               horaFin: turno!.hora_fin,
+              // Un puesto vacío no es una persona: antes salía como «—» entre
+              // los nombres y no se entendía. Se cuenta aparte y se dice
+              // «Falta 1 persona», igual que en el PDF.
               personas: asigs
                 .sort((a, b) => a.posicion - b.posicion)
-                .map(a => a.publicador?.nombre_completo ?? '—'),
+                .filter(a => a.publicador)
+                .map(a => a.publicador!.nombre_completo),
+              faltan: asigs.filter(a => !a.publicador).length,
               esMio,
             });
           }
@@ -599,6 +697,10 @@ export class CalendarioExhibidoresPage implements OnInit {
 
   private get idCong(): number | null {
     return this.ctx.effectiveCongregacionId();
+  }
+
+  ngOnDestroy(): void {
+    if (this.temporizadorResalte) clearTimeout(this.temporizadorResalte);
   }
 
   ngOnInit(): void {
@@ -649,12 +751,49 @@ export class CalendarioExhibidoresPage implements OnInit {
     this.cargar();
   }
 
-  private cargar(): void {
+  /**
+   * Tocar uno de «Mis próximos turnos»: ir a ese día en el calendario. Abre
+   * el mes del turno si es otro, quita el filtro de lugar (podría esconderlo),
+   * desplaza hasta el día y lo resalta unos segundos. Se queda en la vista
+   * (mes o lista) en la que ya estaba la persona.
+   */
+  verEnCalendario(turno: MiTurno): void {
+    const [a, m] = turno.fecha.split('-').map(Number);
+    this.lugarFiltro.set(null);
+    const mostrar = () => this.resaltarDia(turno.fecha);
+    if (a === this.ano() && m === this.mes() && this.mesData()?.generado) {
+      mostrar();
+      return;
+    }
+    this.ano.set(a);
+    this.mes.set(m);
+    this.cargar(mostrar);
+  }
+
+  private resaltarDia(fecha: string): void {
+    this.resaltada.set(fecha);
+    // Esperar a que Angular pinte el mes (o la vista) antes de buscar la celda.
+    setTimeout(() => {
+      document.querySelector(`[data-fecha="${fecha}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
+    if (this.temporizadorResalte) clearTimeout(this.temporizadorResalte);
+    this.temporizadorResalte = setTimeout(() => this.resaltada.set(null), 3000);
+  }
+
+  private cargar(despues?: () => void): void {
     this.cargando.set(true);
     this.diaAbierto.set(null);
+    const token = ++this.cargaSeq;
     this.svc.getMes(this.ano(), this.mes(), this.idCong).subscribe({
-      next: data => { this.mesData.set(data); this.cargando.set(false); },
+      next: data => {
+        // Respuesta de un mes que ya no es el pedido (clics rápidos en las flechas).
+        if (token !== this.cargaSeq) return;
+        this.mesData.set(data); this.cargando.set(false); despues?.();
+      },
       error: () => {
+        if (token !== this.cargaSeq) return;
+        this.mesData.set(null);
         this.cargando.set(false);
         this.toast.error('Error', 'No se pudo cargar el calendario.');
       },

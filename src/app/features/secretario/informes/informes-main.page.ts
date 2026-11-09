@@ -15,7 +15,7 @@ import { ResumenSucursalComponent } from './components/resumen-sucursal/resumen-
 
 
 import { HttpClient } from '@angular/common/http';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, Subscription } from 'rxjs';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm.service';
 import { PrivilegiosService } from '../privilegios/infrastructure/privilegios.service';
@@ -101,6 +101,11 @@ export class InformesMainPage implements OnInit {
   /** Publicadores cuyo autoguardado falló. Persiste hasta que se reintenta con
    *  éxito o hasta que loadResumen() trae datos frescos del servidor. */
   private failedSaves = new Set<number>();
+  /** Periodo de los datos que muestra la tabla (el de la última respuesta aplicada). */
+  private resumenPeriodoId: number | null = null;
+  /** Periodo de cada cambio pendiente: el del mes en pantalla cuando se editó. */
+  private changePeriodo = new Map<number, number>();
+  private resumenSub: Subscription | null = null;
   failedSaveCount = signal(0);
 
   selectedMes: string | null = null;
@@ -479,12 +484,21 @@ export class InformesMainPage implements OnInit {
 
     const grupoParam = (this.selectedGrupo === 'precursores_regulares' || this.selectedGrupo === 'precursores_auxiliares') ? undefined : (this.selectedGrupo as number | undefined);
 
-    this.informesService.getResumenMensual(
+    // Los cambios que esperan el debounce se envían ya, con el mes en que se
+    // hicieron: la respuesta de abajo reemplaza localChanges.
+    this.flushAutoSaves();
+
+    // Solo cuenta la última consulta: una respuesta vieja que llegue tarde
+    // pintaría otro mes (u otro filtro) en la tabla.
+    this.resumenSub?.unsubscribe();
+    this.resumenSub = this.informesService.getResumenMensual(
       periodoId, congregacionId, grupoParam, this.soloSinInforme, this.searchQuery || undefined
     ).subscribe({
       next: (data) => {
         // Datos frescos del servidor — ya no necesitamos el override layer
         this.localChanges = new Map();
+        this.changePeriodo.clear();
+        this.resumenPeriodoId = periodoId;
         this.failedSaves.clear();
         this.failedSaveCount.set(0);
         if (this.autoSaveStatus() === 'error') this.autoSaveStatus.set('idle');
@@ -523,6 +537,11 @@ export class InformesMainPage implements OnInit {
         existing.horas = 0;
         existing.cursos_biblicos = 0;
         existing.observaciones = null;
+        // Sin participación no hay auxiliar del mes. El continuo no se toca:
+        // se cambia en Privilegios.
+        if ((existing.es_paux_mes ?? pub.es_paux_mes) && !pub.paux_continuo) {
+          existing.es_paux_mes = false;
+        }
       }
     }
     else if (field === 'es_paux') existing.es_paux_mes = value;
@@ -534,6 +553,8 @@ export class InformesMainPage implements OnInit {
     const newChanges = new Map(this.localChanges);
     newChanges.set(pub.id_publicador, existing);
     this.localChanges = newChanges;
+    const periodoFila = this.resumenPeriodoId ?? this.getPeriodoId();
+    if (periodoFila) this.changePeriodo.set(pub.id_publicador, periodoFila);
 
     this.scheduleAutoSave(pub.id_publicador);
   }
@@ -554,9 +575,11 @@ export class InformesMainPage implements OnInit {
   private autoGuardar(pubId: number) {
     if (!this.canEditInformes()) return;
     const change = this.localChanges.get(pubId);
-    if (!change) return;
-    const pId = this.getPeriodoId();
-    if (!pId) return;
+    const pId = this.changePeriodo.get(pubId) ?? this.resumenPeriodoId;
+    if (!change || !pId) {
+      this.cerrarEstadoSiTodoListo();
+      return;
+    }
 
     this.pendingSaveCount++;
 
@@ -572,28 +595,38 @@ export class InformesMainPage implements OnInit {
     const savedChange = { ...change };
 
     this.informesService.guardarInformesLote({ periodo_id: pId, informes: [item] }).subscribe({
-      next: () => {
+      next: (result) => {
         this.pendingSaveCount--;
-        this.markSaveResult(pubId, true);
-        // Parchear el resumen con los valores guardados (actualiza pub.* en el signal)
-        this.patchResumen(pubId, savedChange);
+        const errores = result?.errores ?? [];
+        const advertencias = result?.advertencias ?? [];
+        this.markSaveResult(pubId, errores.length === 0);
+        if (errores.length || advertencias.length) {
+          const nombre = this.resumen()?.publicadores_list.find(p => p.id_publicador === pubId)?.nombre_completo;
+          const texto = [...errores, ...advertencias]
+            .map(m => m.replace(/^(Error procesando )?[Pp]ublicador \d+:\s*/, ''))
+            .join(' ');
+          this.showToast(nombre ? `Revise a ${nombre}` : 'Revise el informe', 'error', texto);
+        }
+        // El backend no asignó el auxiliar (choca con otro privilegio): el
+        // interruptor vuelve a apagado en vez de fingir que quedó asignado.
+        if (savedChange.es_paux_mes && advertencias.length) {
+          savedChange.es_paux_mes = false;
+          const actual = this.localChanges.get(pubId);
+          if (actual && this.changePeriodo.get(pubId) === pId) {
+            const nuevos = new Map(this.localChanges);
+            nuevos.set(pubId, { ...actual, es_paux_mes: false });
+            this.localChanges = nuevos;
+          }
+        }
+        // Parchear el resumen con los valores guardados (actualiza pub.* en el
+        // signal), solo si la tabla sigue mostrando el mes de este guardado.
+        if (this.resumenPeriodoId === pId) this.patchResumen(pubId, savedChange);
 
         // NO borramos de localChanges aquí — evita el frame intermedio donde el
         // toggle no tiene fuente de verdad. localChanges actúa como override layer
         // permanente hasta que loadResumen() traiga datos frescos del servidor.
 
-        const allDone = this.pendingSaveCount === 0 && this.autoSaveTimers.size === 0;
-        if (allDone) {
-          this.hasPendingChanges.set(false);
-          if (this.autoSavedClearTimer) clearTimeout(this.autoSavedClearTimer);
-          // Si quedan fallos de otras filas, el indicador sigue en rojo.
-          if (this.failedSaves.size > 0) {
-            this.autoSaveStatus.set('error');
-          } else {
-            this.autoSaveStatus.set('saved');
-            this.autoSavedClearTimer = setTimeout(() => this.autoSaveStatus.set('idle'), 2500);
-          }
-        }
+        this.cerrarEstadoSiTodoListo();
       },
       error: () => {
         this.pendingSaveCount--;
@@ -605,6 +638,21 @@ export class InformesMainPage implements OnInit {
         this.autoSaveStatus.set('error');
       }
     });
+  }
+
+  /** Cierra el indicador de guardado cuando ya no queda nada en vuelo ni esperando. */
+  private cerrarEstadoSiTodoListo() {
+    const allDone = this.pendingSaveCount === 0 && this.autoSaveTimers.size === 0;
+    if (!allDone) return;
+    this.hasPendingChanges.set(false);
+    if (this.autoSavedClearTimer) clearTimeout(this.autoSavedClearTimer);
+    // Si quedan fallos de otras filas, el indicador sigue en rojo.
+    if (this.failedSaves.size > 0) {
+      this.autoSaveStatus.set('error');
+    } else if (this.autoSaveStatus() !== 'idle') {
+      this.autoSaveStatus.set('saved');
+      this.autoSavedClearTimer = setTimeout(() => this.autoSaveStatus.set('idle'), 2500);
+    }
   }
 
   private markSaveResult(pubId: number, ok: boolean) {
@@ -636,7 +684,7 @@ export class InformesMainPage implements OnInit {
   guardarTodo() {
     if (!this.canEditInformes()) return;
     if (this.localChanges.size === 0) return;
-    const pId = this.getPeriodoId();
+    const pId = this.resumenPeriodoId ?? this.getPeriodoId();
     if (!pId) return;
 
     const resumenActual = this.resumen();

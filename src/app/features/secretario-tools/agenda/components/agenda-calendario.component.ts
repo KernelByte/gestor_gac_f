@@ -120,10 +120,12 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
             </div>
           }
         </div>
-        <button type="button" class="btn-secondary" (click)="recordatoriosAbierto.set(true)">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16 9.35h5V4.36M3 19.64v-5h5M3.6 9.35a8.25 8.25 0 0 1 13.8-3.7l3.18 3.18M3.4 14.65l3.18 3.18a8.25 8.25 0 0 0 13.8-3.7"/></svg>
-          <span>Recordatorios periódicos</span>
-        </button>
+        @if (!soloExhibidor) {
+          <button type="button" class="btn-secondary" (click)="recordatoriosAbierto.set(true)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16 9.35h5V4.36M3 19.64v-5h5M3.6 9.35a8.25 8.25 0 0 1 13.8-3.7l3.18 3.18M3.4 14.65l3.18 3.18a8.25 8.25 0 0 0 13.8-3.7"/></svg>
+            <span>Recordatorios periódicos</span>
+          </button>
+        }
       </div>
 
     </header>
@@ -741,12 +743,20 @@ export class AgendaCalendarioComponent implements OnInit {
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
   private injector = inject(Injector);
 
-  /** Solo se muestra en modo secretaría o personal (quien solo tiene tareas no ve calendario). */
-  readonly modo: ModoAgenda = modoAgenda(this.auth) === 'personal' ? 'personal' : 'secretaria';
+  /** Quien solo tiene tareas no ve calendario. */
+  readonly modo: ModoAgenda = (() => {
+    const m = modoAgenda(this.auth);
+    return m === 'personal' || m === 'exhibidor' ? m : 'secretaria';
+  })();
+  /** Calendario de solo lectura con las salidas de exhibidor de esta persona. */
+  readonly soloExhibidor = this.modo === 'exhibidor';
   readonly esCoordinador = esCoordinador(this.auth);
 
-  /** Las tareas (y crearlas) solo si tiene acceso al módulo de Tareas, igual que el menú "Mis Tareas". */
-  readonly conTareas = this.auth.hasPermission('tareas.ver');
+  /**
+   * Las tareas (y crearlas) solo si tiene acceso al módulo de Tareas, igual que el menú "Mis Tareas".
+   * En el calendario de solo exhibidores no: ahí no saldrían (están en la pestaña Tareas).
+   */
+  readonly conTareas = this.auth.hasPermission('tareas.ver') && !this.soloExhibidor;
   /** Aviso de que falta el permiso de Tareas: se cierra una vez por navegador. */
   avisoTareasCerrado = signal(leerAvisoTareasCerrado());
   cerrarAvisoTareas() {
@@ -754,9 +764,11 @@ export class AgendaCalendarioComponent implements OnInit {
     try { localStorage.setItem(CLAVE_AVISO_TAREAS, '1'); } catch { /* sin almacenamiento: vuelve a salir */ }
   }
   /** La agenda personal no tiene informes, bautismos ni traslados: son trabajo del secretario. */
-  readonly tipos: TipoEvento[] = (this.modo === 'personal'
-    ? ['tarea', 'recordatorio', 'visita', 'reunion_ancianos']
-    : ['tarea', 'recordatorio', 'informes', 'visita', 'reunion_ancianos', 'bautismo', 'transferencia'] as TipoEvento[])
+  readonly tipos: TipoEvento[] = (this.modo === 'exhibidor'
+    ? ['exhibidor']
+    : this.modo === 'personal'
+      ? ['tarea', 'recordatorio', 'visita', 'reunion_ancianos', 'exhibidor']
+      : ['tarea', 'recordatorio', 'informes', 'visita', 'reunion_ancianos', 'bautismo', 'transferencia', 'exhibidor'] as TipoEvento[])
     .filter(t => t !== 'tarea' || this.conTareas) as TipoEvento[];
   readonly diasCortos = DIAS_CORTOS;
   readonly diasLargos = DIAS_LARGOS;

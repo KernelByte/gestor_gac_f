@@ -15,3 +15,11 @@ export function fechaIsoLocal(d: Date): string {
   const dd = String(d.getDate()).padStart(2, '0');
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
+
+/**
+ * Año de servicio que contiene `d`: va de septiembre a agosto y se nombra por
+ * el año en que termina (sep-2025 → ago-2026 es el 2026).
+ */
+export function anoServicioDe(d = new Date()): number {
+  return d.getMonth() + 1 >= 9 ? d.getFullYear() + 1 : d.getFullYear();
+}

@@ -123,15 +123,15 @@ const PRIVILEGIO_CONFIG: { [key: string]: { label: string; class: string } } = {
     class: 'text-indigo-700 bg-indigo-100/90 border border-indigo-200/60 dark:bg-indigo-900/40 dark:text-indigo-200 dark:border-indigo-500/40 rounded-full'
   },
   'siervo ministerial': {
-    label: 'Siervo Ministerial',
+    label: 'S. Ministerial',
     class: 'text-amber-800 bg-amber-100/90 border border-amber-200/60 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-500/40 rounded-full'
   },
   'precursor regular': {
-    label: 'Precursor Regular',
+    label: 'P. Regular',
     class: 'text-brand-purple bg-purple-100/90 border border-purple-200/60 dark:bg-purple-900/40 dark:text-purple-200 dark:border-brand-purple/40 rounded-full'
   },
   'precursor auxiliar': {
-    label: 'Precursor Auxiliar',
+    label: 'P. Auxiliar',
     class: 'text-amber-700 bg-amber-100/90 border border-amber-200/50 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-500/40 rounded-full'
   },
 };
@@ -361,8 +361,13 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
   isFullScreen = signal(false);
   showInactivePublishers = signal(true);
   estadosPublicador = signal<Estado[]>([]);
-  /** Término de búsqueda por grupo (solo para filtrar la lista mostrada en cada card). */
-  groupSearchTerms = signal<Record<number, string>>({});
+  /** Filas de encargados de cada columna, en orden. */
+  readonly rolesEncargado: readonly { clave: Rol; etiqueta: string }[] = [
+    { clave: 'capitan', etiqueta: 'Capitán' },
+    { clave: 'auxiliar', etiqueta: 'Auxiliar' },
+  ];
+  /** Un solo buscador para todo el tablero: filtra a la vez Sin asignar y cada grupo. */
+  busqueda = signal('');
   canScrollLeft = signal(false);
   canScrollRight = signal(false);
   activeColumnIndex = signal(0);
@@ -1062,6 +1067,42 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
     this.visiblePublicadores().filter(p => !p.id_grupo_publicador).sort((a, b) => this.porNombreVisible(a, b))
   );
 
+  /** Sin asignar con el buscador aplicado (lo que se pinta en la columna). */
+  sinAsignarFiltrados = computed(() => {
+    const term = this.terminoBusqueda();
+    const lista = this.unassignedPublishers();
+    return term ? lista.filter(p => this.coincideBusqueda(p, term)) : lista;
+  });
+
+  /** Coincidencias en todo el tablero (encargados aparte), para el contador del buscador. */
+  /** Capitanes y auxiliares que coinciden con el buscador, como `idGrupo:rol`.
+   *  No se ocultan (la fila es zona de soltar): se resaltan y cuentan. */
+  lideresCoincidentes = computed(() => {
+    const term = this.terminoBusqueda();
+    const claves = new Set<string>();
+    if (!term) return claves;
+    for (const g of this.grupos()) {
+      for (const rol of ['capitan', 'auxiliar'] as Rol[]) {
+        if (!this.tieneLider(g, rol)) continue;
+        const p = this.liderDe(g, rol);
+        const coincide = p ? this.coincideBusqueda(p, term) : this.nombreLider(g, rol).toLowerCase().includes(term);
+        if (coincide) claves.add(`${g.id_grupo}:${rol}`);
+      }
+    }
+    return claves;
+  });
+
+  liderCoincide(idGrupo: number, rol: Rol): boolean {
+    return this.lideresCoincidentes().has(`${idGrupo}:${rol}`);
+  }
+
+  coincidenciasBusqueda = computed(() => {
+    if (!this.terminoBusqueda()) return null;
+    let n = this.sinAsignarFiltrados().length + this.lideresCoincidentes().size;
+    for (const lista of this.miembrosFiltradosPorGrupo().values()) n += lista.length;
+    return n;
+  });
+
 
   ngAfterViewInit() {
     this.document.addEventListener('scroll', this.onScrollCerrarMenus, true);
@@ -1172,13 +1213,20 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
 
   // Helpers
 
-  getGroupSearch(groupId: number): string {
-    return this.groupSearchTerms()[groupId] ?? '';
+  /** Encuentra tanto por el nombre que se ve en la tarjeta como por el de la
+   *  ficha: quien busca "Juan Pérez" no tiene por qué saber que aquí sale "Juanca". */
+  private coincideBusqueda(p: Publicador, term: string): boolean {
+    return (nombreMostrado(p) + ' ' + nombreLegal(p)).toLowerCase().includes(term);
   }
 
-  setGroupSearch(groupId: number, value: string): void {
-    this.groupSearchTerms.update(prev => ({ ...prev, [groupId]: value ?? '' }));
+  /** Esc en el buscador lo vacía; si ya está vacío, Esc sigue su camino (salir de pantalla completa). */
+  limpiarBusqueda(e: Event): void {
+    if (!this.busqueda()) return;
+    e.stopPropagation();
+    this.busqueda.set('');
   }
+
+  private terminoBusqueda = computed(() => this.busqueda().trim().toLowerCase());
 
 
   // ── Encargados ───────────────────────────────────────────────────────────
@@ -1370,19 +1418,12 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
     return resultado;
   });
 
-  /** Los mismos miembros, ya aplicado el buscador propio de cada tarjeta. */
+  /** Los mismos miembros, ya aplicado el buscador del tablero. */
   private readonly miembrosFiltradosPorGrupo = computed(() => {
-    const terminos = this.groupSearchTerms();
+    const term = this.terminoBusqueda();
     const resultado = new Map<number, Publicador[]>();
     for (const [groupId, miembros] of this.miembrosSinLideresPorGrupo()) {
-      const term = (terminos[groupId] ?? '').trim().toLowerCase();
-      resultado.set(groupId, !term ? miembros : miembros.filter(p => {
-        // Encuentra tanto por el nombre que se ve en la tarjeta como por el
-        // de la ficha: quien busca "Juan Pérez" no tiene por qué saber que
-        // aquí sale "Juanca".
-        const full = (nombreMostrado(p) + ' ' + nombreLegal(p)).toLowerCase();
-        return full.includes(term);
-      }));
+      resultado.set(groupId, !term ? miembros : miembros.filter(p => this.coincideBusqueda(p, term)));
     }
     return resultado;
   });
@@ -1530,9 +1571,10 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
     let targets: number[] = [];
 
     if (groupId === 'unassigned') {
-      targets = this.unassignedPublishers().map(p => p.id_publicador);
+      targets = this.sinAsignarFiltrados().map(p => p.id_publicador);
     } else {
-      targets = this.getGroupMembersExcludingLeaders(groupId).map(p => p.id_publicador);
+      // Respeta el buscador: buscar "Salazar" y seleccionar todos mueve solo a esos.
+      targets = this.getFilteredGroupMembers(groupId).map(p => p.id_publicador);
     }
 
     // Check if ALL targets are currently selected

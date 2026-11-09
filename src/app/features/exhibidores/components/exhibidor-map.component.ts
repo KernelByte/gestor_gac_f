@@ -5,9 +5,11 @@ import {
 import { escapeHtml } from '../../../shared/escape-html';
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
+import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { TerritoriosService } from '../../territorios/services/territorios.service';
+import { ExhibidoresService } from '../services/exhibidores.service';
 import { UbicacionUsuarioService } from '../services/ubicacion-usuario.service';
-import { GeoJSONPoint, PuntoSacada, UbicacionExhibidor } from '../models/exhibidor.model';
+import { GeoJSONPoint, PuntoSacada, TerritorioLimite, UbicacionExhibidor } from '../models/exhibidor.model';
 
 /** Azul de marca del módulo (styles.scss → --color-exh-600). */
 const COLOR_UBICACION = '#165cfc';
@@ -19,6 +21,16 @@ const COLOR_SACADA = '#64748b';
 const COLOR_PROVISIONAL = '#f59e0b';
 /** "Tú estás aquí": verde, el mismo código que usa el mapa de territorios. */
 const COLOR_USUARIO = '#10b981';
+
+/**
+ * Límite del territorio (KML de Territorios): mismo trazo que en el Mapa
+ * general de Territorios (territorio-map.component.ts), para que se reconozca
+ * como «el territorio» en cualquier módulo. Relleno casi transparente: es
+ * contexto, no debe tapar las calles donde se coloca el punto.
+ */
+const ESTILO_LIMITE: L.PathOptions = {
+  color: '#0f766e', weight: 3, dashArray: '8 6', fillColor: '#14b8a6', fillOpacity: 0.05,
+};
 
 /** Encuadre por defecto cuando no hay nada mejor (centro de Colombia). */
 const VISTA_POR_DEFECTO: { centro: L.LatLngExpression; zoom: number } = {
@@ -178,12 +190,17 @@ export class ExhibidorMapComponent implements AfterViewInit, OnChanges, OnDestro
   @Output() coordenadaSeleccionada = new EventEmitter<GeoJSONPoint>();
 
   private territoriosService = inject(TerritoriosService);
+  private exhibidores = inject(ExhibidoresService);
+  private ctx = inject(CongregacionContextService);
   private ubicacionUsuario = inject(UbicacionUsuarioService);
   private map: L.Map | null = null;
   private tileLayer: L.TileLayer | null = null;
   private capaMarcadores: L.LayerGroup | null = null;
   private marcadorProvisional: L.Marker | null = null;
   private marcadorUsuario: L.Marker | null = null;
+  /** Límite del territorio de la congregación, si se subió el KML. */
+  private capaLimite: L.GeoJSON | null = null;
+  private limiteBounds: L.LatLngBounds | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private temporizadorAviso: ReturnType<typeof setTimeout> | null = null;
 
@@ -270,6 +287,49 @@ export class ExhibidorMapComponent implements AfterViewInit, OnChanges, OnDestro
     this.render();
     this.renderProvisional();
     this.centrarEnUsuarioSiProcede();
+    this.cargarLimite();
+  }
+
+  /**
+   * Si la congregación ya subió su KML en Territorios, se dibuja el límite y
+   * el mapa arranca encuadrado en él: así nadie empieza buscando el pueblo
+   * desde el centro de Colombia, y se ve de un vistazo si un punto quedó
+   * fuera del territorio. Sin KML, todo sigue como antes.
+   */
+  private cargarLimite(): void {
+    this.exhibidores.getTerritorioLimite(this.ctx.effectiveCongregacionId()).subscribe(unidades => {
+      if (!this.map || unidades.length === 0) return;
+      this.pintarLimite(unidades);
+      // Mismo criterio que la geolocalización: si el usuario ya movió el
+      // mapa o hay un punto en edición, su contexto manda.
+      if (this.usuarioTomoControl || this.puntoProvisional) {
+        // Marcar el límite como ya encuadrado: si no, el próximo render()
+        // (p. ej. al elegir una tarjeta) vería la firma cambiada y movería
+        // el mapa que el usuario ya acomodó.
+        this.firmaEncuadre += '|limite';
+        return;
+      }
+      this.render();
+    });
+  }
+
+  private pintarLimite(unidades: TerritorioLimite[]): void {
+    if (!this.map) return;  // el mapa pudo destruirse mientras llegaba la respuesta
+    if (this.capaLimite) this.map.removeLayer(this.capaLimite);
+    this.capaLimite = L.geoJSON(
+      {
+        type: 'FeatureCollection',
+        features: unidades.map(u => ({
+          type: 'Feature', properties: { nombre: u.nombre }, geometry: u.coordenada,
+        })),
+      } as any,
+      // interactive: false → los clics atraviesan el polígono y llegan al
+      // mapa, que es lo que coloca el punto en modo selección.
+      { style: () => ESTILO_LIMITE, interactive: false },
+    ).addTo(this.map);
+    this.capaLimite.bringToBack();
+    const b = this.capaLimite.getBounds();
+    this.limiteBounds = b.isValid() ? b : null;
   }
 
   /**
@@ -298,9 +358,9 @@ export class ExhibidorMapComponent implements AfterViewInit, OnChanges, OnDestro
     });
   }
 
-  /** ¿El mapa ya tiene algo propio que mostrar (marcadores o punto en edición)? */
+  /** ¿El mapa ya tiene algo propio que mostrar (territorio, marcadores o punto en edición)? */
   private tieneReferenciaPropia(): boolean {
-    if (this.puntoProvisional) return true;
+    if (this.puntoProvisional || this.limiteBounds) return true;
     return this.ubicaciones.some(u => u.coordenadas)
         || this.puntosSacada.some(p => p.coordenadas);
   }
@@ -419,11 +479,17 @@ export class ExhibidorMapComponent implements AfterViewInit, OnChanges, OnDestro
     // Reencuadrar sólo cuando el conjunto de coordenadas cambia de verdad.
     // Antes se hacía en cada render(), así que seleccionar una tarjeta de la
     // lista deshacía el paneo o el zoom que el usuario acabara de hacer.
-    const firma = bounds.map(b => (b as number[]).join(',')).sort().join('|');
-    const seReencuadroTodo = bounds.length > 0 && firma !== this.firmaEncuadre;
+    // Con KML, el encuadre abarca el territorio entero más cualquier punto
+    // que haya quedado fuera de él (para que se note que está fuera).
+    const firma = bounds.map(b => (b as number[]).join(',')).sort().join('|')
+      + (this.limiteBounds ? '|limite' : '');
+    const hayQueEncuadrar = bounds.length > 0 || this.limiteBounds !== null;
+    const seReencuadroTodo = hayQueEncuadrar && firma !== this.firmaEncuadre;
     if (seReencuadroTodo) {
       this.firmaEncuadre = firma;
-      this.map.fitBounds(L.latLngBounds(bounds), { padding: [40, 40], maxZoom: 16 });
+      const encuadre = L.latLngBounds(bounds);
+      if (this.limiteBounds) encuadre.extend(this.limiteBounds);
+      this.map.fitBounds(encuadre, { padding: [30, 30], maxZoom: 16 });
     }
 
     // Elegir una tarjeta de la lista debe MOSTRAR su marcador, no solo

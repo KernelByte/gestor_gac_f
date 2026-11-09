@@ -16,6 +16,7 @@ import { ModalComponent } from '../../../../shared/components/modal/modal.compon
 import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
 import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { anoServicioDe } from '../../../../core/utils/fecha.util';
 
 type Tab = 'docs' | 'agenda' | 'entrega' | 'preview';
 type ToastType = 'success' | 'error' | 'info';
@@ -1424,8 +1425,7 @@ export class VisitaMainPage implements OnInit {
 
   /** Años de servicio que se pueden elegir: del actual hacia atrás, 5. */
   aniosServicio(): number[] {
-    const hoy = new Date();
-    const actual = hoy.getMonth() + 1 >= 9 ? hoy.getFullYear() + 1 : hoy.getFullYear();
+    const actual = anoServicioDe();
     return Array.from({ length: 5 }, (_, i) => actual - i);
   }
 
@@ -1747,7 +1747,8 @@ export class VisitaMainPage implements OnInit {
     const d = new Date();
     const hoy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     if (v.fecha_inicio > hoy) return 'proxima';
-    const fin = v.fecha_fin || v.fecha_inicio;
+    // Sin fecha fin dura una semana, igual que en el servidor (congelado y colaboradores).
+    const fin = v.fecha_fin || this.sumarDias(v.fecha_inicio, 7);
     if (fin >= hoy) return 'curso';
     return 'realizada';
   }
@@ -1874,6 +1875,14 @@ export class VisitaMainPage implements OnInit {
       },
       error: (e) => {
         // 409: un colaborador la guardó mientras tanto; no se pisa su trabajo.
+        // Se refresca la visita en la lista (no la abierta, para no borrar lo escrito):
+        // si no, «volver a abrirla» cargaba la copia vieja y daba 409 otra vez.
+        if (e?.status === 409) {
+          this.svc.get(v.id_visita).subscribe({
+            next: (fresca) => this.visitas.update(arr => arr.map(x => x.id_visita === fresca.id_visita ? fresca : x)),
+            error: () => {},
+          });
+        }
         this.toast('error', e?.status === 409
           ? 'Un colaborador cambió esta visita mientras usted la editaba. Copie sus cambios, vuelva a abrir la visita y guárdelos de nuevo.'
           : this.errMsg(e, 'Error al generar agenda'), e?.status === 409 ? 8000 : undefined);
@@ -1896,8 +1905,7 @@ export class VisitaMainPage implements OnInit {
     if (!v) return;
     // El año de servicio de la visita (no el de hoy): en una visita de septiembre o ya pasada,
     // el año actual daba una tarjeta casi vacía.
-    const now = new Date();
-    const respaldo = now.getMonth() + 1 >= 9 ? now.getFullYear() + 1 : now.getFullYear();
+    const respaldo = anoServicioDe();
     const pedir = (anio: number) =>
       this.portalSvc.tarjetaPdfInterno(v.id_visita, anio, { publicadorId: ev.idPublicador }).subscribe({
         next: (blob) => {

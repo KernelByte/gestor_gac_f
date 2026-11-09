@@ -185,6 +185,12 @@ const ORDEN_PRIORIDAD: Record<Tarea['prioridad'], number> = { alta: 0, media: 1,
                                 <span class="tabular-nums">{{ t.subtareas_completadas }}/{{ t.subtareas_total }}</span>
                               </span>
                             }
+                            @if (t.origen_tipo === 'precursor_seguimiento' && t.origen_publicador && verPrecursor) {
+                              <button type="button" class="meta meta--enlace" (click)="irAPrecursor(t); $event.stopPropagation()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                Ver precursor
+                              </button>
+                            }
                             @if (t.origen_tipo === 'acta_reunion' && t.origen_id && verActas) {
                               <button type="button" class="meta meta--enlace" (click)="irAActa(t); $event.stopPropagation()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -407,6 +413,8 @@ export class TareasListaComponent implements OnInit {
   private toast = inject(ToastService);
   /** El enlace al acta solo a quien puede abrirla (si no, actasGuard lo devuelve al inicio). */
   readonly verActas = puedeVerActas(this.store);
+  /** El enlace al precursor solo a quien puede abrir su detalle (permissionGuard de la ruta). */
+  readonly verPrecursor = this.store.hasPermission('reportes.precursores.gestionar');
 
   tareas = signal<Tarea[]>([]);
   loading = signal(true);
@@ -684,6 +692,10 @@ export class TareasListaComponent implements OnInit {
   onTareaEliminada(id: number) {
     this.tareas.update(list => list.filter(t => t.id_tarea !== id));
     this.tareaDrawerId.set(null);
+  }
+
+  irAPrecursor(t: Tarea) {
+    if (t.origen_publicador) this.router.navigate(['/reportes/precursores', t.origen_publicador]);
   }
 
   irAActa(t: Tarea) {

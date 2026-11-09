@@ -390,7 +390,7 @@ export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
          ...camposHorarioCambiados(this.config, this.originalConfig),
          correo_congregacion:        this.config.correo_congregacion       || null,
          numero_congregacion:        this.config.numero_congregacion       || null,
-         enlace_zoom:                this.config.enlace_zoom?.trim()       || null,
+         enlace_zoom:                this.enlaceParaGuardar(),
          latitud_salon:              this.config.latitud_salon  ?? null,
          longitud_salon:             this.config.longitud_salon ?? null,
          formato_nombre_visible:     this.config.formato_nombre_visible    || 'completo',
@@ -487,9 +487,37 @@ export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
     * El host NO se restringe a zoom.us: el ajuste se presenta como "Zoom/Meet".
     */
    enlaceZoomInvalido(): boolean {
+      // Con la videoconferencia apagada el campo está oculto: un valor viejo
+      // inválido no puede bloquear el guardado sin que se vea por qué.
+      if (!this.config.usa_zoom) return false;
       const v = this.config.enlace_zoom?.trim();
       if (!v) return false;              // vacío = no configurado, es válido
       return !/^https?:\/\/.+/i.test(v);
+   }
+
+   /** Con la videoconferencia apagada y un enlace sin https, se conserva el guardado: el servidor lo rechazaría. */
+   private enlaceParaGuardar(): string | null {
+      const v = this.config.enlace_zoom?.trim() || null;
+      if (v && !/^https?:\/\/.+/i.test(v)) return this.originalConfig?.enlace_zoom?.trim() || null;
+      return v;
+   }
+
+   /**
+    * Un cambio de horario con fecha ya vigente se refleja aquí sin recargar todo:
+    * recargar `config` borraría lo que la persona lleve a medio editar.
+    */
+   refrescarHorario(): void {
+      this.http.get<Configuracion>(this.API_URL).subscribe({
+         next: (data) => {
+            const campos = ['dia_reunion_entre_semana', 'hora_reunion_entre_semana',
+                            'dia_reunion_fin_semana', 'hora_reunion_fin_semana'] as const;
+            for (const c of campos) {
+               this.config[c] = data[c];
+               if (this.originalConfig) this.originalConfig[c] = data[c];
+            }
+         },
+         error: (err) => console.error('Error actualizando el horario', err),
+      });
    }
 
    onUbicacionCambio(u: UbicacionSalon | null): void {

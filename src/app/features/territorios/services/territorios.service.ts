@@ -2,6 +2,8 @@ import { CongregacionContextService } from '../../../core/congregacion-context/c
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { ExhibidoresService } from '../../exhibidores/services/exhibidores.service';
 import { environment } from '../../../../environments/environment';
 import { ConNombre } from '../../../core/utils/nombre.util';
 import { SalidaProgramada } from './salidas-programa.service';
@@ -95,6 +97,8 @@ export interface PublicadorOpcion extends ConNombre {
 export class TerritoriosService {
   private http = inject(HttpClient);
   private ctx = inject(CongregacionContextService);
+  /** Exhibidores dibuja este mismo límite en sus mapas y lo guarda en caché. */
+  private exhibidores = inject(ExhibidoresService);
   private baseUrl = `${environment.apiUrl}/territorios`;
   private sectoresUrl = `${environment.apiUrl}/territorio-sectores`;
   private congregacionUrl = `${environment.apiUrl}/territorio-congregacion`;
@@ -133,7 +137,8 @@ export class TerritoriosService {
     fd.append('archivo', archivo);
     return this.http.post<{ unidades: UnidadCongregacion[] }>(
       `${this.congregacionUrl}/importar-kml`, fd,
-      { params: this.conCongregacion(new HttpParams().set('guardar', String(guardar))) });
+      { params: this.conCongregacion(new HttpParams().set('guardar', String(guardar))) },
+    ).pipe(tap(() => { if (guardar) this.exhibidores.invalidarTerritorioLimite(); }));
   }
   estadoSugerenciasIa(id: number): Observable<EstadoSugerenciasIa> {
     return this.http.get<EstadoSugerenciasIa>(`${this.congregacionUrl}/${id}/sugerencias-ia`);
@@ -142,7 +147,8 @@ export class TerritoriosService {
     return this.http.post<SugerenciasLimitesIa>(`${this.congregacionUrl}/${id}/sugerencias-ia`, {});
   }
   actualizarCongregacionLimite(id: number, data: Partial<UnidadCongregacion>): Observable<UnidadCongregacion> {
-    return this.http.put<UnidadCongregacion>(`${this.congregacionUrl}/${id}`, data);
+    return this.http.put<UnidadCongregacion>(`${this.congregacionUrl}/${id}`, data)
+      .pipe(tap(() => this.exhibidores.invalidarTerritorioLimite()));
   }
 
   // ── Territorios ──────────────────────────────────────────────────────

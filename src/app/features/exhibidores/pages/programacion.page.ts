@@ -2,8 +2,9 @@ import { Component, OnInit, computed, effect, inject, signal, untracked } from '
 import {
   VacanteTraslado, VacantesTrasladoService, textoVacante, textoVacanteCorto, vacantesPor,
 } from '../../../shared/vacantes-traslado';
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -53,8 +54,8 @@ interface GrupoFecha {
     <app-page-header
       title="Exhibidores"
       [subtitle]="esQuincenal()
-        ? 'Programación quincenal de turnos con asignación inteligente.'
-        : 'Programación mensual de turnos con asignación inteligente.'">
+        ? 'Arma los turnos de cada quincena, revísalos y confírmalos para que todos los vean.'
+        : 'Arma los turnos del mes, revísalos y confírmalos para que todos los vean.'">
       <button class="btn-secondary" (click)="abrirBloqueadas()">Fechas bloqueadas</button>
       <button class="btn-secondary" *ngIf="estadoPeriodo()?.generado" (click)="descargarPdf()">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -69,8 +70,8 @@ interface GrupoFecha {
         {{ generando() ? 'Generando…' : 'Generar ' + nombrePeriodo() }}
       </button>
       <button class="btn-primary-blue" *ngIf="estadoPeriodo()?.generado && !estadoPeriodo()?.confirmado"
-              [disabled]="confirmando()" (click)="confirmar()">
-        {{ confirmando() ? 'Confirmando…' : 'Confirmar ' + nombrePeriodo() }}
+              [disabled]="confirmando()" (click)="confirmPublicar.set(true)">
+        {{ confirmando() ? 'Confirmando…' : 'Confirmar y publicar' }}
       </button>
     </app-page-header>
 
@@ -114,22 +115,36 @@ interface GrupoFecha {
     <!-- Estado del periodo: resultado del generador (izq.) vs. ajustes y acciones (der.) -->
     <div class="flex flex-wrap items-center justify-between gap-3 mb-6 px-4 py-3 rounded-2xl
                 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60">
-      <!-- Informativo: qué generó el sistema -->
-      <div class="flex flex-wrap items-center gap-3">
+      <!-- Informativo: en qué paso va el periodo y cuánto está cubierto.
+           Los tres pasos a la vista enseñan el proceso sin manual: quien
+           entra por primera vez ve qué hizo ya y qué le falta. -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
         <ng-container *ngIf="estadoPeriodo() as e">
-          <span *ngIf="e.confirmado" class="badge-active">Confirmado</span>
-          <span *ngIf="e.generado && !e.confirmado" class="badge-warning">Borrador</span>
+          <ol class="flex flex-wrap items-center gap-1.5 text-xs font-semibold" aria-label="Pasos de la programación">
+            <li *ngFor="let paso of pasos(); let i = index; let ultimo = last" class="flex items-center gap-1.5">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
+                    [attr.aria-current]="paso.estado === 'actual' ? 'step' : null"
+                    [ngClass]="paso.estado === 'hecho'
+                      ? 'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                      : paso.estado === 'actual'
+                        ? 'border-exh-500 bg-exh-600 text-white'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'">
+                <span class="data-num">{{ paso.estado === 'hecho' ? '✓' : i + 1 }}</span>
+                {{ paso.texto }}
+              </span>
+              <span *ngIf="!ultimo" class="text-slate-300 dark:text-slate-600" aria-hidden="true">›</span>
+            </li>
+          </ol>
           <div *ngIf="e.generado" class="flex items-center gap-2.5">
-            <span class="data-num text-sm font-bold text-slate-700 dark:text-slate-200">
-              {{ e.cobertura.cubiertas }}<span class="font-normal text-slate-400">/{{ e.cobertura.total }}</span>
-            </span>
-            <div class="w-28 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+            <div class="w-24 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
               <div class="h-full rounded-full bg-exh-600 transition-all"
                    [style.width.%]="porcentajeCobertura()"></div>
             </div>
-            <span class="text-xs text-slate-400">cubiertos</span>
+            <span class="text-xs text-slate-600 dark:text-slate-300">
+              <span class="data-num font-bold">{{ e.cobertura.cubiertas }} de {{ e.cobertura.total }}</span>
+              puestos cubiertos
+            </span>
           </div>
-          <span *ngIf="!e.generado" class="text-sm text-slate-400 italic">Sin generar todavía</span>
         </ng-container>
       </div>
 
@@ -142,13 +157,9 @@ interface GrupoFecha {
                el diálogo — la acción parecía disponible sin estarlo. Para
                empezar de cero un periodo confirmado, la vía es «Eliminar
                programación» en el menú «⋯». -->
-          <span *ngIf="e.generado && e.confirmado"
-                class="text-xs text-slate-400 dark:text-slate-500 italic"
-                title="Ya está confirmado. Para rehacerlo desde cero, elimina la programación en el menú «⋯».">
-            No se puede regenerar
-          </span>
-          <button *ngIf="e.generado && !e.confirmado" class="btn-secondary !px-3 !py-1.5 text-xs"
-                  (click)="confirmRegenerar.set(true)">Regenerar</button>
+          <button *ngIf="e.generado && !e.confirmado" class="btn-secondary btn-sm"
+                  (click)="confirmRegenerar.set(true)"
+                  title="Descarta este borrador y arma uno nuevo">Generar de nuevo</button>
           <app-dropdown *ngIf="e.generado" [items]="accionesPeriodo" align="right" (itemClick)="onAccionPeriodo($event)">
             <button slot="trigger" class="btn-icon-edit" aria-label="Más acciones de este periodo">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -164,11 +175,12 @@ interface GrupoFecha {
     <div *ngIf="conflictos().length > 0"
          class="mb-5 p-4 rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40">
       <p class="font-semibold text-sm text-amber-800 dark:text-amber-300 mb-1.5">
-        {{ conflictos().length }} hueco(s) sin cubrir — revísalos y asígnalos a mano:
+        {{ conflictos().length === 1 ? 'Quedó 1 puesto sin cubrir' : 'Quedaron ' + conflictos().length + ' puestos sin cubrir' }}.
+        Búscalos abajo (borde punteado) y toca «Asignar persona» para elegir a alguien:
       </p>
       <ul class="text-xs text-amber-700 dark:text-amber-400 space-y-0.5">
         <li *ngFor="let c of conflictos() | slice:0:6">
-          {{ c.fecha }} · {{ c.ubicacion_nombre }} — {{ c.motivo }}
+          {{ fechaLarga(c.fecha) }} · {{ c.ubicacion_nombre }} — {{ c.motivo }}
         </li>
         <li *ngIf="conflictos().length > 6" class="italic">…y {{ conflictos().length - 6 }} más.</li>
       </ul>
@@ -184,7 +196,7 @@ interface GrupoFecha {
           : 'Este mes aún no tiene programación'"
         [description]="mesData()!.turnos.length === 0
           ? 'Primero configura ubicaciones con turnos en la pestaña Ubicaciones.'
-          : 'Genera el borrador automático: el sistema asigna a los participantes respetando reglas, disponibilidad e historial.'"
+          : 'Toca «Generar» y el sistema propone quién sale cada día, según la disponibilidad de cada persona. Luego podrás revisarlo y cambiar lo que quieras antes de publicarlo.'"
         [actionLabel]="mesData()!.turnos.length === 0 ? '' : 'Generar ' + nombrePeriodo()"
         (action)="generar(false)" />
     </div>
@@ -198,7 +210,7 @@ interface GrupoFecha {
     <div *ngIf="!cargando() && estadoPeriodo()?.generado && hayFiltros()"
          class="flex flex-wrap items-center gap-1.5 mb-4">
       <ng-container *ngIf="diasDisponibles().length > 1">
-        <span class="text-xs font-medium text-slate-400 dark:text-slate-500 mr-0.5">Día</span>
+        <span class="text-xs font-medium text-slate-500 dark:text-slate-400 mr-0.5">Día</span>
         <button class="chip-filtro" [ngClass]="clasesChip(diaFiltro() === null)"
                 (click)="filtrarDia(null)">Todos</button>
         <button *ngFor="let d of diasDisponibles()"
@@ -208,11 +220,11 @@ interface GrupoFecha {
 
       <ng-container *ngIf="hayAmbasFranjas()">
         <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1.5"></div>
-        <span class="text-xs font-medium text-slate-400 dark:text-slate-500 mr-0.5">Horario</span>
+        <span class="text-xs font-medium text-slate-500 dark:text-slate-400 mr-0.5">Horario</span>
         <button class="chip-filtro" [ngClass]="clasesChip(franjaFiltro() === 'am')"
-                (click)="filtrarFranja('am')" title="Turnos de la mañana">AM</button>
+                (click)="filtrarFranja('am')">Mañana</button>
         <button class="chip-filtro" [ngClass]="clasesChip(franjaFiltro() === 'pm')"
-                (click)="filtrarFranja('pm')" title="Turnos de la tarde">PM</button>
+                (click)="filtrarFranja('pm')">Tarde</button>
       </ng-container>
     </div>
 
@@ -224,6 +236,11 @@ interface GrupoFecha {
       tarjetas quedaban descuadradas entre sí.
     -->
     <div *ngIf="!cargando() && estadoPeriodo()?.generado" class="space-y-3">
+      <p class="text-sm text-slate-600 dark:text-slate-300">
+        {{ estadoPeriodo()?.confirmado
+          ? 'Toca un nombre para cambiarlo o para registrar que esa persona no puede asistir.'
+          : 'Toca cualquier nombre para cambiarlo. Cuando todo esté bien, usa «Confirmar y publicar».' }}
+      </p>
       <div *ngFor="let grupo of gruposVisibles()"
            class="card-elevated overflow-hidden">
         <div class="flex items-center gap-3 px-4 py-2.5 bg-slate-50/70 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-700/60"
@@ -275,8 +292,7 @@ interface GrupoFecha {
                     {{ a.publicador?.nombre_completo ?? textoSlotVacio(a) }}
                   </span>
                   <span *ngIf="a.estado === 'reasignado'"
-                        class="text-xs font-bold uppercase text-exh-700 dark:text-exh-300"
-                        title="Reemplazo">R</span>
+                        class="text-xs font-semibold text-exh-700 dark:text-exh-300">· reemplazo</span>
                 </button>
               </div>
             </div>
@@ -457,7 +473,7 @@ interface GrupoFecha {
         </ul>
         <div class="flex gap-2 justify-end">
           <button class="btn-secondary !py-1.5 !px-3 text-xs" (click)="conflictoPendiente.set(null)">Cancelar</button>
-          <button class="btn-primary-blue !py-1.5 !px-3 text-xs" (click)="confirmarEleccion()">Asignar de todos modos</button>
+          <button class="btn-primary-blue !py-1.5 !px-3 text-xs" (click)="confirmarEleccion()">{{ modoAusencia() ? 'Usar de todos modos' : 'Asignar de todos modos' }}</button>
         </div>
       </div>
 
@@ -482,7 +498,7 @@ interface GrupoFecha {
           <div *ngFor="let f of fechasBloqueadas()"
                class="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
             <div class="min-w-0">
-              <p class="text-sm font-medium text-slate-800 dark:text-slate-200 data-num">{{ f.fecha }}</p>
+              <p class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ fechaLarga(f.fecha) }}</p>
               <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
                 {{ f.motivo || 'Sin motivo' }} · {{ f.ubicacion_nombre || 'Todas las ubicaciones' }}
               </p>
@@ -530,6 +546,15 @@ interface GrupoFecha {
       confirmLabel="Regenerar"
       (confirmed)="generar(true)" />
 
+    <!-- Publicar es lo único que ve toda la congregación: se confirma con
+         lo que falta a la vista, para no publicar huecos sin darse cuenta. -->
+    <app-confirm-dialog
+      [open]="confirmPublicar()" (openChange)="confirmPublicar.set($event)"
+      [title]="'¿Confirmar y publicar ' + (esQuincenal() ? 'la ' : 'el ') + nombrePeriodo() + '?'"
+      [message]="mensajePublicar()"
+      confirmLabel="Confirmar y publicar"
+      (confirmed)="confirmar()" />
+
     <app-confirm-dialog
       [open]="confirmEliminarMes()" (openChange)="confirmEliminarMes.set($event)"
       [title]="'¿Eliminar la programación ' + (esQuincenal() ? 'de la ' : 'del ') + nombrePeriodo() + '?'"
@@ -543,6 +568,7 @@ export class ProgramacionExhibidoresPage implements OnInit {
   private ctx = inject(CongregacionContextService);
   private toast = inject(ToastService);
   private lookup = inject(PublicadorLookupService);
+  private route = inject(ActivatedRoute);
 
   cargando = signal(true);
   generando = signal(false);
@@ -646,6 +672,31 @@ export class ProgramacionExhibidoresPage implements OnInit {
 
   confirmRegenerar = signal(false);
   confirmEliminarMes = signal(false);
+  confirmPublicar = signal(false);
+
+  /** Los tres pasos del periodo, para la guía del estado. */
+  pasos = computed(() => {
+    const e = this.estadoPeriodo();
+    const actual = e?.confirmado ? 3 : e?.generado ? 1 : 0;
+    return ['Generar', 'Revisar y ajustar', 'Confirmar y publicar'].map((texto, i) => ({
+      texto,
+      estado: i < actual ? 'hecho' : i === actual ? 'actual' : 'pendiente',
+    }));
+  });
+
+  mensajePublicar = computed(() => {
+    const e = this.estadoPeriodo();
+    const faltan = e ? e.cobertura.total - e.cobertura.cubiertas : 0;
+    const base = 'Todos lo verán en el calendario y en la app. Después podrás seguir cambiando personas una a una.';
+    if (faltan <= 0) return base;
+    return `${faltan === 1 ? 'Queda 1 puesto' : `Quedan ${faltan} puestos`} sin cubrir: se publicarán vacíos. ${base}`;
+  });
+
+  /** '2026-11-10' → 'Martes 10 de noviembre' (locale 'es' de app.config). */
+  fechaLarga(iso: string): string {
+    const texto = formatDate(iso, "EEEE d 'de' MMMM", 'es');
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
 
   /** Menú "⋯" junto a Regenerar: agrupa la acción destructiva sin ocultarla al fondo de la página. */
   accionesPeriodo: DropdownItem[] = [
@@ -811,7 +862,8 @@ export class ProgramacionExhibidoresPage implements OnInit {
 
   textoSlotVacio(a: { id_exhibidor_asignacion: number; publicador?: unknown }): string {
     const v = this.vacanteDe(a);
-    return v ? textoVacanteCorto(v) : 'Sin asignar';
+    // Texto de acción, no de estado: el puesto vacío invita a tocarlo.
+    return v ? textoVacanteCorto(v) : 'Asignar persona';
   }
 
   vacanteTitulo(a: { id_exhibidor_asignacion: number; publicador?: unknown }): string | null {
@@ -824,6 +876,15 @@ export class ProgramacionExhibidoresPage implements OnInit {
   }
 
   ngOnInit(): void {
+    // ?ano=&mes= llega desde el Calendario («Ir a Programación»): abrir el
+    // mismo mes que se estaba mirando, no el actual.
+    const q = this.route.snapshot.queryParamMap;
+    const ano = Number(q.get('ano'));
+    const mes = Number(q.get('mes'));
+    if (ano > 2000 && mes >= 1 && mes <= 12) {
+      this.ano.set(ano);
+      this.mes.set(mes);
+    }
     this.cargarMes();
   }
 
@@ -841,8 +902,15 @@ export class ProgramacionExhibidoresPage implements OnInit {
 
   cargarMes(): void {
     this.cargando.set(true);
-    this.svc.getMes(this.ano(), this.mes(), this.idCong).subscribe({
-      next: data => { this.mesData.set(data); this.cargando.set(false); },
+    const ano = this.ano();
+    const mes = this.mes();
+    this.svc.getMes(ano, mes, this.idCong).subscribe({
+      next: data => {
+        // Respuesta tardía de un mes que ya no se está viendo: se descarta.
+        if (ano !== this.ano() || mes !== this.mes()) return;
+        this.mesData.set(data);
+        this.cargando.set(false);
+      },
       error: () => {
         this.cargando.set(false);
         this.toast.error('Error', 'No se pudo cargar la programación.');
@@ -965,9 +1033,9 @@ export class ProgramacionExhibidoresPage implements OnInit {
   subtituloSlot(): string {
     const s = this.slotInfo();
     const a = this.asignacionActiva();
-    if (!s) return a ? `${a.fecha} · posición ${a.posicion}` : '';
+    if (!s) return a ? this.fechaLarga(a.fecha) : '';
     const hora = new Hora12Pipe();
-    return `${s.dia_nombre} ${s.fecha} · ${s.ubicacion_nombre} · ${hora.transform(s.hora_inicio)} – ${hora.transform(s.hora_fin)}`;
+    return `${this.fechaLarga(s.fecha)} · ${s.ubicacion_nombre} · ${hora.transform(s.hora_inicio)} – ${hora.transform(s.hora_fin)}`;
   }
 
   cerrarAsignar(open: boolean): void {
@@ -979,12 +1047,8 @@ export class ProgramacionExhibidoresPage implements OnInit {
   }
 
   elegirCandidato(c: CandidatoSlot): void {
-    if (this.modoAusencia()) {
-      this.guardarAusencia(c.id_publicador, c.nombre);
-      return;
-    }
     if (c.elegible) {
-      this.asignar(c.id_publicador);
+      this.aplicarEleccion(c.id_publicador, c.nombre);
     } else {
       // No elegible: verificar conflictos reales y pedir confirmación
       this.verificarYProponer(c.id_publicador, c.nombre);
@@ -993,10 +1057,6 @@ export class ProgramacionExhibidoresPage implements OnInit {
 
   elegirExterno(p: PublicadorLite | null): void {
     if (!p) return;
-    if (this.modoAusencia()) {
-      this.guardarAusencia(p.id_publicador, p.nombre_completo);
-      return;
-    }
     this.verificarYProponer(p.id_publicador, p.nombre_completo);
   }
 
@@ -1008,16 +1068,22 @@ export class ProgramacionExhibidoresPage implements OnInit {
         if (res.tiene_conflicto) {
           this.conflictoPendiente.set({ id: idPublicador, nombre, detalles: res.asignaciones });
         } else {
-          this.asignar(idPublicador);
+          this.aplicarEleccion(idPublicador, nombre);
         }
       },
-      error: () => this.asignar(idPublicador),
+      error: () => this.aplicarEleccion(idPublicador, nombre),
     });
   }
 
   confirmarEleccion(): void {
     const cf = this.conflictoPendiente();
-    if (cf) this.asignar(cf.id);
+    if (cf) this.aplicarEleccion(cf.id, cf.nombre);
+  }
+
+  /** Asigna a la persona elegida, o la registra como reemplazo si se está marcando una ausencia. */
+  private aplicarEleccion(idPublicador: number, nombre: string): void {
+    if (this.modoAusencia()) this.guardarAusencia(idPublicador, nombre);
+    else this.asignar(idPublicador);
   }
 
   private asignar(idPublicador: number | null): void {

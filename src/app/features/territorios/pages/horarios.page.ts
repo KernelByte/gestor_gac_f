@@ -1,4 +1,4 @@
-import { Component, signal, computed, effect, inject, OnInit, untracked } from '@angular/core';
+import { Component, signal, computed, effect, inject, untracked } from '@angular/core';
 import { VacanteTraslado, VacantesTrasladoService, textoVacante, vacantesPor } from '../../../shared/vacantes-traslado';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
@@ -37,7 +37,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
 @Component({
   standalone: true,
   selector: 'app-horarios-page',
-  host: { class: 'tema-territorios' },
+  host: { class: 'tema-territorios', '(document:click)': 'alClicFuera($event)' },
   imports: [CommonModule, PageHeaderComponent, SalidaEditorComponent, SemanaTipoComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
   template: `
     <div class="flex flex-col h-full min-h-0 gap-4">
@@ -45,7 +45,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
         spacing="none"
         title="Programa de salidas"
         subtitle="Qué días se predica, dónde se reúnen, quién saca el grupo y en qué barrio.">
-        <div class="relative">
+        <div class="relative" data-menu="compartir">
           <button (click)="menuCompartir.set(!menuCompartir())" [disabled]="!salidas().length || exportando()"
             class="btn-secondary whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
             @if (exportando()) {
@@ -56,7 +56,6 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
             Compartir
           </button>
           @if (menuCompartir()) {
-            <div class="fixed inset-0 z-40" (click)="menuCompartir.set(false)"></div>
             <div class="absolute right-0 mt-2 z-50 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-1.5">
               <button (click)="compartir('image')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors">
                 <span class="block text-sm font-bold text-slate-800 dark:text-slate-100">Imagen (WhatsApp)</span>
@@ -96,7 +95,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
           </div>
         }
 
-        @if (puedeEditar() && !sinCongregacion() && !loading()) {
+        @if (puedeEditar() && !sinCongregacion() && !loading() && fijasListas()) {
           <div class="flex gap-2 ml-auto w-full sm:w-auto">
             @if (estado() === 'sin-fijas') {
               <button (click)="abrirSemanaTipo()" class="btn-primary flex-1 sm:flex-none">
@@ -108,13 +107,12 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Agregar salida
               </button>
-              <div class="relative">
+              <div class="relative" data-menu="programa">
                 <button (click)="menuPrograma.set(!menuPrograma())" class="btn-secondary !px-3" aria-haspopup="menu" [attr.aria-expanded]="menuPrograma()" title="Más opciones del programa">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
                   <span class="sr-only">Más opciones</span>
                 </button>
                 @if (menuPrograma()) {
-                  <div class="fixed inset-0 z-40" (click)="menuPrograma.set(false)"></div>
                   <div class="menu-pop absolute right-0 mt-2 z-50 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-1.5" role="menu" (keydown.escape)="menuPrograma.set(false)">
                     @if (estado() === 'con-programa') {
                       <button role="menuitem" (click)="menuPrograma.set(false); pedirRecrear()" class="opcion-menu">
@@ -158,7 +156,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
               <p class="mt-1 text-sm text-slate-500 dark:text-slate-400 max-w-sm">El programa de salidas es de cada congregación. Elíjala en el selector de arriba para verlo o armarlo.</p>
             </div>
           </div>
-        } @else if (loading()) {
+        } @else if (loading() || !fijasListas()) {
           <div class="h-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-2">
             @for (i of [1, 2, 3, 4, 5, 6, 7]; track i) {
               <div class="rounded-2xl skeleton min-h-24"></div>
@@ -226,8 +224,8 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                     <p class="text-xl font-bold leading-tight text-slate-900 dark:text-white tabular-nums">{{ d.numero }}@if (d.fecha === hoyIso) {<span class="ml-1.5 align-middle text-xs font-bold px-1.5 py-0.5 rounded-full bg-emerald-600 text-white">Hoy</span>}</p>
                   </div>
                   @if (puedeEditar()) {
-                    <button (click)="nuevaSalida(d.fecha)" [title]="'Agregar salida el ' + d.titulo"
-                      class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
+                    <button type="button" (click)="nuevaSalida(d.fecha)" [title]="'Agregar salida el ' + d.titulo"
+                      [attr.aria-label]="'Agregar salida el ' + d.titulo" class="btn-icon-sm">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
                   }
@@ -291,7 +289,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                     <span class="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold tabular-nums"
                           [class]="c.fecha === hoyIso ? 'bg-emerald-600 text-white' : c.enMes ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-600'">{{ c.numero }}</span>
                     @if (puedeEditar() && c.enMes) {
-                      <button (click)="nuevaSalida(c.fecha)" title="Agregar salida" class="celda-mas w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                      <button type="button" (click)="nuevaSalida(c.fecha)" title="Agregar salida" [attr.aria-label]="'Agregar salida el ' + tituloDia(c.fecha)" class="celda-mas w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                       </button>
                     }
@@ -521,7 +519,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
     }
   `],
 })
-export class HorariosPage implements OnInit {
+export class HorariosPage {
   private http = inject(HttpClient);
   private svc = inject(SalidasProgramaService);
   private territoriosService = inject(TerritoriosService);
@@ -561,6 +559,8 @@ export class HorariosPage implements OnInit {
   sugerencias = signal<Record<string, SugerenciaSalida>>({});
 
   loading = signal(true);
+  /** Las salidas fijas ya llegaron: antes no se ofrece editarlas (guardar reemplaza la semana tipo completa). */
+  fijasListas = signal(false);
   generando = signal(false);
   guardando = signal(false);
   exportando = signal(false);
@@ -604,18 +604,37 @@ export class HorariosPage implements OnInit {
     ));
   });
 
-  ngOnInit(): void {
+  /** Todo depende de la congregación: el Administrador puede cambiarla en el selector sin salir de la pantalla. */
+  private alCambiarCongregacion = effect(() => {
+    const cong = this.congregacionCtx.effectiveCongregacionId();
+    untracked(() => this.cargarTodo(cong));
+  });
+
+  private cargarTodo(congId: number | null): void {
+    this.pedidas.forEach(p => p.unsubscribe());
+    this.subSugerencias?.unsubscribe();
+    this.editando.set(null);
+    this.mostrarSemanaTipo.set(false);
+    this.error.set(null);
+    this.hecho.set(null);
+    this.salidas.set([]);
+    this.semanaTipo.set([]);
+    this.sugerencias.set({});
+    this.vacantes.set(new Map());
+    this.fijasListas.set(false);
     if (this.sinCongregacion()) { this.loading.set(false); return; }
     this.svc.periodo().subscribe({
       next: (p) => { this.periodo.set(p.periodo); this.nombreCongregacion.set(p.nombre_congregacion ?? ''); this.cargar(); },
       error: () => this.cargar(),
     });
-    this.svc.semanaTipo().subscribe({ next: (l) => this.semanaTipo.set(l) });
+    this.svc.semanaTipo().subscribe({
+      next: (l) => { this.semanaTipo.set(l); this.fijasListas.set(true); },
+      error: (e) => this.mostrarError(e, 'No se pudieron cargar las salidas fijas. Recargue la página.'),
+    });
     this.svc.grupos().subscribe({ next: (l) => this.gruposOpc.set(l) });
     this.svc.capitanes().subscribe({ next: (l) => this.capitanesHabilitados.set(l), error: () => this.capitanesHabilitados.set([]) });
     this.territoriosService.getSectores().subscribe({ next: (r) => this.barrios.set(r.sectores), error: () => this.barrios.set([]) });
     this.territoriosService.getPuntosSalida().subscribe({ next: (l) => this.puntosSalida.set(l), error: () => this.puntosSalida.set([]) });
-    const congId = this.congregacionCtx.effectiveCongregacionId();
     const params: any = { limit: 1000 };
     if (congId) params.id_congregacion = congId;
     this.http.get<Publicador[]>('/api/publicadores/', { params }).subscribe({
@@ -637,13 +656,17 @@ export class HorariosPage implements OnInit {
       next: (l) => { this.salidas.set(l); this.loading.set(false); },
       error: (e) => { this.loading.set(false); this.mostrarError(e, 'No se pudo cargar el programa.'); },
     });
-    this.pedidas = [lista, this.cargarSugerencias()];
+    this.pedidas = [lista];
+    this.cargarSugerencias();
   }
 
   /** Lo que le toca a cada salida; es una ayuda: si falla, la agenda se ve igual, solo sin «Le toca…». */
-  private cargarSugerencias(): Subscription {
+  private subSugerencias?: Subscription;
+  private cargarSugerencias(): void {
+    // Solo vale la última: una respuesta atrasada de otro periodo no pisa la actual.
+    this.subSugerencias?.unsubscribe();
     const { desde, hasta } = this.rango();
-    return this.territoriosService.getSugerencias(aIso(desde), aIso(hasta)).subscribe({
+    this.subSugerencias = this.territoriosService.getSugerencias(aIso(desde), aIso(hasta)).subscribe({
       next: (r) => this.sugerencias.set(r),
       error: () => this.sugerencias.set({}),
     });
@@ -792,10 +815,12 @@ export class HorariosPage implements OnInit {
   borrarPeriodo(): void {
     const { desde, hasta } = this.rango();
     this.generando.set(true);
+    const clave = aIso(desde);
     this.svc.borrarPeriodo(aIso(desde), aIso(hasta)).subscribe({
       next: (r) => {
         this.generando.set(false);
         this.dialogoBorrar.set(false);
+        if (aIso(this.rango().desde) !== clave) return;  // ya se ve otro periodo
         this.salidas.set([]);
         this.sugerencias.set({});
         this.hecho.set(r.borradas === 1 ? 'Se borró 1 salida.' : `Se borraron ${r.borradas} salidas.`);
@@ -815,12 +840,15 @@ export class HorariosPage implements OnInit {
     const { desde, hasta } = this.rango();
     const antes = new Set(this.salidas().map(s => s.id_horario));
     this.generando.set(true);
+    const clave = aIso(desde);
     this.svc.generar(aIso(desde), aIso(hasta), modo).subscribe({
       next: (l) => {
         this.generando.set(false);
         this.dialogoRecrear.set(false);
+        if (aIso(this.rango().desde) !== clave) return;  // ya se ve otro periodo
         this.salidas.set(l);
-        this.avisarCreadas(modo === 'reemplazar' ? l : l.filter(s => !antes.has(s.id_horario)), modo);
+        // También al empezar de nuevo: las registradas que se conservan no son nuevas.
+        this.avisarCreadas(l.filter(s => !antes.has(s.id_horario)), modo);
         this.recienCreado.set(true);
         setTimeout(() => this.recienCreado.set(false), 600);
         this.cargarSugerencias();
@@ -904,7 +932,14 @@ export class HorariosPage implements OnInit {
 
   // ── Semana tipo ───────────────────────────────────────────────────────────
 
-  abrirSemanaTipo(): void { this.mostrarSemanaTipo.set(true); }
+  abrirSemanaTipo(): void { if (this.fijasListas()) this.mostrarSemanaTipo.set(true); }
+
+  /** Cierra los menús desplegables al hacer clic fuera de ellos. */
+  alClicFuera(ev: MouseEvent): void {
+    const dentro = (ev.target as HTMLElement | null)?.closest?.('[data-menu]')?.getAttribute('data-menu');
+    if (dentro !== 'compartir' && this.menuCompartir()) this.menuCompartir.set(false);
+    if (dentro !== 'programa' && this.menuPrograma()) this.menuPrograma.set(false);
+  }
 
   cerrarSemanaTipo(guardado: boolean): void {
     this.mostrarSemanaTipo.set(false);

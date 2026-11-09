@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Output, ViewChild, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Output, ViewChild, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ReportesService, Seguimiento, TipoSeguimiento } from '../../../services/reportes.service';
+import { ReportesService, Seguimiento, TareaLigada, TipoSeguimiento } from '../../../services/reportes.service';
+import { ActaService } from '../../../../secretario-tools/services/acta.service';
 import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ModalComponent } from '../../../../../shared/components/modal/modal.component';
 import { ToastService } from '../../../../../shared/components/toast/toast.service';
@@ -49,13 +50,6 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
       font-size: 1rem;
       letter-spacing: -0.015em;
       color: var(--txt-1);
-    }
-    .panel-titulo::before {
-      content: '';
-      width: 0.1875rem;
-      height: 1.05em;
-      border-radius: 9999px;
-      background: var(--acento);
     }
     .panel-titulo .contador {
       font-family: var(--font-mono);
@@ -124,6 +118,35 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
     .meta-entrada { font-family: var(--font-mono); font-size: 0.75rem; color: var(--txt-3); }
     .descripcion { font-size: 0.8125rem; line-height: 1.6; color: var(--txt-2); margin-top: 0.25rem; white-space: pre-line; max-width: 68ch; overflow-wrap: anywhere; }
 
+    /* ── Tarea ligada ──────────────────────────────────────────────────
+       Cada seguimiento lleva su tarea personal. Pendiente: casilla para
+       marcarla; hecha: fecha en verde con icono (nunca solo color). */
+    .tarea { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 0.75rem; margin-top: 0.5rem; font-size: 0.8125rem; color: var(--txt-2); }
+    .tarea-check {
+      min-height: 2.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding-inline: 0.625rem;
+      border: 1px solid var(--linea);
+      border-radius: 0.5rem;
+      background: var(--superficie);
+      font-weight: 500;
+      color: var(--txt-1);
+      transition: border-color 160ms var(--ease-out-quart), transform 160ms var(--ease-out-quart);
+    }
+    .tarea-check .caja { width: 1rem; height: 1rem; flex: none; border: 1.5px solid var(--txt-3); border-radius: 0.25rem; }
+    .tarea-check:active:not(:disabled) { transform: scale(0.97); }
+    .tarea-check:disabled { opacity: 0.55; cursor: wait; }
+    .tarea-check:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+    @media (hover: hover) and (pointer: fine) { .tarea-check:hover:not(:disabled) { border-color: var(--txt-4); } }
+    .tarea-fecha { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--txt-2); }
+    .tarea-vencida { color: var(--neg); font-weight: 700; }
+    .tarea-hecha { display: inline-flex; align-items: center; gap: 0.375rem; font-weight: 600; color: var(--pos); }
+    .tarea-hecha svg { width: 0.875rem; height: 0.875rem; flex: none; }
+    .nota-tarea { margin-top: 0.75rem; display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.8125rem; line-height: 1.5; color: var(--txt-2); }
+    .nota-tarea svg { width: 1rem; height: 1rem; flex: none; margin-top: 0.125rem; color: var(--txt-3); }
+
     /* El vacío enseña qué se registra aquí, no anuncia que no hay nada. */
     @keyframes aparecer {
       from { opacity: 0; transform: translateY(-4px); }
@@ -138,7 +161,8 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .campo { transition: none; }
+      .campo, .tarea-check { transition: none; }
+      .tarea-check:active:not(:disabled) { transform: none; }
     }
   `],
   template: `
@@ -150,6 +174,11 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
             Seguimiento
             @if (items().length) { <span class="contador">{{ items().length }}</span> }
           </h2>
+          @if (pendientes() > 0) {
+            <p class="panel-apostilla" aria-live="polite">
+              {{ pendientes() === 1 ? 'Tienes 1 tarea pendiente' : 'Tienes ' + pendientes() + ' tareas pendientes' }} con esta persona.
+            </p>
+          }
         </div>
       </div>
 
@@ -185,6 +214,28 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
                   }
                 </div>
                 <p class="descripcion">{{ s.descripcion }}</p>
+                @if (s.tarea; as t) {
+                  <div class="tarea">
+                    @if (t.estado === 'completada') {
+                      <span class="tarea-hecha">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        Tarea hecha@if (t.completado_en) { el {{ t.completado_en | date:'d MMM y' }} }
+                      </span>
+                    } @else if (t.estado !== 'cancelada') {
+                      <button type="button" class="tarea-check"
+                              [disabled]="completando() === t.id_tarea"
+                              (click)="marcarHecha(s)">
+                        <span class="caja" aria-hidden="true"></span>
+                        Marcar tarea como hecha
+                      </button>
+                      @if (t.fecha_limite) {
+                        <span class="tarea-fecha" [class.tarea-vencida]="vencida(t)">
+                          Para el {{ t.fecha_limite + 'T00:00:00' | date:'d MMM y' }}@if (vencida(t)) { · Vencida }
+                        </span>
+                      }
+                    }
+                  </div>
+                }
               </div>
               <button type="button"
                       (click)="pedirEliminar(s)"
@@ -220,7 +271,7 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
               <label for="seg-fecha" class="campo-rotulo">Fecha</label>
               <input id="seg-fecha" type="date" name="fecha" [(ngModel)]="fecha" required class="campo"
                      aria-describedby="seg-fecha-ayuda" />
-              <p id="seg-fecha-ayuda" class="ayuda">Cuándo ocurrió, no cuándo se anota.</p>
+              <p id="seg-fecha-ayuda" class="ayuda">Si es algo por hacer, ¿para cuándo? Si ya pasó, ¿cuándo ocurrió?</p>
             </div>
           </div>
           <div>
@@ -235,6 +286,10 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
               <span class="cuenta">{{ descripcion.length }} / 2000</span>
             </p>
           </div>
+          <p class="nota-tarea">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Se creará una tarea para ti en «Mis tareas»@if (fecha && fecha < hoy) { , ya marcada como hecha porque la fecha ya pasó}.</span>
+          </p>
           @if (errorForm()) {
             <p class="error" role="alert">{{ errorForm() }} Revisa los datos y vuelve a intentarlo.</p>
           }
@@ -259,6 +314,7 @@ const TIPO_META: Record<TipoSeguimiento, { label: string; clase: string; ayuda: 
 export class SeguimientosPanelComponent {
   private api = inject(ReportesService);
   private toast = inject(ToastService);
+  private tareasApi = inject(ActaService);
 
   @Input({ required: true }) idPublicador!: number;
   @Input() set seguimientos(v: Seguimiento[]) { this.items.set(v ?? []); }
@@ -271,10 +327,38 @@ export class SeguimientosPanelComponent {
   readonly guardando = signal(false);
   readonly errorForm = signal<string | null>(null);
   readonly porEliminar = signal<Seguimiento | null>(null);
+  readonly completando = signal<number | null>(null);
+  readonly hoy = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+  /** Tareas propias aún por hacer. */
+  readonly pendientes = computed(() => this.items().filter(s => s.tarea && (s.tarea.estado === 'pendiente' || s.tarea.estado === 'en_progreso')).length);
 
   tipo: TipoSeguimiento = 'reunion_ayuda';
-  fecha = new Date().toISOString().slice(0, 10);
+  fecha = new Date().toLocaleDateString('en-CA');
   descripcion = '';
+
+  vencida(t: TareaLigada): boolean {
+    return !!t.fecha_limite && t.fecha_limite < this.hoy && (t.estado === 'pendiente' || t.estado === 'en_progreso');
+  }
+
+  marcarHecha(s: Seguimiento): void {
+    const t = s.tarea;
+    if (!t || this.completando() !== null) return;
+    this.completando.set(t.id_tarea);
+    this.tareasApi.actualizarEstadoTarea(t.id_tarea, 'completada').subscribe({
+      next: (r) => {
+        this.items.update(list => list.map(x => x.id_seguimiento === s.id_seguimiento
+          ? { ...x, tarea: { ...t, estado: 'completada', completado_en: r.completado_en ?? new Date().toISOString() } }
+          : x));
+        this.completando.set(null);
+        this.toast.success('Tarea marcada como hecha');
+        this.changed.emit();
+      },
+      error: (err) => {
+        this.completando.set(null);
+        this.toast.error('No se pudo marcar la tarea', err?.error?.detail ?? 'Comprueba la conexión y vuelve a intentarlo.');
+      },
+    });
+  }
 
   tipoLabel(t: TipoSeguimiento): string { return TIPO_META[t]?.label ?? t; }
   tipoClases(t: TipoSeguimiento): string { return TIPO_META[t]?.clase ?? TIPO_META.nota.clase; }
@@ -325,7 +409,7 @@ export class SeguimientosPanelComponent {
     const s = this.porEliminar();
     if (!s) return '';
     const fecha = new Date(s.fecha + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' });
-    return `Se borrará «${this.tipoLabel(s.tipo)}» del ${fecha}. Esta acción no se puede deshacer.`;
+    return `Se borrará «${this.tipoLabel(s.tipo)}» del ${fecha}. Esta acción no se puede deshacer.${s.tarea ? ' También se borrará su tarea.' : ''}`;
   }
 
   pedirEliminar(s: Seguimiento): void {

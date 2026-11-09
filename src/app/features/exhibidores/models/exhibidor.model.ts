@@ -8,6 +8,13 @@ export interface GeoJSONPoint {
   coordinates: [number, number]; // [lon, lat]
 }
 
+/** Unidad del KML de la congregación (GET /exhibidores/territorio-limite). */
+export interface TerritorioLimite {
+  id_unidad: number;
+  nombre: string | null;
+  coordenada: { type: 'Polygon' | 'MultiPolygon'; coordinates: unknown };
+}
+
 export interface PublicadorLiteRef {
   id_publicador: number;
   nombre_completo: string;
@@ -139,6 +146,8 @@ export interface MesDisponible {
   mes: number;
   mes_nombre: string;
   confirmado: boolean;
+  /** Alguna quincena publicada y otra todavía en borrador. */
+  parcial: boolean;
 }
 
 export interface CandidatoSlot {
@@ -249,6 +258,8 @@ export interface PerfilAlgoritmo {
   id: string;
   label: string;
   description: string;
+  /** Valor de cada parámetro en este perfil. */
+  valores: Record<string, number>;
 }
 
 export interface OpcionPreferencia {

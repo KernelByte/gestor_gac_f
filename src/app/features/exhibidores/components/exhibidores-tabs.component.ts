@@ -31,7 +31,7 @@ const TABS_EXHIBIDORES: ExhibidoresTab[] = [
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="tab-nav tab-compact mb-6" role="tablist">
+    <div class="tab-nav tab-compact mb-4" role="tablist">
       <button *ngFor="let tab of tabs" type="button" (click)="navegar(tab.key)"
         role="tab" [attr.aria-selected]="active === tab.key"
         class="tab-item">

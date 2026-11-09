@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { TerritoriosService } from '../services/territorios.service';
 import { RegistroS13 } from '../models/territorio.model';
 import { AvisoComponent } from '../../../shared/components/aviso/aviso.component';
@@ -66,7 +67,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
         <app-page-header
           title="Registro de territorios (S-13)"
           subtitle="Cuándo se terminó de trabajar cada territorio y quién lo trabajó">
-          <button type="button" (click)="imprimir()" [disabled]="!data()"
+          <button type="button" (click)="imprimir()" [disabled]="!data() || loading() || error()"
             class="btn-secondary whitespace-nowrap disabled:opacity-50">
             Imprimir
           </button>
@@ -199,12 +200,16 @@ export class RegistroS13Page implements OnInit {
     this.cargar();
   }
 
+  private carga?: Subscription;
+
   private cargar(): void {
+    // Al cambiar de año rápido, la respuesta de un año anterior no debe pisar la del elegido.
+    this.carga?.unsubscribe();
     this.loading.set(true);
     this.error.set(false);
-    this.territoriosService.getRegistroS13(this.anio()).subscribe({
+    this.carga = this.territoriosService.getRegistroS13(this.anio()).subscribe({
       next: (d) => { this.data.set(d); this.loading.set(false); },
-      error: () => { this.error.set(true); this.loading.set(false); },
+      error: () => { this.data.set(null); this.error.set(true); this.loading.set(false); },
     });
   }
 

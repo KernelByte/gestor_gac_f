@@ -5,6 +5,7 @@ import { VisitaService } from '../../services/visita.service';
 import { EntregaPortalService } from '../services/entrega-portal.service';
 import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { anoServicioDe } from '../../../../core/utils/fecha.util';
 
 export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
 
@@ -341,19 +342,27 @@ export class EntregaMetodosComponent implements OnChanges {
 
   descargarZip() {
     if (this.descargandoZip()) return;
-    const now = new Date();
-    // El año de servicio arranca en septiembre.
-    const anio = now.getMonth() + 1 >= 9 ? now.getFullYear() + 1 : now.getFullYear();
+    // Respaldo: el año de servicio de hoy. Vale el de la visita, que da /anios;
+    // un colaborador no puede pedirlo y el servidor corrige el año.
+    const respaldo = anoServicioDe();
     this.descargandoZip.set(true);
-    this.portalSvc.zipFielInterno(this.idVisita, anio).subscribe({
-      next: (blob) => {
-        this.portalSvc.saveBlob(blob, `visita_circuito_${this.idVisita}_ano${anio}.zip`);
-        this.descargandoZip.set(false);
-      },
-      error: (e) => {
-        this.descargandoZip.set(false);
-        this.aviso.emit({ type: 'error', msg: this.errMsg(e, 'Error al descargar el paquete') });
-      },
+    const pedir = (anio: number) =>
+      this.portalSvc.zipFielInterno(this.idVisita, anio).subscribe({
+        next: (blob) => {
+          this.portalSvc.saveBlob(blob, `visita_circuito_${this.idVisita}_ano${anio}.zip`);
+          this.descargandoZip.set(false);
+        },
+        error: (e) => {
+          this.descargandoZip.set(false);
+          this.aviso.emit({ type: 'error', msg: this.errMsg(e, 'Error al descargar el paquete') });
+        },
+      });
+    // /preview/anios es solo de Secretario/Admin (los mismos que pueden revocar):
+    // a un colaborador le daría 403, así que va directo con el respaldo.
+    if (!this.puedeRevocar) { pedir(respaldo); return; }
+    this.portalSvc.aniosInterno(this.idVisita).subscribe({
+      next: ({ anios }) => pedir(anios?.[0] ?? respaldo),
+      error: () => pedir(respaldo),
     });
   }
 

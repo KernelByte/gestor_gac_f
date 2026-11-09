@@ -20,6 +20,8 @@ export interface SessionUser {
   es_anciano?: boolean;
   /** Está convocado a alguna reunión de organización ya convocada (abre el módulo). */
   participa_reuniones?: boolean;
+  /** Participa en exhibidores: su Mi Agenda muestra sus salidas confirmadas, sin dar acceso al módulo. */
+  participa_exhibidores?: boolean;
 }
 
 export const ROL_ADMINISTRADOR = 'Administrador';

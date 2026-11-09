@@ -21,25 +21,25 @@ import type { EstadoPrecursor } from '../../../services/reportes.service';
       display: inline-flex;
       align-items: center;
       gap: 0.3125rem;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 700;
       letter-spacing: 0.07em;
       text-transform: uppercase;
       white-space: nowrap;
     }
     .estado svg { width: 0.75rem; height: 0.75rem; flex: none; }
+    /* «Consideración especial» no cabe en la columna de la tabla: parte en dos
+       líneas con el icono arriba, en vez de quedar cortada por el borde. */
+    .estado.exento { white-space: normal; align-items: flex-start; line-height: 1.25; max-width: 9.5rem; }
+    .estado.exento svg { margin-top: 0.0625rem; }
 
-    .en_meta  { color: oklch(52% 0.13 162); }
-    .atencion { color: oklch(58% 0.14 75); }
-    .riesgo   { color: oklch(54% 0.19 25); }
+    .en_meta  { color: var(--pos); }
+    .atencion { color: var(--aviso); }
+    .riesgo   { color: var(--neg); }
     /* Exento: teal apagado, deliberadamente neutro. No es un logro ni una
        alarma, es "aquí no se mide" — no debe competir con los otros tres. */
-    .exento   { color: oklch(55% 0.07 195); }
+    .exento   { color: var(--exento); }
 
-    :host-context(.dark) .en_meta  { color: oklch(76% 0.13 162); }
-    :host-context(.dark) .atencion { color: oklch(80% 0.13 75); }
-    :host-context(.dark) .riesgo   { color: oklch(71% 0.14 25); }
-    :host-context(.dark) .exento   { color: oklch(75% 0.06 195); }
 
     /* En MacBook Pro 14" la columna compite con 12 meses de datos. */
     @media (min-width: 1440px) and (max-width: 1679.98px) {
@@ -57,6 +57,7 @@ import type { EstadoPrecursor } from '../../../services/reportes.service';
               d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 000-7.8z" />
       </svg>
       {{ texto }}
+      @if (estado === 'exento' && motivo) { <span class="sr-only">({{ motivo }})</span> }
     </span>
   `,
 })

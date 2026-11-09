@@ -162,7 +162,7 @@
                   <!-- Cambio de horario desde una fecha (rotación anual en salones compartidos) -->
                   <div class="px-5 sm:px-8 py-6">
                      <p [class]="cls.ayuda" class="mb-4">Cambiar el día o la hora arriba vale desde hoy.</p>
-                     <app-cambio-horario [canEdit]="canEdit()" [abrirAlCargar]="abrirCambioHorario" (horarioActualCambio)="loadConfig()" />
+                     <app-cambio-horario [canEdit]="canEdit()" [abrirAlCargar]="abrirCambioHorario" (horarioActualCambio)="refrescarHorario()" />
                   </div>
 
                   <!-- Sala B -->

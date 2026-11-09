@@ -1,7 +1,7 @@
 import {
   AfterViewInit, Component, ElementRef, OnDestroy, OnInit, computed, inject, signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
@@ -12,6 +12,7 @@ import {
 } from '../../../shared/components/publicador-picker/publicador-picker.component';
 import { PublicadorLite } from '../../../shared/components/publicador-picker/publicador-lookup.service';
 import { ExhibidoresTabsComponent } from '../components/exhibidores-tabs.component';
+import { LucideAngularModule } from '../../../shared/icons';
 import { ExhibidoresService } from '../services/exhibidores.service';
 import {
   AccionVinculo, DIAS_SEMANA_CORTO, FranjaDia, HistorialParticipante,
@@ -27,7 +28,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
   standalone: true,
   imports: [
     CommonModule, FormsModule, PageHeaderComponent, ModalComponent,
-    PublicadorPickerComponent, ExhibidoresTabsComponent,
+    PublicadorPickerComponent, ExhibidoresTabsComponent, LucideAngularModule,
   ],
   template: `
     <app-page-header class="shrink-0"
@@ -37,9 +38,9 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
            y dos botones al 50% cada uno son un blanco cómodo para el pulgar.
            min-h-11 sube los 38px de btn-secondary al mínimo táctil de 44px. -->
       <button class="btn-secondary flex-1 md:flex-none justify-center min-h-11 md:min-h-0"
-              (click)="abrirVinculos()">Vínculos</button>
+              (click)="abrirVinculos()">Parejas y familias</button>
       <button class="btn-secondary flex-1 md:flex-none justify-center min-h-11 md:min-h-0"
-              (click)="abrirHistorial()">Historial</button>
+              (click)="abrirHistorial()">Historial de salidas</button>
     </app-page-header>
 
     <app-exhibidores-tabs class="shrink-0" />
@@ -68,7 +69,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
         </p>
         <p class="flex items-baseline gap-2 text-sm text-slate-600 dark:text-slate-300">
           <span class="data-num font-bold text-lg text-slate-900 dark:text-slate-100">{{ totalExhibidores() }}</span>
-          participantes activos
+          salen en exhibidores
         </p>
       </div>
     </div>
@@ -115,12 +116,12 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
              que su blanco táctil llegue al borde, así que el rótulo necesita
              el mismo desplazamiento para quedar alineado justo encima de él. -->
         <div class="shrink-0 flex items-center justify-between gap-3 pl-4 pr-2 py-2.5
-                    bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
-          <span class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-600 dark:text-slate-400">Publicador</span>
-          <span class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-600 dark:text-slate-400">Exhibidor</span>
+                    bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+          <span class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-400">Publicador</span>
+          <span class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-400">Participa</span>
         </div>
 
-        <ul class="flex-1 min-h-0 overflow-y-auto custom-scrollbar divide-y divide-gray-100 dark:divide-slate-700/60">
+        <ul class="flex-1 min-h-0 overflow-y-auto custom-scrollbar divide-y divide-slate-100 dark:divide-slate-700/60">
           <li *ngFor="let p of filtrados()" class="px-4 py-3 transition-opacity"
               [class.opacity-50]="estaGuardandoInline(p.id_publicador)"
               [class.pointer-events-none]="estaGuardandoInline(p.id_publicador)">
@@ -188,7 +189,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
                         class="shrink-0 h-10 px-3.5 rounded-lg text-xs font-bold border transition-colors
                                focus-ring-blue active:scale-95"
                         [ngClass]="p.tiene_fluidez
-                          ? 'bg-violet-100 border-violet-200 text-brand-purple dark:bg-violet-950/60 dark:border-violet-800/50 dark:text-violet-300'
+                          ? 'bg-exh-100 border-exh-200 text-exh-700 dark:bg-exh-950/70 dark:border-exh-800/60 dark:text-exh-300'
                           : 'bg-transparent border-slate-200 text-slate-400 dark:border-slate-700 dark:text-slate-500'"
                         [attr.aria-pressed]="p.tiene_fluidez"
                         [attr.aria-label]="(p.tiene_fluidez ? 'Quitar' : 'Marcar') + ' fluidez a ' + p.nombre_completo"
@@ -240,11 +241,11 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
           <thead class="sticky top-0 z-10">
             <tr>
               <th class="table-header-cell text-left">Publicador</th>
-              <th class="table-header-cell text-center">Exhibidor</th>
+              <th class="table-header-cell text-center">Participa</th>
               <th class="table-header-cell text-center">Fluidez</th>
               <th class="table-header-cell text-left">Días disponibles</th>
-              <th class="table-header-cell text-left">Franja</th>
-              <th class="table-header-cell text-center">Turnos/mes</th>
+              <th class="table-header-cell text-left">Horario</th>
+              <th class="table-header-cell text-center">Máx. al mes</th>
               <th class="table-header-cell text-right">Acciones</th>
             </tr>
           </thead>
@@ -302,7 +303,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
               <td class="table-cell">
                 <div *ngIf="p.es_exhibidor" class="flex gap-1">
                   <button *ngFor="let d of diasCorto; let di = index" type="button"
-                          class="w-6 h-6 rounded-md text-xs font-bold flex items-center justify-center
+                          class="w-7 h-7 rounded-md text-xs font-bold flex items-center justify-center
                                  transition-colors focus-ring-blue hover:ring-2 hover:ring-exh-300 dark:hover:ring-exh-700"
                           [ngClass]="diaDisponible(p, di)
                             ? 'bg-exh-100 text-exh-700 dark:bg-exh-950/70 dark:text-exh-300'
@@ -310,7 +311,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
                           [attr.aria-pressed]="diaDisponible(p, di)"
                           [attr.aria-label]="d + (diaDisponible(p, di) ? ': disponible' : ': no disponible')"
                           (click)="toggleDiaInline(p, di)">
-                    {{ d[0] }}
+                    {{ d.slice(0, 2) }}
                   </button>
                 </div>
               </td>
@@ -333,15 +334,14 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
                                focus:border-exh-600 dark:focus:border-exh-600 focus:ring-2 focus:ring-exh-600/20 transition-all"
                         [ngModel]="p.max_turnos_mes" (ngModelChange)="cambiarMaxTurnosInline(p, $event)"
                         [attr.aria-label]="'Turnos máximos al mes: ' + p.nombre_completo">
-                  <option [ngValue]="null">Default</option>
+                  <option [ngValue]="null">Normal</option>
                   <option *ngFor="let n of opcionesMaxTurnos" [ngValue]="n">{{ n }}</option>
                 </select>
               </td>
               <td class="table-cell text-right">
-                <button class="btn-icon-sm" (click)="editar(p)" aria-label="Editar participante">
-                  <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487Z"/>
-                  </svg>
+                <button type="button" class="btn-icon-sm" (click)="editar(p)"
+                        [attr.aria-label]="'Editar a ' + p.nombre_completo" title="Editar">
+                  <lucide-icon name="square-pen"></lucide-icon>
                 </button>
               </td>
             </tr>
@@ -360,53 +360,43 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
              "Activo (desmarcar = pausa temporal)" se parte y deja al de al lado
              desalineado. En columna cada uno ocupa su renglón y el área
              pulsable de la etiqueta cubre el ancho entero. -->
-        <div class="flex flex-col sm:flex-row sm:flex-wrap gap-x-6 gap-y-1 sm:gap-y-3">
-          <label class="inline-flex items-center gap-2.5 min-h-11 sm:min-h-0 cursor-pointer select-none">
-            <span class="relative inline-flex shrink-0">
-              <input type="checkbox" class="peer sr-only" [(ngModel)]="ficha.es_exhibidor" />
-              <span class="block w-9 h-5 rounded-full transition-colors duration-200
-                           bg-slate-200 dark:bg-slate-700 peer-checked:bg-exh-600
-                           peer-focus-visible:ring-2 peer-focus-visible:ring-exh-600 peer-focus-visible:ring-offset-2
-                           dark:peer-focus-visible:ring-offset-slate-900"></span>
-              <span class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm toggle-thumb
-                           peer-checked:translate-x-4"></span>
-            </span>
-            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Participa en exhibidores</span>
-          </label>
-          <label class="inline-flex items-center gap-2.5 min-h-11 sm:min-h-0 select-none"
-                 [class.cursor-pointer]="ficha.es_exhibidor" [class.cursor-not-allowed]="!ficha.es_exhibidor"
-                 [class.opacity-40]="!ficha.es_exhibidor">
-            <span class="relative inline-flex shrink-0">
-              <input type="checkbox" class="peer sr-only" [(ngModel)]="ficha.tiene_fluidez"
-                     [disabled]="!ficha.es_exhibidor" />
-              <span class="block w-9 h-5 rounded-full transition-colors duration-200
-                           bg-slate-200 dark:bg-slate-700 peer-checked:bg-exh-600
-                           peer-focus-visible:ring-2 peer-focus-visible:ring-exh-600 peer-focus-visible:ring-offset-2
-                           dark:peer-focus-visible:ring-offset-slate-900"></span>
-              <span class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm toggle-thumb
-                           peer-checked:translate-x-4"></span>
-            </span>
-            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Se expresa con fluidez</span>
-          </label>
-          <label class="inline-flex items-center gap-2.5 min-h-11 sm:min-h-0 select-none"
-                 [class.cursor-pointer]="ficha.es_exhibidor" [class.cursor-not-allowed]="!ficha.es_exhibidor"
-                 [class.opacity-40]="!ficha.es_exhibidor">
-            <span class="relative inline-flex shrink-0">
-              <input type="checkbox" class="peer sr-only" [(ngModel)]="ficha.activo"
-                     [disabled]="!ficha.es_exhibidor" />
-              <span class="block w-9 h-5 rounded-full transition-colors duration-200
-                           bg-slate-200 dark:bg-slate-700 peer-checked:bg-exh-600
-                           peer-focus-visible:ring-2 peer-focus-visible:ring-exh-600 peer-focus-visible:ring-offset-2
-                           dark:peer-focus-visible:ring-offset-slate-900"></span>
-              <span class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm toggle-thumb
-                           peer-checked:translate-x-4"></span>
-            </span>
-            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Activo <span class="text-slate-400 font-normal">(desmarcar = pausa temporal)</span></span>
-          </label>
+        <!-- Interruptores con la receta .switch del sistema (el patrón
+             peer-checked está prohibido). Cada uno con su explicación
+             debajo: «Activo» a secas no decía qué pasaba al apagarlo. -->
+        <div class="space-y-3">
+          <div class="flex items-start gap-3">
+            <button type="button" class="switch mt-0.5" role="switch" id="sw-participa"
+                    [attr.aria-checked]="ficha.es_exhibidor"
+                    (click)="ficha.es_exhibidor = !ficha.es_exhibidor"><span class="toggle-thumb"></span></button>
+            <label for="sw-participa" class="cursor-pointer">
+              <span class="block text-sm font-medium text-slate-800 dark:text-slate-200">Participa en exhibidores</span>
+              <span class="block text-xs text-slate-500 dark:text-slate-400">Si está apagado, nunca se le programa.</span>
+            </label>
+          </div>
+          <div class="flex items-start gap-3" [class.opacity-50]="!ficha.es_exhibidor">
+            <button type="button" class="switch mt-0.5" role="switch" id="sw-disponible"
+                    [attr.aria-checked]="ficha.activo" [disabled]="!ficha.es_exhibidor"
+                    (click)="ficha.activo = !ficha.activo"><span class="toggle-thumb"></span></button>
+            <label for="sw-disponible" class="cursor-pointer">
+              <span class="block text-sm font-medium text-slate-800 dark:text-slate-200">Disponible ahora</span>
+              <span class="block text-xs text-slate-500 dark:text-slate-400">
+                Apágalo si no puede salir por un tiempo (viaje, salud). Se guarda todo lo demás.
+              </span>
+            </label>
+          </div>
+          <div class="flex items-start gap-3" [class.opacity-50]="!ficha.es_exhibidor">
+            <button type="button" class="switch mt-0.5" role="switch" id="sw-fluidez"
+                    [attr.aria-checked]="ficha.tiene_fluidez" [disabled]="!ficha.es_exhibidor"
+                    (click)="ficha.tiene_fluidez = !ficha.tiene_fluidez"><span class="toggle-thumb"></span></button>
+            <label for="sw-fluidez" class="cursor-pointer">
+              <span class="block text-sm font-medium text-slate-800 dark:text-slate-200">Se expresa con fluidez</span>
+              <span class="block text-xs text-slate-500 dark:text-slate-400">Conversa con soltura con el público. Algunos lugares lo piden.</span>
+            </label>
+          </div>
         </div>
 
         <div [class.opacity-40]="!ficha.es_exhibidor" [class.pointer-events-none]="!ficha.es_exhibidor">
-          <label class="form-label">Días en que puede salir <span class="text-slate-400 font-normal">(ninguno = todos)</span></label>
+          <label class="form-label">Días en que puede salir</label>
           <!-- flex-1 en vez de w-10 fijo: reparte el ancho real disponible, así
                en un móvil de 360px los siete botones siguen midiendo 44px de
                alto y ocupan la fila completa sin desbordarse. -->
@@ -420,11 +410,14 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
               {{ d }}
             </button>
           </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+            Los días en azul son los que puede salir. Toca un día para quitarlo o ponerlo.
+          </p>
 
           <div class="mt-4">
             <label class="form-label" id="franja-label">Horario en que puede salir</label>
             <!--
-              Un solo grupo de 3 opciones excluyentes (Mañana / Tarde / Libre)
+              Un solo grupo de 3 opciones excluyentes (Mañana / Tarde / Cualquiera)
               en vez de dos interruptores independientes donde "las dos
               marcadas" significaba "todo el día": eso obligaba a explicar la
               regla con texto. Con 3 botones donde solo uno queda activo a la
@@ -451,9 +444,9 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
           </div>
 
           <div class="mt-4">
-            <label class="form-label">Máx. turnos al mes</label>
+            <label class="form-label">Máximo de salidas al mes</label>
             <select class="form-select min-h-11" [(ngModel)]="ficha.max_turnos_mes">
-              <option [ngValue]="null">Default del sistema</option>
+              <option [ngValue]="null">Lo normal (se define en Configuración)</option>
               <option *ngFor="let n of opcionesMaxTurnos" [ngValue]="n">{{ n }}</option>
             </select>
             <p class="text-xs text-slate-400 dark:text-slate-500 mt-1.5">
@@ -463,7 +456,8 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
           </div>
 
           <div class="mt-4">
-            <label class="form-label">Puntos vetados <span class="text-slate-400 font-normal">(no se le asignan)</span></label>
+            <label class="form-label">Lugares donde no debe salir</label>
+            <p class="text-xs text-slate-500 dark:text-slate-400 -mt-0.5 mb-1">Toca un lugar para marcarlo en rojo. Nunca se le asignará ahí.</p>
             <div class="flex flex-wrap gap-2 mt-1">
               <button *ngFor="let u of ubicaciones()"
                       class="px-3.5 min-h-10 sm:min-h-0 sm:py-1.5 rounded-full text-xs font-medium border transition-colors focus-ring-blue active:scale-95"
@@ -498,7 +492,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
 
     <!-- ══ Modal Vínculos ══ -->
     <app-modal [open]="modalVinculos()" (openChange)="modalVinculos.set($event)"
-               title="Vínculos entre personas"
+               title="Parejas y familias"
                subtitle="Matrimonios o hermanos que salen juntos, y personas que no deben coincidir."
                size="lg" [hasFooter]="true">
       <div *ngIf="vinculos().length > 0" class="space-y-2 mb-5 max-h-[38vh] sm:max-h-52 overflow-y-auto custom-scrollbar">
@@ -519,17 +513,15 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
               <span class="badge-neutral !text-xs shrink-0">{{ etiquetaTipo(v.tipo) }}</span>
             </p>
           </div>
-          <button class="btn-icon-sm tone-danger" (click)="eliminarVinculo(v)"
+          <button type="button" class="btn-icon-sm tone-danger shrink-0" (click)="eliminarVinculo(v)" title="Eliminar"
                   [attr.aria-label]="'Eliminar vínculo entre ' + v.publicador_a.nombre_completo + ' y ' + v.publicador_b.nombre_completo">
-            <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-            </svg>
+            <lucide-icon name="trash-2"></lucide-icon>
           </button>
         </div>
       </div>
       <div *ngIf="vinculos().length === 0"
            class="mb-5 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 py-6 text-center">
-        <p class="text-sm text-slate-400 dark:text-slate-500">Todavía no hay vínculos configurados.</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Todavía no hay parejas ni familias. Crea la primera abajo.</p>
       </div>
 
       <!--
@@ -541,7 +533,7 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
         justo lo que se va a guardar antes de tocar "Crear vínculo".
       -->
       <div class="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
-        <p class="eyebrow mb-3">Nuevo vínculo</p>
+        <p class="eyebrow mb-3">Nueva pareja o familia</p>
 
         <label class="form-label">Paso 1 — ¿Quiénes van juntos?</label>
         <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 sm:gap-3 sm:items-center mt-1">
@@ -597,15 +589,15 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
         <button class="btn-primary-blue flex-1 sm:flex-none justify-center min-h-11 sm:min-h-0"
                 [disabled]="!nuevoVinculo.a || !nuevoVinculo.b || guardando()"
                 (click)="crearVinculo()">
-          {{ guardando() ? 'Creando…' : 'Crear vínculo' }}
+          {{ guardando() ? 'Guardando…' : 'Guardar' }}
         </button>
       </ng-container>
     </app-modal>
 
     <!-- ══ Modal Historial ══ -->
     <app-modal [open]="modalHistorial()" (openChange)="modalHistorial.set($event)"
-               title="Historial y equidad"
-               subtitle="Salidas acumuladas por participante — útil para detectar desequilibrios."
+               title="Historial de salidas"
+               subtitle="Cuántas veces ha salido cada persona. Sirve para ver si alguien sale mucho más o mucho menos que los demás."
                size="lg">
       <div *ngIf="historial().length === 0"
            class="rounded-xl border border-dashed border-slate-200 dark:border-slate-700 py-8 text-center">
@@ -619,15 +611,15 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
            a comparar, queda alineado a la derecha para poder recorrerlo en
            vertical de un vistazo. -->
       <ul *ngIf="historial().length > 0"
-          class="sm:hidden max-h-[55vh] overflow-y-auto custom-scrollbar rounded-xl border border-gray-200 dark:border-slate-700
-                 divide-y divide-gray-100 dark:divide-slate-700/60">
+          class="sm:hidden max-h-[55vh] overflow-y-auto custom-scrollbar rounded-xl border border-slate-200 dark:border-slate-700
+                 divide-y divide-slate-100 dark:divide-slate-700/60">
         <li *ngFor="let h of historial()" class="flex items-baseline justify-between gap-3 px-4 py-3">
           <div class="min-w-0">
             <p class="text-sm font-semibold leading-snug text-slate-800 dark:text-slate-200">{{ h.nombre_completo }}</p>
             <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              <span class="data-num">{{ h.puntos_distintos }}</span> puntos distintos
+              <span class="data-num">{{ h.puntos_distintos }}</span> lugares distintos
               <span class="text-slate-300 dark:text-slate-600">·</span>
-              última: <span class="data-num">{{ h.ultima_salida ?? 'nunca' }}</span>
+              última vez: {{ fechaCorta(h.ultima_salida) }}
             </p>
           </div>
           <p class="shrink-0 text-right">
@@ -643,8 +635,8 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
             <tr>
               <th class="table-header-cell text-left">Participante</th>
               <th class="table-header-cell text-center">Salidas</th>
-              <th class="table-header-cell text-center">Puntos distintos</th>
-              <th class="table-header-cell text-right">Última salida</th>
+              <th class="table-header-cell text-center">Lugares distintos</th>
+              <th class="table-header-cell text-right">Última vez</th>
             </tr>
           </thead>
           <tbody>
@@ -653,8 +645,8 @@ const TODO_EL_DIA: readonly FranjaDia[] = ['manana', 'tarde'];
               <td class="table-cell text-sm font-medium text-slate-800 dark:text-slate-200">{{ h.nombre_completo }}</td>
               <td class="table-cell text-center data-num">{{ h.total_salidas }}</td>
               <td class="table-cell text-center data-num">{{ h.puntos_distintos }}</td>
-              <td class="table-cell text-right data-num text-sm text-slate-500 dark:text-slate-400">
-                {{ h.ultima_salida ?? 'Nunca' }}
+              <td class="table-cell text-right text-sm text-slate-500 dark:text-slate-400">
+                {{ fechaCorta(h.ultima_salida) }}
               </td>
             </tr>
           </tbody>
@@ -733,8 +725,8 @@ export class ParticipantesExhibidoresPage implements OnInit, AfterViewInit, OnDe
   ficha = this.fichaVacia();
 
   /**
-   * 3 opciones excluyentes en la UI (Mañana / Tarde / Libre), aunque el
-   * modelo de datos solo conoce 'manana'/'tarde' (ver FranjaDia): "Libre" es
+   * 3 opciones excluyentes en la UI (Mañana / Tarde / Cualquiera), aunque el
+   * modelo de datos solo conoce 'manana'/'tarde' (ver FranjaDia): "Cualquiera" es
    * las dos a la vez, no un tercer valor propio — el coordinador no necesita
    * saber eso, solo elegir una de tres tarjetas. El backend clasifica cada
    * turno del mes en una de las dos franjas reales por su punto medio (ver
@@ -744,7 +736,7 @@ export class ParticipantesExhibidoresPage implements OnInit, AfterViewInit, OnDe
   readonly opcionesFranja: { key: 'manana' | 'tarde' | 'libre'; label: string }[] = [
     { key: 'manana', label: 'Mañana' },
     { key: 'tarde', label: 'Tarde' },
-    { key: 'libre', label: 'Libre' },
+    { key: 'libre', label: 'Cualquiera' },
   ];
 
   /** Mismas opciones para el select de la ficha y el select rápido de la tabla. */
@@ -818,6 +810,11 @@ export class ParticipantesExhibidoresPage implements OnInit, AfterViewInit, OnDe
 
   get idCong(): number | null {
     return this.ctx.effectiveCongregacionId();
+  }
+
+  /** '2026-11-10' → '10 nov 2026'; sin fecha → 'Nunca'. */
+  fechaCorta(iso: string | null): string {
+    return iso ? formatDate(iso, 'd MMM y', 'es') : 'Nunca';
   }
 
   // ── Edición rápida desde el listado ─────────────────────────
@@ -1112,11 +1109,13 @@ export class ParticipantesExhibidoresPage implements OnInit, AfterViewInit, OnDe
    * el resumen evita tener que abrirla solo para consultarlos.
    */
   resumenAjustes(p: Participante): string {
-    const franja = this.opcionesFranja.find(f => f.key === this.franjaSeleccionadaDe(p))?.label ?? 'Libre';
-    const turnos = p.max_turnos_mes == null
-      ? 'turnos por defecto'
-      : `${p.max_turnos_mes} turnos/mes`;
-    return `${franja} · ${turnos}`;
+    const clave = this.franjaSeleccionadaDe(p);
+    const etiqueta = this.opcionesFranja.find(f => f.key === clave)?.label ?? '';
+    const horario = clave === 'libre' ? 'Mañana o tarde' : `Solo ${etiqueta.toLowerCase()}`;
+    const tope = p.max_turnos_mes == null
+      ? 'salidas normales al mes'
+      : `hasta ${p.max_turnos_mes} al mes`;
+    return `${horario} · ${tope}`;
   }
 
   etiquetaTipo(tipo: TipoVinculo): string {

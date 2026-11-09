@@ -121,9 +121,9 @@
         <!-- Auxiliar (no aplica a precursores regulares) -->
         <td class="px-3 py-2 text-center align-middle">
           <button *ngIf="!isRegular(pub)" type="button" role="switch"
-            [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
+            [disabled]="!canEdit || !getInformeValue(pub, 'participo') || pauxBloqueado(pub)"
             (click)="togglePaux(pub)"
-            title="Precursor auxiliar este mes"
+            [title]="pauxTitulo(pub)"
             [attr.aria-label]="'Precursor auxiliar este mes: ' + pub.nombre_completo"
             [attr.aria-checked]="getInformeValue(pub, 'es_paux') ? 'true' : 'false'"
             class="inline-flex items-center justify-center p-2 -m-1 rounded-full select-none disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">
@@ -320,10 +320,11 @@
             [class.pointer-events-none]="!canEdit || !getInformeValue(pub, 'participo')">
             <div class="flex items-center gap-2.5">
               <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-500 flex items-center justify-center font-extrabold text-xs shrink-0" aria-hidden="true">P</div>
-              <span [id]="'paux-lbl-' + pub.id_publicador" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Precursor auxiliar este mes</span>
+              <span [id]="'paux-lbl-' + pub.id_publicador" class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ pauxBloqueado(pub) ? 'Precursor auxiliar continuo' : 'Precursor auxiliar este mes' }}</span>
             </div>
             <button type="button" role="switch"
-              [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
+              [disabled]="!canEdit || !getInformeValue(pub, 'participo') || pauxBloqueado(pub)"
+              [title]="pauxTitulo(pub)"
               (click)="togglePaux(pub)"
               class="shrink-0 p-1 -m-1 rounded-full select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
               [attr.aria-checked]="getInformeValue(pub, 'es_paux') ? 'true' : 'false'"

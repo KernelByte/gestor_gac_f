@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -44,7 +44,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
   styles: [`
     /* En monitores muy anchos (2K, 4K, 32") el contenido se queda en una
        medida legible y centrada en vez de estirarse de borde a borde. */
-    .pagina { max-width: 108rem; margin-inline: auto; width: 100%; }
+    .pagina { max-width: 120rem; margin-inline: auto; width: 100%; container-type: inline-size; container-name: pagina; }
     /* El host de la cabecera es inline: sin esto, el margen entre bloques no le aplica. */
     app-page-header { display: block; }
 
@@ -80,7 +80,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       border: 1px solid var(--linea);
       border-radius: 0.625rem;
       background: var(--superficie);
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
       font-weight: 500;
       color: var(--txt-2);
       white-space: nowrap;
@@ -122,7 +122,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       .explicacion-cuerpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 2.5rem; }
     }
     .explicacion-cuerpo h3 {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -130,7 +130,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       margin-bottom: 0.375rem;
     }
     .explicacion-cuerpo p {
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
       line-height: 1.6;
       color: var(--txt-2);
       max-width: 62ch;
@@ -143,7 +143,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       grid-template-columns: 11rem minmax(0, 1fr);
       align-items: baseline;
       gap: 0.75rem;
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
       line-height: 1.5;
       color: var(--txt-2);
     }
@@ -151,9 +151,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       .regla { grid-template-columns: 1fr; gap: 0.125rem; }
     }
 
-    /* ── Encabezado de sección ─────────────────────────────────────────
-       Un filete corto de acento marca dónde empieza cada bloque: es el
-       único color "de marca" de la página fuera de lo interactivo. */
+    /* ── Encabezado de sección ─────────────────────────────────────── */
     .cabecera-seccion {
       display: flex;
       align-items: flex-end;
@@ -173,17 +171,9 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       letter-spacing: -0.015em;
       color: var(--txt-1);
     }
-    .seccion-titulo::before {
-      content: '';
-      width: 0.1875rem;
-      height: 1.05em;
-      border-radius: 9999px;
-      background: var(--acento);
-    }
     .seccion-nota {
       margin-top: 0.125rem;
-      padding-left: 0.6875rem;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       color: var(--txt-3);
     }
     .seccion-nota strong { font-weight: 600; color: var(--txt-2); font-variant-numeric: tabular-nums; }
@@ -233,7 +223,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       border-radius: 9999px;
       border: 1px solid var(--linea);
       background: var(--superficie);
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       color: var(--txt-2);
       transition: border-color 160ms var(--ease-out-quart),
@@ -245,7 +235,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
     .chip-estado .contador {
       font-family: var(--font-mono);
       font-variant-numeric: tabular-nums;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 500;
       color: var(--txt-3);
     }
@@ -278,7 +268,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       align-items: center;
       column-gap: 1rem;
       row-gap: 0.25rem;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       color: var(--txt-3);
     }
     .leyenda dt {
@@ -290,7 +280,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
     }
     .leyenda dd { display: inline; }
     .leyenda .item { white-space: nowrap; }
-    .leyenda .sim-credito { color: var(--credito); font-size: 0.75rem; vertical-align: super; }
+    .leyenda .sim-credito { color: var(--credito); font-size: 0.8125rem; vertical-align: super; }
     /* Muestras del tinte de cada mes: la leyenda enseña el código de color
        con las mismas celdas que la matriz, y con la cifra escrita. */
     .leyenda .muestra {
@@ -300,7 +290,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       height: 1.375rem;
       padding-inline: 0.25rem;
       border-radius: 0.3125rem;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 500;
       color: var(--txt-1);
     }
@@ -346,7 +336,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
     }
     .vacio-texto {
       margin-top: 0.25rem;
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
       line-height: 1.6;
       max-width: 52ch;
       color: var(--txt-2);
@@ -379,7 +369,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       border-radius: 0.625rem;
       background: var(--superficie);
     }
-    .cifra-clave dt { font-size: 0.75rem; font-weight: 500; line-height: 1.3; color: var(--txt-2); }
+    .cifra-clave dt { font-size: 0.8125rem; font-weight: 500; line-height: 1.3; color: var(--txt-2); }
     .cifra-clave dd { margin: 0; display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 0.5rem; }
     .cifra-valor {
       font-family: var(--font-display);
@@ -390,7 +380,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
       font-variant-numeric: tabular-nums;
       color: var(--tono);
     }
-    .cifra-hint { font-size: 0.75rem; color: var(--txt-3); }
+    .cifra-hint { font-size: 0.8125rem; color: var(--txt-3); }
     .cifra-clave.tono-pos    { --tono: var(--pos); }
     .cifra-clave.tono-neg    { --tono: var(--neg); }
     .cifra-clave.tono-exento { --tono: var(--exento); }
@@ -406,6 +396,26 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
     }
     @media (min-width: 640px) { .kpis-grid { gap: 1rem; } }
 
+
+
+    /* ── Pantallas 2K y 4K ─────────────────────────────────────────────
+       El html escala (18 px en 2K, 24 px en 4K), así que todo lo que está en
+       rem crece solo. Aquí se sube un peldaño la jerarquía para que, a un
+       metro del monitor, las cifras y los controles sigan leyéndose sin
+       esfuerzo y las tarjetas no queden como tiras. */
+    @container pagina (min-width: 100rem) {
+      .cifras { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1.25rem; }
+      .cifra-clave { padding: 1rem 1.25rem 1.0625rem; gap: 0.375rem; border-radius: 0.75rem; }
+      .cifra-clave dt { font-size: 0.875rem; }
+      .cifra-valor { font-size: 2.25rem; }
+      .cifra-hint { font-size: 0.875rem; }
+      .seccion-titulo { font-size: 1.25rem; }
+      .seccion-nota, .leyenda, .leyenda .muestra, .chip-estado, .chip-estado .contador { font-size: 0.875rem; }
+      .control { font-size: 0.9375rem; }
+      .busqueda { width: 20rem; }
+      .explicacion-cuerpo p, .regla { font-size: 0.9375rem; }
+      .explicacion-cuerpo { padding: 1.25rem 1.5rem 1.375rem; column-gap: 4rem; }
+    }
 
     /* ── Movimiento ────────────────────────────────────────────────────
        Una sola entrada al cargar (opacidad + 4 px), para que el cambio de
@@ -530,11 +540,8 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
                 </p>
               </div>
               <div>
-                <h3>Símbolos de la tabla</h3>
-                <p>
-                  <strong>–</strong> no era precursor(a) ese mes · <strong>+5</strong> junto a una cifra son horas de crédito ·
-                  la barra bajo «Total / meta» es el avance del año.
-                </p>
+                <h3>Avance del año</h3>
+                <p>La barra bajo «Total / meta» muestra cuánto de la meta individual lleva cumplido. Los símbolos de los meses están en la leyenda, sobre la tabla.</p>
                 <h3 class="mt-3">Qué significa cada estado</h3>
                 <dl class="reglas">
                   <div class="regla">
@@ -594,6 +601,8 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
               <div class="item"><dt><span class="muestra m-ok" aria-hidden="true">{{ ritmoMensual() }}</span></dt><dd>alcanzó las {{ ritmoMensual() }} h del mes</dd></div>
               <div class="item"><dt><span class="muestra m-bajo" aria-hidden="true">{{ ritmoMensual() - 8 }}</span></dt><dd>quedó por debajo</dd></div>
               <div class="item"><dt><span class="muestra m-falta" aria-hidden="true">×</span></dt><dd>sin informe</dd></div>
+              <div class="item"><dt>–</dt><dd>no era precursor(a) ese mes</dd></div>
+              <div class="item"><dt><span class="sim-credito">+5</span></dt><dd>horas de crédito</dd></div>
             </dl>
 
             @if (filasFiltradas().length) {
@@ -626,7 +635,7 @@ const CHIPS_ESTADO: { valor: FiltroEstado; texto: string }[] = [
             <app-chart-card title="Horas de los precursores por mes"
                             [subtitle]="'Predicación más crédito de todos los precursores regulares, frente a la meta del mes (' + ritmoMensual() + ' h × precursores con nombramiento ese mes).'"
                             [option]="tendenciaOption()"
-                            [height]="300" />
+                            [height]="alturaGrafica()" />
           </section>
         } @else {
           <div class="panel aparecer" role="status">
@@ -695,6 +704,20 @@ export class PrecursoresPage {
   readonly estadoFiltro = signal<FiltroEstado>('todos');
 
   readonly chips = CHIPS_ESTADO;
+  /** Alto de la gráfica en px: ECharts no entiende rem, así que sigue la escala del html (16/18/24 px). */
+  readonly alturaGrafica = signal(this.calcularAlturaGrafica());
+
+  /** El html cambia de escala por ancho de ventana: se recalcula al redimensionar (p. ej. al cambiar de monitor). */
+  @HostListener('window:resize')
+  ajustarAlturaGrafica(): void {
+    const alto = this.calcularAlturaGrafica();
+    if (alto !== this.alturaGrafica()) this.alturaGrafica.set(alto);
+  }
+
+  private calcularAlturaGrafica(): number {
+    if (typeof document === 'undefined') return 300;
+    return Math.round(300 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16);
+  }
   /** Panel "¿Cómo se calcula?": plegado por defecto para no empujar los datos. */
   readonly verAyuda = signal(false);
 

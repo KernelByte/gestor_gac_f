@@ -37,6 +37,10 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
         <div class="cab-izq">
           <span class="cab-etiqueta">Tarea</span>
           @if (tarea(); as t) {
+            @if (t.origen_tipo === 'precursor_seguimiento' && t.origen_publicador && verPrecursor) {
+              <span class="cab-sep" aria-hidden="true">·</span>
+              <button type="button" class="enlace" (click)="irAPrecursor(t.origen_publicador!)">Ver precursor</button>
+            }
             @if (t.origen_tipo === 'acta_reunion' && t.origen_id && verActas) {
               <span class="cab-sep" aria-hidden="true">·</span>
               <button type="button" class="enlace" (click)="irAActa(t.origen_id!)">Acta #{{ t.origen_id }}</button>
@@ -451,6 +455,7 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
   private store = inject(AuthStore);
   /** El enlace al acta solo a quien puede abrirla (si no, actasGuard lo devuelve al inicio). */
   readonly verActas = puedeVerActas(this.store);
+  readonly verPrecursor = this.store.hasPermission('reportes.precursores.gestionar');
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   tarea = signal<Tarea | null>(null);
@@ -783,6 +788,10 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
       next: () => { this.tareaEliminada.emit(t.id_tarea); this.cerrar.emit(); },
       error: (err) => this.mostrarError(mensajeError(err, 'No se pudo eliminar la tarea.')),
     });
+  }
+
+  irAPrecursor(idPublicador: number) {
+    this.router.navigate(['/reportes/precursores', idPublicador]);
   }
 
   irAActa(actaId: number) {

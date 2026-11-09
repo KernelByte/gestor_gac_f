@@ -141,6 +141,14 @@ export interface HistoricoAnio {
 
 export type TipoSeguimiento = 'reunion_ayuda' | 'decision_comite' | 'nota';
 
+/** Tarea personal que nace con el seguimiento; null si no es del usuario que consulta. */
+export interface TareaLigada {
+  id_tarea: number;
+  estado: 'pendiente' | 'en_progreso' | 'completada' | 'cancelada';
+  fecha_limite?: string | null;
+  completado_en?: string | null;
+}
+
 export interface Seguimiento {
   id_seguimiento: number;
   anio_servicio: number;
@@ -149,6 +157,7 @@ export interface Seguimiento {
   descripcion: string;
   creado_por_nombre?: string | null;
   fecha_creacion?: string | null;
+  tarea?: TareaLigada | null;
 }
 
 export interface SeguimientoCreate {

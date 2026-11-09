@@ -17,6 +17,7 @@ import {
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { ThemeService } from '../../../../core/services/theme.service';
 import { SECCIONES_CONFIG, SeccionConfig, SeccionGrupo } from './agenda-secciones.config';
+import { anoServicioDe } from '../../../../core/utils/fecha.util';
 
 type Seccion = 'registros' | 'totales' | 'contactos' | 'asistencia' | 'documentos' | 'agenda';
 
@@ -684,8 +685,7 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
 
   /** Año de servicio que contiene hoy: Sep(N-1)–Ago(N) → devuelve N. */
   private calcularAnioServicio(): number {
-    const now = new Date();
-    return now.getMonth() + 1 >= 9 ? now.getFullYear() + 1 : now.getFullYear();
+    return anoServicioDe();
   }
 
   seccionCambio(s: Seccion) {
