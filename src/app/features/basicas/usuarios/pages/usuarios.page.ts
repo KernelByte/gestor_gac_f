@@ -78,7 +78,7 @@ type UserFormTab = 'datos' | 'acceso' | 'seguridad';
     .segmented-item:focus-visible,
      .campo-select:focus-visible, .link-quitar:focus-visible { outline: 2px solid var(--u-marca); outline-offset: 2px; }
 
-    .panel-lista { background: white; border: 1px solid rgb(17 24 39 / 0.07); border-radius: 0.75rem; }
+    .panel-lista { background: white; border: 1px solid rgb(17 24 39 / 0.12); border-radius: 0.75rem; }
     :host-context(.dark) .panel-lista { background: var(--color-slate-900, #0f172a); border-color: rgb(148 163 184 / 0.14); }
     .toolbar { padding: 0.875rem 1rem 0.75rem; border-bottom: 1px solid var(--dash-borde); }
     :host-context(.dark) .toolbar { border-bottom-color: rgb(148 163 184 / 0.14); }
@@ -119,6 +119,8 @@ type UserFormTab = 'datos' | 'acceso' | 'seguridad';
     .segmented-item svg { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
     .segmented-item:not(.is-active) svg.ok, .segmented-item:not(.is-active) b.ok { color: var(--estado-ok-fg); }
     .segmented-item b { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .segmented-item .etq { font-size: 0.8125rem; font-weight: 600; }
+    .segmented-item:not(.is-active) .etq.ok { color: var(--estado-ok-fg); }
     @media (pointer: coarse) { .segmented-item { min-height: 2.75rem; } }
 
     .link-quitar { font-size: 0.875rem; font-weight: 600; color: var(--u-marca-texto); padding: 0.5rem 0.25rem; border-radius: 0.375rem; }
@@ -127,10 +129,10 @@ type UserFormTab = 'datos' | 'acceso' | 'seguridad';
     .chip { display: inline-flex; align-items: center; gap: 0.375rem; flex-shrink: 0; white-space: nowrap;
       padding: 0.125rem 0.625rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; line-height: 1.25rem; }
     .chip-info { background: var(--estado-info-bg); color: var(--estado-info-fg); padding-right: 0.25rem; }
-    .chip { border: 1px solid transparent; }
+    .chip { border: 1px solid color-mix(in oklab, currentColor 22%, transparent); }
     .chip .punto { width: 0.375rem; height: 0.375rem; border-radius: 999px; background: currentColor; }
     /* Insignia de rol/congregación: el texto siempre completo (envuelve, no se corta) */
-    .badge { display: inline-block; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-wrap: balance; padding: 0.1875rem 0.625rem; border-radius: 0.875rem; font-size: 0.75rem; font-weight: 700; line-height: 1.25; }
+    .badge { display: inline-block; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-wrap: balance; padding: 0.1875rem 0.625rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; line-height: 1.25; }
     .chip-x { width: 1.375rem; height: 1.375rem; display: grid; place-items: center; border-radius: 999px; }
     .chip-x:hover { background: rgb(0 0 0 / 0.08); }
 
@@ -143,7 +145,7 @@ type UserFormTab = 'datos' | 'acceso' | 'seguridad';
     .list-table thead th { position: sticky; top: 0; z-index: 1; padding: 0.625rem 1rem; font-size: 0.75rem; font-weight: 600;
       color: var(--dash-texto-suave); background: white; border-bottom: 1px solid var(--dash-borde); }
     :host-context(.dark) .list-table thead th { background: rgb(15 23 42); border-bottom-color: rgb(148 163 184 / 0.14); }
-    .list-table tbody td { padding: 0.9375rem 1rem; border-bottom: 1px solid rgb(17 24 39 / 0.05); vertical-align: middle; }
+    .list-table tbody td { padding: 0.9375rem 1rem; border-bottom: 1px solid rgb(17 24 39 / 0.08); vertical-align: middle; }
     :host-context(.dark) .list-table tbody td { border-bottom-color: rgb(148 163 184 / 0.1); }
     .list-table tbody td:last-child { padding-right: 1.125rem; }
     .fila-t { transition: background-color 150ms ease; }
@@ -151,7 +153,7 @@ type UserFormTab = 'datos' | 'acceso' | 'seguridad';
     @media (hover: hover) and (pointer: fine) { .fila-t:hover { background: var(--dash-hover); } }
 
     /* Tarjetas */
-    .tarjeta { padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid rgb(17 24 39 / 0.05); transition: background-color 150ms ease;
+    .tarjeta { padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid rgb(17 24 39 / 0.08); transition: background-color 150ms ease;
       animation: fila-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 35ms); }
     :host-context(.dark) .tarjeta { border-bottom-color: rgb(148 163 184 / 0.1); }
     .tarjeta:active { background: var(--dash-hover); }

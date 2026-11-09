@@ -90,7 +90,7 @@ export class TimeAgoPipe implements PipeTransform {
                 GAC
               </span>
             </div>
-            <svg class="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <svg class="w-4 h-4 text-slate-500 dark:text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
             </svg>
           </div>
@@ -102,13 +102,13 @@ export class TimeAgoPipe implements PipeTransform {
           <nav class="space-y-1.5">
             <!-- Main Section -->
             <div class="mb-8">
-              <p *ngIf="!collapsed()" class="px-3 mb-2 text-xs font-bold tracking-[0.08em] uppercase text-slate-500 dark:text-slate-400">Principal</p>
+              <p *ngIf="!collapsed()" class="px-3 mb-2 text-xs font-bold tracking-[0.08em] uppercase text-slate-600 dark:text-slate-400">Principal</p>
               
               <!-- Inicio -->
-              <a routerLink="/" routerLinkActive="text-brand-purple dark:text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active" [routerLinkActiveOptions]="{ exact: true }"
-                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04]"
+              <a routerLink="/" routerLinkActive="!text-brand-purple dark:!text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active" [routerLinkActiveOptions]="{ exact: true }"
+                class="group flex items-center text-sm text-slate-600 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04]"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Inicio">
-                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
+                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Inicio</span>
@@ -116,20 +116,20 @@ export class TimeAgoPipe implements PipeTransform {
 
 
               <!-- Roles -->
-              <a *ngIf="hasRole('Administrador')" routerLink="/roles" routerLinkActive="text-brand-purple dark:text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
-                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
+              <a *ngIf="hasRole('Administrador')" routerLink="/roles" routerLinkActive="!text-brand-purple dark:!text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
+                class="group flex items-center text-sm text-slate-600 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Roles">
-                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
+                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Roles</span>
               </a>
 
               <!-- Usuarios -->
-              <a *ngIf="hasRole('Administrador') || hasRole('Gestor Aplicación') || hasRole('Coordinador') || hasRole('Secretario')" routerLink="/usuarios" routerLinkActive="text-brand-purple dark:text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
-                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
+              <a *ngIf="hasRole('Administrador') || hasRole('Gestor Aplicación') || hasRole('Coordinador') || hasRole('Secretario')" routerLink="/usuarios" routerLinkActive="!text-brand-purple dark:!text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
+                class="group flex items-center text-sm text-slate-600 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Usuarios">
-                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
+                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Usuarios</span>
@@ -141,12 +141,12 @@ export class TimeAgoPipe implements PipeTransform {
                  Va aparte del menú "Secretario" (que es exclusivo del rol Secretario). -->
             <div *ngIf="hasColaboraciones()" class="mb-8">
               <div class="h-px bg-slate-100 dark:bg-slate-800/60 mx-2 mb-4 mt-2"></div>
-              <p *ngIf="!collapsed()" class="px-3 mb-2 text-xs font-bold tracking-[0.08em] uppercase text-slate-500 dark:text-slate-400">Colaboración</p>
+              <p *ngIf="!collapsed()" class="px-3 mb-2 text-xs font-bold tracking-[0.08em] uppercase text-slate-600 dark:text-slate-400">Colaboración</p>
 
-              <a routerLink="/herramientas/visita-colaborador" routerLinkActive="text-brand-purple dark:text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
-                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04]"
+              <a routerLink="/herramientas/visita-colaborador" routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
+                class="group flex items-center text-sm text-slate-600 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04]"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Visita del circuito">
-                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
+                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Visita del circuito</span>
@@ -156,13 +156,13 @@ export class TimeAgoPipe implements PipeTransform {
             <!-- Modules Section -->
             <div *ngIf="hasAnyModulo()">
               <div class="h-px bg-slate-100 dark:bg-slate-800/60 mx-2 mb-4 mt-2"></div>
-              <p *ngIf="!collapsed()" class="px-3 mb-2 text-xs font-bold tracking-[0.08em] uppercase text-slate-500 dark:text-slate-400">Módulos</p>
+              <p *ngIf="!collapsed()" class="px-3 mb-2 text-xs font-bold tracking-[0.08em] uppercase text-slate-600 dark:text-slate-400">Módulos</p>
               
               <!-- Mi Agenda: calendario y tareas de cada persona -->
-              <a *ngIf="puedeVerAgenda()" routerLink="/agenda" routerLinkActive="text-rose-600 dark:text-rose-400 font-semibold [&_.nav-icon]:!text-rose-500 dark:[&_.nav-icon]:!text-rose-400 bg-rose-500/10 dark:bg-rose-500/[0.13] nav-active"
-                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
+              <a *ngIf="puedeVerAgenda()" routerLink="/agenda" routerLinkActive="!text-rose-600 dark:!text-rose-400 font-semibold [&_.nav-icon]:!text-rose-500 dark:[&_.nav-icon]:!text-rose-400 bg-rose-500/10 dark:bg-rose-500/[0.13] nav-active"
+                class="group flex items-center text-sm text-slate-600 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Mi Agenda">
-                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
+                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 3v3m8-3v3M4 9h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1Zm4 9 2 2 4-4"/></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Mi Agenda</span>
@@ -179,11 +179,11 @@ export class TimeAgoPipe implements PipeTransform {
                     'p-3': collapsed(),
                     'px-3 py-2.5': !collapsed(),
                     'text-brand-purple dark:text-purple-300 font-semibold bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active': isReunionesActive(),
-                    'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.04]': !isReunionesActive()
+                    'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.04]': !isReunionesActive()
                   }" title="Reuniones">
                   <div class="flex items-center" [ngClass]="{ 'justify-center w-full': collapsed(), 'gap-3': !collapsed() }">
-                    <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]"
-                         [ngClass]="isReunionesActive() ? '!text-brand-purple dark:!text-purple-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'">
+                    <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]"
+                         [ngClass]="isReunionesActive() ? '!text-brand-purple dark:!text-purple-400' : 'text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'">
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                     </div>
                     <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Reuniones</span>
@@ -198,30 +198,30 @@ export class TimeAgoPipe implements PipeTransform {
                      [attr.data-title]="collapsed() ? 'Reuniones' : null" [attr.role]="collapsed() ? 'menu' : null">
                    <a *ngIf="hasPermission('reuniones.ver')" routerLink="/reuniones/resumen" routerLinkActive="sub-active" #rlaResumen="routerLinkActive"
                       class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                      [ngClass]="rlaResumen.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                      [ngClass]="rlaResumen.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                       <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                            [ngClass]="rlaResumen.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                            [ngClass]="rlaResumen.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Resumen de hoy</span>
                    </a>
                    <a *ngIf="hasPermission('reuniones.entre_semana') || hasPermission('reuniones.fin_semana') || hasPermission('reuniones.logistica') || hasPermission('reuniones.discursos')" routerLink="/reuniones/programacion" routerLinkActive="sub-active" #rlaProg="routerLinkActive"
                       class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                      [ngClass]="rlaProg.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                      [ngClass]="rlaProg.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                       <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                            [ngClass]="rlaProg.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                            [ngClass]="rlaProg.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Programación</span>
                    </a>
                    <a *ngIf="hasPermission('reuniones.asistencia')" routerLink="/reuniones/asistencia" routerLinkActive="sub-active" #rlaAsist="routerLinkActive"
                       class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                      [ngClass]="rlaAsist.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                      [ngClass]="rlaAsist.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                       <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                            [ngClass]="rlaAsist.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                            [ngClass]="rlaAsist.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Asistencia</span>
                    </a>
                    <a *ngIf="hasPermission('reuniones.configuracion')" routerLink="/reuniones/configuracion" routerLinkActive="sub-active" #rlaConfigPl="routerLinkActive"
                       class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                      [ngClass]="rlaConfigPl.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                      [ngClass]="rlaConfigPl.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                       <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                            [ngClass]="rlaConfigPl.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                            [ngClass]="rlaConfigPl.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Configuración</span>
                    </a>
                 </div>
@@ -236,23 +236,23 @@ export class TimeAgoPipe implements PipeTransform {
                    solo eso- entra igual y ve nada más la pestaña de acceso. -->
               <a *ngIf="puedeVerPublicadores()"
                 routerLink="/secretario/publicadores"
-                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500"
+                class="group flex items-center text-sm text-slate-600 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500"
                 [ngClass]="{
                   'justify-center p-3': collapsed(),
                   'gap-3 px-3 py-2.5': !collapsed(),
                   'text-brand-orange dark:text-orange-300 font-semibold [&_.nav-icon]:!text-brand-orange dark:[&_.nav-icon]:!text-orange-400 bg-brand-orange/10 dark:bg-orange-500/[0.13] nav-active': isPublicadoresActive()
                 }" title="Publicadores">
-                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
+                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Publicadores</span>
               </a>
 
               <!-- Informes -->
-              <a *ngIf="hasAnyInformesPermission()" routerLink="/secretario/informes" routerLinkActive="text-brand-purple dark:text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
-                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
+              <a *ngIf="hasAnyInformesPermission()" routerLink="/secretario/informes" routerLinkActive="!text-brand-purple dark:!text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
+                class="group flex items-center text-sm text-slate-600 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Informes">
-                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
+                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Informes</span>
@@ -270,11 +270,11 @@ export class TimeAgoPipe implements PipeTransform {
                     'p-3': collapsed(),
                     'px-3 py-2.5': !collapsed(),
                     'text-brand-purple dark:text-purple-300 font-semibold bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active': isAdministracionActive(),
-                    'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.04]': !isAdministracionActive()
+                    'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.04]': !isAdministracionActive()
                   }" title="Administración">
                   <div class="flex items-center" [ngClass]="{ 'justify-center w-full': collapsed(), 'gap-3': !collapsed() }">
                     <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 group-hover:-translate-y-[1px]"
-                         [ngClass]="isAdministracionActive() ? '!text-brand-purple dark:!text-purple-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'">
+                         [ngClass]="isAdministracionActive() ? '!text-brand-purple dark:!text-purple-400' : 'text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'">
                       <!-- Maletín -->
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                     </div>
@@ -289,30 +289,30 @@ export class TimeAgoPipe implements PipeTransform {
                      [attr.data-title]="collapsed() ? 'Administración' : null" [attr.role]="collapsed() ? 'menu' : null">
                   <a *ngIf="puedeVerReunionesAncianos()" routerLink="/administracion/reuniones-teocraticas" routerLinkActive="sub-active" #rlaRA="routerLinkActive"
                      class="relative flex items-center pl-4 pr-1.5 py-2 text-sm leading-snug transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaRA.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaRA.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaRA.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaRA.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span>Reuniones teocráticas</span>
                   </a>
                   <a *ngIf="esSecretarioOAdmin()" routerLink="/administracion/visita-superintendente" routerLinkActive="sub-active" #rlaVS="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaVS.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaVS.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaVS.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaVS.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Visita del SC</span>
                   </a>
                   <a *ngIf="puedeVerActas()" routerLink="/administracion/actas-reunion" routerLinkActive="sub-active" #rlaAR="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaAR.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaAR.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaAR.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaAR.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Actas de reunión</span>
                   </a>
                   <a *ngIf="esSecretarioOAdmin()" routerLink="/administracion/transferencias" routerLinkActive="sub-active" #rlaTR="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaTR.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaTR.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaTR.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaTR.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Transferencias</span>
                   </a>
                 </div>
@@ -328,11 +328,11 @@ export class TimeAgoPipe implements PipeTransform {
                     'p-3': collapsed(),
                     'px-3 py-2.5': !collapsed(),
                     'text-brand-green dark:text-green-300 font-semibold bg-brand-green/10 dark:bg-green-500/[0.13] nav-active': isTerritoriosActive(),
-                    'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.04]': !isTerritoriosActive()
+                    'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.04]': !isTerritoriosActive()
                   }" title="Territorios">
                   <div class="flex items-center" [ngClass]="{ 'justify-center w-full': collapsed(), 'gap-3': !collapsed() }">
                     <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 group-hover:-translate-y-[1px]"
-                         [ngClass]="isTerritoriosActive() ? '!text-brand-green dark:!text-green-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'">
+                         [ngClass]="isTerritoriosActive() ? '!text-brand-green dark:!text-green-400' : 'text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'">
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
                     </div>
                     <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Territorios</span>
@@ -347,30 +347,30 @@ export class TimeAgoPipe implements PipeTransform {
                      [attr.data-title]="collapsed() ? 'Territorios' : null" [attr.role]="collapsed() ? 'menu' : null">
                   <a routerLink="/territorios" routerLinkActive="sub-active" #rlaTerr="routerLinkActive" [routerLinkActiveOptions]="{exact: true}"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaTerr.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaTerr.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaTerr.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaTerr.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Congregación</span>
                   </a>
                   <a routerLink="/horarios" routerLinkActive="sub-active" #rlaHor="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaHor.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaHor.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaHor.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaHor.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Horarios</span>
                   </a>
                   <a routerLink="/seguimiento-predicacion" routerLinkActive="sub-active" #rlaPred="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaPred.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaPred.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaPred.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaPred.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Predicación</span>
                   </a>
                   <a routerLink="/territorios/registro" routerLinkActive="sub-active" #rlaS13="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaS13.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaS13.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaS13.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaS13.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Registro S-13</span>
                   </a>
                 </div>
@@ -386,11 +386,11 @@ export class TimeAgoPipe implements PipeTransform {
                     'p-3': collapsed(),
                     'px-3 py-2.5': !collapsed(),
                     'text-brand-blue dark:text-blue-300 font-semibold bg-brand-blue/10 dark:bg-blue-500/[0.13] nav-active': isReportesActive(),
-                    'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.04]': !isReportesActive()
+                    'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.04]': !isReportesActive()
                   }" title="Reportes">
                   <div class="flex items-center" [ngClass]="{ 'justify-center w-full': collapsed(), 'gap-3': !collapsed() }">
                     <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 group-hover:-translate-y-[1px]"
-                         [ngClass]="isReportesActive() ? '!text-brand-blue dark:!text-blue-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'">
+                         [ngClass]="isReportesActive() ? '!text-brand-blue dark:!text-blue-400' : 'text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'">
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3v18h18M7 15l4-4 4 4 6-6" /></svg>
                     </div>
                     <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Reportes</span>
@@ -405,30 +405,30 @@ export class TimeAgoPipe implements PipeTransform {
                      [attr.data-title]="collapsed() ? 'Reportes' : null" [attr.role]="collapsed() ? 'menu' : null">
                   <a *ngIf="hasPermission('reportes.precursores')" routerLink="/reportes/precursores" routerLinkActive="sub-active" #rlaRepPrec="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaRepPrec.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaRepPrec.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaRepPrec.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaRepPrec.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Precursores</span>
                   </a>
                   <a *ngIf="hasPermission('reportes.publicadores')" routerLink="/reportes/publicadores" routerLinkActive="sub-active" #rlaRepPub="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaRepPub.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaRepPub.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaRepPub.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaRepPub.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Publicadores</span>
                   </a>
                   <a *ngIf="hasPermission('reportes.predicacion')" routerLink="/reportes/predicacion" routerLinkActive="sub-active" #rlaRepPred="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaRepPred.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaRepPred.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaRepPred.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaRepPred.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Predicación</span>
                   </a>
                   <a *ngIf="hasPermission('reportes.logistica')" routerLink="/reportes/logistica" routerLinkActive="sub-active" #rlaRepLog="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
-                     [ngClass]="rlaRepLog.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                     [ngClass]="rlaRepLog.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
-                          [ngClass]="rlaRepLog.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                          [ngClass]="rlaRepLog.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Carga de logística</span>
                   </a>
                 </div>
@@ -436,9 +436,9 @@ export class TimeAgoPipe implements PipeTransform {
 
               <!-- Exhibidores -->
               <a *ngIf="hasAnyExhibidoresPermission()" routerLink="/exhibidores" routerLinkActive="text-brand-blue dark:text-blue-300 font-semibold [&_.nav-icon]:!text-brand-blue dark:[&_.nav-icon]:!text-blue-400 bg-brand-blue/10 dark:bg-blue-500/[0.13] nav-active"
-                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
+                class="group flex items-center text-sm text-slate-600 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Exhibidores">
-                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
+                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Exhibidores</span>
@@ -450,20 +450,20 @@ export class TimeAgoPipe implements PipeTransform {
               <div class="h-px bg-slate-100 dark:bg-slate-800/60 mx-2 mb-3"></div>
               
               <!-- Configuracion Normal -->
-              <a *ngIf="!hasRole('Administrador') && puedeVerConfiguracion()" routerLink="/configuracion" routerLinkActive="text-brand-purple dark:text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
-                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
+              <a *ngIf="!hasRole('Administrador') && puedeVerConfiguracion()" routerLink="/configuracion" routerLinkActive="!text-brand-purple dark:!text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
+                class="group flex items-center text-sm text-slate-600 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Configuración">
-                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
+                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Configuración</span>
               </a>
 
               <!-- Configuracion Admin -->
-              <a *ngIf="hasRole('Administrador')" routerLink="/admin/configuracion" routerLinkActive="text-brand-purple dark:text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
-                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
+              <a *ngIf="hasRole('Administrador')" routerLink="/admin/configuracion" routerLinkActive="!text-brand-purple dark:!text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
+                class="group flex items-center text-sm text-slate-600 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Configuración del Sistema">
-                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
+                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-sm">Configuración</span>
@@ -586,7 +586,7 @@ export class TimeAgoPipe implements PipeTransform {
               <div *ngIf="userMenuOpen()" class="fixed inset-0 z-40" (click)="userMenuOpen.set(false)"></div>
               <button 
                 id="user-menu-button"
-                class="flex items-center w-full p-2 min-h-[44px] rounded-xl transition-all bg-slate-50/80 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 shadow-sm border border-slate-100/80 dark:border-white/5 hover:border-slate-200 dark:hover:border-slate-700 group focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                class="flex items-center w-full p-2 min-h-[44px] rounded-xl transition-all bg-slate-50/80 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 border border-slate-200/70 dark:border-white/5 hover:border-slate-200 dark:hover:border-slate-700 group focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                 [ngClass]="collapsed() ? 'justify-center' : 'justify-between'"
                 (click)="toggleUserMenu()"
                 title="Menú de Usuario"
@@ -597,10 +597,10 @@ export class TimeAgoPipe implements PipeTransform {
                   </div>
                   <div *ngIf="!collapsed()" class="flex flex-col items-start min-w-0 text-left">
                      <span class="text-sm font-bold text-slate-800 dark:text-white truncate max-w-full leading-tight">{{ u.nombre || u.username }}</span>
-                     <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-normal leading-tight mt-1 max-w-full break-words" [title]="etiquetaRol(u.roles?.[0]) || 'User'">{{ etiquetaRol(u.roles?.[0]) || 'User' }}</span>
+                     <span class="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-normal leading-tight mt-1 max-w-full break-words" [title]="etiquetaRol(u.roles?.[0]) || 'User'">{{ etiquetaRol(u.roles?.[0]) || 'User' }}</span>
                   </div>
                 </div>
-                <svg *ngIf="!collapsed()" class="w-4 h-4 text-slate-400 transition-transform group-hover:text-slate-600 mr-1 shrink-0" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                <svg *ngIf="!collapsed()" class="w-4 h-4 text-slate-500 transition-transform group-hover:text-slate-700 mr-1 shrink-0" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
               </button>
 
               <!-- User Menu Popup (upwards) -->

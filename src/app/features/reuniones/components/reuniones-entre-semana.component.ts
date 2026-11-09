@@ -401,8 +401,8 @@ import { BarraAdaptableDirective } from '../../../shared/directives/barra-adapta
                  refuerza. -->
             <span class="shrink-0 px-2 text-xs font-bold uppercase tracking-wider"
               [class]="estado() === 'publicado'
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-amber-600 dark:text-amber-400'">
+                ? 'text-emerald-700 dark:text-emerald-400'
+                : 'text-amber-700 dark:text-amber-400'">
               {{ estadoLabel() }}
             </span>
 
@@ -624,7 +624,7 @@ import { BarraAdaptableDirective } from '../../../shared/directives/barra-adapta
                   @if (i > 0) {
                     <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0"></span>
                   }
-                  <span class="pl-0.5 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ item.sem.fecha | date:'MMMM' }}</span>
+                  <span class="pl-0.5 text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-500">{{ item.sem.fecha | date:'MMMM' }}</span>
                 </span>
               }
               <button
@@ -640,7 +640,7 @@ import { BarraAdaptableDirective } from '../../../shared/directives/barra-adapta
                 @if (item.sinReunion) {
                   <svg class="w-3 h-3 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 }
-                <span [class.line-through]="!!item.sinReunion" [class.opacity-60]="!!item.sinReunion">{{ item.sem.fecha | date:'d' }}</span>
+                <span [class.line-through]="!!item.sinReunion" [class.opacity-80]="!!item.sinReunion">{{ item.sem.fecha | date:'d' }}</span>
               </button>
             }
            </div>
@@ -666,14 +666,14 @@ import { BarraAdaptableDirective } from '../../../shared/directives/barra-adapta
                a la pantalla (mismo criterio que Logística). -->
           @if (estado() === 'idle' || (estado() !== 'loading' && estado() !== 'error' && semanas().length === 0)) {
             <div class="flex-1 flex items-center justify-center p-6 overflow-y-auto simple-scrollbar">
-              <div class="w-full max-w-sm flex flex-col items-center text-center gap-1.5">
+              <div class="w-full max-w-md flex flex-col items-center text-center gap-1.5">
 
                 <div class="w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center mb-2.5">
                   <svg class="w-6 h-6 text-violet-500 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
 
-                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">Ninguna programación abierta</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-[15rem]">
+                <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Ninguna programación abierta</h3>
+                <p class="text-sm text-slate-600 dark:text-slate-400 max-w-[18rem]">
                   @if (periodosNav().length > 0) {
                     {{ navegacionPorGuia() ? 'Elige una guía para verla y editarla.' : 'Elige un mes para verlo y editarlo.' }}
                   } @else if (hasEditPermission()) {
@@ -698,7 +698,7 @@ import { BarraAdaptableDirective } from '../../../shared/directives/barra-adapta
                         [attr.data-mes]="p.mes"
                         (click)="abrirPeriodo(p)"
                         [disabled]="loadingHistorial()"
-                        class="w-full flex items-center gap-2.5 px-3.5 py-2 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
+                        class="w-full flex items-center gap-2.5 px-3.5 py-2 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-800 dark:text-slate-200 text-sm font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
                         <div class="min-w-0 flex-1 text-left">
                           <span class="block truncate">{{ p.label }}</span>
                           <!-- El rótulo por sí solo no dice si está completo.
@@ -708,7 +708,7 @@ import { BarraAdaptableDirective } from '../../../shared/directives/barra-adapta
                           <span class="block truncate text-xs font-normal mt-0.5"
                                 [class]="p.incompleta
                                   ? 'text-amber-600 dark:text-amber-400 font-semibold'
-                                  : 'text-slate-400 dark:text-slate-500'">
+                                  : 'text-slate-600 dark:text-slate-400'">
                             {{ p.sublabel }}
                           </span>
                         </div>
@@ -871,7 +871,7 @@ import { BarraAdaptableDirective } from '../../../shared/directives/barra-adapta
                                  esperan a nadie: salen en la lista y en el PDF,
                                  pero sin casilla que invite a rellenarlas. -->
                             @if (semanaSinReunion(semana)) {
-                              <span class="text-xs text-slate-400 dark:text-slate-500 italic px-1">No aplica</span>
+                              <span class="text-xs font-medium text-slate-600 dark:text-slate-400 px-1">No aplica</span>
                             } @else if (asig.asignable === false) {
                               <span class="text-xs text-slate-400 dark:text-slate-500 italic px-1">Sin asignación</span>
                             } @else {
@@ -885,8 +885,8 @@ import { BarraAdaptableDirective } from '../../../shared/directives/barra-adapta
                                 [class]="assigneeButtonClass(asig)"
                                 [class.pill-highlight]="highlightPublicadorId() === asig.id_publicador">
                                 @if (grupo.partes.length > 1) {
-                                  <span class="text-xs font-bold uppercase tracking-wide leading-none shrink-0 opacity-60">{{ grupoRoleLabel(grupo, pi) }}</span>
-                                  <span class="opacity-30 text-xs leading-none shrink-0">·</span>
+                                  <span class="text-xs font-bold uppercase tracking-wide leading-none shrink-0 opacity-80">{{ grupoRoleLabel(grupo, pi) }}</span>
+                                  <span class="opacity-50 text-xs leading-none shrink-0">·</span>
                                 }
                                 <span class="truncate max-w-[9rem]" [attr.title]="vacanteTituloParte(asig)">{{ asig.nombre_completo || textoParteVacia(asig) }}</span>
                                 @if (hasEditPermission()) {
@@ -1704,7 +1704,7 @@ import { BarraAdaptableDirective } from '../../../shared/directives/barra-adapta
     .parte-row:nth-child(n+7){ animation-delay: 160ms; }
 
     /* ── Etiquetas de estado ── */
-    .semana-sin-reunion .sec-card { opacity: 0.6; }
+    .semana-sin-reunion .sec-card { opacity: 0.8; }
 
     .estado-tag {
       display: inline-flex;

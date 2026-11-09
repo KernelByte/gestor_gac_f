@@ -3,8 +3,11 @@ import type { EChartsOption } from 'echarts';
 export const REDUCED_MOTION =
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+const EJE_CLARO = '#475569';
+const EJE_OSCURO = '#94a3b8';
+
 const EJE = {
-  color: '#8b95a7',
+  color: EJE_CLARO,
   fontSize: 12,
   fontFamily: "'JetBrains Mono', monospace",
   fontWeight: 600 as const,
@@ -23,7 +26,11 @@ const REJILLA = { lineStyle: { color: 'rgba(148,163,184,0.12)', width: 1, type: 
 export interface PuntoInformes { mes: string; recibidos: number }
 
 /** Informes recibidos por mes: barras con su número encima; el último mes resaltado. */
-export function graficoInformes(puntos: PuntoInformes[]): EChartsOption {
+export function graficoInformes(puntos: PuntoInformes[], oscuro = false): EChartsOption {
+  const eje = { ...EJE, color: oscuro ? EJE_OSCURO : EJE_CLARO };
+  const barra = oscuro ? 'rgba(96,165,250,0.45)' : '#93c5fd';
+  const barraActual = oscuro ? '#3b82f6' : '#2563eb';
+  const rejilla = oscuro ? REJILLA : { lineStyle: { color: 'rgba(100,116,139,0.22)', width: 1, type: 'solid' as const } };
   return {
     animation: !REDUCED_MOTION,
     animationDuration: 650,
@@ -31,9 +38,9 @@ export function graficoInformes(puntos: PuntoInformes[]): EChartsOption {
     animationDelay: (i: number) => 200 + i * 60,
     grid: { top: 22, right: 4, bottom: 22, left: 4 },
     xAxis: { type: 'category', data: puntos.map(p => p.mes),
-      axisLine: { show: false }, axisTick: { show: false }, axisLabel: EJE },
+      axisLine: { show: false }, axisTick: { show: false }, axisLabel: eje },
     yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, axisLabel: { show: false },
-      splitLine: REJILLA, splitNumber: 3 },
+      splitLine: rejilla, splitNumber: 3 },
     tooltip: { ...TOOLTIP, trigger: 'axis', axisPointer: { type: 'none' },
       formatter: (params: any) => {
         const p = Array.isArray(params) ? params[0] : params;
@@ -45,10 +52,10 @@ export function graficoInformes(puntos: PuntoInformes[]): EChartsOption {
         value: p.recibidos,
         itemStyle: {
           borderRadius: [4, 4, 0, 0],
-          color: i === puntos.length - 1 ? '#3b82f6' : 'rgba(96,165,250,0.45)',
+          color: i === puntos.length - 1 ? barraActual : barra,
         },
       })),
-      label: { show: true, position: 'top', color: '#94a3b8', fontSize: 12, fontWeight: 600,
+      label: { show: true, position: 'top', color: eje.color, fontSize: 12, fontWeight: 600,
         fontFamily: "'JetBrains Mono', monospace" },
     }],
   };

@@ -125,7 +125,7 @@ interface FilaMatriz {
            <!-- Filtros (solo para tab privilegios) — van ANTES del botón Guardar -->
            @if (activeTab() === 'privilegios') {
                <!-- Search -->
-               <div class="relative grow basis-[55%] max-sm:order-1 sm:grow-0 sm:basis-auto sm:w-[180px]">
+               <div class="relative grow basis-[55%] max-sm:order-1 sm:grow-0 sm:basis-auto sm:w-[220px]">
                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                        <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                    </div>
@@ -133,7 +133,7 @@ interface FilaMatriz {
                      [ngModel]="searchQuery()"
                      (ngModelChange)="searchQuery.set($event); currentPage.set(1)"
                      placeholder="Buscar publicador..."
-                     class="priv-search w-full h-9 max-sm:h-11 pl-9 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm">
+                     class="priv-search w-full h-9 max-sm:h-11 pl-9 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-500 dark:placeholder:text-slate-500 outline-none shadow-sm">
                </div>
                <!-- Filter Icons sexo -->
                <div class="flex items-center gap-1 max-sm:order-3">
@@ -144,9 +144,9 @@ interface FilaMatriz {
                      class="h-9 max-sm:h-11 max-sm:min-w-11 justify-center px-2.5 flex items-center gap-1.5 rounded-lg transition-[background-color,border-color,color,transform] duration-150 ease-out border active:scale-[0.97]"
                      [class]="filtroSexo() === 'solo_hombres'
                        ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-blue-300 hover:text-blue-500'">
+                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-blue-300 hover:text-blue-600'">
                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
-                       <span class="hidden sm:inline text-xs font-bold">Hermanos</span>
+                       <span class="hidden sm:inline text-sm font-bold">Hermanos</span>
                    </button>
                    <button
                      (click)="setFiltroSexo('solo_mujeres')"
@@ -155,9 +155,9 @@ interface FilaMatriz {
                      class="h-9 max-sm:h-11 max-sm:min-w-11 justify-center px-2.5 flex items-center gap-1.5 rounded-lg transition-[background-color,border-color,color,transform] duration-150 ease-out border active:scale-[0.97]"
                      [class]="filtroSexo() === 'solo_mujeres'
                        ? 'bg-rose-500 border-rose-500 text-white shadow-sm'
-                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-rose-300 hover:text-rose-500'">
+                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-rose-300 hover:text-rose-600'">
                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M12 21v-8"/><path d="M9 14l3-3 3 3"/></svg>
-                       <span class="hidden sm:inline text-xs font-bold">Hermanas</span>
+                       <span class="hidden sm:inline text-sm font-bold">Hermanas</span>
                    </button>
                </div>
                <!-- Permission dropdown custom -->
@@ -165,10 +165,10 @@ interface FilaMatriz {
                  <!-- Trigger -->
                  <button
                    (click)="permisoDropdownOpen.set(!permisoDropdownOpen())"
-                   class="h-9 max-sm:h-11 pl-3 pr-2.5 flex items-center gap-2 rounded-lg text-xs font-bold border transition-all whitespace-nowrap"
+                   class="h-9 max-sm:h-11 pl-3 pr-2.5 flex items-center gap-2 rounded-lg text-sm font-bold border transition-all whitespace-nowrap"
                    [class]="filtroPermiso()
                      ? 'border-brand-purple bg-brand-purple/10 dark:bg-brand-purple/20 text-brand-purple dark:text-purple-300 ring-2 ring-brand-purple/20'
-                     : 'bg-white dark:bg-[#1a1b26] border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'">
+                     : 'bg-white dark:bg-[#1a1b26] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'">
                    <svg class="w-3.5 h-3.5 shrink-0 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                    <span>{{ filtroPermiso() ? getColLabel(filtroPermiso()!) : 'Filtrar por permiso' }}</span>
                    <svg class="w-3 h-3 shrink-0 opacity-50 transition-transform" [class.rotate-180]="permisoDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
@@ -1684,7 +1684,7 @@ interface FilaMatriz {
      :host-context(.dark) .priv-row.is-dirty { background: rgba(120,53,15,0.12); }
      .priv-td-name { background: #fff; max-width: 0; }   /* el ancho lo fija la cabecera; así trunca */
      :host-context(.dark) .priv-td-name { background: #0f172a; }
-     .priv-row.is-dirty .priv-td-name { box-shadow: inset 3px 0 0 #f59e0b; }
+     .priv-row.is-dirty .priv-name::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 999px; background: #f59e0b; vertical-align: 1px; }
 
      /* Cruz de lectura: fila y columna bajo el puntero se tiñen, para no
         perderse entre 16 columnas iguales. */
@@ -1764,7 +1764,7 @@ interface FilaMatriz {
        -webkit-appearance: none;
         width: 16px; height: 16px;
         border-radius: 5px;
-        border: 1.5px solid #cbd5e1;
+        border: 1.5px solid #8391a7;
         background: #fff;
         cursor: pointer;
         position: relative;

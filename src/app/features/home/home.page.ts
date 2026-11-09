@@ -125,13 +125,13 @@ import { VistaGeneralComponent } from './components/vista-general.component';
       flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem 2.5rem; align-items: center;
       padding: clamp(0.875rem, 2.2cqh, 1.5rem) clamp(1rem, 2.5cqw, 2rem); border-radius: 0.875rem; color: white;
       background:
-        radial-gradient(120% 140% at 100% 0%, rgb(167 139 250 / 0.35) 0%, transparent 55%),
+        radial-gradient(120% 140% at 100% 0%, rgb(167 139 250 / 0.2) 0%, transparent 55%),
         linear-gradient(125deg, #4c1d95 0%, #5b21b6 45%, #7c3aed 100%);
       box-shadow: none;
       animation: entra 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
     /* Brillo que deriva muy despacio al abrir y luego se queda quieto (solo transform; no gasta batería en reposo) */
     .hero::before { content: ''; position: absolute; z-index: -1; width: 70%; aspect-ratio: 1; right: -12%; top: -70%;
-      border-radius: 999px; background: radial-gradient(closest-side, rgb(196 181 253 / 0.38), transparent 72%);
+      border-radius: 999px; background: radial-gradient(closest-side, rgb(196 181 253 / 0.22), transparent 72%);
       animation: deriva 16s ease-in-out 2 alternate both; pointer-events: none; }
     @keyframes deriva { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(-18%, 22%, 0) scale(1.15); } }
     :host(.sin-movimiento) .hero::before { animation: none; }
@@ -153,7 +153,7 @@ import { VistaGeneralComponent } from './components/vista-general.component';
     .fh-a:focus-visible::after { outline: 2px solid white; outline-offset: 1px; }
     .fh i svg { width: 0.8125rem; height: 0.8125rem; }
     .fh-d { padding-left: 0.5rem; border-left: 1px solid rgb(255 255 255 / 0.28); font-weight: 500; font-variant-numeric: tabular-nums;
-      color: rgb(237 233 254); }
+      color: white; }
     .fh[data-t="asignacion"] i { background: rgb(252 211 77 / 0.9); color: #78350f; }
     .fh[data-t="informe"] i { background: rgb(253 164 175 / 0.95); color: #881337; }
     .fh[data-t="alerta"] { background: rgb(253 164 175 / 0.22); }
@@ -162,7 +162,7 @@ import { VistaGeneralComponent } from './components/vista-general.component';
     :host(.sin-movimiento) .fh { animation: none; }
     @container dash (min-width: 46rem) { .hero { grid-template-columns: minmax(0, 0.9fr) minmax(21rem, 1.1fr); } }
     .hero-txt { min-width: 0; }
-    .h-fecha { font-size: 0.8125rem; font-weight: 600; color: rgb(237 233 254); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .h-fecha { font-size: 0.8125rem; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .h-fecha::first-letter { text-transform: uppercase; }
     h1 { margin-top: 0.25rem; font-family: var(--font-display, 'Urbanist', sans-serif); font-weight: 700;
       font-size: clamp(1.25rem, 2.5cqw, 1.75rem); line-height: 1.15; letter-spacing: -0.02em;

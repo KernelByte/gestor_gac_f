@@ -709,6 +709,12 @@
 
   /* --- Floating Sidebar --- */
   @media (min-width: 1024px) {
+    /* Barra de desplazamiento del menú: fina y solo visible al apuntarla, para que no compita con los iconos. */
+    .sidebar-nav { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+    .sidebar-nav:hover { scrollbar-color: rgb(148 163 184 / 0.55) transparent; }
+    .sidebar-nav::-webkit-scrollbar { width: 6px; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: transparent; border-radius: 6px; }
+    .sidebar-nav:hover::-webkit-scrollbar-thumb { background: rgb(148 163 184 / 0.55); }
     .sidebar-float {
       box-shadow:
         0 0 0 1px rgba(15, 23, 42, 0.05),
@@ -1656,7 +1662,10 @@
   --accent-ring: color-mix(in oklab, var(--color-brand-purple) 18%, transparent); --accent-shadow: var(--shadow-violet);
 }
 .tema-publicadores {
-  --accent: var(--color-brand-orange); --accent-hover: var(--color-orange-600); --accent-focus: var(--color-brand-orange);
+  /* En claro, el naranja de este módulo baja a orange-600: blanco sobre él da 3,6:1 y no 2,8:1 como con el naranja de marca.
+     Redefinir la variable aquí afecta a todo bg-/text-/border-brand-orange dentro del módulo. */
+  --color-brand-orange: var(--color-orange-600);
+  --accent: var(--color-brand-orange); --accent-hover: var(--color-orange-700); --accent-focus: var(--color-brand-orange);
   --accent-ring: color-mix(in oklab, var(--color-brand-orange) 20%, transparent); --accent-shadow: var(--shadow-orange);
 }
 .tema-territorios {
@@ -1675,6 +1684,7 @@
 /* En oscuro el violeta necesita un foco más claro; los demás ya contrastan. */
 .dark .tema-reuniones { --accent-focus: #a78bfa; --accent-ring: color-mix(in oklab, var(--color-brand-purple) 35%, transparent); }
 .dark .tema-exhibidores { --accent-focus: var(--color-exh-400); }
+.dark .tema-publicadores { --color-brand-orange: #f97316; --accent-hover: var(--color-orange-600); }
 .dark .tema-publicadores, .dark .tema-territorios, .dark .tema-exhibidores { --accent-ring: color-mix(in oklab, var(--accent) 35%, transparent); }
 
 /* ═══════════════════════════════════════════════════════ */
@@ -1687,7 +1697,7 @@
   --estado-alerta-bg: #fee2e2;  --estado-alerta-fg: #b91c1c;  --estado-alerta-punto: #dc2626;
   --estado-info-bg: #ede9fe;    --estado-info-fg: #5b21b6;    --estado-info-punto: #7c3aed;
   --estado-neutro-bg: #f1f5f9;  --estado-neutro-fg: #475569;
-  --dash-texto-suave: #6b7280;  /* gray-500 sobre blanco: 4.8:1 */
+  --dash-texto-suave: #5b6472;  /* 5.9:1 sobre blanco y 5.2:1 sobre la tesela gris */
   --dash-tesela: #f3f4f6;       --dash-tesela-fg: #111827;
   --dash-tesela-info: #ede9fe;  --dash-tesela-info-fg: #5b21b6;
   --dash-hover: #f9fafb;        --dash-borde: #e5e7eb;

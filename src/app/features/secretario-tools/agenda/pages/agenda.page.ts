@@ -59,16 +59,18 @@ type Vista = 'calendario' | 'tareas';
     @if (vista() === 'calendario') {
       <app-agenda-calendario/>
     } @else {
-      <!-- Panel oscuro propio: separa las tarjetas del resto de la pantalla. La clase dark activa las variantes oscuras de la lista. -->
-      <div class="panel-tareas dark" data-testid="panel-tareas"><app-tareas-lista/></div>
+      <!-- Panel propio que separa las tarjetas del resto de la pantalla; sigue el tema (claro/oscuro) del portal. -->
+      <div class="panel-tareas" data-testid="panel-tareas"><app-tareas-lista/></div>
     }
   </div>
   `,
   styles: [`
     /* Acento rosa de la Agenda: lo leen las pestañas (.tab-item) y el resto de piezas globales. */
     :host { --accent: #e11d48; --accent-hover: #be123c; --accent-focus: #e11d48; --accent-ring: rgb(225 29 72 / 0.18); --accent-shadow: 0 1px 2px rgb(225 29 72 / 0.2); }
-    .panel-tareas { flex: 1 1 0%; min-height: 0; overflow-y: auto; background: #10162b; border-radius: 16px; padding: 12px; color: rgb(226 232 240); }
-    @media (min-width: 640px) { .panel-tareas { padding: 20px; } }
+    /* Claro: sin caja gris sobre gris; la lista queda alineada con las pestañas y las tarjetas blancas se separan solas del fondo. */
+    .panel-tareas { flex: 1 1 0%; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 0 4px 12px 0; color: rgb(30 41 59); }
+    :host-context(.dark) .panel-tareas { background: #10162b; border-radius: 16px; padding: 12px; color: rgb(226 232 240); }
+    @media (min-width: 640px) { :host-context(.dark) .panel-tareas { padding: 20px; } }
     .btn-nueva {
       display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 10px;
       font-size: 14px; font-weight: 600; white-space: nowrap; color: #fff;

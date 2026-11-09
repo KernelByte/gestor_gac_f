@@ -965,8 +965,8 @@ type ItemEntrante =
                       <div class="w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center mb-2.5">
                         <svg class="w-6 h-6 text-violet-500 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                       </div>
-                      <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">Ninguna programación abierta</h3>
-                      <p class="text-xs text-slate-500 dark:text-slate-400 max-w-[15rem]">
+                      <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Ninguna programación abierta</h3>
+                      <p class="text-sm text-slate-600 dark:text-slate-400 max-w-[18rem]">
                         @if (hasEditPermission()) {
                           Genera una nueva programación para comenzar.
                         } @else {
@@ -1239,7 +1239,7 @@ type ItemEntrante =
                                   class="flex items-center gap-1.5 px-2.5 h-9 sm:h-8 rounded-lg border text-xs sm:text-xs font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                                   [class]="entrante.orador_confirmado
                                     ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
-                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-emerald-300 hover:text-emerald-600 dark:hover:border-emerald-700 dark:hover:text-emerald-400'">
+                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-700 dark:hover:text-emerald-400'">
                                   @if (entrante.orador_confirmado) {
                                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     <span>Orador confirmado</span>

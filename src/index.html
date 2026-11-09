@@ -15,16 +15,14 @@
   <link rel="preload" as="font" type="font/woff2" href="fonts/manrope-latin.woff2" crossorigin>
   <link rel="preload" as="font" type="font/woff2" href="fonts/urbanist-latin.woff2" crossorigin>
 
+  <!-- Tema antes del primer pintado: evita el destello oscuro al abrir en tema claro. -->
+  <script>try { if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
   <style>
-    body, html { 
-      background-color: #020617; /* slate-950 */
-      color: white; 
-      margin: 0;
-      padding: 0;
-    }
+    body, html { margin: 0; padding: 0; background-color: #f3f4f6; /* app-bg */ color: #334155; }
+    html.dark, html.dark body { background-color: #020617; /* slate-950 */ color: white; }
   </style>
 </head>
-<body style="background-color: #020617;">
+<body>
   <app-root></app-root>
 </body>
 

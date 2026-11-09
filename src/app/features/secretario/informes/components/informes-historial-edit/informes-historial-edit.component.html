@@ -60,7 +60,7 @@
                         class="relative flex items-center gap-2 px-1 py-3.5 text-sm font-semibold mr-5 transition-colors duration-150"
                         [ngClass]="activeTab() === 'informe'
                             ? 'text-brand-purple dark:text-violet-300'
-                            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'">
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -76,7 +76,7 @@
                         class="relative flex items-center gap-2 px-1 py-3.5 text-sm font-semibold transition-colors duration-150"
                         [ngClass]="activeTab() === 'privilegios'
                             ? 'text-brand-purple dark:text-violet-300'
-                            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'">
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
@@ -111,7 +111,7 @@
                                 </div>
                                 <div>
                                     <p class="text-sm font-semibold text-slate-800 dark:text-white">Participó en el ministerio</p>
-                                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Indica si tuvo participación este mes</p>
+                                    <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Indica si tuvo participación este mes</p>
                                 </div>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
@@ -150,9 +150,9 @@
                                        class="form-control text-center">
                                 <div *ngIf="totalHorasConCreditos() !== null" class="mt-2 flex items-center justify-center gap-1.5 text-xs">
                                     <span class="text-slate-400">{{ horas() }}</span>
-                                    <span class="text-slate-300 dark:text-slate-600">+</span>
+                                    <span class="text-slate-500 dark:text-slate-500">+</span>
                                     <span class="font-bold text-teal-600 dark:text-teal-400">{{ hrsFromObservacion() }}</span>
-                                    <span class="text-slate-300 dark:text-slate-600">=</span>
+                                    <span class="text-slate-500 dark:text-slate-500">=</span>
                                     <span class="font-bold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded-md">{{ totalHorasConCreditos() }}</span>
                                 </div>
                             </div>
@@ -169,7 +169,7 @@
                                  [ngClass]="showValidationError() && horasRequierePrecursor() ? 'border-red-300 dark:border-red-700 ring-1 ring-red-300 dark:ring-red-700' : ''">
                                 <div class="flex items-center justify-between mb-3">
                                     <p class="text-xs font-bold text-slate-400 uppercase tracking-wider"
-                                       [ngClass]="showValidationError() && horasRequierePrecursor() ? 'text-red-500 dark:text-red-400' : ''">
+                                       [ngClass]="showValidationError() && horasRequierePrecursor() ? 'text-red-700 dark:text-red-400' : ''">
                                         Precursor este mes
                                     </p>
                                     <button (click)="switchTab('privilegios')"
@@ -194,7 +194,7 @@
                                             <span *ngIf="!esAuxiliar()" class="text-xs font-bold">A</span>
                                         </div>
                                         <span class="text-xs font-bold uppercase tracking-wide"
-                                              [ngClass]="esAuxiliar() ? 'text-amber-700 dark:text-amber-300' : 'text-slate-400 dark:text-slate-500'">Auxiliar</span>
+                                              [ngClass]="esAuxiliar() ? 'text-amber-700 dark:text-amber-300' : 'text-slate-600 dark:text-slate-400'">Auxiliar</span>
                                     </button>
 
                                     <button (click)="togglePrivilegio('Regular')"
@@ -210,7 +210,7 @@
                                             <span *ngIf="!esRegular()" class="text-xs font-bold">R</span>
                                         </div>
                                         <span class="text-xs font-bold uppercase tracking-wide"
-                                              [ngClass]="esRegular() ? 'text-brand-purple dark:text-violet-300' : 'text-slate-400 dark:text-slate-500'">Regular</span>
+                                              [ngClass]="esRegular() ? 'text-brand-purple dark:text-violet-300' : 'text-slate-600 dark:text-slate-400'">Regular</span>
                                     </button>
 
                                     <button (click)="togglePrivilegio('Especial')"
@@ -226,10 +226,10 @@
                                             <span *ngIf="!esEspecial()" class="text-xs font-bold">E</span>
                                         </div>
                                         <span class="text-xs font-bold uppercase tracking-wide"
-                                              [ngClass]="esEspecial() ? 'text-brand-purple dark:text-purple-300' : 'text-slate-400 dark:text-slate-500'">Especial</span>
+                                              [ngClass]="esEspecial() ? 'text-brand-purple dark:text-purple-300' : 'text-slate-600 dark:text-slate-400'">Especial</span>
                                     </button>
                                 </div>
-                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-2.5">
+                                <p class="text-xs text-slate-600 dark:text-slate-400 mt-2.5">
                                     Marca el tipo correspondiente a este mes. Para gestionar períodos formales con fechas, usa la pestaña <button (click)="switchTab('privilegios')" class="text-brand-purple dark:text-violet-400 font-semibold hover:underline">Privilegios</button>.
                                 </p>
 
@@ -272,7 +272,7 @@
                                             {{ savingQuickPriv() ? 'Guardando…' : 'Confirmar' }}
                                         </button>
                                         <button (click)="cancelarQuickPriv()"
-                                                class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 py-1.5 px-1 transition-colors">
+                                                class="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 py-1.5 px-1 transition-colors">
                                             Omitir
                                         </button>
                                     </div>
@@ -288,11 +288,11 @@
                                     class="w-5 h-5 shrink-0 rounded border-2 border-slate-300 dark:border-slate-600 hover:border-violet-500 dark:hover:border-violet-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center">
                                 <span *ngIf="savingQuickAuxiliar()" class="spinner-xs text-slate-400" role="status"></span>
                             </button>
-                            <p class="text-xs text-slate-400 dark:text-slate-500 flex-1">
+                            <p class="text-xs text-slate-600 dark:text-slate-400 flex-1">
                                 ¿Fue Precursor Auxiliar este mes?
                             </p>
                             <button (click)="switchTab('privilegios')"
-                                    class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:underline transition-colors shrink-0">
+                                    class="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:underline transition-colors shrink-0">
                                 Más opciones →
                             </button>
                         </div>
@@ -423,12 +423,12 @@
                         <div *ngIf="!loadingPrivilegios() && privilegiosPrecursor().length === 0 && !showNewPrivilegioForm()"
                              class="py-8 text-center">
                             <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center mx-auto mb-3">
-                                <svg class="w-5 h-5 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="w-5 h-5 text-slate-400 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
                             </div>
-                            <p class="text-sm font-medium text-slate-400 dark:text-slate-500 mb-1">Sin períodos registrados</p>
-                            <p class="text-xs text-slate-300 dark:text-slate-600">Usa el botón de arriba para añadir el primer período de precursor.</p>
+                            <p class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Sin períodos registrados</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-500">Usa el botón de arriba para añadir el primer período de precursor.</p>
                         </div>
 
                         <!-- Records list -->
@@ -455,7 +455,7 @@
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <p class="text-xs font-semibold text-slate-700 dark:text-slate-200">{{ priv.nombre }}</p>
-                                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                        <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                                             {{ formatFecha(priv.fecha_inicio) }}
                                             <span class="mx-1 text-slate-200 dark:text-slate-700">—</span>
                                             <span [ngClass]="!priv.fecha_fin ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : ''">
@@ -466,14 +466,14 @@
                                     <!-- Actions -->
                                     <div class="flex items-center gap-1 shrink-0">
                                         <button (click)="iniciarEdicionPrivilegio(priv)"
-                                            class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 dark:text-slate-600 hover:text-brand-purple hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-900/30 transition-colors"
+                                            class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-500 hover:text-brand-purple hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-900/30 transition-colors"
                                             title="Editar fechas">
                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                         </button>
                                         <button (click)="iniciarEliminacionPrivilegio(priv.id_publicador_privilegio)"
-                                            class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/30 transition-colors"
+                                            class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/30 transition-colors"
                                             title="Eliminar">
                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -571,7 +571,7 @@
 
     <ng-container slot="footer">
         <div *ngIf="activeTab() === 'informe'" class="w-full flex items-center justify-between gap-3">
-            <div class="text-xs text-slate-400 dark:text-slate-500">
+            <div class="text-xs text-slate-600 dark:text-slate-400">
                 <span *ngIf="pendingChanges.size > 0" class="inline-flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
                     {{ pendingChanges.size }} {{ pendingChanges.size === 1 ? 'cambio sin guardar' : 'cambios sin guardar' }}

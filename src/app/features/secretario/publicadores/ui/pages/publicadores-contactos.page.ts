@@ -58,7 +58,7 @@ interface ContactoEmergencia {
           <div class="hidden md:flex items-center justify-between mb-3">
             <h3 class="font-display font-bold text-slate-800 dark:text-white text-lg">Directorio</h3>
             <button (click)="exportarPDF()" [disabled]="downloadingPdf()" aria-label="Exportar lista de contactos como PDF"
-                class="p-2 -mr-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="p-2 -mr-2 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Exportar Lista de Contactos (PDF)">
               <svg *ngIf="!downloadingPdf()" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
               <div *ngIf="downloadingPdf()" class="spinner-sm text-emerald-500"></div>
@@ -74,7 +74,7 @@ interface ContactoEmergencia {
             </div>
             <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
                 placeholder="Buscar publicador..."
-                class="w-full pl-9 h-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all shadow-sm"
+                class="w-full pl-9 h-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all shadow-sm"
                 [class.pr-8]="searchQuery()" [class.pr-3]="!searchQuery()">
             <button *ngIf="searchQuery()" (click)="searchQuery.set('')"
                 aria-label="Limpiar búsqueda"
@@ -97,7 +97,7 @@ interface ContactoEmergencia {
             </button>
             <button (click)="toggleFilter('inactive')"
                 class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-xs font-bold transition-[background-color,border-color,color] duration-150 border shrink-0 flex items-center justify-center"
-                [ngClass]="activeFilters().has('inactive') ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'">
+                [ngClass]="activeFilters().has('inactive') ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300'">
               Inactivos
             </button>
             <button (click)="toggleFilter('no-phone')" title="Publicadores sin ningún contacto de emergencia con teléfono registrado"
@@ -131,11 +131,11 @@ interface ContactoEmergencia {
 
               <div class="min-w-0 flex-1">
                 <h4 class="text-sm font-bold truncate leading-tight transition-colors"
-                    [ngClass]="selectedPublicador()?.id_publicador === p.id_publicador ? 'text-brand-orange' : 'text-slate-800 dark:text-slate-200 group-hover:text-brand-orange'">
+                    [ngClass]="selectedPublicador()?.id_publicador === p.id_publicador ? 'text-orange-700' : 'text-slate-800 dark:text-slate-200 group-hover:text-orange-700'">
                   {{ nombreMostrado(p) }}
                 </h4>
-                <p class="text-xs font-medium truncate flex items-center gap-1.5 mt-0.5"
-                   [ngClass]="p.telefono ? 'text-slate-500 dark:text-slate-400' : 'text-amber-500 dark:text-amber-400'">
+                <p class="text-sm font-medium truncate flex items-center gap-1.5 mt-0.5"
+                   [ngClass]="p.telefono ? 'text-slate-600 dark:text-slate-400' : 'text-amber-700 dark:text-amber-400'">
                   <span class="w-1.5 h-1.5 rounded-full shrink-0 flex-none"
                         [ngClass]="p.id_estado_publicador === 1 ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'"></span>
                   {{ p.telefono || 'Sin teléfono' }}
@@ -178,11 +178,11 @@ interface ContactoEmergencia {
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
             </svg>
           </div>
-          <h2 class="text-xl font-display font-black text-slate-800 dark:text-white tracking-tight">Selecciona un publicador</h2>
+          <h2 class="text-xl font-display font-bold text-slate-800 dark:text-white tracking-tight">Selecciona un publicador</h2>
           <p class="text-sm text-slate-500 dark:text-slate-400 max-w-[280px] text-center mt-2 leading-relaxed">
             Elige un nombre del directorio para ver y gestionar sus contactos de emergencia.
           </p>
-          <div class="hidden md:flex items-center gap-1.5 mt-8 text-xs text-slate-300 dark:text-slate-700 font-black uppercase tracking-widest">
+          <div class="hidden md:flex items-center gap-1.5 mt-8 text-xs text-slate-500 dark:text-slate-500 font-bold uppercase tracking-widest">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
             Directorio
           </div>
@@ -216,7 +216,7 @@ interface ContactoEmergencia {
                     {{ nombreMostrado(p) }}
                   </h1>
                   <span *ngIf="p.id_estado_publicador === 1"
-                        class="hidden md:inline shrink-0 text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800 uppercase tracking-wide">
+                        class="hidden md:inline shrink-0 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800 uppercase tracking-wide">
                     Activo
                   </span>
                 </div>
@@ -292,7 +292,7 @@ interface ContactoEmergencia {
                              class="absolute z-20 top-full mt-1 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl max-h-56 overflow-y-auto py-1">
                           <ng-container *ngFor="let grupo of filteredParentescos()">
                             <ng-container *ngIf="grupo.opciones.length > 0">
-                              <div class="px-3 pt-2 pb-1 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest sticky top-0 bg-white dark:bg-slate-900">{{ grupo.grupo }}</div>
+                              <div class="px-3 pt-2 pb-1 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest sticky top-0 bg-white dark:bg-slate-900">{{ grupo.grupo }}</div>
                               <button *ngFor="let opcion of grupo.opciones"
                                       type="button"
                                       (mousedown)="selectParentesco(opcion)"
@@ -319,7 +319,7 @@ interface ContactoEmergencia {
                     <!-- Dirección: collapsible — collapsed by default, auto-expands when editing a contact that has a value -->
                     <div class="col-span-12">
                       <button *ngIf="!showDireccion()" type="button" (click)="showDireccion.set(true)"
-                          class="group flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-brand-orange transition-colors py-1.5">
+                          class="group flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-brand-orange transition-colors py-1.5">
                         <svg class="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Añadir dirección o notas
                       </button>
@@ -358,7 +358,7 @@ interface ContactoEmergencia {
                            [ngClass]="form.get('es_principal')?.value ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-300'">
                           Principal
                         </p>
-                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Primera persona a llamar en una emergencia</p>
+                        <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Primera persona a llamar en una emergencia</p>
                       </div>
                       <svg *ngIf="form.get('es_principal')?.value" class="w-4 h-4 shrink-0 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                     </label>
@@ -448,15 +448,15 @@ interface ContactoEmergencia {
                 <!-- Row 1: Parentesco + badges (left) — Action buttons (right, in flow) -->
                 <div class="flex items-start justify-between gap-2 mb-2">
                   <div class="flex flex-wrap items-center gap-1.5 min-w-0">
-                    <span class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                    <span class="text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400">
                       {{ c.parentesco || 'Familiar' }}
                     </span>
                     <span *ngIf="c.es_principal"
-                          class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-black uppercase tracking-wide border border-emerald-200 dark:border-emerald-800">
+                          class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase tracking-wide border border-emerald-200 dark:border-emerald-800">
                       Principal
                     </span>
                     <span *ngIf="c.solo_urgencias"
-                          class="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-xs font-black uppercase tracking-wide border border-amber-200 dark:border-amber-800/50">
+                          class="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wide border border-amber-200 dark:border-amber-800/50">
                       Solo urgencias
                     </span>
                   </div>
@@ -484,7 +484,7 @@ interface ContactoEmergencia {
                 </div>
 
                 <!-- Row 2: Name — hero, full width, no right padding needed -->
-                <h4 class="font-display font-black text-slate-900 dark:text-white text-xl leading-tight mb-4 group-hover:text-brand-orange transition-colors duration-150">
+                <h4 class="font-display font-bold text-slate-900 dark:text-white text-xl leading-tight mb-4 group-hover:text-brand-orange transition-colors duration-150">
                   {{ c.nombre }}
                 </h4>
 
@@ -514,7 +514,7 @@ interface ContactoEmergencia {
                    class="lg:col-span-2 xl:col-span-3 flex items-center gap-4 py-1">
                 <div class="flex-1 h-px bg-slate-200 dark:bg-slate-900"></div>
                 <button (click)="initNewContacto()" aria-label="Añadir otro contacto de emergencia"
-                    class="group inline-flex items-center gap-2 text-sm font-bold text-slate-400 dark:text-slate-600 hover:text-brand-orange transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange/30 rounded px-1 py-0.5">
+                    class="group inline-flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-500 hover:text-orange-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange/30 rounded px-1 py-0.5">
                   <svg class="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                   </svg>

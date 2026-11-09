@@ -3,19 +3,19 @@
   <!-- ══ Toolbar ═══════════════════════════════════════════════════════════
        Misma tarjeta que el listado de Publicadores: búsqueda + filtros +
        acción dentro de una sola barra blanca con borde y sombra suave. -->
-  <div class="shrink-0 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-1.5 flex items-center gap-1.5 flex-wrap lg:flex-nowrap">
+  <div class="shrink-0 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-1.5 flex items-center gap-1.5 flex-wrap">
 
     <!-- Búsqueda -->
     <div class="relative flex-1 min-w-[200px]">
       <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       </div>
       <!-- text-base en móvil: por debajo de 16px Safari iOS hace zoom al
            enfocar y deja la pantalla descuadrada. -->
       <input type="search" [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)"
              aria-label="Buscar publicador por nombre o PIN"
              placeholder="Buscar por nombre o PIN"
-             class="campo w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-700 border border-transparent dark:border-slate-600 rounded-lg text-base sm:text-sm text-slate-700 dark:text-slate-100 font-medium placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-700 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none" />
+             class="campo w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-700 border border-transparent dark:border-slate-600 rounded-lg text-base sm:text-sm text-slate-700 dark:text-slate-100 font-medium placeholder:text-sm placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-700 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none" />
     </div>
 
     <!-- Grupo: desplegable propio de la app; el <select> nativo abre el menú
@@ -27,14 +27,14 @@
     </div>
 
     <!-- Chips de estado: mismo patrón que los filtros rápidos del listado -->
-    <div class="flex items-center gap-1 overflow-x-auto sin-barra w-full lg:w-auto order-last lg:order-none" role="group" aria-label="Filtrar por estado de acceso">
+    <div class="flex flex-wrap items-center gap-1 w-full order-last" role="group" aria-label="Filtrar por estado de acceso">
       <button type="button" (click)="filtroEstado.set(null)"
               [attr.aria-pressed]="filtroEstado() === null"
               class="chip flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap shrink-0"
               [ngClass]="filtroEstado() === null
                 ? 'bg-brand-orange text-white shadow-sm'
                 : 'bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200'">
-        Todos <span class="text-xs opacity-80">{{ items().length }}</span>
+        Todos <span class="text-xs opacity-90">{{ items().length }}</span>
       </button>
       @for (e of estados; track e.id) {
         <button type="button" (click)="filtroEstado.set(filtroEstado() === e.id ? null : e.id)"
@@ -49,7 +49,7 @@
                ese naranja, así que pasa a ser un punto blanco translúcido. -->
           <span class="w-1.5 h-1.5 rounded-full shrink-0"
                 [ngClass]="filtroEstado() === e.id ? 'bg-white/70' : claseFondo(e.tono)" aria-hidden="true"></span>
-          {{ e.label }} <span class="text-xs" [class]="filtroEstado() === e.id ? 'opacity-80' : 'opacity-60'">{{ conteos()[e.id] }}</span>
+          {{ e.label }} <span class="text-xs" [class]="filtroEstado() === e.id ? 'opacity-90' : 'opacity-80'">{{ conteos()[e.id] }}</span>
         </button>
       }
     </div>
@@ -73,7 +73,7 @@
         <input type="checkbox" [checked]="todosVisiblesSeleccionados()" (change)="alternarTodosVisibles()"
                [disabled]="!filtrados().length"
                class="w-[18px] h-[18px] rounded border-slate-300 dark:border-slate-600 text-brand-orange focus:ring-brand-orange/40 cursor-pointer disabled:opacity-40" />
-        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
           <span class="tabular-nums">{{ filtrados().length }}</span> publicador{{ filtrados().length === 1 ? '' : 'es' }}
         </span>
       </label>
@@ -88,7 +88,7 @@
                 [attr.aria-label]="'Copiar el código de congregación ' + codigoSeguridad()">
           <span class="hidden sm:inline text-slate-500 dark:text-slate-400 font-medium">Código de congregación</span>
           <span class="font-mono font-bold tabular-nums tracking-wider text-sm text-slate-900 dark:text-slate-50">{{ codigoSeguridad() }}</span>
-          <svg class="w-4 h-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          <svg class="w-4 h-4 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
         </button>
       }
     </div>
@@ -96,7 +96,7 @@
     <!-- Cabecera de columnas: solo en escritorio, con el mismo tratamiento
          que el <thead> pegajoso del listado de Publicadores. -->
     @if (!cargando() && filtrados().length) {
-      <div class="shrink-0 hidden md:flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-[#1d283d] backdrop-blur-md shadow-sm text-xs font-bold text-slate-400 uppercase tracking-wider"
+      <div class="shrink-0 hidden md:flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-[#1d283d] backdrop-blur-md shadow-sm text-xs font-bold text-slate-600 uppercase tracking-wider"
            aria-hidden="true">
         <span class="w-11 -ml-2 shrink-0"></span>
         <span class="w-[30%] shrink-0">Publicador</span>
@@ -136,7 +136,7 @@
           <p class="text-slate-800 dark:text-slate-100 font-bold mb-1">
             {{ items().length ? 'Ningún publicador coincide' : 'Todavía no hay publicadores' }}
           </p>
-          <p class="text-slate-400 dark:text-gray-500 text-sm mb-5">
+          <p class="text-slate-600 dark:text-slate-400 text-sm mb-5">
             {{ items().length
                 ? 'Prueba con otro grupo o quita el filtro de estado.'
                 : 'Cuando registres publicadores aparecerán aquí para darles acceso a la app.' }}
@@ -180,7 +180,7 @@
                       title="Puede anotar la asistencia del mes en curso desde Mi Reunión">Anota asistencia</span>
               }
             </div>
-            <p class="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">
+            <p class="text-xs text-slate-600 dark:text-slate-400 truncate mt-0.5">
               {{ it.grupo || 'Sin grupo' }}@if (it.privilegio) { · {{ it.privilegio }} }
             </p>
 
@@ -190,7 +190,7 @@
               <span class="insignia" [ngClass]="claseBadge(tonoEstado(it.estado_acceso))">
                 {{ etiquetaEstado(it.estado_acceso) }}
               </span>
-              <p class="text-xs text-slate-400 dark:text-slate-500 mt-1.5">{{ detalleEstado(it) }}</p>
+              <p class="text-xs text-slate-600 dark:text-slate-400 mt-1.5">{{ detalleEstado(it) }}</p>
             </div>
           </div>
 
@@ -199,7 +199,7 @@
             <span class="insignia" [ngClass]="claseBadge(tonoEstado(it.estado_acceso))">
               {{ etiquetaEstado(it.estado_acceso) }}
             </span>
-            <p class="text-xs text-slate-400 dark:text-slate-500 truncate mt-1">{{ detalleEstado(it) }}</p>
+            <p class="text-xs text-slate-600 dark:text-slate-400 truncate mt-1">{{ detalleEstado(it) }}</p>
           </div>
 
           <!-- PIN o correo, según cómo entra esta persona -->
@@ -207,14 +207,14 @@
             <button type="button" (click)="copiar(it.correo, 'Correo')" [disabled]="!it.correo"
                     [attr.aria-label]="it.correo ? 'Copiar correo de ' + it.nombre : null"
                     class="btn-txt hidden sm:flex flex-col justify-center shrink-0 w-32 h-11 px-2 rounded-lg text-left disabled:opacity-60 disabled:pointer-events-none">
-              <span class="text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">Correo</span>
+              <span class="text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400">Correo</span>
               <span class="font-mono text-xs font-semibold text-brand-purple dark:text-violet-400 truncate">{{ it.correo || '—' }}</span>
             </button>
           } @else {
             <button type="button" (click)="copiar(it.codigo_pin, 'PIN')" [disabled]="!it.codigo_pin"
                     [attr.aria-label]="it.codigo_pin ? 'Copiar PIN de ' + it.nombre : null"
                     class="btn-txt hidden sm:flex flex-col justify-center shrink-0 w-32 h-11 px-2 rounded-lg text-left disabled:opacity-60 disabled:pointer-events-none">
-              <span class="text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">PIN</span>
+              <span class="text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400">PIN</span>
               <span class="font-mono text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-300 truncate">{{ it.codigo_pin || '—' }}</span>
             </button>
           }
@@ -351,19 +351,19 @@
         <div class="divide-y divide-slate-200 dark:divide-slate-700 border-t border-slate-200 dark:border-slate-700">
           <button type="button" (click)="copiarEnlace(inv)"
                   class="btn-txt w-full flex items-center gap-3 py-3 text-left">
-            <span class="w-20 shrink-0 text-xs text-slate-400 dark:text-slate-500">Enlace</span>
+            <span class="w-20 shrink-0 text-xs text-slate-600 dark:text-slate-400">Enlace</span>
             <span class="flex-1 min-w-0 text-xs text-slate-600 dark:text-slate-300 truncate">{{ inv.url }}</span>
             <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">Copiar</span>
           </button>
           <button type="button" (click)="copiar(inv.codigo_pin, 'PIN')"
                   class="btn-txt w-full flex items-center gap-3 py-3 text-left">
-            <span class="w-20 shrink-0 text-xs text-slate-400 dark:text-slate-500">PIN</span>
+            <span class="w-20 shrink-0 text-xs text-slate-600 dark:text-slate-400">PIN</span>
             <span class="flex-1 min-w-0 font-mono text-sm font-semibold tabular-nums text-slate-700 dark:text-slate-200 truncate">{{ inv.codigo_pin }}</span>
             <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">Copiar</span>
           </button>
           <button type="button" (click)="copiar(codigoSeguridad(), 'Código de congregación')"
                   class="btn-txt w-full flex items-center gap-3 py-3 text-left">
-            <span class="w-20 shrink-0 text-xs text-slate-400 dark:text-slate-500">Congregación</span>
+            <span class="w-20 shrink-0 text-xs text-slate-600 dark:text-slate-400">Congregación</span>
             <span class="flex-1 min-w-0 font-mono text-sm font-semibold tabular-nums text-slate-700 dark:text-slate-200 truncate">{{ codigoSeguridad() }}</span>
             <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">Copiar</span>
           </button>
@@ -400,7 +400,7 @@
           <div class="flex items-center gap-3 px-6 py-3">
             <div class="min-w-0 flex-1">
               <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ p.invitacion.nombre }}</p>
-              <p class="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">
+              <p class="text-xs text-slate-600 dark:text-slate-400 truncate mt-0.5">
                 {{ p.invitacion.telefono || 'Sin teléfono — elige el contacto en WhatsApp' }}
               </p>
             </div>

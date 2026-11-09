@@ -85,7 +85,7 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
         <button type="button" (click)="cambiarMes(-1)" aria-label="Mes anterior" class="icono-btn">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
         </button>
-        <h2 class="mes-titulo" aria-live="polite">{{ nombreMes() }} <span class="text-slate-500 dark:text-slate-400 font-semibold">{{ anio() }}</span></h2>
+        <h2 class="mes-titulo" aria-live="polite">{{ nombreMes() }} <span class="text-slate-600 dark:text-slate-400 font-semibold">{{ anio() }}</span></h2>
         <button type="button" (click)="cambiarMes(1)" aria-label="Mes siguiente" class="icono-btn">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
         </button>
@@ -306,7 +306,7 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
         @for (g of grupos(); track g.clave) {
           <section class="mt-3 first:mt-1">
             <h3 class="grupo-titulo" [ngClass]="'grupo-titulo--' + g.tono">
-              {{ g.titulo }} <span class="font-semibold opacity-70">{{ g.eventos.length }}</span>
+              {{ g.titulo }} <span class="font-semibold">{{ g.eventos.length }}</span>
             </h3>
             <ul>
               @for (e of g.eventos | slice:0:visiblesGrupo(g); track e.id) {
@@ -542,7 +542,8 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
     :host-context(.dark) .celda--festivo { background: rgb(120 53 15 / 0.22); }
     :host-context(.dark) .celda--festivo:hover { background: rgb(120 53 15 / 0.32); }
     .celda--otro { background: rgb(248 250 252); }
-    .celda--otro .celda-num { color: rgb(148 163 184); }
+    .celda--otro .celda-num { color: rgb(100 116 139); font-weight: 600; }
+    .celda:has(.celda-num--hoy):not(.celda--sel) { background: rgb(255 241 242 / 0.55); }
     .celda--sel, .celda--sel:hover { background: rgb(255 228 230 / 0.7); box-shadow: inset 0 0 0 2px rgb(244 63 94); }
     :host-context(.dark) .celda { border-color: rgb(30 41 59 / 0.8); }
     :host-context(.dark) .celda:hover { background: rgb(136 19 55 / 0.15); }
@@ -562,11 +563,11 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
     @media (min-width: 2560px) { .semanas { --p-alto: 30px; --p-fuente: 16px; --n-alto: 34px; --n-fuente: 18px; --dia-fuente: 16px; } }
     @media (min-width: 3200px) { .semanas { --p-alto: 38px; --p-fuente: 20px; --n-alto: 42px; --n-fuente: 22px; --dia-fuente: 20px; } }
     .dia-cab {
-      padding: 8px 0; text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      background: rgb(248 250 252); padding: 8px 0; text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
       color: rgb(71 85 105);
     }
-    .dia-cab--finde { color: rgb(100 116 139); }
-    :host-context(.dark) .dia-cab { color: rgb(148 163 184); }
+    .dia-cab--finde { color: rgb(71 85 105); }
+    :host-context(.dark) .dia-cab { color: rgb(148 163 184); background: rgb(30 41 59 / 0.35); }
     :host-context(.dark) .dia-cab--finde { color: rgb(100 116 139); }
     @media (min-width: 1920px) { .dia-cab { font-size: 14px; padding: 10px 0; } }
     @media (min-width: 2560px) { .dia-cab { font-size: 16px; padding: 12px 0; } }
@@ -581,7 +582,7 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
     .celda-num--hoy, :host-context(.dark) .celda-num--hoy { background: #e11d48; color: #fff; }
 
     .pildora {
-      display: flex; align-items: center; gap: 4px; height: var(--p-alto, 20px); padding: 0 6px; border-radius: 6px; border: 1px solid;
+      display: flex; align-items: center; gap: 4px; height: var(--p-alto, 20px); padding: 0 6px; border-radius: 6px; border-width: 1px; border-style: solid;
       font-size: var(--p-fuente, 12px); font-weight: 600; line-height: 1; min-width: 0;
     }
     .pildora-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -589,7 +590,7 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
     .pildora--multi { height: auto; min-height: var(--p-alto, 20px); padding-top: 2px; padding-bottom: 2px; line-height: 1.15; }
     .pildora--multi .pildora-txt { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: var(--lineas, 2); }
     .pildora--lista { height: auto; padding: 4px 8px; font-size: 13px; line-height: 1.3; }
-    .ev-hecho { opacity: 0.55; text-decoration: line-through; }
+    .ev-hecho { opacity: 0.75; text-decoration: line-through; }
     .ev-vencido { border-color: rgb(248 113 113) !important; color: rgb(185 28 28) !important; background: rgb(254 242 242) !important; }
     :host-context(.dark) .ev-vencido { border-color: rgb(185 28 28) !important; color: rgb(254 202 202) !important; background: rgb(69 10 10 / 0.6) !important; }
     .mas { font-size: var(--p-fuente, 12px); font-weight: 700; color: rgb(225 29 72); padding-left: 4px; }

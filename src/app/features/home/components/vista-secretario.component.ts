@@ -14,6 +14,7 @@ import { MESES, escalaUI, fechaLocal } from '../services/dashboard.service';
 import { PanelComponent } from './panel.component';
 import { PendientesPanelComponent } from './pendientes-panel.component';
 import { tamanoQueCabe } from './rejilla';
+import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
   selector: 'app-vista-secretario',
@@ -69,14 +70,14 @@ import { tamanoQueCabe } from './rejilla';
     .puntos-caja { overflow: hidden; display: flex; align-items: center; }
     .puntos { display: flex; flex-wrap: wrap; gap: 0.25rem; align-content: center; width: 100%; }
     .pt { width: var(--s, 12px); height: var(--s, 12px); border-radius: 999px; flex-shrink: 0;
-      background: #eceef2;
+      background: var(--color-slate-300, #cbd5e1);
       animation: pt-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(min(var(--i), 150) * 5ms + 150ms); }
     .pt.lleno { background: #3b82f6; box-shadow: none; }
     :host-context(.dark) .pt { background: rgb(71 85 105 / 0.45); }
     :host-context(.dark) .pt.lleno { background: #60a5fa; box-shadow: none; }
     .pt.fijo { display: inline-block; width: 0.625rem; height: 0.625rem; margin-right: 0.375rem; vertical-align: -1px; animation: none; }
     .ley-pts { flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem;
-      font-size: 0.75rem; color: var(--color-gray-500, #6b7280); }
+      font-size: 0.75rem; color: var(--color-gray-600, #4b5563); }
     .ley-pts .mas { margin-left: auto; padding: 0; }
     :host-context(.dark) .ley-pts { color: var(--color-slate-400, #94a3b8); }
     @keyframes pt-in { from { opacity: 0; transform: scale(0.2); } }
@@ -85,6 +86,7 @@ import { tamanoQueCabe } from './rejilla';
 })
 export class VistaSecretarioComponent implements OnInit {
   private ctx = inject(CongregacionContextService);
+  private tema = inject(ThemeService);
   private informesSrv = inject(InformesService);
 
   readonly caja = signal<Medida>({ ancho: 0, alto: 0 });
@@ -148,7 +150,7 @@ export class VistaSecretarioComponent implements OnInit {
 
   readonly grafico = computed(() => {
     const p = this.tendencia.datos();
-    return p && p.length >= 2 ? graficoInformes(p) : null;
+    return p && p.length >= 2 ? graficoInformes(p, this.tema.darkMode()) : null;
   });
 
   ngOnInit() {

@@ -6,7 +6,7 @@
          <!-- Left Section: Back & Title (Clean) -->
          <div class="flex items-center gap-3 min-w-0 xl:shrink-0">
             <button (click)="goBack()"
-               class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200/70 dark:border-orange-700/40 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:border-orange-300 dark:hover:border-orange-600/50 transition-[background-color,border-color,transform] duration-150 active:scale-[0.97] shrink-0 group"
+               class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200/70 dark:border-orange-700/40 text-orange-700 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:border-orange-300 dark:hover:border-orange-600/50 transition-[background-color,border-color,transform] duration-150 active:scale-[0.97] shrink-0 group"
                aria-label="Volver a Publicadores">
                <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
@@ -41,7 +41,7 @@
                      <span *ngIf="b.sinCapitan" class="absolute -top-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-500" aria-hidden="true"></span>
                   </button>
                </div>
-               <span class="self-center ml-2 text-xs font-medium leading-tight text-slate-500 dark:text-slate-400 whitespace-nowrap" aria-hidden="true">
+               <span class="self-center ml-2 text-xs font-medium leading-tight text-slate-600 dark:text-slate-400 whitespace-nowrap" aria-hidden="true">
                   Media {{ equilibrio().media }}
                   <span *ngIf="equilibrio().sinCapitan" class="block text-red-600 dark:text-red-400">{{ equilibrio().sinCapitan }} sin capitán</span>
                </span>
@@ -265,7 +265,7 @@
                      </div>
                      <!-- Sin asignar -->
                      <div *ngIf="unassignedPublishers().length > 0"
-                        class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20">
+                        class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20">
                         <span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shrink-0"></span>
                         <span>{{ unassignedPublishers().length }} sin asignar</span>
                      </div>
@@ -571,7 +571,7 @@
                            </svg>
                         </div>
                         <!-- Decorativo: en columnas estrechas (pantalla completa con muchos grupos) cede su sitio al nombre. -->
-                        <div class="hidden @[19rem]/col:flex w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 items-center justify-center shrink-0">
+                        <div class="hidden @[19rem]/col:flex w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 items-center justify-center shrink-0">
                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                               <circle cx="9" cy="7" r="4"></circle>
@@ -657,10 +657,10 @@
                            (drop)="onDropLeader($event, grupo.id_grupo, rol.clave)">
                            <div class="min-w-0 flex-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
                               <span class="text-xs font-bold"
-                                 [ngClass]="tieneLider(grupo, rol.clave) ? 'text-orange-600 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400'">{{ rol.etiqueta }}</span>
+                                 [ngClass]="tieneLider(grupo, rol.clave) ? 'text-orange-700 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400'">{{ rol.etiqueta }}</span>
                               <ng-container *ngIf="tieneLider(grupo, rol.clave); else vacioLider">
                                  <span class="text-sm font-semibold leading-snug break-words min-w-0"
-                                    [ngClass]="isLeaderModified(grupo.id_grupo, rol.clave) ? 'text-orange-600 dark:text-orange-300' : 'text-slate-800 dark:text-slate-100'">{{ nombreLider(grupo, rol.clave) }}</span>
+                                    [ngClass]="isLeaderModified(grupo.id_grupo, rol.clave) ? 'text-orange-700 dark:text-orange-300' : 'text-slate-800 dark:text-slate-100'">{{ nombreLider(grupo, rol.clave) }}</span>
                                  <span *ngFor="let tag of liderTags(grupo, rol.clave)"
                                     class="inline-flex items-center px-1.5 py-px text-xs font-semibold whitespace-nowrap tracking-tight"
                                     [ngClass]="tag.class">{{ tag.label }}</span>
@@ -931,7 +931,7 @@
          <svg class="w-5 h-5 shrink-0 mt-0.5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 8v4m0 4h.01"/></svg>
          <p class="text-sm font-medium leading-snug text-slate-700 dark:text-slate-200 min-w-0 flex-1">{{ errorMsg() }}</p>
          <button *ngIf="errorRecargar()" (click)="recargarDesdeServidor()" type="button"
-            class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
+            class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
             Recargar
          </button>
          <button (click)="errorMsg.set(null); errorRecargar.set(false)" type="button" aria-label="Cerrar"
@@ -961,11 +961,11 @@
       (keydown)="onCardKeydown($event, p)"
       (click)="togglePublisherSelection(p, $event)">
 
-      <!-- Indicador lateral: pendiente de guardar (naranja) o inactivo (rojo) -->
+      <!-- Punto indicador: pendiente de guardar (naranja) o inactivo (rojo) -->
       <div *ngIf="!isSelected(p.id_publicador) && (isModified(p) || isInactivePublisher(p))"
-         class="absolute left-0 inset-y-1 w-[3px] rounded-full"
+         class="absolute left-0.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full"
          [class.bg-orange-500]="isModified(p)"
-         [class.bg-red-400]="!isModified(p)"
+         [class.bg-red-500]="!isModified(p)"
          [attr.title]="isModified(p) ? 'Cambio sin guardar' : null"></div>
 
       <!-- Asa de arrastre (solo puntero fino); al seleccionar se vuelve una marca.
@@ -986,11 +986,11 @@
          <span class="text-sm font-semibold break-words leading-snug min-w-0"
             [attr.title]="nombreMostrado(p)"
             [ngClass]="isSelected(p.id_publicador) ? 'text-orange-800 dark:text-orange-200'
-               : isInactivePublisher(p) ? 'text-red-600 dark:text-red-300' : 'text-slate-800 dark:text-slate-100'">
+               : isInactivePublisher(p) ? 'text-red-700 dark:text-red-300' : 'text-slate-800 dark:text-slate-100'">
             {{ nombreMostrado(p) }}
          </span>
          <span *ngIf="isInactivePublisher(p)"
-            class="inline-flex items-center px-1.5 py-px text-xs font-bold whitespace-nowrap rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-300">
+            class="inline-flex items-center px-1.5 py-px text-xs font-bold whitespace-nowrap rounded-full bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300">
             Inactivo
          </span>
          <span *ngFor="let tag of getPrivilegioTags(p)"

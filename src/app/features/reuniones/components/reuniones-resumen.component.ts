@@ -445,7 +445,7 @@ const SECCION_LABELS: Record<string, string> = {
                         <!-- Sala Principal -->
                         <div class="sala-block">
                           <span class="sala-letter sala-letter-p"
-                                [style.color]="grupo.color"
+                                [style.color]="textoLegible(grupo.color)"
                                 [style.background]="hexToRgba(grupo.color, 0.12)"
                                 [style.border-color]="hexToRgba(grupo.color, 0.3)"
                                 aria-hidden="true">P</span>
@@ -558,7 +558,7 @@ const SECCION_LABELS: Record<string, string> = {
       --text-2: #3d4966;
       /* #8490a8 se quedaba en 3.2:1 sobre blanco y casi todo lo que lo usa es
          texto de 10-11px (duraciones, fuentes, etiquetas de sala). */
-      --text-3: #6b7590;
+      --text-3: #5b6580;
       --brand: var(--color-brand-purple);
       --brand-2: #7c3aed;
       --radius-card: 16px;
@@ -850,9 +850,11 @@ const SECCION_LABELS: Record<string, string> = {
     /* ──────────────────────────────────────────
        HEADER CARD
     ────────────────────────────────────────── */
+    /* Tarjeta blanca: se distingue del aviso «Tienes una asignación», que es el que lleva el tinte violeta. */
     .header-card {
-      background: rgba(109, 40, 217, 0.026);
-      border: 1px solid rgba(109, 40, 217, 0.16);
+      background: var(--surface);
+      border: 1px solid var(--border-std);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px -4px rgba(15, 23, 42, 0.06);
       border-radius: var(--radius-card);
       padding: 16px 16px 15px;
     }
@@ -862,6 +864,7 @@ const SECCION_LABELS: Record<string, string> = {
     :host-context(.dark) .header-card {
       background: rgba(109, 40, 217, 0.08);
       border-color: rgba(167, 139, 250, 0.18);
+      box-shadow: none;
     }
     @media (min-width: 640px) {
       .header-card { padding: 22px 24px 20px; }
@@ -2019,7 +2022,7 @@ export class ReunionesResumenComponent {
     if (esMia) {
       return {
         background: 'rgba(139, 92, 246, 0.12)',
-        color: '#8b5cf6',
+        color: this.isDarkMode ? '#a78bfa' : '#6d28d9',
         borderColor: 'rgba(139, 92, 246, 0.3)',
       };
     }
@@ -2027,13 +2030,18 @@ export class ReunionesResumenComponent {
     if (esNeutral) {
       return this.isDarkMode
         ? { background: '#1e293b', color: '#94a3b8', borderColor: '#334155' }
-        : { background: '#f1f5f9', color: '#64748b', borderColor: '#cbd5e1' };
+        : { background: '#f1f5f9', color: '#475569', borderColor: '#cbd5e1' };
     }
     return {
       background: this.hexToRgba(color, 0.1),
-      color,
+      color: this.textoLegible(color),
       borderColor: this.hexToRgba(color, 0.3),
     };
+  }
+
+  /** El color de la sección sirve para rellenos; como texto en tema claro se oscurece hasta superar 4,5:1. */
+  textoLegible(color: string): string {
+    return this.isDarkMode ? color : `color-mix(in oklab, ${color} 70%, black)`;
   }
 
   hexToRgba(hex: string, alpha: number): string {

@@ -536,14 +536,14 @@ function normalizarTexto(s: string): string {
                  forma de entrar a la pantalla. Todo vive dentro de una sola
                  tarjeta para que no se vea como piezas sueltas en el centro. -->
             <div class="flex-1 flex items-center justify-center p-6 overflow-y-auto simple-scrollbar">
-              <div class="w-full max-w-sm flex flex-col items-center text-center gap-1.5">
+              <div class="w-full max-w-md flex flex-col items-center text-center gap-1.5">
 
                 <div class="w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center mb-2.5">
                   <svg class="w-6 h-6 text-violet-500 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 </div>
 
-                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">Ninguna programación abierta</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-[15rem]">
+                <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Ninguna programación abierta</h3>
+                <p class="text-sm text-slate-600 dark:text-slate-400 max-w-[18rem]">
                   @if (mesesDisponibles().length > 0) {
                     Elige un mes para verlo y editarlo.
                   } @else if (hasEditPermission()) {
@@ -569,7 +569,7 @@ function normalizarTexto(s: string): string {
                         [attr.data-mes]="m.mes"
                         (click)="cargarMes(m.ano, m.mes)"
                         [disabled]="estado() === 'loading'"
-                        class="w-full flex items-center gap-2.5 px-3.5 h-11 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
+                        class="w-full flex items-center gap-2.5 px-3.5 h-11 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-800 dark:text-slate-200 text-sm font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
                         <span class="min-w-0 truncate text-left flex-1">{{ mesLabel(m) }}</span>
                         <span class="shrink-0 px-2 h-5 flex items-center rounded-full text-xs font-bold" [class]="badgeEstadoMesClass(m)">{{ etiquetaEstadoMes(m) }}</span>
                         <svg class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
@@ -853,7 +853,7 @@ function normalizarTexto(s: string): string {
                                             (click)="onCambiarPublicador(fecha.fecha, puesto, null)"
                                             title="Quitar asignación"
                                             aria-label="Quitar asignación"
-                                            class="shrink-0 px-1.5 py-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-[opacity,color] duration-150 text-base leading-none">
+                                            class="shrink-0 px-1.5 py-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-[opacity,color] duration-150 text-base leading-none">
                                             ×
                                           </button>
                                         }

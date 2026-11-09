@@ -90,7 +90,7 @@ let SIGUIENTE_ID = 0;
       container: panel / inline-size;
       height: 100%; display: flex; flex-direction: column; gap: var(--panel-gap, 0.875rem);
       padding: var(--panel-pad, 1.125rem 1.25rem); border-radius: 0.75rem; overflow: hidden;
-      background: var(--panel-bg, white); border: 1px solid rgb(17 24 39 / 0.07); }
+      background: var(--panel-bg, white); border: 1px solid rgb(17 24 39 / 0.12); }
     :host-context(.dark) .panel { --c-suave: rgb(139 92 246 / 0.14); --c-texto: #c4b5fd;
       background: rgb(15 23 42 / 0.72); border-color: rgb(148 163 184 / 0.14); }
     .panel[data-color="naranja"] { --c: #f97316; --c-suave: #fff7ed; --c-texto: #c2410c; }

@@ -197,7 +197,7 @@ export interface PickerOption {
     .sp-trigger-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sp-trigger-label--value { color: #1e293b; font-weight: 500; }
     :host-context(.dark) .sp-trigger-label--value { color: #e2e8f0; }
-    .sp-trigger-label--placeholder { color: #94a3b8; }
+    .sp-trigger-label--placeholder { color: #64748b; }
     :host-context(.dark) .sp-trigger-label--placeholder { color: #64748b; }
 
     .sp-clear-btn { width: 0.875rem; height: 0.875rem; flex-shrink: 0; color: #94a3b8; cursor: pointer; transition: color 150ms; }

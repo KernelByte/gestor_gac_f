@@ -316,7 +316,8 @@ const ORDEN_PRIORIDAD: Record<Tarea['prioridad'], number> = { alta: 0, media: 1,
       color: rgb(55 65 81);
     }
     .grupo-titulo--alerta { color: rgb(185 28 28); }
-    .grupo-num { font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: rgb(156 163 175); font-variant-numeric: tabular-nums; }
+    .grupo-num { font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: rgb(75 85 99); font-variant-numeric: tabular-nums; }
+    :host-context(.dark) .grupo-num { color: rgb(148 163 184); }
     :host-context(.dark) .grupo-titulo { color: rgb(203 213 225); }
     :host-context(.dark) .grupo-titulo--alerta { color: rgb(252 165 165); }
 
@@ -396,7 +397,7 @@ const ORDEN_PRIORIDAD: Record<Tarea['prioridad'], number> = { alta: 0, media: 1,
     :host-context(.dark) .prio-alta { color: rgb(252 165 165); background: rgb(127 29 29 / 0.35); }
 
     .fila-chevron {
-      width: 20px; height: 20px; margin: 20px 0 0 8px; color: rgb(156 163 175); opacity: 0.7;
+      width: 20px; height: 20px; margin: 20px 0 0 8px; color: rgb(100 116 139); opacity: 0.8;
       transform: translateX(0); transition: opacity 160ms ease, transform 200ms var(--ease);
     }
     @media (prefers-reduced-motion: reduce) {

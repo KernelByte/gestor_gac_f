@@ -83,13 +83,14 @@ const FILA_PX = 52;
     .lectura { display: flex; align-items: center; justify-content: center; gap: clamp(1rem, 4cqw, 2.5rem); container-type: size; }
     .anillo { flex: 0 0 auto; width: min(48cqw, 92cqh, 15rem); height: auto; aspect-ratio: 1; transform: rotate(-90deg); }
     .anillo text { transform: rotate(90deg); transform-origin: 60px 60px; text-anchor: middle; }
-    .fondo { fill: none; stroke: var(--color-gray-100, #f3f4f6); stroke-width: 11; }
+    .fondo { fill: none; stroke: var(--color-gray-200, #e5e7eb); stroke-width: 11; }
     .valor { fill: none; stroke: url(#anillo-g); stroke-width: 11; stroke-linecap: round;
       animation: anillo-in 1.3s cubic-bezier(0.22, 1, 0.36, 1) both 200ms; }
     :host-context(.dark) .fondo { stroke: rgb(51 65 85 / 0.6); }
     .n { font-family: var(--font-display, 'Urbanist', sans-serif); font-weight: 700; font-size: 30px; fill: var(--color-gray-900, #111827); }
-    .pc { font-size: 15px; fill: var(--color-gray-400, #9ca3af); }
-    .l { font-size: 10.5px; font-weight: 600; fill: var(--color-gray-500, #6b7280); }
+    .pc { font-size: 15px; fill: var(--color-gray-600, #4b5563); }
+    :host-context(.dark) .pc { fill: var(--color-slate-400, #94a3b8); }
+    .l { font-size: 12px; font-weight: 600; fill: var(--color-gray-600, #4b5563); }
     :host-context(.dark) .n { fill: var(--color-slate-50, #f8fafc); }
     :host-context(.dark) .l { fill: var(--color-slate-400, #94a3b8); }
     @keyframes anillo-in { from { stroke-dasharray: 0 100; } }

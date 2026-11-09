@@ -155,7 +155,7 @@ interface CalendarWeek {
               </div>
               <div>
                 <h3 class="text-base lg:text-lg font-bold text-slate-900 dark:text-white tracking-tight">Registro de Asistencia</h3>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ mesLabel() }} {{ selectedYear() }}</p>
+                <p class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mt-0.5">{{ mesLabel() }} {{ selectedYear() }}</p>
               </div>
             </div>
 
@@ -167,7 +167,7 @@ interface CalendarWeek {
                         [attr.aria-selected]="selectedWeek() === week">
                   <span class="text-xs font-bold leading-none">S{{ week }}</span>
                   @if (formatChipDates(week)) {
-                    <span class="text-xs font-bold tabular-nums leading-none opacity-60 whitespace-nowrap">{{ formatChipDates(week) }}</span>
+                    <span class="text-xs font-bold tabular-nums leading-none opacity-90 whitespace-nowrap">{{ formatChipDates(week) }}</span>
                   }
                   @if (weekHasData(week)) { <span class="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500"></span> }
                 </button>
@@ -196,7 +196,7 @@ interface CalendarWeek {
                  [class.flex]="activeMeetingSection() === 'midweek'"
                  [class.hidden]="activeMeetingSection() !== 'midweek'">
 
-              <div class="flex items-start justify-between gap-2">
+              <div class="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-brand-purple shrink-0"></div>
@@ -231,12 +231,12 @@ interface CalendarWeek {
               @if (canEditMidweekWeek()) {
                 <div class="flex flex-col gap-2">
                   <div>
-                    <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
+                    <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
                     <input type="number" min="0" inputmode="numeric" [ngModel]="currentMidweekPres()" (ngModelChange)="updateMidweekWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
                   </div>
                   @if (congregacionConfig()?.usa_zoom !== 0) {
                     <div>
-                      <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
+                      <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
                       <input type="number" min="0" inputmode="numeric" [ngModel]="currentMidweekZoom()" (ngModelChange)="updateMidweekZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
                     </div>
                   }
@@ -244,14 +244,14 @@ interface CalendarWeek {
               } @else {
                 <div class="flex flex-col items-center justify-center gap-1.5 py-6 text-center">
                   <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/><line x1="14" y1="14" x2="10" y2="18"/></svg>
-                  <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sin reunión entre semana</p>
-                  <p class="text-xs font-bold text-slate-400/70 dark:text-slate-500">Esta semana no tiene reunión de este tipo</p>
+                  <p class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Sin reunión entre semana</p>
+                  <p class="text-xs font-bold text-slate-600 dark:text-slate-400">Esta semana no tiene reunión de este tipo</p>
                 </div>
               }
 
               @if (canEditMidweekWeek() && currentMidweekPres() !== null) {
                 <div class="flex items-center justify-between pt-2 mt-auto border-t border-brand-purple/10">
-                  <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total</span>
+                  <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Total</span>
                   <span class="text-sm font-bold text-brand-purple tabular-nums">{{ currentMidweekTotal() }}</span>
                 </div>
               }
@@ -265,7 +265,7 @@ interface CalendarWeek {
                  [class.flex]="activeMeetingSection() === 'weekend'"
                  [class.hidden]="activeMeetingSection() !== 'weekend'">
 
-              <div class="flex items-start justify-between gap-2">
+              <div class="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div>
@@ -284,7 +284,7 @@ interface CalendarWeek {
                       <span class="text-xs font-bold px-2 py-0.5 rounded-lg bg-emerald-500 text-white shrink-0">HOY</span>
                     }
                     @case ('next') {
-                      <span class="text-xs font-bold px-2 py-0.5 rounded-lg border border-orange-500/40 bg-orange-500/10 text-orange-500 shrink-0">PRÓXIMA</span>
+                      <span class="text-xs font-bold px-2 py-0.5 rounded-lg border border-orange-500/40 bg-orange-500/10 text-orange-700 dark:text-orange-400 shrink-0">PRÓXIMA</span>
                     }
                   }
                 } @else if (weekendFallbackBadge(); as badge) {
@@ -300,12 +300,12 @@ interface CalendarWeek {
               @if (canEditWeekendWeek()) {
                 <div class="flex flex-col gap-2">
                   <div>
-                    <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
+                    <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
                     <input type="number" min="0" inputmode="numeric" [ngModel]="currentWeekendPres()" (ngModelChange)="updateWeekendWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
                   </div>
                   @if (congregacionConfig()?.usa_zoom !== 0) {
                     <div>
-                      <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
+                      <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
                       <input type="number" min="0" inputmode="numeric" [ngModel]="currentWeekendZoom()" (ngModelChange)="updateWeekendZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
                     </div>
                   }
@@ -313,15 +313,15 @@ interface CalendarWeek {
               } @else {
                 <div class="flex flex-col items-center justify-center gap-1.5 py-6 text-center">
                   <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/><line x1="14" y1="14" x2="10" y2="18"/></svg>
-                  <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sin reunión fin de semana</p>
-                  <p class="text-xs font-bold text-slate-400/70 dark:text-slate-500">Esta semana no tiene reunión de este tipo</p>
+                  <p class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Sin reunión fin de semana</p>
+                  <p class="text-xs font-bold text-slate-600 dark:text-slate-400">Esta semana no tiene reunión de este tipo</p>
                 </div>
               }
 
               @if (canEditWeekendWeek() && currentWeekendPres() !== null) {
                 <div class="flex items-center justify-between pt-2 mt-auto border-t border-orange-500/10">
-                  <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total</span>
-                  <span class="text-sm font-bold text-orange-500 tabular-nums">{{ currentWeekendTotal() }}</span>
+                  <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Total</span>
+                  <span class="text-sm font-bold text-orange-700 dark:text-orange-400 tabular-nums">{{ currentWeekendTotal() }}</span>
                 </div>
               }
             </div>
@@ -338,7 +338,7 @@ interface CalendarWeek {
             </div>
             <div>
               <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Resumen Mensual</h3>
-              <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ mesLabel() }} {{ selectedYear() }}</p>
+              <p class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mt-0.5">{{ mesLabel() }} {{ selectedYear() }}</p>
             </div>
           </div>
 
@@ -346,19 +346,19 @@ interface CalendarWeek {
             @for (week of weeksArray(); track week; let i = $index) {
               <div class="flex items-center justify-between px-3 py-2 rounded-xl stagger-row"
                    [style.--row-index]="i"
-                   [ngClass]="weekHasData(week) ? 'bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800/40 text-slate-400'">
+                   [ngClass]="weekHasData(week) ? 'bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800/40 text-slate-500'">
                 <span class="text-xs font-bold uppercase tracking-widest">Semana {{ week }}</span>
                 <div class="flex items-center gap-1.5 tabular-nums text-xs font-bold">
                   @if (weekData(week).midweek) {
                     <span class="text-brand-purple">{{ weekData(week).midweek }}</span>
                   } @else {
-                    <span class="text-slate-300 dark:text-slate-700">·</span>
+                    <span class="text-slate-400 dark:text-slate-600">·</span>
                   }
-                  <span class="text-slate-300 dark:text-slate-700">/</span>
+                  <span class="text-slate-400 dark:text-slate-600">/</span>
                   @if (weekData(week).weekend) {
-                    <span class="text-orange-500">{{ weekData(week).weekend }}</span>
+                    <span class="text-orange-700 dark:text-orange-400">{{ weekData(week).weekend }}</span>
                   } @else {
-                    <span class="text-slate-300 dark:text-slate-700">·</span>
+                    <span class="text-slate-400 dark:text-slate-600">·</span>
                   }
                   @if (weekHasData(week)) {
                     <svg class="w-3.5 h-3.5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -376,7 +376,7 @@ interface CalendarWeek {
               <p class="text-lg font-bold text-slate-900 dark:text-white tabular-nums leading-none">{{ midweekMonthTotal() }}</p>
             </div>
             <div class="bg-orange-500/5 dark:bg-orange-500/10 rounded-xl p-2.5 border border-orange-500/10 text-center">
-              <p class="text-xs font-bold text-orange-500 uppercase tracking-widest mb-1">F. Semana</p>
+              <p class="text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-widest mb-1">F. Semana</p>
               <p class="text-lg font-bold text-slate-900 dark:text-white tabular-nums leading-none">{{ weekendMonthTotal() }}</p>
             </div>
           </div>
@@ -390,11 +390,11 @@ interface CalendarWeek {
             <div>
               <h4 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Desglose Anual</h4>
               <div class="flex items-center gap-1 mt-0.5">
-                <button (click)="prevResumenYear()" class="press-btn p-1 -ml-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-400">
+                <button (click)="prevResumenYear()" class="press-btn p-1 -ml-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-500">
                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
                 </button>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest tabular-nums">Año {{ resumenServiceYear() }}</p>
-                <button (click)="nextResumenYear()" class="press-btn p-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-400">
+                <p class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest tabular-nums">Año {{ resumenServiceYear() }}</p>
+                <button (click)="nextResumenYear()" class="press-btn p-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-500">
                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
                 </button>
               </div>
@@ -404,11 +404,11 @@ interface CalendarWeek {
 
           <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
             <table class="w-full text-xs font-bold">
-              <thead class="bg-slate-50 dark:bg-slate-950 sticky top-0 z-10 text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+              <thead class="bg-slate-50 dark:bg-slate-950 sticky top-0 z-10 text-slate-600 dark:text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                 <tr>
                   <th class="px-4 py-2.5 text-left">Mes</th>
                   <th class="px-3 py-2.5 text-center text-brand-purple">M. Sem.</th>
-                  <th class="px-3 py-2.5 text-center text-orange-500">F. Sem.</th>
+                  <th class="px-3 py-2.5 text-center text-orange-700 dark:text-orange-400">F. Sem.</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -418,7 +418,7 @@ interface CalendarWeek {
                       [class.bg-brand-purple/5]="+row.mes === +selectedMonth()">
                     <td class="px-4 py-2 text-slate-700 dark:text-slate-200">{{ row.nombre_mes }}</td>
                     <td class="px-3 py-2 text-center text-sm tabular-nums text-brand-purple">{{ row.midweek_promedio ?? '–' }}</td>
-                    <td class="px-3 py-2 text-center text-sm tabular-nums text-orange-500">{{ row.weekend_promedio ?? '–' }}</td>
+                    <td class="px-3 py-2 text-center text-sm tabular-nums text-orange-700 dark:text-orange-400">{{ row.weekend_promedio ?? '–' }}</td>
                   </tr>
                 }
                 @empty {
@@ -430,11 +430,11 @@ interface CalendarWeek {
 
           @if (resumenAnualHistorico().length > 0) {
             <div class="shrink-0 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 px-4 py-2.5 flex items-center justify-between text-xs font-bold">
-              <span class="text-slate-400 uppercase tracking-widest">Promedio anual</span>
+              <span class="text-slate-600 dark:text-slate-400 uppercase tracking-widest">Promedio anual</span>
               <div class="flex items-center gap-3 tabular-nums text-sm">
                 <span class="text-brand-purple">{{ midweekPromedioAnual() ?? '–' }}</span>
-                <span class="text-slate-300 dark:text-slate-700">/</span>
-                <span class="text-orange-500">{{ weekendPromedioAnual() ?? '–' }}</span>
+                <span class="text-slate-400 dark:text-slate-600">/</span>
+                <span class="text-orange-700 dark:text-orange-400">{{ weekendPromedioAnual() ?? '–' }}</span>
               </div>
             </div>
           }
