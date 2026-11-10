@@ -766,7 +766,7 @@ export class AgendaCalendarioComponent implements OnInit {
   }
   /** La agenda personal no tiene informes, bautismos ni traslados: son trabajo del secretario. */
   readonly tipos: TipoEvento[] = (this.modo === 'exhibidor'
-    ? ['exhibidor']
+    ? ['exhibidor', 'reunion_ancianos']
     : this.modo === 'personal'
       ? ['tarea', 'recordatorio', 'visita', 'reunion_ancianos', 'exhibidor']
       : ['tarea', 'recordatorio', 'informes', 'visita', 'reunion_ancianos', 'bautismo', 'transferencia', 'exhibidor'] as TipoEvento[])

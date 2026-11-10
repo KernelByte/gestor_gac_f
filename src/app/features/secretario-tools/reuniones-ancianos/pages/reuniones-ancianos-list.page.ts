@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, OnInit, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal, untracked } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { ReunionAncianosService } from '../../services/reunion-ancianos.service';
@@ -59,6 +59,7 @@ interface LineaPrograma {
 @Component({
   selector: 'app-reuniones-ancianos-list',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgTemplateOutlet, RouterLink, EmptyStateComponent, LucideAngularModule, ParticipacionPanelComponent, ModalComponent, CategoriasModalComponent],
   template: `
   <div class="ra @container flex-1 min-h-[30rem] w-full flex flex-col gap-3 @3xl:gap-4">
@@ -85,7 +86,9 @@ interface LineaPrograma {
     }
 
     @if (gestor && seccion() === 'participacion') {
-      <app-participacion-panel class="block flex-1 min-h-0 overflow-y-auto lista-interna" [idCongregacion]="idCongregacionAdmin()" />
+      @defer {
+        <app-participacion-panel class="block flex-1 min-h-0 overflow-y-auto lista-interna" [idCongregacion]="idCongregacionAdmin()" />
+      }
     } @else {
     @if (cargando()) {
       <!-- Esqueleto con la silueta de la pantalla ya cargada -->
@@ -384,7 +387,9 @@ interface LineaPrograma {
       </button>
     </div>
   </app-modal>
-  <app-categorias-modal [open]="categoriasAbierto()" (openChange)="categoriasAbierto.set($event)" [idCongregacion]="idCongregacionAdmin()" />
+  @defer (when categoriasAbierto()) {
+    <app-categorias-modal [open]="categoriasAbierto()" (openChange)="categoriasAbierto.set($event)" [idCongregacion]="idCongregacionAdmin()" />
+  }
 
   <!-- Fila de reunión (lista lateral): al tocarla, su detalle se ve a la izquierda -->
   <ng-template #fila let-r let-activa="activa">

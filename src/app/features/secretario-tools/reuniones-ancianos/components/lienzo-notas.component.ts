@@ -275,13 +275,19 @@ export class LienzoNotasComponent implements OnDestroy {
   textoNota = signal('');
   estadoNota = signal<'' | 'guardando' | 'guardado' | 'sin-conexion'>('');
   private servidor = '';
+  /** `actualizado_en` de ese texto: una lectura que salió antes de guardar y llega después trae uno más viejo. */
+  private versionServidor = '';
   private enVuelo = false;
   private tNota: ReturnType<typeof setTimeout> | null = null;
 
   /** Llegó el estado de la reunión: si la nota cambió en el servidor, se incorpora. */
   private recibirNota() {
-    const remoto = this.nota()?.texto ?? '';
+    const n = this.nota();
+    const remoto = n?.texto ?? '';
     if (this.enVuelo || remoto === this.servidor) return;
+    // Viejo: tomarlo como «cambio de otro» desharía lo último que se guardó.
+    if (n && this.versionServidor && n.actualizado_en < this.versionServidor) return;
+    this.versionServidor = n?.actualizado_en ?? '';
     const local = this.textoNota();
     const nuevo = local === this.servidor ? remoto : fusionar(this.servidor, remoto, local);
     this.servidor = remoto;
@@ -313,6 +319,7 @@ export class LienzoNotasComponent implements OnDestroy {
     try {
       const p = await firstValueFrom(this.svc.notaCompartida(this.idReunion, this.idParte, this.servidor, enviado));
       this.servidor = p.texto;
+      this.versionServidor = p.actualizado_en ?? '';
       this.todos.update(l => (l.some(x => x.id_punto === p.id_punto) ? l.map(x => (x.id_punto === p.id_punto ? p : x)) : [...l, p]));
       // Lo que se siguió escribiendo mientras tanto se junta con lo que devolvió el servidor.
       const local = this.textoNota();

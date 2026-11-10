@@ -74,7 +74,8 @@ export function esSecretarioOAdmin(s: AuthStore): boolean {
  * Mi Agenda (/agenda): calendario y tareas en una sola pantalla. Va fuera de Administración.
  * - 'secretaria': Secretario y Administrador (pendientes de la secretaría).
  * - 'personal': el coordinador y los ancianos con cuenta (sus recordatorios y reuniones).
- * - 'exhibidor': quien participa en exhibidores; calendario de solo lectura con SUS salidas
+ * - 'exhibidor': quien participa en exhibidores o fue convocado a una reunión (p. ej. un siervo
+ *   ministerial); calendario de solo lectura con SUS salidas y reuniones
  *   (y la pestaña Tareas, si tiene acceso). No necesita ningún permiso de Exhibidores.
  * - 'tareas': cualquiera con acceso a Tareas; solo ve la lista de sus tareas.
  * El backend vuelve a comprobarlo en /secretario/agenda, /agenda y /tareas.
@@ -84,7 +85,7 @@ export type AccesoAgenda = 'secretaria' | 'personal' | 'exhibidor' | 'tareas';
 export function modoAgenda(s: AuthStore): AccesoAgenda | null {
   if (esSecretarioOAdmin(s)) return 'secretaria';
   if (esCoordinador(s) || !!s.user()?.es_anciano) return 'personal';
-  if (s.user()?.participa_exhibidores) return 'exhibidor';
+  if (s.user()?.participa_exhibidores || s.user()?.participa_reuniones) return 'exhibidor';
   if (s.hasPermission('tareas.ver')) return 'tareas';
   return null;
 }

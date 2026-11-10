@@ -8,6 +8,10 @@ export type Conexion = 'conectando' | 'en-vivo' | 'sondeo' | 'sin-conexion';
 
 const SONDEO_MS = 5000;
 const REINTENTO_SSE_MS = 30_000;
+/** Si el stream ya estaba abierto y se corta (el servidor lo renueva a los 30 min, cambio de red), se reabre enseguida. */
+const REABRIR_SSE_MS = 2_000;
+/** Con el stream abierto, una relectura de seguridad: una conexión puede morir en silencio tras un proxy. */
+const SEGURIDAD_MS = 30_000;
 
 /**
  * El estado compartido de una reunión en vivo, para la pantalla que la sigue.
@@ -44,10 +48,17 @@ export class ReunionVivoStore implements OnDestroy {
   private sondeo: ReturnType<typeof setInterval> | null = null;
   private reintento: ReturnType<typeof setTimeout> | null = null;
   private fuente: EventSource | null = null;
+  private seguridad: ReturnType<typeof setInterval> | null = null;
+  /** Hora del servidor de la última respuesta aplicada: una respuesta más vieja que llegue tarde no la pisa. */
+  private ultimaHora = 0;
   private pidiendo = false;
   private otraVez = false;
   private destruido = false;
   private alVolver = () => { if (document.visibilityState === 'visible') this.refrescar(); };
+  private alReconectar = () => {
+    void this.refrescar();
+    if (!this.fuente) this.conectar();
+  };
 
   parteActual = computed<ParteVivo | null>(() => {
     const d = this.datos();
@@ -61,6 +72,7 @@ export class ReunionVivoStore implements OnDestroy {
       this.reloj = setInterval(() => this.zone.run(() => this.tic.set(Date.now())), 250);
     });
     document.addEventListener('visibilitychange', this.alVolver);
+    window.addEventListener('online', this.alReconectar);
     await this.refrescar();
     if (!this.error()) this.conectar();
   }
@@ -69,9 +81,11 @@ export class ReunionVivoStore implements OnDestroy {
     this.destruido = true;
     if (this.reloj) clearInterval(this.reloj);
     this.pararSondeo();
+    this.pararSeguridad();
     if (this.reintento) clearTimeout(this.reintento);
     this.fuente?.close();
     document.removeEventListener('visibilitychange', this.alVolver);
+    window.removeEventListener('online', this.alReconectar);
   }
 
   /** Segundos reales de una parte, contando el tramo que corre ahora. */
@@ -92,6 +106,10 @@ export class ReunionVivoStore implements OnDestroy {
   // ── Datos ────────────────────────────────────────────────────────────────
 
   aplicar(d: VivoOut) {
+    // Una lectura que salió antes de un cambio puede llegar después de su respuesta: se descarta.
+    const hora = Date.parse(d.ahora);
+    if (hora < this.ultimaHora) return;
+    this.ultimaHora = hora;
     // Desfase = hora del servidor menos la del equipo, al recibir la respuesta.
     this.desfase = Date.parse(d.ahora) - Date.now();
     this.tic.set(Date.now());
@@ -105,6 +123,8 @@ export class ReunionVivoStore implements OnDestroy {
     this.pidiendo = true;
     try {
       this.aplicar(await firstValueFrom(this.svc.vivo(this.id)));
+      // Una lectura que sale bien borra el «sin conexión»: el stream, si sigue abierto, o el sondeo.
+      if (this.conexion() === 'sin-conexion') this.conexion.set(this.fuente ? 'en-vivo' : 'sondeo');
     } catch (e) {
       const err = e as HttpErrorResponse;
       if (err.status === 404 || err.status === 403) this.error.set('no-encontrada');
@@ -146,7 +166,8 @@ export class ReunionVivoStore implements OnDestroy {
 
   private conectar() {
     if (this.destruido) return;
-    this.conexion.set('conectando');
+    if (this.reintento) { clearTimeout(this.reintento); this.reintento = null; }
+    if (this.conexion() !== 'en-vivo') this.conexion.set('conectando');
     this.svc.ticketStream().subscribe({
       next: ({ ticket }) => this.abrir(ticket),
       // Sin ticket (sesión con PIN, o Redis caído): se sondea.
@@ -160,24 +181,39 @@ export class ReunionVivoStore implements OnDestroy {
     this.zone.runOutsideAngular(() => {
       const fuente = new EventSource(this.svc.urlStream(this.id, ticket));
       this.fuente = fuente;
+      let abierta = false;
       fuente.addEventListener('listo', () => this.zone.run(() => {
+        if (this.fuente !== fuente) return;
+        abierta = true;
         this.pararSondeo();
         this.conexion.set('en-vivo');
         void this.refrescar();
+        if (!this.seguridad) {
+          this.zone.runOutsideAngular(() => {
+            this.seguridad = setInterval(() => this.zone.run(() => {
+              if (document.visibilityState === 'visible') void this.refrescar();
+            }), SEGURIDAD_MS);
+          });
+        }
       }));
-      fuente.addEventListener('cambio', () => this.zone.run(() => void this.refrescar()));
+      fuente.addEventListener('cambio', () => this.zone.run(() => {
+        if (this.fuente === fuente) void this.refrescar();
+      }));
       fuente.onerror = () => this.zone.run(() => {
         // El ticket es de un solo uso: no se deja que EventSource reintente la misma URL.
         fuente.close();
-        if (this.fuente === fuente) this.fuente = null;
-        this.modoSondeo();
+        if (this.fuente !== fuente) return;
+        this.fuente = null;
+        // Se cortó uno que funcionaba: se reabre enseguida; si nunca abrió, se espera más.
+        this.modoSondeo(abierta ? REABRIR_SSE_MS : REINTENTO_SSE_MS);
       });
     });
   }
 
-  private modoSondeo() {
+  private modoSondeo(reintentoMs = REINTENTO_SSE_MS) {
     if (this.destruido) return;
-    this.conexion.set('sondeo');
+    this.pararSeguridad();
+    if (this.conexion() !== 'sin-conexion') this.conexion.set('sondeo');
     if (!this.sondeo) {
       this.zone.runOutsideAngular(() => {
         this.sondeo = setInterval(() => this.zone.run(() => {
@@ -186,7 +222,11 @@ export class ReunionVivoStore implements OnDestroy {
       });
     }
     if (this.reintento) clearTimeout(this.reintento);
-    this.reintento = setTimeout(() => this.conectar(), REINTENTO_SSE_MS);
+    this.reintento = setTimeout(() => this.conectar(), reintentoMs);
+  }
+
+  private pararSeguridad() {
+    if (this.seguridad) { clearInterval(this.seguridad); this.seguridad = null; }
   }
 
   private pararSondeo() {

@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { LucideAngularModule } from '../../../../shared/icons';
 import { EstadoReunion } from '../../models/reunion-ancianos.model';
 
@@ -14,7 +14,8 @@ const PASOS: Paso[] = [
 /**
  * En qué momento va la reunión: Programar → Convocada → (En curso) → Realizada.
  * «En curso» solo existe si la congregación usa la reunión en vivo (o ya está en curso).
- * Una línea, sin acciones: orienta, no reemplaza al botón principal.
+ * Orienta, no reemplaza al botón principal. Una sola excepción: con `puedeIniciar`, el paso
+ * «En curso» es un botón que abre la reunión en vivo (un atajo a lo que viene a continuación).
  * En el teléfono se resume en «Paso 2 de 4 · Preparar».
  */
 @Component({
@@ -28,12 +29,19 @@ const PASOS: Paso[] = [
     <ol class="pasos" aria-label="Momento de la reunión">
       @for (p of pasos(); track p.clave; let i = $index) {
         <li class="paso est-reunion" [attr.data-estado]="p.clave" [attr.data-fase]="i < actual() ? 'hecho' : i === actual() ? 'actual' : 'futuro'"
-            [attr.aria-current]="i === actual() ? 'step' : null" [title]="p.ayuda">
-          <span class="punto" aria-hidden="true">
-            @if (i < actual()) { <lucide-icon name="check" [size]="12"></lucide-icon> } @else { {{ i + 1 }} }
-          </span>
-          <span class="txt">{{ p.etiqueta }}</span>
-          @if (i < actual()) { <span class="sr-only">(hecho)</span> }
+            [attr.aria-current]="i === actual() ? 'step' : null" [title]="p.clave === 'en_curso' && puedeIniciar() ? 'Abrir la reunión en vivo' : p.ayuda">
+          @if (p.clave === 'en_curso' && puedeIniciar()) {
+            <button type="button" class="paso-accion focus-ring" (click)="iniciarEnVivo.emit()" aria-label="Iniciar la reunión en vivo">
+              <span class="punto" aria-hidden="true"><lucide-icon name="play" [size]="11"></lucide-icon></span>
+              <span class="txt">{{ p.etiqueta }}</span>
+            </button>
+          } @else {
+            <span class="punto" aria-hidden="true">
+              @if (i < actual()) { <lucide-icon name="check" [size]="12"></lucide-icon> } @else { {{ i + 1 }} }
+            </span>
+            <span class="txt">{{ p.etiqueta }}</span>
+            @if (i < actual()) { <span class="sr-only">(hecho)</span> }
+          }
         </li>
       }
     </ol>
@@ -47,6 +55,13 @@ const PASOS: Paso[] = [
     :host-context(.dark) .resumen { color: var(--color-slate-400); }
     @container (min-width: 26rem) { .pasos { display: flex; } .resumen { display: none; } }
     .paso { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+    .paso-accion {
+      display: inline-flex; align-items: center; gap: 0.375rem; font: inherit; color: var(--est);
+      padding: 0.125rem 0.5rem 0.125rem 0.125rem; margin: -0.125rem 0; border-radius: 9999px; cursor: pointer;
+      transition: background-color 150ms ease-out;
+    }
+    .paso-accion:hover { background: color-mix(in oklab, var(--est) 12%, transparent); }
+    .paso-accion .punto { border: 1px solid currentColor; }
     .paso + .paso::before {
       content: ''; width: 1.25rem; height: 1px; margin-right: 0.25rem; background: var(--color-slate-300);
     }
@@ -72,6 +87,9 @@ export class ReunionPasosComponent {
   estado = input.required<EstadoReunion | 'en_curso' | null>();
   /** La congregación usa la reunión en vivo. */
   conEnVivo = input(false);
+  /** «En curso» se vuelve un botón que abre la reunión en vivo (solo quien la puede iniciar). */
+  puedeIniciar = input(false);
+  iniciarEnVivo = output<void>();
   pasos = computed(() => this.conEnVivo() || this.estado() === 'en_curso' ? PASOS : PASOS.filter(p => p.clave !== 'en_curso'));
   actual = computed(() => Math.max(0, this.pasos().findIndex(p => p.clave === (this.estado() ?? 'borrador'))));
 }

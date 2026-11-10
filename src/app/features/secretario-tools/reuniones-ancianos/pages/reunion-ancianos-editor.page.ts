@@ -140,10 +140,10 @@ const MIN_MAX = 240;
           </h1>
         </div>
         <!-- Estrecho: los pasos van debajo del título; en ancho, en la misma fila que él (ver abajo) -->
-        @if (reunion(); as r) { <div class="mt-1 @7xl:hidden"><app-reunion-pasos [estado]="r.estado" [conEnVivo]="usarEnVivo()" /></div> }
+        @if (reunion(); as r) { <div class="mt-1 @7xl:hidden"><app-reunion-pasos [estado]="r.estado" [conEnVivo]="usarEnVivo()" [puedeIniciar]="puedeIniciarEnVivo()" (iniciarEnVivo)="hacerSiguiente('vivo')" /></div> }
       </div>
       <!-- Los pasos miden su propio contenedor: sin un ancho fijo se encogen a cero y el texto se parte palabra por palabra -->
-      @if (reunion(); as r) { <div class="hidden @7xl:block shrink-0 w-[28rem]"><app-reunion-pasos [estado]="r.estado" [conEnVivo]="usarEnVivo()" /></div> }
+      @if (reunion(); as r) { <div class="hidden @7xl:block shrink-0 w-[28rem]"><app-reunion-pasos [estado]="r.estado" [conEnVivo]="usarEnVivo()" [puedeIniciar]="puedeIniciarEnVivo()" (iniciarEnVivo)="hacerSiguiente('vivo')" /></div> }
       @if (!cargando() && !errorCarga() && modoEdicion()) {
         <!-- Armar / Vista previa: se alternan en cualquier ancho -->
         <div class="segmented seg-movil w-full order-last" role="tablist" aria-label="Armar la reunión o ver cómo queda">
@@ -654,11 +654,6 @@ const MIN_MAX = 240;
                   <lucide-icon name="book-open" [size]="16" aria-hidden="true"></lucide-icon>Generar el acta
                 </button>
               }
-              @if (usarEnVivo() && reunion()?.estado === 'convocada' && siguientePaso()?.clave !== 'vivo') {
-                <button type="button" role="menuitem" class="menu-item" (click)="accionMenu('vivo')">
-                  <lucide-icon name="play" [size]="16" aria-hidden="true"></lucide-icon>Abrir la reunión en vivo
-                </button>
-              }
               <button type="button" role="menuitem" class="menu-item" (click)="accionMenu('preparar')">
                 <lucide-icon name="notebook-pen" [size]="16" aria-hidden="true"></lucide-icon>Mi preparación y mis notas
               </button>
@@ -684,8 +679,15 @@ const MIN_MAX = 240;
         <button type="button" class="btn-icon" [disabled]="descargando()" (click)="descargarPdf()" aria-label="Descargar el programa en PDF" title="Descargar PDF">
           @if (descargando()) { <span class="spinner spinner-xs" aria-hidden="true"></span> } @else { <lucide-icon name="download"></lucide-icon> }
         </button>
+        @if (puedeIniciarEnVivo()) {
+          <button type="button" class="btn-primary-violet est-reunion est-boton focus-ring acc-ancho" data-estado="en_curso" [disabled]="ocupado()" (click)="hacerSiguiente('vivo')"
+                  title="Abre la reunión en vivo: reloj, temas y notas. Allí se toca «Iniciar la reunión»">
+            <lucide-icon name="play" [size]="16" aria-hidden="true"></lucide-icon>Iniciar en vivo
+          </button>
+        }
         @if (siguientePaso(); as sp) {
-          <button type="button" class="focus-ring acc-ancho" [class]="sucio() ? 'btn-secondary' : 'btn-primary-violet'"
+          <button type="button" class="focus-ring acc-ancho" [class]="sucio() ? 'btn-secondary' : sp.clave === 'vivo' ? 'btn-primary-violet est-reunion est-boton' : 'btn-primary-violet'"
+                  [attr.data-estado]="!sucio() && sp.clave === 'vivo' ? 'en_curso' : null"
                   [disabled]="ocupado() || leyendoActa()" (click)="hacerSiguiente(sp.clave)">
             <lucide-icon [name]="sp.icono" [size]="16" aria-hidden="true"></lucide-icon>{{ sp.texto }}
           </button>
@@ -2029,6 +2031,16 @@ export class ReunionAncianosEditorPage implements OnInit {
     if (r.id_acta && r.puedo_leer_acta) return { clave: 'leer-acta', texto: 'Leer el acta', icono: 'book-open' };
     if (r.puedo_pasar_a_acta && !r.id_acta && r.fecha <= hoy) return { clave: 'acta', texto: 'Generar el acta', icono: 'book-open' };
     return null;
+  });
+
+  /**
+   * «Iniciar en vivo» a la vista mientras la reunión está convocada (cualquier día):
+   * antes solo salía como botón principal el mismo día y el resto del tiempo quedaba
+   * escondido en «Más acciones». Si ya es el botón principal, no se repite.
+   */
+  puedeIniciarEnVivo = computed(() => {
+    const r = this.reunion();
+    return !!r && !this.esNueva() && this.usarEnVivo() && r.estado === 'convocada' && this.siguientePaso()?.clave !== 'vivo';
   });
 
   hacerSiguiente(clave: PasoSiguiente) {
