@@ -2689,6 +2689,9 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     if (n('exhibidores')) lineas.push(`Quedan libres ${plural(n('exhibidores'), 'turno', 'turnos')} de exhibidores.`);
     if (n('horarios')) lineas.push(`Quedan sin capitán ${plural(n('horarios'), 'salida', 'salidas')} de predicación.`);
     if (n('tareas')) lineas.push(`Quedan sin responsable ${plural(n('tareas'), 'tarea', 'tareas')}.`);
+    if (n('reuniones_teocraticas')) {
+      lineas.push(`Queda sin responsable en ${plural(n('reuniones_teocraticas'), 'reunión teocrática ya programada', 'reuniones teocráticas ya programadas')}. Lo ya hecho no cambia.`);
+    }
     if (mi.territorios_sin_devolver) lineas.push(`Se devuelven ${plural(mi.territorios_sin_devolver, 'territorio', 'territorios')} que tenía asignados.`);
     if (lineas.length > (mi.rol_cambiara ? 1 : 0)) {
       lineas.push('Quienes programan cada parte recibirán un aviso para asignar un reemplazo.');

@@ -5,13 +5,15 @@ import { environment } from '../../environments/environment';
 
 /**
  * Puesto que quedó libre porque la persona asignada se trasladó a otra
- * congregación. Programación, Logística, Discursos, Exhibidores y Horarios lo
+ * congregación. Programación, Logística, Discursos, Exhibidores, Horarios y
+ * Reuniones teocráticas lo
  * muestran en el hueco hasta que alguien lo ocupa (el backend lo da por
  * resuelto solo).
  */
 export type ModuloVacante =
   | 'entre_semana' | 'fin_semana' | 'logistica' | 'discursos'
-  | 'exhibidores' | 'exhibidor_punto' | 'horario_predicacion' | 'salida_predicacion';
+  | 'exhibidores' | 'exhibidor_punto' | 'horario_predicacion' | 'salida_predicacion'
+  | 'reunion_teocratica';
 
 export interface VacanteTraslado {
   id_vacante: number;

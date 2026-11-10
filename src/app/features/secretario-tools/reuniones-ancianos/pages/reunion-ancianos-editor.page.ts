@@ -1,4 +1,4 @@
-import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, OnInit, signal, untracked } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -24,6 +24,7 @@ import { DocumentoReunion, ReunionDocumentoComponent } from '../components/reuni
 import { ReunionPasosComponent } from '../components/reunion-pasos.component';
 import { AQuienAsignarComponent, PedidoSugerencia } from '../components/a-quien-asignar.component';
 import { AutosizeTextareaDirective } from '../../../../shared/directives/autosize-textarea.directive';
+import { VacanteTraslado, VacantesTrasladoService } from '../../../../shared/vacantes-traslado';
 import { clasificarTitulo, diaYMes, hoyIso, minutosTexto } from '../reunion-ancianos-formato';
 
 /** Una parte mientras se edita. `temas` va como texto, una línea por tema. */
@@ -213,6 +214,18 @@ const MIN_MAX = 240;
         </div>
       }
 
+      <!-- ══════ Puestos libres porque alguien se trasladó ══════ -->
+      @for (v of vacantesAgrupadas(); track v.quien) {
+        <div role="status" class="shrink-0 flex items-start gap-3 rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-500/10 px-4 py-3">
+          <lucide-icon name="alert-triangle" [size]="20" class="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" aria-hidden="true"></lucide-icon>
+          <p class="flex-1 text-sm text-amber-900 dark:text-amber-200">
+            <strong>{{ v.quien }} se trasladó{{ v.destino ? ' a ' + v.destino : '' }}.</strong>
+            {{ v.puestos.length === 1 ? 'Quedó sin persona:' : 'Quedaron sin persona:' }} {{ v.puestos.join(', ') }}.
+            Elija a otra persona y guarde.
+          </p>
+        </div>
+      }
+
       <div class="flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)] gap-4">
 
         <!-- ────── Formulario ────── -->
@@ -290,8 +303,13 @@ const MIN_MAX = 240;
                       @if (resumenConvocados().sinAviso) {
                         <span class="sin-cuenta" title="No tienen la app ni cuenta: no les llega el aviso">{{ resumenConvocados().sinAviso }} sin aviso</span>
                       }
-                    } @else {
+                    } @else if (!convocadosEliminados().length) {
                       <span class="font-semibold text-amber-800 dark:text-amber-300">Nadie todavía</span>
+                    }
+                    @if (convocadosEliminados().length; as n) {
+                      <span class="text-slate-600 dark:text-slate-300" [title]="convocadosEliminados().join(', ')">
+                        {{ form.convocados.length ? 'y' : '' }} {{ n === 1 ? '1 que ya no está' : n + ' que ya no están' }} en GAC: {{ convocadosEliminados().join(', ') }}
+                      </span>
                     }
                   </p>
                   <button type="button" class="btn-cambiar focus-ring" (click)="abrirConvocados()" [disabled]="cargandoConvocados()">
@@ -1515,6 +1533,32 @@ export class ReunionAncianosEditorPage implements OnInit {
   private id: number | null = null;
   esNueva = signal(false);
   reunion = signal<ReunionOut | null>(null);
+
+  // Puestos que quedaron libres porque alguien se trasladó (el backend las da
+  // por resueltas solas al asignar a otra persona). Se releen con cada guardado.
+  private vacantesSvc = inject(VacantesTrasladoService);
+  private vacantes = signal<VacanteTraslado[]>([]);
+  private recargarVacantes = effect(() => {
+    const r = this.reunion();
+    if (!r?.id_reunion || !r.puedo_editar) { this.vacantes.set([]); return; }
+    untracked(() => this.vacantesSvc.listar(['reunion_teocratica'], r.id_congregacion)
+      .subscribe(lista => this.vacantes.set(lista.filter(v => Number(v.referencia?.['id_reunion']) === r.id_reunion))));
+  });
+  /** Una franja por persona trasladada: «Oración inicial, «Nombramientos»». */
+  vacantesAgrupadas = computed(() => {
+    const grupos = new Map<string, { quien: string; destino: string | null; puestos: string[] }>();
+    for (const v of this.vacantes()) {
+      const g = grupos.get(v.nombre_publicador)
+        ?? { quien: v.nombre_publicador, destino: v.congregacion_destino, puestos: [] };
+      // La descripción es «Título de la reunión: puesto»; aquí basta el puesto.
+      const puesto = (v.descripcion ?? '').split(': ').slice(1).join(': ') || 'una parte';
+      g.puestos.push(v.referencia?.['papel'] === 'parte' ? `«${puesto}»` : puesto);
+      grupos.set(v.nombre_publicador, g);
+    }
+    return [...grupos.values()];
+  });
+  /** Convocados que ya se eliminaron de GAC (reuniones ya hechas). */
+  convocadosEliminados = computed(() => this.reunion()?.convocados_eliminados ?? []);
   cargando = signal(true);
   errorCarga = signal<'no-encontrada' | 'error' | 'sin-congregacion' | null>(null);
   /** Publicadores activos de la congregación (GET /personas), para elegir convocados. */

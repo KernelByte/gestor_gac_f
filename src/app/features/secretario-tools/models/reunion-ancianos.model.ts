@@ -145,6 +145,8 @@ export interface ReunionOut extends ReunionResumen {
   creado_en: string;
   /** Ordenados por grupo y nombre. */
   convocados: ConvocadoOut[];
+  /** Convocados que después se eliminaron de GAC (solo en reuniones ya hechas): sus nombres. */
+  convocados_eliminados?: string[];
   /** Aceptadas en orden y, al final, las propuestas pendientes. */
   partes: ParteOut[];
   otros_temas: string[];
