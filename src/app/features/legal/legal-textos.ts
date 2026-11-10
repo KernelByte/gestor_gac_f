@@ -46,6 +46,6 @@ export const MEDIDAS_SEGURIDAD: { titulo: string; texto: string; icono: string }
   { titulo: 'Cada persona ve solo lo que necesita', texto: 'El acceso depende de la responsabilidad de cada persona. Un publicador solo ve su propia información.', icono: 'users' },
   { titulo: 'Sesiones que caducan', texto: 'La sesión se cierra automáticamente después de un tiempo, y puede cerrarse a distancia si pierde su teléfono.', icono: 'clock' },
   { titulo: 'Enlaces de un solo uso', texto: 'Los enlaces para restablecer una contraseña o activar el acceso sirven una sola vez y tienen una vigencia limitada.', icono: 'link' },
-  { titulo: 'Copias de seguridad', texto: 'Se hacen copias automáticas para no perder información en caso de falla.', icono: 'database-backup' },
+  { titulo: 'Copias de seguridad', texto: 'Se hacen copias automáticas y cifradas para no perder información en caso de falla. Solo quien tiene la llave de respaldos puede abrirlas.', icono: 'database-backup' },
   { titulo: 'Sin publicidad ni rastreadores', texto: 'GAC no muestra anuncios ni usa herramientas de analítica, y no vende datos a nadie.', icono: 'ban' },
 ];
