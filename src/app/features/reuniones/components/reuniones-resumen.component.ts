@@ -1717,7 +1717,7 @@ export class ReunionesResumenComponent {
     for (let i = 0; i < partes.length; i++) {
       if (usedIdx.has(i) || partes[i].es_ayudante) continue;
 
-      const principal = partes[i];
+      let principal = partes[i];
       usedIdx.add(i);
 
       let ayudante: AsignacionDraft | undefined;
@@ -1756,6 +1756,9 @@ export class ReunionesResumenComponent {
           !isSalaB(a.p) && (a.p.sala === maestroPrincipal.p.sala || !a.p.sala || a.p.sala === 'Principal'));
         const ayudanteBloque = grupoAyudantes.find(a => a !== ayudantePrincipal);
 
+        // El API puede traer la fila de Sala B (Auxiliar) antes que la
+        // Principal; la fila a mostrar es siempre la de la sala principal.
+        principal = maestroPrincipal.p;
         ayudante  = ayudantePrincipal?.p;
         salaB     = maestroB?.p;
         ayudanteB = ayudanteBloque?.p;
