@@ -118,7 +118,7 @@ interface EntradaIndice { id: string; num: string; titulo: string; }
               <h2><span class="num">2</span><span class="tit">Su autorización</span></h2>
               <p>
                 El tratamiento se basa en la autorización que cada publicador firma ante su congregación en el formulario
-                <strong>“Notificación y consentimiento de uso de datos personales”</strong>. En el caso de los menores
+                <strong>“Notificación y consentimiento de uso de datos personales” (S-290a)</strong>. En el caso de los menores
                 de edad, lo firma su padre, madre o representante legal. GAC conserva la constancia de esa firma.
               </p>
               <p>

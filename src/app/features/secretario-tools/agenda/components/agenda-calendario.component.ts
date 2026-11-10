@@ -764,12 +764,12 @@ export class AgendaCalendarioComponent implements OnInit {
     this.avisoTareasCerrado.set(true);
     try { localStorage.setItem(CLAVE_AVISO_TAREAS, '1'); } catch { /* sin almacenamiento: vuelve a salir */ }
   }
-  /** La agenda personal no tiene informes, bautismos ni traslados: son trabajo del secretario. */
+  /** La agenda personal no tiene informes, bautismos, S-290a ni traslados: son trabajo del secretario. */
   readonly tipos: TipoEvento[] = (this.modo === 'exhibidor'
     ? ['exhibidor', 'reunion_ancianos']
     : this.modo === 'personal'
       ? ['tarea', 'recordatorio', 'visita', 'reunion_ancianos', 'exhibidor']
-      : ['tarea', 'recordatorio', 'informes', 'visita', 'reunion_ancianos', 'bautismo', 'transferencia', 'exhibidor'] as TipoEvento[])
+      : ['tarea', 'recordatorio', 'informes', 'visita', 'reunion_ancianos', 'bautismo', 'consentimiento', 'transferencia', 'exhibidor'] as TipoEvento[])
     .filter(t => t !== 'tarea' || this.conTareas) as TipoEvento[];
   readonly diasCortos = DIAS_CORTOS;
   readonly diasLargos = DIAS_LARGOS;

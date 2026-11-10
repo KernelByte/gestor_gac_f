@@ -15,7 +15,7 @@ const FILA_PX = 52;
 const MAX_FILAS = 4;
 const ETIQUETA_TIPO: Record<TipoEvento, string> = {
   tarea: 'Tarea', recordatorio: 'Recordatorio', visita: 'Visita del superintendente',
-  transferencia: 'Traslado', informes: 'Informes', bautismo: 'Bautismo', reunion_ancianos: 'Reunión de ancianos',
+  transferencia: 'Traslado', informes: 'Informes', bautismo: 'Bautismo', consentimiento: 'Consentimiento (S-290a)', reunion_ancianos: 'Reunión de ancianos',
   exhibidor: 'Exhibidor',
 };
 
