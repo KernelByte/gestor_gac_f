@@ -2,7 +2,7 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
 import { Component, ElementRef, Input, Output, EventEmitter, inject, signal, computed, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ActaService } from '../../services/acta.service';
 import { Subtarea, Tarea, UsuarioAsignable } from '../../models/acta.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
@@ -28,7 +28,7 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
 @Component({
   selector: 'app-tarea-detail-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, EmptyStateComponent, SelectPickerComponent, DatePickerComponent, ConfirmDialogComponent, ChipListComponent],
+  imports: [CommonModule, FormsModule, RouterLink, EmptyStateComponent, SelectPickerComponent, DatePickerComponent, ConfirmDialogComponent, ChipListComponent],
   template: `
   <div class="panel" [class.panel--drawer]="modoDrawer">
 
@@ -44,6 +44,10 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
             @if (t.origen_tipo === 'acta_reunion' && t.origen_id && verActas) {
               <span class="cab-sep" aria-hidden="true">·</span>
               <button type="button" class="enlace" (click)="irAActa(t.origen_id!)">Acta #{{ t.origen_id }}</button>
+            }
+            @if (t.origen_tipo === 'reunion_teocratica' && t.origen_id) {
+              <span class="cab-sep" aria-hidden="true">·</span>
+              <a class="enlace" [routerLink]="['/administracion/reuniones-teocraticas', t.origen_id, 'preparar']">Ver la reunión</a>
             }
           }
         </div>

@@ -501,6 +501,53 @@
   .badge-neutral, .badge { @apply bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700; }
   .badge-warning  { @apply bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800/50; }
 
+  /* ── Estado de una reunión teocrática ───────────────────────────────────
+   Un color por momento: Programar (ámbar) · Preparar (celeste) · En curso
+   (rosa, «en vivo») · Realizada (verde) · Cancelada (gris). Se pone la clase
+   .est-reunion y data-estado en cualquier pieza (chip, paso, borde) y ella
+   lee --est. Nunca va solo el color: siempre lleva el nombre del estado. */
+  .est-reunion { --est: var(--color-slate-600); --est-fill: var(--est); --est-on: #fff; }
+  .est-reunion[data-estado='borrador']  { --est: color-mix(in oklab, #ffd230 40%, #422006); --est-fill: #ffd230; --est-on: var(--color-slate-900); }
+  .est-reunion[data-estado='convocada'] { --est: var(--color-sky-700); }
+  .est-reunion[data-estado='en_curso']  { --est: var(--color-rose-700); }
+  .est-reunion[data-estado='realizada'] { --est: var(--color-green-700); }
+  .dark .est-reunion { --est: var(--color-slate-300); }
+  .dark .est-reunion[data-estado='borrador']  { --est: #ffd230; }
+  .dark .est-reunion[data-estado='convocada'] { --est: var(--color-sky-300); }
+  .dark .est-reunion[data-estado='en_curso']  { --est: var(--color-rose-300); }
+  .dark .est-reunion[data-estado='realizada'] { --est: var(--color-green-300); }
+  /* Botón principal con el color del momento (.btn-primary-violet + .est-reunion + .est-boton). */
+  .est-boton[data-estado='borrador']  { --accent: #ffd230; --accent-hover: #f5c400; --accent-focus: #b88f00; --accent-shadow: none; color: var(--color-slate-900); }
+  .est-boton[data-estado='convocada'] { --accent: var(--color-sky-700);   --accent-hover: var(--color-sky-800);   --accent-focus: var(--color-sky-600);   --accent-shadow: none; }
+  .est-boton[data-estado='en_curso']  { --accent: var(--color-rose-700);  --accent-hover: var(--color-rose-800);  --accent-focus: var(--color-rose-600);  --accent-shadow: none; }
+  .est-boton[data-estado='realizada'] { --accent: var(--color-green-700); --accent-hover: var(--color-green-800); --accent-focus: var(--color-green-600); --accent-shadow: none; }
+
+  /* --- Chip de categoría (Reuniones teocráticas) ---
+     <span class="cat-chip" data-color="amber"><lucide-icon name="gem"></lucide-icon>Perla</span>
+     El color es un nombre de token (lo guarda la categoría), nunca un hex: así
+     se ve igual de bien en claro y oscuro. `--cat` queda disponible para
+     barras y puntos de gráficos del mismo color. */
+  .cat-chip {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap;
+  }
+  .cat-chip > lucide-icon svg { width: 0.875rem; height: 0.875rem; stroke-width: 2; }
+  .cat-chip[data-color='indigo'], .cat-color[data-color='indigo'] { --cat: var(--color-indigo-600); @apply bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60; }
+  .cat-chip[data-color='cyan'],   .cat-color[data-color='cyan']   { --cat: var(--color-cyan-600);   @apply bg-cyan-50 dark:bg-cyan-950/60 text-cyan-800 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/60; }
+  .cat-chip[data-color='amber'],  .cat-color[data-color='amber']  { --cat: var(--color-amber-600);  @apply bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800/60; }
+  .cat-chip[data-color='green'],  .cat-color[data-color='green']  { --cat: var(--color-green-600);  @apply bg-green-50 dark:bg-green-950/60 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800/60; }
+  .cat-chip[data-color='rose'],   .cat-color[data-color='rose']   { --cat: var(--color-rose-600);   @apply bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800/60; }
+  .cat-chip[data-color='violet'], .cat-color[data-color='violet'] { --cat: var(--color-brand-purple); @apply bg-violet-50 dark:bg-violet-950/60 text-violet-800 dark:text-violet-300 border-violet-200 dark:border-violet-800/60; }
+  .cat-chip[data-color='teal'],   .cat-color[data-color='teal']   { --cat: var(--color-teal-600);   @apply bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-800/60; }
+  .cat-chip[data-color='slate'],  .cat-color[data-color='slate']  { --cat: var(--color-slate-500);  @apply bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700; }
+  .dark .cat-chip[data-color='indigo'], .dark .cat-color[data-color='indigo'] { --cat: var(--color-indigo-400); }
+  .dark .cat-chip[data-color='cyan'],   .dark .cat-color[data-color='cyan']   { --cat: var(--color-cyan-400); }
+  .dark .cat-chip[data-color='amber'],  .dark .cat-color[data-color='amber']  { --cat: var(--color-amber-400); }
+  .dark .cat-chip[data-color='green'],  .dark .cat-color[data-color='green']  { --cat: var(--color-green-400); }
+  .dark .cat-chip[data-color='rose'],   .dark .cat-color[data-color='rose']   { --cat: var(--color-rose-400); }
+  .dark .cat-chip[data-color='violet'], .dark .cat-color[data-color='violet'] { --cat: var(--color-violet-400); }
+  .dark .cat-chip[data-color='teal'],   .dark .cat-color[data-color='teal']   { --cat: var(--color-teal-400); }
+  .dark .cat-chip[data-color='slate'],  .dark .cat-color[data-color='slate']  { --cat: var(--color-slate-400); }
+
   /* --- Buscador estándar (icono + campo) --- */
   .search-field { @apply relative block; }
   .search-field > svg, .search-field > lucide-icon, .search-field > .search-icon {

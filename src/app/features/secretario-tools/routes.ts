@@ -23,6 +23,22 @@ export const SECRETARIO_TOOLS_ROUTES: Routes = [
       import('./reuniones-ancianos/pages/reuniones-ancianos-list.page').then(m => m.ReunionesAncianosListPage),
   },
   {
+    // «Mi preparación»: la reunión vista por quien asiste, con sus notas privadas.
+    path: 'reuniones-teocraticas/:id/preparar',
+    title: 'Mi preparación',
+    canActivate: [reunionesAncianosGuard],
+    loadComponent: () =>
+      import('./reuniones-ancianos/pages/reunion-preparar.page').then(m => m.ReunionPrepararPage),
+  },
+  {
+    // La reunión en vivo: cronómetro compartido y notas del acta entre varios.
+    path: 'reuniones-teocraticas/:id/en-vivo',
+    title: 'Reunión en vivo',
+    canActivate: [reunionesAncianosGuard],
+    loadComponent: () =>
+      import('./reuniones-ancianos/pages/reunion-en-vivo.page').then(m => m.ReunionEnVivoPage),
+  },
+  {
     // 'nueva' o el id de la reunión. El propio editor decide si es de
     // edición (gestores) o de solo lectura (convocados).
     path: 'reuniones-teocraticas/:id',

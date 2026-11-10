@@ -21,6 +21,9 @@ import {
   Send, Lightbulb, ArrowUp, ArrowDown, Save, BookOpen, BellOff,
   // páginas legales (/legal)
   KeyRound, ShieldCheck, Building2, DatabaseBackup, Ban, Printer, Sun, Moon, Scale, TimerReset,
+  // reuniones teocráticas: categorías, preparar, notas
+  Gem, HandHeart, UserCheck, Megaphone, ClipboardList, Flag, Tag, Bold, List, ListOrdered, Heading2, Quote, LayoutTemplate, ImageOff, NotebookPen, RotateCcw,
+  Play, Pause, SkipForward, Coffee, Square, Wifi, WifiOff, Timer, CircleCheck, CircleDot, CirclePause,
 } from 'lucide-angular';
 
 export const APP_ICONS = {
@@ -40,6 +43,9 @@ export const APP_ICONS = {
   Send, Lightbulb, ArrowUp, ArrowDown, Save, BookOpen, BellOff,
   // páginas legales (/legal)
   KeyRound, ShieldCheck, Building2, DatabaseBackup, Ban, Printer, Sun, Moon, Scale, TimerReset,
+  // reuniones teocráticas: categorías, preparar, notas
+  Gem, HandHeart, UserCheck, Megaphone, ClipboardList, Flag, Tag, Bold, List, ListOrdered, Heading2, Quote, LayoutTemplate, ImageOff, NotebookPen, RotateCcw,
+  Play, Pause, SkipForward, Coffee, Square, Wifi, WifiOff, Timer, CircleCheck, CircleDot, CirclePause,
 };
 
 /** Para usar en app.config.ts:  importProvidersFrom(LucideAngularModule.pick(APP_ICONS)) */

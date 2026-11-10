@@ -67,3 +67,33 @@ export function minutosTexto(min: number | null | undefined): string {
   const h = Math.floor(min / 60), m = min % 60;
   return m ? `${h} h ${m} min` : `${h} h`;
 }
+
+// ─── Categorías ─────────────────────────────────────────────────────────────
+
+/** Minúsculas, sin tildes y solo letras y números separados por un espacio (igual que el backend). */
+export function normalizarClave(texto: string): string {
+  return (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .match(/[a-z0-9]+/g)?.join(' ') ?? '';
+}
+
+interface CategoriaClasificable { id_categoria: number; palabras_clave: string[]; activa: boolean; por_defecto: boolean; orden: number; }
+
+/**
+ * La misma regla que categorias.clasificar del backend: cada palabra de la
+ * palabra clave debe ser el comienzo de una palabra seguida del título.
+ * Sirve para mostrar la categoría mientras se escribe; el servidor decide al guardar.
+ */
+export function clasificarTitulo<T extends CategoriaClasificable>(titulo: string, categorias: readonly T[]): T | null {
+  const activas = categorias.filter(c => c.activa).sort((a, b) => a.orden - b.orden || a.id_categoria - b.id_categoria);
+  const palabras = normalizarClave(titulo).split(' ').filter(Boolean);
+  const coincide = (clave: string) => {
+    const buscadas = normalizarClave(clave).split(' ').filter(Boolean);
+    if (!buscadas.length) return false;
+    for (let i = 0; i + buscadas.length <= palabras.length; i++) {
+      if (buscadas.every((b, k) => palabras[i + k].startsWith(b))) return true;
+    }
+    return false;
+  };
+  return activas.find(c => c.palabras_clave.some(coincide))
+    ?? activas.find(c => c.por_defecto) ?? activas[activas.length - 1] ?? null;
+}

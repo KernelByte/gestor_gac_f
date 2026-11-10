@@ -15,6 +15,8 @@ export interface DocumentoReunion {
   oracionInicial: string | null;
   oracionFinal: string | null;
   partes: DocumentoParte[];
+  /** Asuntos breves sin responsable. */
+  otrosTemas?: string[];
 }
 
 export interface DocumentoParte {
@@ -25,6 +27,7 @@ export interface DocumentoParte {
   texto_biblico: string | null;
   referencias: string | null;
   temas: string[];
+  cancelada?: boolean;
 }
 
 /**
@@ -85,8 +88,9 @@ export interface DocumentoParte {
           @for (p of doc().partes; track $index; let i = $index) {
             <li class="fila">
               <span class="hidden @xl:block text-slate-500 dark:text-slate-400 tabular-nums">{{ i + 1 }}</span>
-              <span class="font-medium @xl:font-normal">
+              <span class="font-medium @xl:font-normal" [class.cancelada]="p.cancelada">
                 <span class="@xl:hidden">{{ i + 1 }}. </span>{{ p.titulo || 'Parte sin título' }}
+                @if (p.cancelada) { <span class="badge-neutral ml-1 align-middle">Cancelado</span> }
                 @if (p.minutos) { <span class="@xl:hidden minutos-txt"> · {{ p.minutos }} min</span> }
               </span>
               <span class="persona">{{ p.responsable || '—' }}</span>
@@ -107,6 +111,15 @@ export interface DocumentoParte {
           </p>
         }
       </section>
+
+      @if (otros().length) {
+        <section class="mt-7" aria-labelledby="doc-otros">
+          <h3 id="doc-otros" class="seccion">Otros temas</h3>
+          <ul class="mt-3 list-disc pl-5 columns-1 @xl:columns-2 gap-8 text-base text-slate-800 dark:text-slate-200">
+            @for (t of otros(); track $index) { <li class="break-inside-avoid py-0.5">{{ t }}</li> }
+          </ul>
+        </section>
+      }
 
       <!-- Desarrollo de los temas: solo las partes que tienen algo que leer -->
       @if (conDetalle().length) {
@@ -203,6 +216,9 @@ export interface DocumentoParte {
       }
     }
     .persona { font-weight: 700; color: #4338ca; }
+    .cancelada { color: #64748b; text-decoration: line-through; text-decoration-thickness: 1px; }
+    .cancelada .badge-neutral { text-decoration: none; }
+    :host-context(.dark) .cancelada { color: #94a3b8; }
     .campo-etq { font-size: 0.875rem; color: #64748b; }
     :host-context(.dark) .rotulo, :host-context(.dark) .campo-etq, :host-context(.dark) .cabecera { color: #94a3b8; }
     :host-context(.dark) .seccion::before { background: #a78bfa; }
@@ -218,7 +234,8 @@ export interface DocumentoParte {
 export class ReunionDocumentoComponent {
   doc = input.required<DocumentoReunion>();
 
-  total = computed(() => this.doc().partes.reduce((s, p) => s + (p.minutos || 0), 0));
+  total = computed(() => this.doc().partes.reduce((s, p) => s + (p.cancelada ? 0 : p.minutos || 0), 0));
+  otros = computed(() => (this.doc().otrosTemas ?? []).filter(t => t.trim()));
   fechaTexto = computed(() => diaYMes(this.doc().fecha));
   dia = computed(() => diaSemana(this.doc().fecha));
   horaTexto = computed(() => hora12(this.doc().hora));
@@ -233,6 +250,6 @@ export class ReunionDocumentoComponent {
   conDetalle = computed(() =>
     this.doc().partes
       .map((p, i) => ({ p, n: i + 1 }))
-      .filter(({ p }) => !!(p.objetivo || p.texto_biblico || p.referencias || p.temas.length)),
+      .filter(({ p }) => !p.cancelada && !!(p.objetivo || p.texto_biblico || p.referencias || p.temas.length)),
   );
 }

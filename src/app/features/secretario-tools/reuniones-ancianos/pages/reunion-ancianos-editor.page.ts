@@ -6,7 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { ReunionAncianosService } from '../../services/reunion-ancianos.service';
 import {
-  ESTADO_REUNION_LABEL, GRUPO_PERSONA_LABEL, GrupoPersona, ParteIn, ParteOut, PersonaOpcion, ReunionOut, ReunionUpdate,
+  CategoriaOut, ESTADO_REUNION_LABEL, GRUPO_PERSONA_LABEL, GrupoPersona, ParteIn, ParteOut, PersonaOpcion, ReunionOut, ReunionUpdate,
   TIPOS_REUNION, TipoReunion, tipoReunion,
 } from '../../models/reunion-ancianos.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
@@ -21,7 +21,10 @@ import { PickerOption, SelectPickerComponent } from '../../../../shared/componen
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 import { LucideAngularModule } from '../../../../shared/icons';
 import { DocumentoReunion, ReunionDocumentoComponent } from '../components/reunion-documento.component';
-import { diaYMes, hoyIso, minutosTexto } from '../reunion-ancianos-formato';
+import { ReunionPasosComponent } from '../components/reunion-pasos.component';
+import { AQuienAsignarComponent, PedidoSugerencia } from '../components/a-quien-asignar.component';
+import { AutosizeTextareaDirective } from '../../../../shared/directives/autosize-textarea.directive';
+import { clasificarTitulo, diaYMes, hoyIso, minutosTexto } from '../reunion-ancianos-formato';
 
 /** Una parte mientras se edita. `temas` va como texto, una línea por tema. */
 interface ParteForm {
@@ -37,9 +40,19 @@ interface ParteForm {
   texto_biblico: string;
   referencias: string;
   temas: string;
+  /** La categoría elegida a mano; si categoria_manual es false, se clasifica por el título. */
+  id_categoria: number | null;
+  categoria_manual: boolean;
+  /** Indicación privada para el responsable (solo él y los gestores la ven). */
+  nota_asignado: string;
+  cancelada: boolean;
   /** Detalles desplegados (objetivo, texto bíblico, referencias, temas). */
   abierta: boolean;
+  /** Campos menos usados desplegados (categoría, referencias, temas, cancelar). */
+  masCampos: boolean;
 }
+
+type PasoSiguiente = 'convocar' | 'avisar' | 'vivo' | 'abrir-acta' | 'leer-acta' | 'acta';
 
 interface FormReunion {
   tipo: TipoReunion;
@@ -54,9 +67,15 @@ interface FormReunion {
   id_oracion_inicial: number | null;
   id_oracion_final: number | null;
   partes: ParteForm[];
+  /** Asuntos breves sin responsable, uno por renglón. */
+  otros_temas: string;
+  /** Papeles en la reunión; null = el de siempre (coordinador / secretario). */
+  id_tiempo: number | null;
+  id_redactor: number | null;
+  colaboradores: number[];
 }
 
-type Confirmacion = 'convocar' | 'acta' | 'eliminar' | 'salir' | 'quitar-parte' | 'descartar' | 'cambiar-tipo' | null;
+type Confirmacion = 'convocar' | 'acta' | 'eliminar' | 'salir' | 'quitar-parte' | 'descartar' | 'cambiar-tipo' | 'cancelar' | null;
 
 /** Una persona en el selector de convocados (de /personas o ya convocada en la reunión). */
 interface PersonaSel {
@@ -89,9 +108,10 @@ const MIN_MAX = 240;
  * propio panel.
  *
  * - Gestores (puedo_editar): datos en una franja, el programa con una parte
- *   por renglón y, si cabe (≥ 72 rem de contenido), la vista previa en vivo
- *   al lado; si no, pestañas «Editar» / «Vista previa». Las acciones van en
- *   la cabecera; en el teléfono, en una barra abajo, al alcance del pulgar.
+ *   por renglón. Todo el ancho es para armar la reunión; la vista previa del
+ *   PDF se alterna con un control «Armar» / «Vista previa» en la cabecera, en
+ *   cualquier ancho. Las acciones van en la cabecera; en el teléfono, en una
+ *   barra abajo, al alcance del pulgar.
  * - Convocado: solo el documento, descargar el PDF y proponer puntos.
  *
  * Qué puede hacer cada quien lo dicen los puedo_* de la respuesta; aquí no
@@ -102,46 +122,33 @@ const MIN_MAX = 240;
   standalone: true,
   imports: [
     NgTemplateOutlet, FormsModule, RouterLink, ModalComponent, ConfirmDialogComponent, DatePickerComponent, TimePickerComponent,
-    SelectPickerComponent, EmptyStateComponent, LucideAngularModule, ReunionDocumentoComponent,
+    SelectPickerComponent, EmptyStateComponent, LucideAngularModule, ReunionDocumentoComponent, ReunionPasosComponent,
+    AutosizeTextareaDirective, AQuienAsignarComponent,
   ],
   template: `
   <div class="ed @container flex-1 min-h-[30rem] w-full flex flex-col gap-3">
 
     <!-- ══════ Cabecera: volver, título, estado y (desde tableta) las acciones ══════ -->
     <header class="shrink-0 flex flex-wrap items-center gap-x-4 gap-y-2">
-      <a routerLink="/administracion/reuniones-teocraticas" class="volver focus-ring" aria-label="Volver a las reuniones" title="Volver a las reuniones">
-        <lucide-icon name="arrow-left" [size]="18" aria-hidden="true"></lucide-icon>
-        <span class="hidden @md:inline">Volver</span>
+      <a routerLink="/administracion/reuniones-teocraticas" class="btn-icon shrink-0" aria-label="Volver a las reuniones" title="Volver a las reuniones">
+        <lucide-icon name="arrow-left"></lucide-icon>
       </a>
       <div class="flex-1 min-w-[12rem]">
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h1 class="page-title ed-titulo !text-lg @md:!text-xl @3xl:!text-[1.375rem] leading-tight">
-            {{ cargando() ? 'Reunión' : titulo() }}@if (!cargando() && fechaTitulo()) {<span class="ed-fecha"> · {{ fechaTitulo() }}</span>}
+        <div class="flex items-center gap-x-3 min-w-0">
+          <h1 class="page-title ed-titulo min-w-0 truncate" [title]="cargando() ? 'Reunión' : titulo()">
+            {{ cargando() ? 'Reunión' : titulo() }}
           </h1>
-          @if (reunion(); as r) {
-            <span class="chip-estado" [attr.data-estado]="r.estado" [attr.title]="ayudaEstado(r)">{{ estadoLabel[r.estado] }}</span>
-            @if (sinAvisar()) {
-              <span class="chip-sin-avisar" title="Está confirmada, pero los convocados todavía no recibieron aviso">Sin avisar</span>
-            }
-          }
-          @if (!cargando() && !errorCarga() && modoEdicion()) {
-            <span class="estado-guardado" role="status" aria-live="polite">
-              @if (guardando()) {
-                <span class="spinner spinner-xs" aria-hidden="true"></span>Guardando…
-              } @else if (sucio()) {
-                <span class="punto" aria-hidden="true"></span>Sin guardar
-              } @else if (!esNueva()) {
-                <lucide-icon name="check" [size]="15" class="text-green-600 dark:text-green-400" aria-hidden="true"></lucide-icon>Guardado
-              }
-            </span>
-          }
         </div>
+        <!-- Estrecho: los pasos van debajo del título; en ancho, en la misma fila que él (ver abajo) -->
+        @if (reunion(); as r) { <div class="mt-1 @7xl:hidden"><app-reunion-pasos [estado]="r.estado" [conEnVivo]="usarEnVivo()" /></div> }
       </div>
+      <!-- Los pasos miden su propio contenedor: sin un ancho fijo se encogen a cero y el texto se parte palabra por palabra -->
+      @if (reunion(); as r) { <div class="hidden @7xl:block shrink-0 w-[28rem]"><app-reunion-pasos [estado]="r.estado" [conEnVivo]="usarEnVivo()" /></div> }
       @if (!cargando() && !errorCarga() && modoEdicion()) {
-        <!-- Editar / Vista previa: solo cuando la vista previa no cabe al lado -->
-        <div class="segmented seg-movil w-full order-last" role="tablist" aria-label="Editar o ver el documento">
+        <!-- Armar / Vista previa: se alternan en cualquier ancho -->
+        <div class="segmented seg-movil w-full order-last" role="tablist" aria-label="Armar la reunión o ver cómo queda">
           <button type="button" role="tab" class="segmented-item flex-1" [attr.aria-selected]="pestana() === 'editar'" (click)="pestana.set('editar')">
-            <lucide-icon name="edit-2" [size]="16" aria-hidden="true"></lucide-icon>Editar
+            <lucide-icon name="edit-2" [size]="16" aria-hidden="true"></lucide-icon>Armar
           </button>
           <button type="button" role="tab" class="segmented-item flex-1" [attr.aria-selected]="pestana() === 'vista'" (click)="pestana.set('vista')">
             <lucide-icon name="eye" [size]="16" aria-hidden="true"></lucide-icon>Vista previa
@@ -151,12 +158,6 @@ const MIN_MAX = 240;
       @if (!cargando() && !errorCarga()) {
         <div class="hidden @3xl:flex items-center gap-2">
           @if (modoEdicion()) {
-            <!-- Tableta y 720p: la vista previa se abre en lugar del formulario -->
-            <button type="button" class="btn-secondary focus-ring @6xl:hidden" title="Vista previa del PDF" [class.vista-activa]="pestana() === 'vista'"
-                    [attr.aria-pressed]="pestana() === 'vista'" (click)="pestana.set(pestana() === 'vista' ? 'editar' : 'vista')">
-              <lucide-icon [name]="pestana() === 'vista' ? 'edit-2' : 'eye'" [size]="16" aria-hidden="true"></lucide-icon>
-              <span class="acc-txt">{{ pestana() === 'vista' ? 'Editar' : 'Vista previa' }}</span>
-            </button>
             <ng-container *ngTemplateOutlet="acciones" />
           } @else {
             <ng-container *ngTemplateOutlet="accionesLector" />
@@ -182,7 +183,11 @@ const MIN_MAX = 240;
       </div>
     } @else if (errorCarga()) {
       <div class="card flex-1 min-h-0 grid place-items-center">
-        @if (errorCarga() === 'no-encontrada') {
+        @if (errorCarga() === 'sin-congregacion') {
+          <app-empty-state icon="calendar" accent="violet" title="Elija una congregación"
+            description="Las reuniones son de cada congregación. Escójala en el selector del menú lateral y vuelva a crear la reunión."
+            actionLabel="Volver a las reuniones" (action)="irALista()" />
+        } @else if (errorCarga() === 'no-encontrada') {
           <app-empty-state icon="calendar-off" title="No encontramos esta reunión"
             description="Puede que la hayan borrado o que todavía no esté convocada."
             actionLabel="Volver a las reuniones" (action)="irALista()" />
@@ -208,16 +213,16 @@ const MIN_MAX = 240;
         </div>
       }
 
-      <div class="flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)] gap-4 @6xl:grid-cols-[minmax(0,1fr)_minmax(24rem,0.72fr)] @min-[120rem]:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]">
+      <div class="flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)] gap-4">
 
         <!-- ────── Formulario ────── -->
-        <div class="panel-edicion lista-interna min-h-0 @6xl:flex flex-col gap-3 @4xl:gap-4"
+        <div class="panel-edicion lista-interna min-h-0 flex-col gap-3 @4xl:gap-4"
              [class.flex]="pestana() === 'editar'" [class.hidden]="pestana() !== 'editar'">
 
           <!-- Datos: una sola franja; en ancho, todo en dos renglones -->
-          <section class="card datos shrink-0 p-4 @3xl:p-5" aria-labelledby="titulo-datos">
+          <section class="card datos shrink-0 p-3 @3xl:px-4 @3xl:py-3" aria-labelledby="titulo-datos">
             <h2 id="titulo-datos" class="sr-only">Datos de la reunión</h2>
-            <div class="grid gap-x-3 gap-y-3 grid-cols-1 @sm:grid-cols-2 @3xl:grid-cols-[repeat(3,minmax(0,1fr))]">
+            <div class="grid gap-x-3 gap-y-2.5 grid-cols-1 @sm:grid-cols-2 @3xl:grid-cols-[repeat(3,minmax(0,1fr))] @6xl:grid-cols-[repeat(4,minmax(0,1fr))]">
               <div class="@sm:col-span-2 @3xl:col-span-1">
                 <span class="lbl">Tipo de reunión</span>
                 <app-select-picker colorScheme="violet" ariaLabel="Tipo de reunión" placeholder="Elegir tipo"
@@ -262,17 +267,19 @@ const MIN_MAX = 240;
                   [options]="opciones()" [(ngModel)]="form.id_secretario" (ngModelChange)="tocar()" />
               </div>
               <div class="@sm:col-span-2 @3xl:col-span-1">
-                <span class="lbl">Oración inicial</span>
+                <span class="lbl-fila"><span class="lbl">Oración inicial</span>
+                  <button type="button" class="sugerir" (click)="sugerirOracion('inicial')"><lucide-icon name="lightbulb" [size]="13" aria-hidden="true"></lucide-icon>¿A quién?</button></span>
                 <app-select-picker colorScheme="violet" ariaLabel="Oración inicial" placeholder="Elegir persona"
                   [options]="opciones()" [(ngModel)]="form.id_oracion_inicial" (ngModelChange)="tocar()" />
               </div>
               <div class="@sm:col-span-2 @3xl:col-span-1">
-                <span class="lbl">Oración final</span>
+                <span class="lbl-fila"><span class="lbl">Oración final</span>
+                  <button type="button" class="sugerir" (click)="sugerirOracion('final')"><lucide-icon name="lightbulb" [size]="13" aria-hidden="true"></lucide-icon>¿A quién?</button></span>
                 <app-select-picker colorScheme="violet" ariaLabel="Oración final" placeholder="Elegir persona"
                   [options]="opciones()" [(ngModel)]="form.id_oracion_final" (ngModelChange)="tocar()" />
               </div>
               <!-- Convocados: resumen en una línea; la lista se cambia en una ventana -->
-              <div [class]="mostrarTitulo() ? '@sm:col-span-2 @3xl:col-span-1' : '@sm:col-span-2 @3xl:col-span-2'">
+              <div [class]="mostrarTitulo() ? '@sm:col-span-2 @3xl:col-span-1' : '@sm:col-span-2 @3xl:col-span-2 @6xl:col-span-1'">
                 <span class="lbl" id="lbl-convocados">Convocados</span>
                 <div class="convocados" [attr.data-vacio]="form.convocados.length ? null : 'si'" aria-labelledby="lbl-convocados">
                   <p class="flex-1 min-w-0 leading-snug flex flex-wrap items-baseline gap-x-1.5" aria-live="polite">
@@ -292,6 +299,22 @@ const MIN_MAX = 240;
                   </button>
                 </div>
               </div>
+              @if (usarEnVivo()) {
+              <!-- Papeles durante la reunión: una línea de pie, sin caja -->
+              <div class="@sm:col-span-2 @3xl:col-span-3 @6xl:col-span-4 pie-papeles">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400" id="lbl-papeles">Durante la reunión</span>
+                <p class="flex-1 min-w-0 text-sm leading-snug flex flex-wrap items-baseline gap-x-3 gap-y-0.5" aria-labelledby="lbl-papeles">
+                  <span><span class="text-slate-500 dark:text-slate-400">Toma el tiempo:</span> <strong class="text-slate-900 dark:text-slate-100">{{ papelesResumen().tiempo }}</strong></span>
+                  <span><span class="text-slate-500 dark:text-slate-400">Toma las notas:</span> <strong class="text-slate-900 dark:text-slate-100">{{ papelesResumen().notas }}</strong></span>
+                  @if (form.colaboradores.length) {
+                    <span class="text-slate-600 dark:text-slate-300">y {{ form.colaboradores.length === 1 ? '1 colabora' : form.colaboradores.length + ' colaboran' }}</span>
+                  }
+                </p>
+                <button type="button" class="btn-link focus-ring shrink-0" (click)="abrirPapeles()">
+                  <lucide-icon name="square-pen" [size]="14" aria-hidden="true"></lucide-icon>Cambiar
+                </button>
+              </div>
+              }
             </div>
           </section>
 
@@ -336,46 +359,77 @@ const MIN_MAX = 240;
               <p class="flex items-center gap-1.5 tabular-nums" aria-live="polite">
                 <span class="dato-prog">{{ form.partes.length }} {{ form.partes.length === 1 ? 'parte' : 'partes' }}</span>
                 <span class="dato-prog dato-prog-min"><lucide-icon name="clock" [size]="13" aria-hidden="true"></lucide-icon>{{ minutosTexto(totalMinutos()) }}</span>
-                @if (form.partes.length) {
-                  <button type="button" class="dato-prog dato-prog-anadir focus-ring" (click)="anadirParte(); $event.stopPropagation()"
-                          title="Añadir una parte al final del programa">
-                    <lucide-icon name="plus" [size]="14" aria-hidden="true"></lucide-icon>Añadir parte
-                  </button>
-                }
               </p>
             </div>
 
             <div class="lista-interna flex-1 min-h-0 overflow-y-auto px-2 @3xl:px-3 py-2">
               @if (!form.partes.length) {
                 <!-- Sin partes: un solo recuadro que explica y deja añadir la primera -->
-                <app-empty-state [compact]="true" icon="file-text" title="Todavía no hay partes"
-                  description="Añada cada tema que se va a tratar, con su responsable y sus minutos."
-                  actionLabel="Añadir la primera parte" (action)="anadirParte()"></app-empty-state>
+                <div class="vacio">
+                  <div class="vacio-cab">
+                    <span class="vacio-icono" aria-hidden="true"><lucide-icon name="file-text" [size]="22"></lucide-icon></span>
+                    <div class="min-w-0">
+                      <h3 class="card-title">Arme el programa</h3>
+                      <p class="text-sm text-slate-600 dark:text-slate-300 mt-0.5">Toque el tipo de parte que va a añadir. Después elija al responsable y los minutos.</p>
+                    </div>
+                  </div>
+                  <div class="losetas" role="group" aria-label="Añadir la primera parte">
+                    @for (c of rapidas(); track c.id_categoria) {
+                      <button type="button" class="loseta cat-color focus-ring" [attr.data-color]="c.color" (click)="anadirParte(c)">
+                        <lucide-icon [name]="c.icono" [size]="18" aria-hidden="true"></lucide-icon>{{ tituloDe(c) }}
+                      </button>
+                    }
+                    <button type="button" class="loseta loseta-neutra focus-ring" (click)="anadirParte()">
+                      <lucide-icon name="plus" [size]="18" aria-hidden="true"></lucide-icon>Otro tema
+                    </button>
+                  </div>
+                </div>
               }
 
               <ol class="flex flex-col gap-1.5">
                 @for (p of form.partes; track p.uid; let i = $index; let primera = $first; let ultima = $last) {
-                  <li class="parte" [class.abierta]="p.abierta" [class.parte-error]="intento() && !p.titulo.trim()">
+                  <li class="parte" [class.abierta]="p.abierta" [class.parte-cancelada]="p.cancelada" [class.parte-error]="intento() && !p.titulo.trim()">
                     <div class="parte-fila">
                       <span class="numero" aria-hidden="true">{{ i + 1 }}</span>
 
                       <div class="c-titulo min-w-0">
                         <label class="sr-only" [for]="'ra-titulo-' + p.uid">Título de la parte {{ i + 1 }}</label>
                         <textarea [id]="'ra-titulo-' + p.uid" class="titulo-input" rows="1" maxlength="300"
-                                  placeholder="Título. Ej.: Perla espiritual"
+                                  placeholder="Nombre del tema"
                                   [attr.aria-invalid]="intento() && !p.titulo.trim()"
                                   (keydown.enter)="$event.preventDefault()"
                                   [(ngModel)]="p.titulo" (ngModelChange)="tocar()"></textarea>
                         @if (intento() && !p.titulo.trim()) { <p class="error-campo">Escriba el título.</p> }
+                        <div class="meta-parte">
+                          @if (!p.abierta && categoriaDe(p); as c) {
+                            <span class="cat-chip" [attr.data-color]="c.color"
+                                  [title]="p.categoria_manual ? 'Categoría elegida a mano' : 'Categoría automática, según el título'">
+                              <lucide-icon [name]="c.icono"></lucide-icon>{{ c.etiqueta }}
+                              @if (!p.categoria_manual) { <span class="sr-only"> (automática)</span> }
+                            </span>
+                          }
+                          @if (p.cancelada) { <span class="badge-inactive">Cancelado</span> }
+                          @if (p.nota_asignado.trim()) {
+                            <span class="badge-neutral" title="Tiene una indicación privada para el responsable">
+                              <lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>Indicación
+                            </span>
+                          }
+                        </div>
                       </div>
 
-                      <div class="c-resp min-w-0">
-                        <app-select-picker colorScheme="violet" placeholder="Responsable"
+                      <div class="c-resp min-w-0 flex items-start gap-1.5">
+                        <div class="flex-1 min-w-0">
+                        <app-select-picker colorScheme="violet" placeholder="Elegir responsable"
                           [ariaLabel]="'Responsable de la parte ' + (i + 1)"
                           [allowCustom]="true"
                           [options]="opcionesResponsable(p)" [ngModel]="valorResponsable(p)"
                           (ngModelChange)="cambiarResponsable(p, $event)"
                           (custom)="responsableEscrito(p, $event)" />
+                        </div>
+                        <button type="button" class="icono-btn shrink-0 mt-1" (click)="sugerirParte(p, i)"
+                                [attr.aria-label]="'¿A quién asignar la parte ' + (i + 1) + '?'" title="¿A quién asignar?">
+                          <lucide-icon name="lightbulb" [size]="17" aria-hidden="true"></lucide-icon>
+                        </button>
                       </div>
 
                       <div class="c-min stepper" role="group" [attr.aria-label]="'Minutos de la parte ' + (i + 1)">
@@ -383,7 +437,7 @@ const MIN_MAX = 240;
                           <lucide-icon name="minus" [size]="15" aria-hidden="true"></lucide-icon>
                         </button>
                         <input type="number" inputmode="numeric" min="0" max="240" class="stepper-input"
-                               aria-label="Minutos" placeholder="0"
+                               aria-label="Minutos" placeholder="min"
                                [ngModel]="p.minutos" (ngModelChange)="fijarMinutos(p, $event)" />
                         <button type="button" class="stepper-btn" (click)="sumarMinutos(p, 5)" [disabled]="(p.minutos || 0) >= 240" aria-label="Añadir 5 minutos">
                           <lucide-icon name="plus" [size]="15" aria-hidden="true"></lucide-icon>
@@ -393,8 +447,8 @@ const MIN_MAX = 240;
                       <div class="c-acc flex items-center">
                         <button type="button" class="icono-btn" [class.activo]="p.abierta" (click)="p.abierta = !p.abierta"
                                 [attr.aria-expanded]="p.abierta" [attr.aria-controls]="'ra-detalles-' + p.uid"
-                                [attr.aria-label]="(p.abierta ? 'Ocultar' : 'Ver') + ' objetivo, texto bíblico, referencias y temas'"
-                                title="Objetivo, texto bíblico, referencias y temas">
+                                [attr.aria-label]="(p.abierta ? 'Ocultar' : 'Ver') + ' más detalles de la parte ' + (i + 1)"
+                                title="Más detalles">
                           <lucide-icon name="file-text" [size]="17" aria-hidden="true"></lucide-icon>
                           @if (detallesLlenos(p)) { <span class="badge-det">{{ detallesLlenos(p) }}</span> }
                         </button>
@@ -415,10 +469,10 @@ const MIN_MAX = 240;
 
                     @if (p.abierta) {
                       <div [id]="'ra-detalles-' + p.uid" class="detalles">
-                        <div class="det-objetivo">
+                        <div class="det-ancho">
                           <label class="lbl" [for]="'ra-obj-' + p.uid">Objetivo</label>
-                          <textarea [id]="'ra-obj-' + p.uid" class="form-control !py-2" rows="2"
-                                    placeholder="Qué se quiere lograr con esta parte"
+                          <textarea [id]="'ra-obj-' + p.uid" appAutosize [minRows]="1" [maxRows]="4" class="form-control !py-2" maxlength="4000"
+                                    placeholder="Qué se quiere lograr"
                                     [(ngModel)]="p.objetivo" (ngModelChange)="tocar()"></textarea>
                         </div>
                         <div>
@@ -426,18 +480,62 @@ const MIN_MAX = 240;
                           <input [id]="'ra-tb-' + p.uid" class="form-control !py-2" placeholder="Ej.: 1 Timoteo 3:1-13"
                                  [(ngModel)]="p.texto_biblico" (ngModelChange)="tocar()" />
                         </div>
+                        <div class="nota-asignado">
+                          <label class="lbl flex items-center gap-1.5" [for]="'ra-nota-' + p.uid">
+                            <lucide-icon name="lock" [size]="13" aria-hidden="true"></lucide-icon>Indicación para el responsable
+                            <span class="font-normal text-slate-500 dark:text-slate-400">(opcional)</span>
+                          </label>
+                          <textarea [id]="'ra-nota-' + p.uid" appAutosize [minRows]="3" [maxRows]="8" class="form-control !py-2" maxlength="4000"
+                                    placeholder="Cómo enfocarla, qué destacar o evitar"
+                                    [(ngModel)]="p.nota_asignado" (ngModelChange)="tocar()"></textarea>
+                          <p class="caption mt-1">Solo la ve el responsable, en su preparación, y le llega con el aviso. No sale en el programa, el PDF ni el acta.</p>
+                        </div>
+                        @if (!p.masCampos) {
+                          <div class="det-ancho">
+                            <button type="button" class="btn-link focus-ring" (click)="p.masCampos = true">
+                              <lucide-icon name="plus" [size]="14" aria-hidden="true"></lucide-icon>Más campos: categoría, referencias, temas
+                            </button>
+                          </div>
+                        } @else {
+                        <div class="det-cat">
+                          <span class="lbl" [id]="'ra-cat-lbl-' + p.uid">Categoría</span>
+                          <div class="flex flex-wrap gap-1.5" role="radiogroup" [attr.aria-labelledby]="'ra-cat-lbl-' + p.uid">
+                            @for (c of categoriasParaElegir(p); track c.id_categoria) {
+                              <button type="button" role="radio" class="cat-chip cat-opcion focus-ring" [attr.data-color]="c.color"
+                                      [attr.aria-checked]="categoriaDe(p)?.id_categoria === c.id_categoria" (click)="cambiarCategoria(p, c.id_categoria)">
+                                <lucide-icon [name]="categoriaDe(p)?.id_categoria === c.id_categoria ? 'check' : c.icono"></lucide-icon>{{ c.etiqueta }}{{ c.activa ? '' : ' (archivada)' }}
+                              </button>
+                            }
+                          </div>
+                          <p class="caption mt-1.5">
+                            @if (p.categoria_manual) {
+                              Elegida a mano. <button type="button" class="btn-link" (click)="cambiarCategoria(p, 'auto')">Volver a automática</button>
+                            } @else {
+                              Se elige sola según el título. Toque otra para cambiarla.
+                            }
+                          </p>
+                        </div>
                         <div>
                           <label class="lbl" [for]="'ra-ref-' + p.uid">Referencias</label>
-                          <textarea [id]="'ra-ref-' + p.uid" class="form-control !py-2" rows="2"
-                                    placeholder="Publicaciones o cartas que se van a usar"
+                          <textarea [id]="'ra-ref-' + p.uid" appAutosize [minRows]="1" [maxRows]="5" class="form-control !py-2"
+                                    placeholder="Publicaciones o cartas a usar"
                                     [(ngModel)]="p.referencias" (ngModelChange)="tocar()"></textarea>
                         </div>
-                        <div class="det-temas">
-                          <label class="lbl" [for]="'ra-temas-' + p.uid">Temas <span class="font-normal text-slate-500">(uno por renglón)</span></label>
-                          <textarea [id]="'ra-temas-' + p.uid" class="form-control !py-2" rows="3"
-                                    placeholder="Audio y video&#10;Aires acondicionados&#10;Sistema eléctrico"
+                        <div>
+                          <label class="lbl" [for]="'ra-temas-' + p.uid">Temas <span class="font-normal text-slate-500 dark:text-slate-400">(uno por renglón)</span></label>
+                          <textarea [id]="'ra-temas-' + p.uid" appAutosize [minRows]="3" [maxRows]="8" class="form-control !py-2"
+                                    placeholder="Un tema por renglón"
                                     [(ngModel)]="p.temas" (ngModelChange)="tocar()"></textarea>
                         </div>
+                        <div class="det-ancho det-cancelar">
+                          <button type="button" role="switch" class="switch" [attr.aria-checked]="p.cancelada" [attr.aria-labelledby]="'ra-canc-' + p.uid"
+                                  (click)="p.cancelada = !p.cancelada; tocar()"><span class="toggle-thumb"></span></button>
+                          <span [id]="'ra-canc-' + p.uid" class="text-sm text-slate-700 dark:text-slate-300 leading-snug">
+                            <strong>Tema cancelado</strong>
+                            <span class="caption"> · No se tratará: sale tachado y no suma minutos.</span>
+                          </span>
+                        </div>
+                        }
                       </div>
                     }
                   </li>
@@ -445,18 +543,48 @@ const MIN_MAX = 240;
               </ol>
 
               @if (form.partes.length) {
-                <button type="button" class="anadir focus-ring mt-2" (click)="anadirParte()">
-                  <lucide-icon name="plus" [size]="18" aria-hidden="true"></lucide-icon>
-                  Añadir parte
-                </button>
+                <div class="mt-2">
+                  <button type="button" class="anadir focus-ring" (click)="anadirParte()">
+                    <lucide-icon name="plus" [size]="18" aria-hidden="true"></lucide-icon>Añadir parte
+                  </button>
+                  @if (rapidas().length) {
+                    <div class="rapidas" role="group" aria-label="Añadir una parte de un tipo conocido">
+                      <span class="caption">O añada:</span>
+                      @for (c of rapidas(); track c.id_categoria) {
+                        <button type="button" class="cat-chip cat-btn focus-ring" [attr.data-color]="c.color" (click)="anadirParte(c)">
+                          <lucide-icon name="plus" [size]="12" aria-hidden="true"></lucide-icon>{{ tituloDe(c) }}
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
               }
+
+              <div class="otros mt-3 px-1">
+                @if (form.otros_temas.trim() || otrosAbierto()) {
+                  <div class="flex items-baseline justify-between gap-3">
+                    <label class="lbl" for="ra-otros">Otros temas <span class="font-normal text-slate-500 dark:text-slate-400">· uno por renglón, sin responsable</span></label>
+                    @if (!form.otros_temas.trim()) {
+                      <button type="button" class="btn-link focus-ring" (click)="otrosAbierto.set(false)">Cancelar</button>
+                    }
+                  </div>
+                  <textarea id="ra-otros" appAutosize [minRows]="2" [maxRows]="8" class="form-control !py-2" maxlength="6000"
+                            placeholder="Ej.: Limpieza del salón el sábado"
+                            (keydown.escape)="form.otros_temas.trim() || otrosAbierto.set(false)"
+                            [(ngModel)]="form.otros_temas" (ngModelChange)="tocar()"></textarea>
+                } @else {
+                  <button type="button" class="btn-link focus-ring" (click)="abrirOtros()">
+                    <lucide-icon name="plus" [size]="14" aria-hidden="true"></lucide-icon>Añadir otros temas
+                  </button>
+                }
+              </div>
             </div>
           </section>
         </div>
 
         <!-- ────── Vista previa en vivo ────── -->
-        <div class="min-h-0 @6xl:flex flex-col" [class.flex]="pestana() === 'vista'" [class.hidden]="pestana() !== 'vista'">
-          <p class="eyebrow mb-2 shrink-0 hidden @6xl:block">Vista previa · así saldrá el PDF</p>
+        <div class="min-h-0 flex-col w-full max-w-7xl mx-auto pt-3" [class.flex]="pestana() === 'vista'" [class.hidden]="pestana() !== 'vista'">
+          <p class="eyebrow mb-3 shrink-0">Vista previa · así saldrá el PDF</p>
           <div class="lista-interna flex-1 min-h-0 overflow-y-auto rounded-2xl">
             <app-reunion-documento [doc]="documentoForm()" />
           </div>
@@ -509,29 +637,57 @@ const MIN_MAX = 240;
   <ng-template #acciones>
     <div class="acciones">
       @if (!esNueva()) {
-        <button type="button" class="btn-ghost-danger focus-ring acc-icono" (click)="confirmar.set('eliminar')"
-                aria-label="Eliminar reunión" title="Eliminar reunión">
-          <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>
-        </button>
-        <button type="button" class="btn-secondary focus-ring" [disabled]="descargando()" (click)="descargarPdf()" title="Descargar PDF">
-          @if (descargando()) { <span class="spinner spinner-xs" aria-hidden="true"></span> } @else { <lucide-icon name="download" [size]="16" aria-hidden="true"></lucide-icon> }<span class="acc-txt">PDF</span>
-        </button>
-        @if (reunion()?.id_acta && puedeEditarActas) {
-          <a class="btn-secondary focus-ring" [routerLink]="['/administracion/actas-reunion', reunion()!.id_acta]" title="Abrir el acta para tomar notas">
-            <lucide-icon name="book-open" [size]="16" aria-hidden="true"></lucide-icon><span class="acc-txt">Acta</span>
-          </a>
-        } @else if (reunion()?.puedo_pasar_a_acta && !reunion()?.id_acta) {
-          <button type="button" class="btn-secondary focus-ring" [disabled]="ocupado()" (click)="confirmar.set('acta')" title="Generar el acta en el módulo de Actas">
-            <lucide-icon name="book-open" [size]="16" aria-hidden="true"></lucide-icon><span class="acc-txt">Generar acta</span>
+        <div class="menu-wrap" (focusout)="cerrarMenuSiSale($event)" (keydown.escape)="menuAbierto.set(false)">
+          <button type="button" class="btn-icon" aria-label="Más acciones" title="Más acciones" aria-haspopup="menu"
+                  [attr.aria-expanded]="menuAbierto()" (click)="menuAbierto.set(!menuAbierto())">
+            <lucide-icon name="more-vertical"></lucide-icon>
           </button>
-        } @else if (reunion()?.puedo_leer_acta) {
-          <button type="button" class="btn-secondary focus-ring" [disabled]="leyendoActa()" (click)="leerActa()" title="Leer el acta de la reunión">
-            @if (leyendoActa()) { <span class="spinner spinner-xs" aria-hidden="true"></span> } @else { <lucide-icon name="book-open" [size]="16" aria-hidden="true"></lucide-icon> }<span class="acc-txt">Leer el acta</span>
-          </button>
-        }
-        @if (reunion()?.estado !== 'realizada') {
-          <button type="button" class="btn-secondary focus-ring acc-ancho" [disabled]="ocupado()" (click)="pedirConvocar()">
-            <lucide-icon name="send" [size]="16" aria-hidden="true"></lucide-icon>{{ reunion()?.estado !== 'convocada' ? 'Convocar' : sinAvisar() ? 'Avisar' : 'Avisar cambios' }}
+          @if (menuAbierto()) {
+            <div class="menu" role="menu" aria-label="Más acciones">
+              @if (reunion()?.estado === 'convocada' && !sinAvisar()) {
+                <button type="button" role="menuitem" class="menu-item" (click)="accionMenu('avisar')">
+                  <lucide-icon name="send" [size]="16" aria-hidden="true"></lucide-icon>Avisar de los cambios
+                </button>
+              }
+              @if (reunion()?.puedo_pasar_a_acta && !reunion()?.id_acta && siguientePaso()?.clave !== 'acta') {
+                <button type="button" role="menuitem" class="menu-item" (click)="accionMenu('acta')">
+                  <lucide-icon name="book-open" [size]="16" aria-hidden="true"></lucide-icon>Generar el acta
+                </button>
+              }
+              @if (usarEnVivo() && reunion()?.estado === 'convocada' && siguientePaso()?.clave !== 'vivo') {
+                <button type="button" role="menuitem" class="menu-item" (click)="accionMenu('vivo')">
+                  <lucide-icon name="play" [size]="16" aria-hidden="true"></lucide-icon>Abrir la reunión en vivo
+                </button>
+              }
+              <button type="button" role="menuitem" class="menu-item" (click)="accionMenu('preparar')">
+                <lucide-icon name="notebook-pen" [size]="16" aria-hidden="true"></lucide-icon>Mi preparación y mis notas
+              </button>
+              <button type="button" role="menuitem" class="menu-item" (click)="accionMenu('duplicar')">
+                <lucide-icon name="copy" [size]="16" aria-hidden="true"></lucide-icon>Duplicar como plantilla
+              </button>
+              @if (reunion()?.estado === 'cancelada') {
+                <button type="button" role="menuitem" class="menu-item" (click)="accionMenu('reabrir')">
+                  <lucide-icon name="rotate-ccw" [size]="16" aria-hidden="true"></lucide-icon>Reabrir la reunión
+                </button>
+              } @else if (reunion()?.estado !== 'realizada') {
+                <button type="button" role="menuitem" class="menu-item" (click)="accionMenu('cancelar')">
+                  <lucide-icon name="ban" [size]="16" aria-hidden="true"></lucide-icon>Cancelar la reunión
+                </button>
+              }
+              <div class="menu-sep" role="separator"></div>
+              <button type="button" role="menuitem" class="menu-item menu-peligro" (click)="accionMenu('eliminar')">
+                <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>Eliminar
+              </button>
+            </div>
+          }
+        </div>
+        <button type="button" class="btn-icon" [disabled]="descargando()" (click)="descargarPdf()" aria-label="Descargar el programa en PDF" title="Descargar PDF">
+          @if (descargando()) { <span class="spinner spinner-xs" aria-hidden="true"></span> } @else { <lucide-icon name="download"></lucide-icon> }
+        </button>
+        @if (siguientePaso(); as sp) {
+          <button type="button" class="focus-ring acc-ancho" [class]="sucio() ? 'btn-secondary' : 'btn-primary-violet'"
+                  [disabled]="ocupado() || leyendoActa()" (click)="hacerSiguiente(sp.clave)">
+            <lucide-icon [name]="sp.icono" [size]="16" aria-hidden="true"></lucide-icon>{{ sp.texto }}
           </button>
         }
       }
@@ -611,6 +767,7 @@ const MIN_MAX = 240;
 
   <!-- ══════ Elegir convocados ══════ -->
   <app-modal [open]="convocadosAbierto()" (closed)="convocadosAbierto.set(false)" title="¿A quién se convoca?" size="3xl"
+             subtitle="Reciben el aviso y pueden ver el programa. La campana tachada marca a quien no le llega el aviso."
              [hasFooter]="true" [padding]="false">
     <div class="@container">
     <div class="sel">
@@ -619,10 +776,7 @@ const MIN_MAX = 240;
         @for (g of resumenGrupos(); track g.id) {
           <button type="button" class="sel-g" [attr.aria-current]="grupoVista() === g.id ? 'true' : null" (click)="grupoVista.set(g.id)">
             <span class="sel-g-txt">{{ g.etiqueta }}</span>
-            <span class="sel-g-n tabular-nums">{{ g.id === 'elegidos' ? g.total : g.elegidos + '/' + g.total }}</span>
-            @if (g.id !== 'todos' && g.id !== 'elegidos') {
-              <span class="sel-g-barra" aria-hidden="true"><span [style.width.%]="g.total ? (g.elegidos / g.total) * 100 : 0"></span></span>
-            }
+            <span class="sel-g-n tabular-nums" [attr.data-hay]="g.elegidos || g.total ? null : 'no'">{{ g.id === 'elegidos' ? g.total : g.elegidos + '/' + g.total }}</span>
           </button>
         }
       </nav>
@@ -650,7 +804,13 @@ const MIN_MAX = 240;
           @for (g of gruposSel(); track g.grupo) {
             <section [attr.aria-labelledby]="'sel-g-' + g.grupo">
               @if (gruposSel().length > 1) {
-                <h3 [id]="'sel-g-' + g.grupo" class="sel-subt">{{ g.etiqueta }}</h3>
+                <div class="sel-subt">
+                  <h3 [id]="'sel-g-' + g.grupo" class="sel-subt-t">{{ g.etiqueta }}<span class="sel-subt-n tabular-nums">{{ elegidosEn(g.personas) }} de {{ g.personas.length }}</span></h3>
+                  <button type="button" class="sel-subt-accion focus-ring" (click)="marcarGrupo(g.personas, elegidosEn(g.personas) < g.personas.length)"
+                          [attr.aria-label]="(elegidosEn(g.personas) < g.personas.length ? 'Elegir a todos en ' : 'Quitar a todos en ') + g.etiqueta">
+                    {{ elegidosEn(g.personas) < g.personas.length ? 'Elegir todos' : 'Quitar todos' }}
+                  </button>
+                </div>
               }
               <ul class="sel-lista">
                 @for (a of g.personas; track a.id) {
@@ -658,7 +818,7 @@ const MIN_MAX = 240;
                     <label class="sel-persona" [attr.data-on]="seleccion().has(a.id) ? 'si' : null">
                       <input type="checkbox" class="sr-only" [checked]="seleccion().has(a.id)" (change)="alternar(a.id)" />
                       <span class="sel-caja" aria-hidden="true"><lucide-icon name="check" [size]="14"></lucide-icon></span>
-                      <span class="flex-1 min-w-0 font-medium leading-snug break-words">{{ a.nombre }}</span>
+                      <span class="sel-nombre">{{ a.nombre }}</span>
                       @if (!a.recibe_aviso) {
                         <span class="sel-sin" title="No tiene la app ni cuenta: no le llega el aviso">
                           <lucide-icon name="bell-off" [size]="14" aria-hidden="true"></lucide-icon><span class="sr-only">No tiene la app ni cuenta: no le llega el aviso</span>
@@ -700,6 +860,62 @@ const MIN_MAX = 240;
     </div>
   </app-modal>
 
+  <!-- ══════ Papeles durante la reunión ══════ -->
+  <app-modal [open]="papelesAbierto()" (closed)="papelesAbierto.set(false)" title="Papeles durante la reunión" size="lg" [hasFooter]="true"
+             subtitle="Elija quién lleva el tiempo y quién escribe el acta.">
+    <div class="flex flex-col gap-5">
+      <div class="grid gap-4">
+        <div>
+          <span class="lbl">Toma el tiempo</span>
+          <app-select-picker colorScheme="violet" ariaLabel="Quién toma el tiempo" placeholder="Elegir persona"
+            [options]="opciones()" [(ngModel)]="papeles.tiempo" />
+          <p class="caption mt-1">Lleva el cronómetro de cada tema. Si no elige a nadie: {{ porDefectoTiempo() }}.</p>
+        </div>
+        <div>
+          <span class="lbl">Toma las notas del acta</span>
+          <app-select-picker colorScheme="violet" ariaLabel="Quién toma las notas" placeholder="Elegir persona"
+            [options]="opciones()" [(ngModel)]="papeles.redactor" />
+          <p class="caption mt-1">Escribe el acta y decide qué queda. Si no elige a nadie: {{ porDefectoNotas() }}.</p>
+        </div>
+      </div>
+      <fieldset>
+        <legend class="lbl w-full flex items-baseline justify-between gap-2">
+          <span>Colaboran en las notas <span class="font-normal text-slate-500 dark:text-slate-400">(opcional)</span></span>
+          @if (papeles.colaboradores.size) { <span class="caption tabular-nums">{{ papeles.colaboradores.size }} {{ papeles.colaboradores.size === 1 ? 'elegido' : 'elegidos' }}</span> }
+        </legend>
+        <p class="caption mb-2">Pueden añadir puntos a las notas durante la reunión.</p>
+        @if (candidatosColaborar().length) {
+          <ul class="sel-lista">
+            @for (a of candidatosColaborar(); track a.id) {
+              <li>
+                <label class="sel-persona" [attr.data-on]="papeles.colaboradores.has(a.id) ? 'si' : null">
+                  <input type="checkbox" class="sr-only" [checked]="papeles.colaboradores.has(a.id)" (change)="alternarColaborador(a.id)" />
+                  <span class="sel-caja" aria-hidden="true"><lucide-icon name="check" [size]="14"></lucide-icon></span>
+                  <span class="sel-nombre">{{ a.label }}</span>
+                </label>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="text-sm text-slate-500 dark:text-slate-400">Primero elija a los convocados.</p>
+        }
+      </fieldset>
+    </div>
+    <div slot="footer" class="flex gap-3">
+      <button type="button" class="btn-ghost" (click)="papelesAbierto.set(false)">Cancelar</button>
+      <button type="button" class="btn-save focus-ring" (click)="aplicarPapeles()">
+        <lucide-icon name="check" [size]="16" aria-hidden="true"></lucide-icon>Listo
+      </button>
+    </div>
+  </app-modal>
+
+  <app-a-quien-asignar [pedido]="sugerencia()?.pedido ?? null" [idCongregacion]="congregacionAdmin()"
+    (elegir)="aplicarSugerencia($event)" (cerrar)="sugerencia.set(null)" />
+
+  <app-confirm-dialog [open]="confirmar() === 'cancelar'" severity="danger" title="¿Cancelar esta reunión?"
+    [message]="mensajeCancelar()" confirmLabel="Cancelar la reunión" cancelLabel="No, dejarla"
+    [busy]="accionando()" (confirmed)="cancelarReunion()" (cancelled)="confirmar.set(null)" />
+
   <!-- ══════ Confirmaciones ══════ -->
   <app-confirm-dialog [open]="confirmar() === 'cambiar-tipo'" severity="warning" title="¿Cambiar también los convocados?"
     [message]="'Usted cambió la lista de convocados a mano. ¿Quiere ponerla como corresponde a «' + tipoActual().etiqueta + '», o dejar la suya?'"
@@ -713,8 +929,8 @@ const MIN_MAX = 240;
       <button type="button" class="op-convocar op-avisar focus-ring" (click)="convocar(true)">
         <span class="op-icono"><lucide-icon name="send" [size]="22" aria-hidden="true"></lucide-icon></span>
         <span class="op-cuerpo">
-          <span class="op-titulo">Convocar y avisar a {{ avisoInfo().conAviso }} {{ avisoInfo().conAviso === 1 ? 'persona' : 'personas' }}</span>
-          <span class="op-texto">Reciben el aviso en el celular y pueden ver el programa.</span>
+          <span class="op-titulo">Convocar y avisar a {{ avisoInfo().conAviso }} {{ avisoInfo().conAviso === 1 ? 'persona convocada' : 'personas convocadas' }}</span>
+          <span class="op-texto">Reciben el aviso en el celular y pueden ver el programa. También se avisa al Coordinador y al Secretario.</span>
           @if (avisoInfo().sinAviso) {
             <span class="op-nota">{{ avisoInfo().sinAviso }} no {{ avisoInfo().sinAviso === 1 ? 'tiene' : 'tienen' }} la app ni cuenta: avíseles usted.</span>
           }
@@ -776,13 +992,8 @@ const MIN_MAX = 240;
       font-size: 0.75rem; font-weight: 700; border: 1px solid transparent; cursor: default;
     }
     .chip-estado::before { content: ''; width: 0.375rem; height: 0.375rem; border-radius: 9999px; background: currentColor; }
-    .chip-estado[data-estado='borrador']  { background: #fffbeb; color: #b45309; border-color: #fde68a; }
-    .chip-estado[data-estado='convocada'] { background: #f5f3ff; color: var(--color-brand-purple); border-color: #ddd6fe; }
-    .chip-sin-avisar {
-      display: inline-flex; align-items: center; padding: 0.1875rem 0.625rem; border-radius: 9999px;
-      font-size: 0.75rem; font-weight: 700; border: 1px solid #fde68a; background: #fffbeb; color: #b45309; cursor: default;
-    }
-    :host-context(.dark) .chip-sin-avisar { background: rgba(245,158,11,0.12); color: #fcd34d; border-color: rgba(245,158,11,0.3); }
+    .chip-estado { color: var(--est); background: color-mix(in oklab, var(--est) 11%, transparent); border-color: color-mix(in oklab, var(--est) 32%, transparent); }
+    .chip-estado[data-estado='cancelada'] { text-decoration: line-through; text-decoration-thickness: 1px; }
     .op-convocar {
       display: flex; align-items: center; gap: 1rem; width: 100%; text-align: left; cursor: pointer;
       padding: 1rem 1.125rem; border-radius: 1rem; border: 1.5px solid #cbd5e1; background: #fff;
@@ -794,8 +1005,8 @@ const MIN_MAX = 240;
       display: inline-flex; align-items: center; justify-content: center;
     }
     .op-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
-    .op-titulo { font-size: 1.0625rem; font-weight: 700; color: #0f172b; line-height: 1.3; }
-    .op-texto { font-size: 0.9375rem; color: #45556c; line-height: 1.45; }
+    .op-titulo { font-size: 1rem; font-weight: 700; color: #0f172b; line-height: 1.3; }
+    .op-texto { font-size: 0.875rem; color: #45556c; line-height: 1.45; }
     .op-nota { font-size: 0.875rem; font-weight: 600; color: #b45309; }
     .op-flecha { flex-shrink: 0; color: #90a1b9; }
     .op-avisar { border-color: #c4b5fd; background: #f5f3ff; }
@@ -812,45 +1023,22 @@ const MIN_MAX = 240;
     :host-context(.dark) .op-silencio .op-icono { background: rgba(148,163,184,0.2); color: #e2e8f0; }
     :host-context(.dark) .op-avisar:hover { border-color: #a78bfa; background: rgba(139,92,246,0.2); }
     :host-context(.dark) .op-silencio:hover { border-color: #90a1b9; background: rgba(148,163,184,0.12); }
-    .chip-estado[data-estado='realizada'] { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-    :host-context(.dark) .chip-estado[data-estado='borrador']  { background: rgba(245,158,11,0.12); color: #fcd34d; border-color: rgba(245,158,11,0.3); }
-    :host-context(.dark) .chip-estado[data-estado='convocada'] { background: rgba(139,92,246,0.14); color: #c4b5fd; border-color: rgba(139,92,246,0.3); }
-    :host-context(.dark) .chip-estado[data-estado='realizada'] { background: rgba(16,185,129,0.12); color: #6ee7b7; border-color: rgba(16,185,129,0.3); }
 
-    /* Pestañas solo en el teléfono (en el CSS del componente: una utilidad
-       @3xl:hidden no le gana a display:grid de .seg). */
-    @container (min-width: 48rem) { .segmented.seg-movil { display: none; } }
+    /* Armar / Vista previa: a todo el ancho en el teléfono; en pantallas anchas,
+       un control compacto en la cabecera, antes de las acciones. */
+    @container (min-width: 48rem) { .segmented.seg-movil { width: auto; order: 0; margin-left: auto; } }
     /* Ancho medio (720p con menú abierto): PDF, Acta y Vista previa solo con
        icono (llevan título emergente y aria-label) para que el título quepa. */
     @container (min-width: 48rem) and (max-width: 75rem) {
       .ed header .acc-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     }
-    .vista-activa { border-color: #a78bfa !important; color: var(--color-brand-purple) !important; background: #f5f3ff !important; }
-    :host-context(.dark) .vista-activa { color: #ddd6fe !important; background: rgba(139,92,246,0.16) !important; }
-    .estado-guardado { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; font-weight: 600; color: #62748e; }
+    .estado-guardado { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 600; color: #62748e; }
     :host-context(.dark) .estado-guardado { color: #90a1b9; }
     .estado-guardado .punto { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: #f59e0b; }
 
-    /* Volver: botón con borde, flecha y «Reuniones» */
-    .volver {
-      flex-shrink: 0; min-height: 2.5rem; display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0 0.875rem 0 0.75rem; border-radius: 0.75rem;
-      font-size: 0.875rem; font-weight: 600; color: #314158; background: #fff; border: 1px solid #e2e8f0;
-      transition: color 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out, transform 120ms ease-out;
-    }
-    .volver lucide-icon { transition: transform 150ms ease-out; }
-    .volver:active { transform: scale(0.97); }
-    @container (max-width: 47.99rem) { .volver { width: 2.5rem; padding: 0; justify-content: center; } }
-    @media (hover: hover) {
-      .volver:hover { color: var(--color-brand-purple); background: #f5f3ff; border-color: #c4b5fd; }
-      .volver:hover lucide-icon { transform: translateX(-2px); }
-    }
-    :host-context(.dark) .volver { color: #e2e8f0; background: #1d293d; border-color: #314158; }
-    @media (hover: hover) { :host-context(.dark) .volver:hover { color: #ddd6fe; background: rgba(139,92,246,0.14); border-color: rgba(139,92,246,0.5); } }
-
     .titulo-reunion { display: block; resize: none; field-sizing: content; min-height: 2.625rem; line-height: 1.35; }
     .titulo-reunion[aria-invalid='true'] { border-color: #fda4af !important; }
-    .ed-fecha { font-weight: 500; color: #62748e; }
+    .ed-fecha { font-size: 1rem; font-weight: 500; color: #62748e; }
     :host-context(.dark) .ed-fecha { color: #90a1b9; }
 
     /* Convocados: se ve como un campo más de la rejilla */
@@ -867,7 +1055,7 @@ const MIN_MAX = 240;
     :host-context(.dark) .sin-cuenta { color: #fcd34d; }
     .btn-cambiar {
       flex-shrink: 0; margin-left: auto; display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2rem; padding: 0 0.75rem;
-      border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 700; color: var(--color-brand-purple); background: #f5f3ff; border: 1px solid #ddd6fe;
+      border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; color: var(--color-brand-purple); background: #f5f3ff; border: 1px solid #ddd6fe;
       transition: background-color 150ms ease-out, border-color 150ms ease-out, transform 120ms ease-out;
     }
     .btn-cambiar:hover:not(:disabled) { background: #ede9fe; border-color: #c4b5fd; }
@@ -896,38 +1084,28 @@ const MIN_MAX = 240;
       }
       :host-context(.dark) .sel-grupos { background: rgba(15,23,42,0.35); border-color: rgba(148,163,184,0.14); }
     }
+    /* Grupos: filas iguales, sin adornos. El activo lleva el acento; el contador resume lo elegido. */
     .sel-g {
-      flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 0.75rem;
-      min-height: 2.5rem; padding: 0.375rem 0.875rem; border-radius: 0.625rem; text-align: left;
-      font-size: 0.875rem; font-weight: 600; color: #45556c; background: #f1f5f9;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+      min-height: 2.5rem; padding: 0.375rem 0.75rem; border-radius: 0.75rem; text-align: left;
+      font-size: 0.875rem; font-weight: 600; color: var(--color-slate-600); background: transparent;
       transition: background-color 150ms ease-out, color 150ms ease-out, transform 120ms ease-out;
     }
-    @container (min-width: 44rem) { .sel-g { background: transparent; padding: 0.5rem 0.75rem; } }
+    :host-context(.dark) .sel-g { color: var(--color-slate-300); }
     .sel-g:active { transform: scale(0.98); }
-    @media (hover: hover) { .sel-g:hover { background: #ede9fe; color: #5b21b6; } }
-    .sel-g[aria-current='true'] { background: #fff; color: var(--color-brand-purple); box-shadow: 0 1px 2px rgba(15,23,42,0.08), inset 0 0 0 1px #ddd6fe; }
-    :host-context(.dark) .sel-g { color: #cbd5e1; background: rgba(51,65,85,0.5); }
-    @container (min-width: 44rem) { :host-context(.dark) .sel-g { background: transparent; } }
-    @media (hover: hover) { :host-context(.dark) .sel-g:hover { background: rgba(139,92,246,0.14); color: #ddd6fe; } }
-    :host-context(.dark) .sel-g[aria-current='true'] { background: rgba(139,92,246,0.2); color: #ede9fe; box-shadow: inset 0 0 0 1px rgba(167,139,250,0.4); }
-    .sel-g:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 1px; }
+    @media (hover: hover) { .sel-g:hover { background: color-mix(in oklab, var(--accent) 8%, transparent); } }
+    .sel-g[aria-current='true'] { background: color-mix(in oklab, var(--accent) 12%, transparent); color: var(--accent); }
+    :host-context(.dark) .sel-g[aria-current='true'] { color: color-mix(in oklab, var(--accent) 45%, white); }
+    .sel-g:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 1px; }
     .sel-g-txt { white-space: nowrap; }
     @container (min-width: 44rem) { .sel-g-txt { white-space: normal; line-height: 1.25; } }
-    .sel-g-n { font-size: 0.8125rem; font-weight: 700; color: #62748e; }
-    .sel-g[aria-current='true'] .sel-g-n { color: #7c3aed; }
-    :host-context(.dark) .sel-g-n { color: #90a1b9; }
-    :host-context(.dark) .sel-g[aria-current='true'] .sel-g-n { color: #c4b5fd; }
-    /* Barrita de cuántos del grupo están elegidos (solo en la columna lateral) */
-    .sel-g-barra { display: none; }
-    @container (min-width: 44rem) {
-      .sel-g-barra {
-        display: block; grid-column: 1 / -1; height: 0.25rem; margin-top: 0.375rem; border-radius: 9999px;
-        background: #e2e8f0; overflow: hidden;
-      }
-      .sel-g-barra > span { display: block; height: 100%; border-radius: inherit; background: #8b5cf6; transition: width 220ms cubic-bezier(0.23, 1, 0.32, 1); }
-      :host-context(.dark) .sel-g-barra { background: rgba(148,163,184,0.2); }
-      :host-context(.dark) .sel-g-barra > span { background: #a78bfa; }
+    .sel-g-n {
+      min-width: 1.75rem; padding: 0.0625rem 0.5rem; border-radius: 9999px; text-align: center;
+      font-size: 0.75rem; font-weight: 700; color: var(--color-slate-600); background: var(--color-slate-100);
     }
+    :host-context(.dark) .sel-g-n { color: var(--color-slate-300); background: rgb(51 65 85 / 0.6); }
+    .sel-g[aria-current='true'] .sel-g-n { color: #fff; background: var(--accent); }
+    :host-context(.dark) .sel-g[aria-current='true'] .sel-g-n { color: #fff; }
 
     .sel-main { min-height: 0; display: flex; flex-direction: column; }
     /* El buscador toma la línea entera si no cabe junto a «Elegir a todos» */
@@ -962,28 +1140,39 @@ const MIN_MAX = 240;
     :host-context(.dark) .sel-tri[data-estado='todos'], :host-context(.dark) .sel-tri[data-estado='algunos'] { background: #8b5cf6; border-color: #8b5cf6; color: #fff; }
 
     .sel-lista-wrap { flex: 1; min-height: 0; overflow-y: auto; padding: 0 1rem 1rem; }
+    /* Rótulo de cada sección: sin banda de color; título, cuántos y la acción de la sección en una línea. */
     .sel-subt {
-      position: sticky; top: 0; z-index: 1; margin: 0 -0.25rem; padding: 0.5rem 0.25rem 0.375rem;
-      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #62748e;
-      background: #fff;
+      position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+      padding: 0.625rem 0 0.5rem; background: var(--color-white);
+      border-bottom: 1px solid var(--color-slate-200); margin-bottom: 0.5rem;
     }
-    :host-context(.dark) .sel-subt { color: #90a1b9; background: #1d293d; }
-    section + section .sel-subt { margin-top: 0.5rem; }
+    :host-context(.dark) .sel-subt { background: var(--color-slate-900); border-bottom-color: rgb(148 163 184 / 0.16); }
+    .sel-subt-t { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-slate-600); }
+    :host-context(.dark) .sel-subt-t { color: var(--color-slate-300); }
+    .sel-subt-n { font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--color-slate-500); }
+    .sel-subt-accion {
+      min-height: 2rem; padding: 0 0.625rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; color: var(--accent);
+      transition: background-color 150ms ease-out;
+    }
+    :host-context(.dark) .sel-subt-accion { color: color-mix(in oklab, var(--accent) 45%, white); }
+    @media (hover: hover) { .sel-subt-accion:hover { background: color-mix(in oklab, var(--accent) 10%, transparent); } }
+    section + section { margin-top: 0.75rem; }
     /* Tantas columnas como quepan: 1 en el teléfono, 2–3 en escritorio, 4 en pantallas grandes */
-    .sel-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: 0.375rem; }
+    .sel-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: 0.5rem; }
     .sel-persona {
-      display: flex; align-items: center; gap: 0.75rem; min-height: 3rem; padding: 0.5rem 0.75rem;
-      border-radius: 0.75rem; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #1d293d;
+      display: flex; align-items: center; gap: 0.75rem; min-height: 2.75rem; padding: 0.375rem 0.75rem;
+      border-radius: 0.75rem; cursor: pointer; border: 1px solid var(--color-slate-200); background: var(--color-white); color: var(--color-slate-800);
       transition: background-color 150ms ease-out, border-color 150ms ease-out, transform 120ms ease-out;
       user-select: none;
     }
+    .sel-nombre { flex: 1; min-width: 0; font-size: 0.875rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
     .sel-persona:active { transform: scale(0.985); }
-    @media (hover: hover) { .sel-persona:hover { border-color: #c4b5fd; } }
-    .sel-persona[data-on='si'] { background: #f5f3ff; border-color: #c4b5fd; color: #2e1065; }
-    .sel-persona:has(:focus-visible) { outline: 2px solid #8b5cf6; outline-offset: 2px; }
-    :host-context(.dark) .sel-persona { background: rgba(15,23,42,0.4); border-color: #314158; color: #e2e8f0; }
-    @media (hover: hover) { :host-context(.dark) .sel-persona:hover { border-color: rgba(167,139,250,0.55); } }
-    :host-context(.dark) .sel-persona[data-on='si'] { background: rgba(139,92,246,0.16); border-color: rgba(167,139,250,0.55); color: #f5f3ff; }
+    @media (hover: hover) { .sel-persona:hover { border-color: color-mix(in oklab, var(--accent) 45%, var(--color-slate-200)); } }
+    .sel-persona[data-on='si'] { background: color-mix(in oklab, var(--accent) 7%, white); border-color: color-mix(in oklab, var(--accent) 55%, white); }
+    .sel-persona:has(:focus-visible) { outline: 2px solid var(--accent-focus); outline-offset: 2px; }
+    :host-context(.dark) .sel-persona { background: transparent; border-color: var(--color-slate-700); color: var(--color-slate-100); }
+    @media (hover: hover) { :host-context(.dark) .sel-persona:hover { border-color: color-mix(in oklab, var(--accent) 55%, var(--color-slate-700)); } }
+    :host-context(.dark) .sel-persona[data-on='si'] { background: color-mix(in oklab, var(--accent) 12%, transparent); border-color: color-mix(in oklab, var(--accent) 50%, transparent); }
     /* Casilla propia: más grande y clara que la del navegador */
     .sel-caja {
       flex-shrink: 0; width: 1.375rem; height: 1.375rem; display: grid; place-items: center; border-radius: 0.375rem;
@@ -991,19 +1180,19 @@ const MIN_MAX = 240;
       transition: background-color 150ms ease-out, border-color 150ms ease-out;
     }
     .sel-caja lucide-icon { transform: scale(0.4); opacity: 0; transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), opacity 120ms ease-out; }
-    .sel-persona[data-on='si'] .sel-caja { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    .sel-persona[data-on='si'] .sel-caja { background: var(--accent); border-color: var(--accent); color: #fff; }
     .sel-persona[data-on='si'] .sel-caja lucide-icon { transform: scale(1); opacity: 1; }
     :host-context(.dark) .sel-caja { background: transparent; border-color: #62748e; }
-    :host-context(.dark) .sel-persona[data-on='si'] .sel-caja { background: #8b5cf6; border-color: #8b5cf6; }
+    :host-context(.dark) .sel-persona[data-on='si'] .sel-caja { background: var(--accent); border-color: var(--accent); }
     .sel-sin { flex-shrink: 0; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 9999px; color: #b45309; background: #fef3c7; }
     :host-context(.dark) .sel-sin { color: #fcd34d; background: rgba(245,158,11,0.16); }
 
     .sel-pie { width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
-    .sel-resumen { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; font-size: 0.9375rem; color: #45556c; }
+    .sel-resumen { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; font-size: 0.875rem; color: #45556c; }
     :host-context(.dark) .sel-resumen { color: #cbd5e1; }
     .sel-resumen-sin {
       display: inline-flex; align-items: center; gap: 0.3125rem; padding: 0.125rem 0.5rem; border-radius: 9999px;
-      font-size: 0.8125rem; font-weight: 600; color: #92400e; background: #fef3c7;
+      font-size: 0.75rem; font-weight: 600; color: #92400e; background: #fef3c7;
     }
     :host-context(.dark) .sel-resumen-sin { color: #fcd34d; background: rgba(245,158,11,0.16); }
 
@@ -1014,12 +1203,12 @@ const MIN_MAX = 240;
     .sel-barra .buscador-lupa ::ng-deep svg { width: 1.0625rem; height: 1.0625rem; }
 
     @media (prefers-reduced-motion: reduce) {
-      .sel-g, .sel-persona, .sel-caja, .sel-caja lucide-icon, .sel-todos, .sel-g-barra > span { transition: none; }
+      .sel-g, .sel-persona, .sel-caja, .sel-caja lucide-icon, .sel-todos { transition: none; }
     }
 
-    .lbl { display: block; font-size: 0.8125rem; font-weight: 600; color: #45556c; margin: 0 0 0.3125rem 0.125rem; }
+    .lbl { display: block; font-size: 0.875rem; font-weight: 600; color: #45556c; margin: 0 0 0.3125rem 0.125rem; }
     :host-context(.dark) .lbl { color: #cbd5e1; }
-    .error-campo { margin-top: 0.25rem; font-size: 0.8125rem; font-weight: 600; color: #be123c; }
+    .error-campo { margin-top: 0.25rem; font-size: 0.75rem; font-weight: 600; color: #be123c; }
     :host-context(.dark) .error-campo { color: #fda4af; }
 
     /* ── Acciones ──────────────────────────────────────────── */
@@ -1067,7 +1256,7 @@ const MIN_MAX = 240;
     :host-context(.dark) .franja-programa { background: rgba(15,23,42,0.45); border-bottom-color: rgba(148,163,184,0.18); }
     .dato-prog {
       display: inline-flex; align-items: center; gap: 0.3125rem; padding: 0.125rem 0.625rem;
-      border-radius: 9999px; font-size: 0.8125rem; font-weight: 700; background: #fff; border: 1px solid #e2e8f0; color: #314158;
+      border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #fff; border: 1px solid #e2e8f0; color: #314158;
     }
     .dato-prog-min { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
     .dato-prog.dato-prog-anadir, :host-context(.dark) .dato-prog.dato-prog-anadir {
@@ -1099,14 +1288,18 @@ const MIN_MAX = 240;
     .c-titulo { grid-area: titulo; }
     .c-resp { grid-area: resp; }
     .c-min { grid-area: min; justify-self: start; }
-    .c-acc { grid-area: acc; }
+    .c-acc { grid-area: acc; min-height: 2.75rem; }
     /* Ancho: una parte = un renglón, como la tabla del PDF */
     @container (min-width: 46rem) {
       .parte-fila {
         grid-template-columns: 2rem minmax(0, 1.4fr) minmax(11rem, 1fr) auto auto;
         grid-template-areas: 'num titulo resp min acc';
+        /* Los controles arrancan alineados arriba: bajo el título puede haber la etiqueta de categoría,
+           y centrados quedarían más abajo que el campo del título. */
+        align-items: start;
       }
-      .numero { align-self: center; margin-top: 0; }
+      .numero { align-self: start; margin-top: 0.375rem; }
+      .c-min, .c-acc { align-self: start; }
     }
 
     /* Los nombres no se cortan: si no caben, pasan a un segundo renglón */
@@ -1123,12 +1316,12 @@ const MIN_MAX = 240;
 
     /* El título es un textarea que crece: nunca se corta, pasa a otro renglón */
     .titulo-input {
-      display: block; width: 100%; resize: none; field-sizing: content; min-height: 2.5rem;
+      display: block; width: 100%; resize: none; field-sizing: content; min-height: 2.75rem;
       padding: 0.5rem 0.75rem; border-radius: 0.625rem; border: 1px solid #e2e8f0; background: #fff;
       font-weight: 600; line-height: 1.35; color: #0f172b; outline: none;
       transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
     }
-    .titulo-input::placeholder { color: #90a1b9; font-weight: 500; }
+    .titulo-input::placeholder { color: #90a1b9; font-weight: 400; }
     .titulo-input:hover { border-color: #cbd5e1; }
     .titulo-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
     .titulo-input[aria-invalid='true'] { border-color: #fda4af; }
@@ -1137,7 +1330,7 @@ const MIN_MAX = 240;
     :host-context(.dark) .titulo-input:focus { border-color: #8b5cf6; }
 
     .stepper {
-      display: inline-flex; align-items: stretch; height: 2.5rem;
+      display: inline-flex; align-items: stretch; height: 2.75rem;
       border: 1px solid #e2e8f0; border-radius: 0.625rem; overflow: hidden; background: #fff;
     }
     :host-context(.dark) .stepper { border-color: #314158; background: #0f172b; }
@@ -1153,7 +1346,7 @@ const MIN_MAX = 240;
     :host-context(.dark) .stepper-btn { color: #cbd5e1; }
     :host-context(.dark) .stepper-btn:hover:not(:disabled) { background: rgba(139,92,246,0.2); color: #ddd6fe; }
     .stepper-input {
-      width: 2.75rem; text-align: center; font-weight: 700; font-size: 0.9375rem; background: transparent;
+      width: 2.75rem; text-align: center; font-weight: 700; font-size: 0.875rem; background: transparent;
       border-inline: 1px solid #e2e8f0; outline: none; color: #0f172b; -moz-appearance: textfield;
     }
     :host-context(.dark) .stepper-input { border-color: #314158; color: #f1f5f9; }
@@ -1193,13 +1386,98 @@ const MIN_MAX = 240;
     .anadir {
       width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
       padding: 0.625rem; border-radius: 0.875rem; border: 2px dashed #ddd6fe;
-      font-size: 0.9375rem; font-weight: 700; color: var(--color-brand-purple);
+      font-size: 0.875rem; font-weight: 700; color: var(--color-brand-purple);
       transition: background-color 150ms ease-out, border-color 150ms ease-out, transform 120ms ease-out;
     }
     .anadir:hover { background: #f5f3ff; border-color: #a78bfa; }
     .anadir:active { transform: scale(0.99); }
     :host-context(.dark) .anadir { border-color: rgba(139,92,246,0.35); color: #c4b5fd; }
     :host-context(.dark) .anadir:hover { background: rgba(139,92,246,0.1); }
+
+    .vacio { display: flex; flex-direction: column; gap: 1rem; padding: 1rem 0.5rem 0.5rem; }
+    .vacio-cab { display: flex; align-items: flex-start; gap: 0.75rem; }
+    .vacio-icono {
+      flex-shrink: 0; width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; display: grid; place-items: center;
+      color: var(--accent); background: var(--accent-soft, color-mix(in oklab, var(--accent) 12%, transparent));
+    }
+    .losetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: 0.625rem; }
+    .loseta {
+      display: flex; align-items: center; gap: 0.625rem; min-height: 3.25rem; padding: 0.5rem 0.875rem;
+      border-radius: 0.875rem; border-width: 1px; border-style: solid; font-size: 0.875rem; font-weight: 700; text-align: left;
+      transition: transform 120ms ease-out, filter 150ms ease-out, border-color 150ms ease-out;
+    }
+    .loseta > lucide-icon { flex-shrink: 0; color: var(--cat, currentColor); }
+    .loseta:hover { border-color: var(--cat, var(--accent)); }
+    .loseta:active { transform: scale(0.98); }
+    .loseta-neutra { border-style: dashed; border-color: var(--color-slate-300); color: var(--color-slate-700); background: transparent; }
+    :host-context(.dark) .loseta-neutra { border-color: var(--color-slate-700); color: var(--color-slate-200); }
+    .loseta-neutra:hover { border-color: var(--accent); }
+    @media (prefers-reduced-motion: reduce) { .loseta:active { transform: none; } }
+    .pie-papeles {
+      display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem;
+      padding-top: 0.5rem; border-top: 1px solid var(--color-slate-200);
+    }
+    :host-context(.dark) .pie-papeles { border-top-color: var(--color-slate-800); }
+    .det-cat, .det-ancho { grid-column: 1 / -1; }
+    .detalles { align-items: start; }
+    .det-cancelar { display: flex; align-items: center; gap: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--color-slate-200); }
+    :host-context(.dark) .det-cancelar { border-top-color: var(--color-slate-800); }
+    .cat-opcion {
+      cursor: pointer; min-height: 2rem; padding: 0 0.625rem; font-size: 0.75rem; opacity: 0.72;
+      transition: opacity 150ms ease-out, transform 120ms ease-out, box-shadow 150ms ease-out;
+    }
+    .cat-opcion:hover { opacity: 1; }
+    .cat-opcion:active { transform: scale(0.97); }
+    .cat-opcion[aria-checked='true'] { opacity: 1; font-weight: 700; box-shadow: 0 0 0 1px var(--cat); }
+    /* Con el dedo, objetivo táctil de 40 px */
+    @media (pointer: coarse) { .cat-opcion { min-height: 2.5rem; padding: 0 0.875rem; font-size: 0.875rem; } }
+    @media (prefers-reduced-motion: reduce) { .cat-opcion:active { transform: none; } }
+    .rapidas { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.625rem; padding: 0 0.25rem; }
+    .lbl-fila { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.3125rem; }
+    .lbl-fila .lbl { margin-bottom: 0; }
+    .sugerir { display: inline-flex; align-items: center; gap: 0.25rem; min-height: 1.75rem; margin-block: -0.25rem; padding: 0 0.375rem; border-radius: 0.5rem;
+      font-size: 0.75rem; font-weight: 700; color: var(--color-brand-purple); }
+    .sugerir:hover { background: color-mix(in oklab, var(--color-brand-purple) 8%, transparent); }
+    .sugerir:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 1px; }
+    :host-context(.dark) .sugerir { color: color-mix(in oklab, var(--color-brand-purple) 45%, white); }
+
+    /* Debajo del título: categoría, cancelado, indicación */
+    .meta-parte { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; margin-top: 0.375rem; }
+    .meta-parte:empty { display: none; }
+    .cat-btn { cursor: pointer; transition: transform 120ms ease-out, filter 150ms ease-out; }
+    .cat-btn:hover { filter: brightness(0.97); }
+    .cat-btn:active { transform: scale(0.97); }
+    .parte-cancelada .titulo-input { text-decoration: line-through; color: #62748e; }
+    :host-context(.dark) .parte-cancelada .titulo-input { color: #90a1b9; }
+    .nota-asignado { padding: 0.75rem; border-radius: 0.75rem; border: 1px dashed #fcd34d; background: rgb(255 251 235 / 0.6); }
+    :host-context(.dark) .nota-asignado { border-color: rgb(245 158 11 / 0.35); background: rgb(245 158 11 / 0.06); }
+
+    /* Menú «Más acciones» */
+    .menu-wrap { position: relative; }
+    .menu {
+      position: absolute; right: 0; top: calc(100% + 0.375rem); z-index: var(--z-dropdown, 40); min-width: 15rem;
+      padding: 0.375rem; border-radius: 0.875rem; background: #fff; border: 1px solid #e2e8f0;
+      box-shadow: 0 12px 32px -12px rgb(15 23 42 / 0.25); transform-origin: top right;
+      animation: menu-entra 160ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    }
+    .barra .menu { top: auto; bottom: calc(100% + 0.5rem); left: 0; right: auto; transform-origin: bottom left; }
+    :host-context(.dark) .menu { background: #0f172b; border-color: #1d293d; }
+    @keyframes menu-entra { from { opacity: 0; transform: scale(0.96) translateY(-2px); } }
+    .menu-item {
+      width: 100%; display: flex; align-items: center; gap: 0.625rem; min-height: 2.5rem; padding: 0 0.75rem;
+      border-radius: 0.625rem; font-size: 0.875rem; font-weight: 600; color: #314158; text-align: left;
+      transition: background-color 120ms ease-out;
+    }
+    .menu-item:hover, .menu-item:focus-visible { background: #f1f5f9; outline: none; }
+    :host-context(.dark) .menu-item { color: #e2e8f0; }
+    :host-context(.dark) .menu-item:hover, :host-context(.dark) .menu-item:focus-visible { background: rgb(255 255 255 / 0.06); }
+    .menu-peligro { color: #be123c; }
+    .menu-peligro:hover, .menu-peligro:focus-visible { background: #fff1f2; }
+    :host-context(.dark) .menu-peligro { color: #fda4af; }
+    :host-context(.dark) .menu-peligro:hover { background: rgb(244 63 94 / 0.12); }
+    .menu-sep { height: 1px; margin: 0.375rem 0.25rem; background: #e2e8f0; }
+    :host-context(.dark) .menu-sep { background: #1d293d; }
+    @media (prefers-reduced-motion: reduce) { .menu { animation: none; } .cat-btn:active { transform: none; } }
 
     .lista-interna { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.45) transparent; overscroll-behavior: contain; }
 
@@ -1211,13 +1489,10 @@ const MIN_MAX = 240;
       .parte-fila { padding-block: 0.3125rem; }
     }
 
-    /* Monitores 2K/4K a escala 100 %: todo crece en proporción */
-    @media (min-width: 2400px) and (min-height: 1300px) { :host { zoom: 1.2; } }
-    @media (min-width: 3200px) and (min-height: 1800px) { :host { zoom: 1.5; } }
 
     @media (prefers-reduced-motion: reduce) {
       .parte, .detalles { animation: none; }
-      .icono-btn:active, .stepper-btn:active, .anadir:active, .volver:active { transform: none; }
+      .icono-btn:active, .stepper-btn:active, .anadir:active { transform: none; }
     }
   `],
 })
@@ -1239,7 +1514,7 @@ export class ReunionAncianosEditorPage implements OnInit {
   esNueva = signal(false);
   reunion = signal<ReunionOut | null>(null);
   cargando = signal(true);
-  errorCarga = signal<'no-encontrada' | 'error' | null>(null);
+  errorCarga = signal<'no-encontrada' | 'error' | 'sin-congregacion' | null>(null);
   /** Publicadores activos de la congregación (GET /personas), para elegir convocados. */
   personas = signal<PersonaOpcion[]>([]);
   cargandoConvocados = signal(false);
@@ -1279,6 +1554,13 @@ export class ReunionAncianosEditorPage implements OnInit {
   private indiceAQuitar: number | null = null;
   parteAQuitarTitulo = signal('');
   propuestaADescartar = signal<ParteOut | null>(null);
+
+  /** Categorías de la congregación (también las archivadas, para mostrar las partes viejas). */
+  categorias = signal<CategoriaOut[]>([]);
+  menuAbierto = signal(false);
+  // Ventana de papeles: trabaja sobre una copia y se aplica con «Listo».
+  papelesAbierto = signal(false);
+  papeles = { tiempo: null as number | null, redactor: null as number | null, colaboradores: new Set<number>() };
 
   proponerAbierto = signal(false);
   enviandoPropuesta = signal(false);
@@ -1500,7 +1782,9 @@ export class ReunionAncianosEditorPage implements OnInit {
         texto_biblico: p.texto_biblico.trim() || null,
         referencias: p.referencias.trim() || null,
         temas: lineas(p.temas),
+        cancelada: p.cancelada,
       })),
+      otrosTemas: lineas(f.otros_temas),
     };
   });
 
@@ -1525,7 +1809,9 @@ export class ReunionAncianosEditorPage implements OnInit {
         texto_biblico: p.texto_biblico,
         referencias: p.referencias,
         temas: p.temas ?? [],
+        cancelada: p.cancelada,
       })),
+      otrosTemas: r.otros_temas ?? [],
     };
   });
 
@@ -1547,7 +1833,7 @@ export class ReunionAncianosEditorPage implements OnInit {
   mensajeConvocar = computed(() => {
     const { conAviso, conApp, sinAviso } = this.avisoInfo();
     const guardar = this.sucio() ? ' Antes se guardarán sus cambios.' : '';
-    const personas = `${conAviso} ${conAviso === 1 ? 'persona' : 'personas'}`;
+    const personas = `${conAviso} ${conAviso === 1 ? 'persona convocada' : 'personas convocadas'} y al Coordinador y al Secretario`;
     let m = this.sinAvisar()
       ? `Todavía no se les ha avisado. Se avisará a ${personas}; podrán ver el programa y proponer puntos.`
       : `Se avisará a ${personas} que la reunión cambió.`;
@@ -1568,6 +1854,7 @@ export class ReunionAncianosEditorPage implements OnInit {
   });
 
   ngOnInit() {
+    this.svc.cargarConfig(this.congregacionAdmin()).subscribe({ error: () => {} });
     this.cargar();
   }
 
@@ -1576,7 +1863,253 @@ export class ReunionAncianosEditorPage implements OnInit {
     if (r.estado === 'borrador') return 'Los convocados todavía no la ven. Cuando esté lista, use «Convocar».';
     if (r.estado === 'convocada' && !r.avisada_en) return 'Está confirmada, pero los convocados todavía no recibieron aviso.';
     if (r.estado === 'convocada') return `Los convocados ya recibieron el aviso${r.avisada_en ? ' el ' + this.convocadaTexto(r.avisada_en) : ''}.`;
-    return 'Esta reunión ya se realizó y se pasó a acta.';
+    if (r.estado === 'cancelada') return 'La reunión se canceló. Puede reabrirla desde «Más acciones».';
+    return 'Esta reunión ya se realizó.';
+  }
+
+  // ── Categorías ───────────────────────────────────────────────────────────
+
+  private catPorId = computed(() => new Map(this.categorias().map(c => [c.id_categoria, c])));
+
+  /** La de la parte: la elegida a mano o, si no, la que da su título (en vivo, mientras se escribe). */
+  categoriaDe(p: ParteForm): CategoriaOut | null {
+    if (p.categoria_manual && p.id_categoria) return this.catPorId().get(p.id_categoria) ?? null;
+    return clasificarTitulo(p.titulo, this.categorias());
+  }
+
+  /** Las activas; la archivada que ya tenía la parte sigue a la vista para no perderla. */
+  categoriasParaElegir(p: ParteForm): CategoriaOut[] {
+    const actual = p.categoria_manual ? p.id_categoria : null;
+    return this.categorias().filter(x => x.activa || x.id_categoria === actual);
+  }
+
+  cambiarCategoria(p: ParteForm, v: unknown) {
+    if (v === 'auto' || v === null) { p.categoria_manual = false; p.id_categoria = null; }
+    else if (typeof v === 'number') { p.categoria_manual = true; p.id_categoria = v; }
+    this.tocar();
+  }
+
+  // ── ¿A quién asignar? ────────────────────────────────────────────────────
+
+  sugerencia = signal<{ pedido: PedidoSugerencia; aplicar: (id: number) => void } | null>(null);
+
+  /** Quiénes ya tienen algo en esta reunión (sin contar el lugar que se está llenando). */
+  private ocupados(excepto: ParteForm | 'inicial' | 'final'): number[] {
+    const f = this.form;
+    const ids = [
+      excepto === 'inicial' ? null : f.id_oracion_inicial,
+      excepto === 'final' ? null : f.id_oracion_final,
+      ...f.partes.filter(p => p !== excepto && !p.cancelada).map(p => p.id_responsable),
+    ];
+    return [...new Set(ids.filter((x): x is number => !!x))];
+  }
+
+  sugerirParte(p: ParteForm, i: number) {
+    const cat = this.categoriaDe(p);
+    if (!cat) { this.toast.info('Sin categorías', 'Cree las categorías de las partes para recibir sugerencias.'); return; }
+    this.sugerencia.set({
+      pedido: {
+        idCategoria: cat.id_categoria, fecha: this.form.fecha, ocupados: this.ocupados(p), actual: p.id_responsable,
+        para: `Parte ${i + 1}${p.titulo.trim() ? ': ' + p.titulo.trim() : ''}`,
+      },
+      aplicar: id => { p.id_responsable = id; p.responsable_texto = ''; },
+    });
+  }
+
+  sugerirOracion(cual: 'inicial' | 'final') {
+    const cat = this.categorias().find(c => c.clave === 'oracion');
+    if (!cat) return;
+    this.sugerencia.set({
+      pedido: {
+        idCategoria: cat.id_categoria, fecha: this.form.fecha, ocupados: this.ocupados(cual),
+        actual: cual === 'inicial' ? this.form.id_oracion_inicial : this.form.id_oracion_final,
+        para: cual === 'inicial' ? 'Oración inicial' : 'Oración final',
+      },
+      aplicar: id => { if (cual === 'inicial') this.form.id_oracion_inicial = id; else this.form.id_oracion_final = id; },
+    });
+  }
+
+  aplicarSugerencia(id: number) {
+    const s = this.sugerencia();
+    if (!s) return;
+    s.aplicar(id);
+    this.sugerencia.set(null);
+    this.tocar();
+    const n = this.nombres().get(id);
+    if (!this.form.convocados.includes(id)) {
+      this.toast.info(`${n ?? 'La persona elegida'} no está convocada`, 'Añádala en «Convocados» para que reciba el aviso.');
+    }
+  }
+
+  // ── Papeles ──────────────────────────────────────────────────────────────
+
+  nombreSecretario = computed(() => {
+    this.version();
+    return this.form.id_secretario ? this.nombres().get(this.form.id_secretario) ?? null : null;
+  });
+
+  papelesResumen = computed(() => {
+    this.version();
+    const n = (id: number | null) => (id ? this.nombres().get(id) ?? 'Otra persona' : null);
+    const r = this.reunion();
+    return {
+      tiempo: n(this.form.id_tiempo) ?? (r?.tiempo_nombre && !r.id_publicador_tiempo_propio ? r.tiempo_nombre : 'El coordinador'),
+      notas: n(this.form.id_redactor) ?? this.nombreSecretario() ?? 'El secretario',
+    };
+  });
+
+  porDefectoTiempo(): string {
+    const r = this.reunion();
+    return 'el coordinador' + (r?.tiempo_nombre && !this.form.id_tiempo ? ' (' + r.tiempo_nombre + ')' : '');
+  }
+
+  porDefectoNotas(): string {
+    const n = this.nombreSecretario();
+    return 'el secretario de la reunión' + (n ? ' (' + n + ')' : '');
+  }
+
+  /** Quien toma las notas: el elegido en la ventana o, si no hay, el secretario de la reunión. */
+  private quienTomaNotas(): number | null {
+    return this.papeles.redactor ?? this.form.id_secretario ?? null;
+  }
+
+  /**
+   * Los convocados, sin quien toma las notas (ya puede escribir todo): de ellos
+   * se eligen los colaboradores. Es un método y no un computed porque depende de
+   * la selección de la ventana, que no es una señal.
+   */
+  candidatosColaborar(): { id: number; label: string }[] {
+    const convocados = new Set(this.form.convocados);
+    const redactor = this.quienTomaNotas();
+    return this.opciones()
+      .filter(o => typeof o.value === 'number' && convocados.has(o.value) && o.value !== redactor)
+      .map(o => ({ id: o.value as number, label: o.label }));
+  }
+
+  abrirPapeles() {
+    this.papeles = { tiempo: this.form.id_tiempo, redactor: this.form.id_redactor, colaboradores: new Set(this.form.colaboradores) };
+    this.papelesAbierto.set(true);
+  }
+
+  alternarColaborador(id: number) {
+    const c = this.papeles.colaboradores;
+    if (c.has(id)) c.delete(id); else c.add(id);
+  }
+
+  aplicarPapeles() {
+    this.form.id_tiempo = this.papeles.tiempo ?? null;
+    this.form.id_redactor = this.papeles.redactor ?? null;
+    const redactor = this.quienTomaNotas();
+    this.form.colaboradores = ordenar([...this.papeles.colaboradores].filter(id => id !== redactor));
+    this.papelesAbierto.set(false);
+    this.tocar();
+  }
+
+  // ── Menú «Más acciones» ──────────────────────────────────────────────────
+
+  cerrarMenuSiSale(e: FocusEvent) {
+    const siguiente = e.relatedTarget as Node | null;
+    if (!siguiente || !(e.currentTarget as HTMLElement).contains(siguiente)) this.menuAbierto.set(false);
+  }
+
+  /** La congregación usa la reunión en vivo (apagado por defecto). */
+  readonly usarEnVivo = this.svc.usarEnVivo;
+
+  /** Lo siguiente que toca hacer con la reunión, a un toque en la cabecera; lo demás queda en «Más acciones». */
+  siguientePaso = computed<{ clave: PasoSiguiente; texto: string; icono: string } | null>(() => {
+    const r = this.reunion();
+    if (!r || this.esNueva()) return null;
+    const hoy = hoyIso();
+    if (r.estado === 'borrador') return { clave: 'convocar', texto: 'Convocar', icono: 'send' };
+    if (this.sinAvisar()) return { clave: 'avisar', texto: 'Avisar', icono: 'send' };
+    if (r.estado === 'en_curso' || (this.usarEnVivo() && r.estado === 'convocada' && r.fecha === hoy)) {
+      return { clave: 'vivo', texto: r.estado === 'en_curso' ? 'Volver a la reunión' : 'Abrir en vivo', icono: 'play' };
+    }
+    if (r.id_acta && this.puedeEditarActas) return { clave: 'abrir-acta', texto: 'Abrir el acta', icono: 'book-open' };
+    if (r.id_acta && r.puedo_leer_acta) return { clave: 'leer-acta', texto: 'Leer el acta', icono: 'book-open' };
+    if (r.puedo_pasar_a_acta && !r.id_acta && r.fecha <= hoy) return { clave: 'acta', texto: 'Generar el acta', icono: 'book-open' };
+    return null;
+  });
+
+  hacerSiguiente(clave: PasoSiguiente) {
+    const r = this.reunion();
+    if (!r) return;
+    switch (clave) {
+      case 'convocar': case 'avisar': this.pedirConvocar(); break;
+      case 'vivo': this.router.navigate(['/administracion/reuniones-teocraticas', r.id_reunion, 'en-vivo']); break;
+      case 'acta': this.confirmar.set('acta'); break;
+      case 'abrir-acta': this.router.navigate(['/administracion/actas-reunion', r.id_acta]); break;
+      case 'leer-acta': this.leerActa(); break;
+    }
+  }
+
+  async accionMenu(accion: 'preparar' | 'duplicar' | 'avisar' | 'acta' | 'vivo' | 'cancelar' | 'reabrir' | 'eliminar') {
+    this.menuAbierto.set(false);
+    if (accion === 'avisar') { this.pedirConvocar(); return; }
+    if (accion === 'acta') { this.confirmar.set('acta'); return; }
+    if (accion === 'vivo') { this.hacerSiguiente('vivo'); return; }
+    if (accion === 'eliminar') { this.confirmar.set('eliminar'); return; }
+    if (accion === 'cancelar') { this.confirmar.set('cancelar'); return; }
+    if (!this.id) return;
+    if (this.sucio() && !(await this.guardar())) return;
+    if (accion === 'preparar') { this.router.navigate(['/administracion/reuniones-teocraticas', this.id, 'preparar']); return; }
+    if (accion === 'reabrir') { this.reabrir(); return; }
+    this.duplicar();
+  }
+
+  mensajeCancelar = computed(() => {
+    const r = this.reunion();
+    const avisada = !!r?.avisada_en;
+    return avisada
+      ? 'Se avisará a los convocados que la reunión se canceló. Podrá reabrirla más adelante.'
+      : 'Nadie ha recibido aviso de esta reunión, así que no se avisará a nadie. Podrá reabrirla más adelante.';
+  });
+
+  cancelarReunion() {
+    if (!this.id) return;
+    this.accionando.set(true);
+    this.svc.cancelar(this.id, true).subscribe({
+      next: res => {
+        this.accionando.set(false);
+        this.confirmar.set(null);
+        this.reunion.set(res.reunion);
+        this.toast.success('Reunión cancelada', res.notificados ? `Se avisó a ${res.notificados} ${res.notificados === 1 ? 'persona' : 'personas'}.` : undefined);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.accionando.set(false);
+        this.toast.error('No se pudo cancelar', detalle(e) ?? 'Intente de nuevo en un momento.');
+      },
+    });
+  }
+
+  private reabrir() {
+    this.accionando.set(true);
+    this.svc.reabrir(this.id!).subscribe({
+      next: r => {
+        this.accionando.set(false);
+        this.reunion.set(r);
+        this.toast.success('Reunión reabierta', r.estado === 'convocada' ? 'Si cambió algo, use «Avisar de los cambios».' : 'Sigue en borrador.');
+      },
+      error: (e: HttpErrorResponse) => {
+        this.accionando.set(false);
+        this.toast.error('No se pudo reabrir', detalle(e) ?? 'Intente de nuevo en un momento.');
+      },
+    });
+  }
+
+  private duplicar() {
+    this.accionando.set(true);
+    this.svc.duplicar(this.id!).subscribe({
+      next: r => {
+        this.accionando.set(false);
+        this.toast.success('Reunión duplicada', 'Es un borrador con el mismo programa: revise la fecha y asigne las partes.', 7000);
+        this.router.navigate(['/administracion/reuniones-teocraticas', r.id_reunion]).then(() => this.cargar());
+      },
+      error: (e: HttpErrorResponse) => {
+        this.accionando.set(false);
+        this.toast.error('No se pudo duplicar', detalle(e) ?? 'Intente de nuevo en un momento.');
+      },
+    });
   }
 
   // ── Carga ────────────────────────────────────────────────────────────────
@@ -1590,6 +2123,12 @@ export class ReunionAncianosEditorPage implements OnInit {
     if (param === 'nueva') {
       if (!puedeGestionarReunionesAncianos(this.store)) { this.irALista(); return; }
       this.esNueva.set(true);
+      // El Administrador crea en la congregación del selector: con «Todas» el servidor no sabe dónde.
+      if (this.store.isAdministrador() && this.congregacionAdmin() === null) {
+        this.errorCarga.set('sin-congregacion');
+        this.cargando.set(false);
+        return;
+      }
       this.cargarNueva();
       return;
     }
@@ -1602,11 +2141,16 @@ export class ReunionAncianosEditorPage implements OnInit {
     }
     this.svc.get(this.id).subscribe({
       next: r => {
-        this.reunion.set(r);
-        if (r.puedo_editar) {
-          this.cargarPersonas(r.id_congregacion);
-          this.llenarForm(r);
+        // Quien no gestiona ve la reunión como «Mi preparación».
+        if (!r.puedo_editar) {
+          this.saliendo = true;
+          this.router.navigate(['/administracion/reuniones-teocraticas', r.id_reunion, 'preparar'], { replaceUrl: true });
+          return;
         }
+        this.reunion.set(r);
+        this.cargarPersonas(r.id_congregacion);
+        this.cargarCategorias(this.store.isAdministrador() ? r.id_congregacion : null);
+        this.llenarForm(r);
         this.cargando.set(false);
       },
       error: (e: HttpErrorResponse) => {
@@ -1620,6 +2164,7 @@ export class ReunionAncianosEditorPage implements OnInit {
   private cargarNueva() {
     const idCong = this.congregacionAdmin();
     this.cargarPersonas(idCong);
+    this.cargarCategorias(idCong);
     this.form = this.formVacio();
     this.convocadosEditados = false;
     this.svc.sugerencia(idCong, this.form.tipo).subscribe({
@@ -1633,6 +2178,10 @@ export class ReunionAncianosEditorPage implements OnInit {
       },
       error: () => { this.marcarLimpio(); this.cargando.set(false); },
     });
+  }
+
+  private cargarCategorias(idCong: number | null) {
+    this.svc.categorias(idCong).subscribe({ next: c => this.categorias.set(c), error: () => this.categorias.set([]) });
   }
 
   private cargarPersonas(idCong: number | null) {
@@ -1699,6 +2248,11 @@ export class ReunionAncianosEditorPage implements OnInit {
     });
   }
 
+  elegidosEn(personas: PersonaSel[]): number {
+    const sel = this.seleccion();
+    return personas.reduce((n, p) => n + (sel.has(p.id) ? 1 : 0), 0);
+  }
+
   marcarGrupo(personas: PersonaSel[], marcar: boolean) {
     this.seleccion.update(s => {
       const n = new Set(s);
@@ -1717,7 +2271,7 @@ export class ReunionAncianosEditorPage implements OnInit {
   }
 
   /** El Administrador no tiene congregación propia: usa la del selector del portal. */
-  private congregacionAdmin(): number | null {
+  congregacionAdmin(): number | null {
     return this.store.isAdministrador() ? this.ctx.effectiveCongregacionId() : null;
   }
 
@@ -1742,7 +2296,10 @@ export class ReunionAncianosEditorPage implements OnInit {
   }
 
   private formVacio(): FormReunion {
-    return { tipo: 'ancianos', titulo: '', convocados: [], fecha: null, hora: null, lugar: '', id_secretario: null, id_oracion_inicial: null, id_oracion_final: null, partes: [] };
+    return {
+      tipo: 'ancianos', titulo: '', convocados: [], fecha: null, hora: null, lugar: '', id_secretario: null,
+      id_oracion_inicial: null, id_oracion_final: null, partes: [], otros_temas: '', id_tiempo: null, id_redactor: null, colaboradores: [],
+    };
   }
 
   private llenarForm(r: ReunionOut) {
@@ -1757,6 +2314,10 @@ export class ReunionAncianosEditorPage implements OnInit {
       id_oracion_inicial: r.id_publicador_oracion_inicial,
       id_oracion_final: r.id_publicador_oracion_final,
       partes: r.partes.filter(p => p.estado === 'aceptada').map(p => this.parteForm(p)),
+      otros_temas: (r.otros_temas ?? []).join('\n'),
+      id_tiempo: r.id_publicador_tiempo_propio ?? null,
+      id_redactor: r.id_publicador_redactor_propio ?? null,
+      colaboradores: ordenar(r.colaboradores ?? []),
     };
     this.intento.set(false);
     this.marcarLimpio();
@@ -1774,7 +2335,12 @@ export class ReunionAncianosEditorPage implements OnInit {
       texto_biblico: p?.texto_biblico ?? '',
       referencias: p?.referencias ?? '',
       temas: (p?.temas ?? []).join('\n'),
+      id_categoria: p?.categoria_manual ? p.id_categoria : null,
+      categoria_manual: !!p?.categoria_manual,
+      nota_asignado: p?.nota_asignado ?? '',
+      cancelada: !!p?.cancelada,
       abierta: false,
+      masCampos: !!(p?.referencias?.trim() || p?.temas?.length || p?.categoria_manual || p?.cancelada),
     };
   }
 
@@ -1801,19 +2367,49 @@ export class ReunionAncianosEditorPage implements OnInit {
         texto_biblico: texto(p.texto_biblico),
         referencias: texto(p.referencias),
         temas: lineas(p.temas),
+        id_categoria: p.categoria_manual ? p.id_categoria : null,
+        categoria_manual: p.categoria_manual,
+        nota_asignado: texto(p.nota_asignado),
+        cancelada: p.cancelada,
       })),
+      otros_temas: lineas(f.otros_temas),
+      id_publicador_tiempo: f.id_tiempo,
+      id_publicador_redactor: f.id_redactor,
+      colaboradores: [...f.colaboradores],
     };
   }
 
   detallesLlenos(p: ParteForm): number {
-    return [p.objetivo, p.texto_biblico, p.referencias, p.temas].filter(v => v.trim()).length;
+    return [p.objetivo, p.texto_biblico, p.referencias, p.temas, p.nota_asignado].filter(v => v.trim()).length;
   }
 
-  anadirParte() {
+  /** Tipos con nombre propio (perla, nombramiento…): un toque añade la parte ya titulada y clasificada. */
+  otrosAbierto = signal(false);
+  abrirOtros() {
+    this.otrosAbierto.set(true);
+    setTimeout(() => document.getElementById('ra-otros')?.focus());
+  }
+
+  /** La perla se llama «Perla espiritual» en el programa; las demás, como su categoría. */
+  tituloDe(c: CategoriaOut): string { return c.clave === 'perla' ? 'Perla espiritual' : c.etiqueta; }
+
+  rapidas = computed(() => this.categorias().filter(c => c.activa && !c.es_sistema && !c.por_defecto));
+
+  /** Sin tipo: una parte en blanco. Con tipo: ya lleva su título y categoría, y el foco pasa al responsable. */
+  anadirParte(tipo?: CategoriaOut) {
     const nueva = this.parteForm();
+    if (tipo) {
+      nueva.titulo = this.tituloDe(tipo);
+      nueva.id_categoria = tipo.id_categoria;
+      nueva.categoria_manual = true;
+    }
     this.form.partes.push(nueva);
     this.tocar();
-    setTimeout(() => document.getElementById(`ra-titulo-${nueva.uid}`)?.focus());
+    const n = this.form.partes.length;
+    setTimeout(() => {
+      const resp = tipo ? document.querySelector<HTMLElement>(`[aria-label="Responsable de la parte ${n}"]`) : null;
+      (resp ?? document.getElementById(`ra-titulo-${nueva.uid}`))?.focus();
+    });
   }
 
   /** Mueve la parte y deja el foco en el mismo botón, para seguir moviéndola con el teclado. */

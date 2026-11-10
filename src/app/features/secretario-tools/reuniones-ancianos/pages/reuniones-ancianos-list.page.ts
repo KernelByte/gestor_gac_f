@@ -2,12 +2,15 @@ import { Component, computed, effect, inject, OnInit, signal, untracked } from '
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { ReunionAncianosService } from '../../services/reunion-ancianos.service';
-import { ESTADO_REUNION_LABEL, EstadoReunion, ReunionOut, ReunionResumen, TIPOS_REUNION, TipoReunion, tipoReunion } from '../../models/reunion-ancianos.model';
+import { ESTADO_REUNION_LABEL, EstadoReunion, ReunionOut, ReunionResumen, TipoReunion, tipoReunion } from '../../models/reunion-ancianos.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
-import { puedeEditarActas, puedeGestionarReunionesAncianos } from '../../../../core/auth/acceso-modulos';
+import { puedeEditarActas, puedeGestionarReunionesAncianos, puedeVerActas } from '../../../../core/auth/acceso-modulos';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 import { LucideAngularModule } from '../../../../shared/icons';
+import { ParticipacionPanelComponent } from '../components/participacion-panel.component';
+import { CategoriasModalComponent } from '../components/categorias-modal.component';
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 import { cuandoRelativo, diaSemana, diaYMes, fechaCompleta, fechaLocal, hora12, hoyIso, minutosTexto } from '../reunion-ancianos-formato';
 
 type FiltroLista = 'todas' | 'por-convocar' | 'sin-avisar' | 'propuestas' | 'sin-acta' | `tipo:${TipoReunion}`;
@@ -56,7 +59,7 @@ interface LineaPrograma {
 @Component({
   selector: 'app-reuniones-ancianos-list',
   standalone: true,
-  imports: [NgTemplateOutlet, RouterLink, EmptyStateComponent, LucideAngularModule],
+  imports: [NgTemplateOutlet, RouterLink, EmptyStateComponent, LucideAngularModule, ParticipacionPanelComponent, ModalComponent, CategoriasModalComponent],
   template: `
   <div class="ra @container flex-1 min-h-[30rem] w-full flex flex-col gap-3 @3xl:gap-4">
 
@@ -64,6 +67,26 @@ interface LineaPrograma {
     <!-- Sin título visible: el menú ya dice dónde está. El h1 queda para lectores de pantalla. -->
     <h1 class="sr-only">Reuniones teocráticas</h1>
 
+    @if (gestor) {
+      <!-- Secciones: las reuniones y la participación de cada hermano -->
+      <div class="shrink-0 flex items-center gap-2">
+      <div class="tab-nav tab-compact" role="tablist" aria-label="Secciones">
+        <button type="button" role="tab" class="tab-item" [attr.aria-selected]="seccion() === 'reuniones'" (click)="irASeccion('reuniones')">
+          <lucide-icon name="calendar" [size]="14" aria-hidden="true"></lucide-icon><span>Reuniones</span>
+        </button>
+        <button type="button" role="tab" class="tab-item" [attr.aria-selected]="seccion() === 'participacion'" (click)="irASeccion('participacion')">
+          <lucide-icon name="users" [size]="14" aria-hidden="true"></lucide-icon><span>Participación</span>
+        </button>
+      </div>
+      <button type="button" class="btn-icon" aria-label="Ajustes de las reuniones" title="Ajustes" (click)="ajustesAbierto.set(true)">
+        <lucide-icon name="settings"></lucide-icon>
+      </button>
+      </div>
+    }
+
+    @if (gestor && seccion() === 'participacion') {
+      <app-participacion-panel class="block flex-1 min-h-0 overflow-y-auto lista-interna" [idCongregacion]="idCongregacionAdmin()" />
+    } @else {
     @if (cargando()) {
       <!-- Esqueleto con la silueta de la pantalla ya cargada -->
       <div class="flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)] gap-4 @4xl:grid-cols-[minmax(0,1fr)_18rem] @6xl:grid-cols-[minmax(0,1fr)_22rem]"
@@ -124,18 +147,19 @@ interface LineaPrograma {
 
               <!-- Datos de la reunión -->
               <div class="hero cambia panel-datos shrink-0 p-4 @md:p-5 @3xl:p-6 flex flex-wrap items-center gap-x-5 gap-y-3">
-                <div class="bloque-fecha shrink-0 rounded-2xl text-center bg-violet-50 dark:bg-violet-500/10 text-brand-purple dark:text-violet-300" aria-hidden="true">
-                  <p class="text-xs font-semibold uppercase tracking-wide leading-none">{{ mesCorto(p.fecha) }}</p>
-                  <p class="text-3xl @3xl:text-4xl font-bold leading-none mt-1 tabular-nums">{{ dia(p.fecha) }}</p>
-                </div>
-
                 <div class="flex-1 min-w-[13rem]">
-                  <p class="rotulo-sel eyebrow mb-1.5">{{ rotulo(p) }}</p>
                   <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5">
                     @if (tipoCorto(p); as t) { <span class="chip-tipo">{{ t }}</span> }
-                    <span class="chip-estado" [attr.data-estado]="p.estado">{{ estadoLabel[p.estado] }}</span>
-                    @if (sinAvisar(p)) { <span class="chip-sin-avisar" title="Está confirmada, pero los convocados todavía no recibieron aviso">Sin avisar</span> }
+                    <span class="chip-estado est-reunion" [attr.data-estado]="p.estado">{{ estadoLabel[p.estado] }}</span>
+                    @if (gestor && sinAvisar(p)) {
+                      <span class="chip-aviso" title="Está confirmada, pero los convocados todavía no recibieron el aviso">
+                        <lucide-icon name="bell-off" [size]="13" aria-hidden="true"></lucide-icon>Sin avisar
+                      </span>
+                    }
                     <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">{{ relativo(p.fecha) }}</span>
+                    @if (p.mis_partes) {
+                      <span class="badge-role"><lucide-icon name="user-check" [size]="13" aria-hidden="true"></lucide-icon>{{ p.mis_partes === 1 ? 'Usted tiene una parte' : 'Usted tiene ' + p.mis_partes + ' partes' }}</span>
+                    }
                     @if (p.propuestas_pendientes) {
                       <span class="chip-aviso">
                         <lucide-icon name="lightbulb" [size]="13" aria-hidden="true"></lucide-icon>
@@ -147,33 +171,43 @@ interface LineaPrograma {
                   <ul class="meta mt-2">
                     <li><lucide-icon name="clock" [size]="15" aria-hidden="true"></lucide-icon>{{ hora(p.hora) || 'Sin hora' }}</li>
                     <li><lucide-icon name="map-pin" [size]="15" aria-hidden="true"></lucide-icon>{{ p.lugar ? 'Lugar: ' + p.lugar : 'Sin lugar' }}</li>
-                    <li class="meta-sec"><lucide-icon name="user" [size]="15" aria-hidden="true"></lucide-icon>{{ p.secretario_nombre ? 'Secretario: ' + p.secretario_nombre : 'Sin secretario' }}</li>
                   </ul>
                 </div>
 
                 <!-- Ver el detalle ya está a la vista; editar es una acción aparte -->
                 <div class="w-full @lg:w-auto shrink-0 flex flex-col gap-1.5">
+                  @if (vivoPrimario(p)) {
+                    <a [routerLink]="rutaVivo(p)" class="btn-primary-violet est-reunion est-boton focus-ring justify-center" data-estado="en_curso">
+                      <lucide-icon name="play" [size]="16" aria-hidden="true"></lucide-icon>
+                      {{ p.estado === 'en_curso' ? 'Unirse a la reunión en vivo' : gestor ? 'Iniciar la reunión' : 'Abrir en vivo' }}
+                    </a>
+                  }
                   <div class="flex gap-2">
                     @if (gestor) {
-                      <a [routerLink]="ruta(p)" class="btn-primary-violet focus-ring justify-center flex-1">
-                        <lucide-icon [name]="textoEditar(p) === 'Editar reunión' ? 'edit-2' : 'send'" [size]="16" aria-hidden="true"></lucide-icon>
+                      <a [routerLink]="ruta(p)" class="focus-ring justify-center flex-1"
+                         [class]="vivoPrimario(p) ? 'btn-secondary' : 'btn-primary-violet est-reunion est-boton'"
+                         [attr.data-estado]="vivoPrimario(p) ? null : p.estado">
+                        <lucide-icon [name]="iconoEditar(p)" [size]="16" aria-hidden="true"></lucide-icon>
                         {{ textoEditar(p) }}
                       </a>
-                    } @else {
-                      <a [routerLink]="ruta(p)" class="btn-primary-violet focus-ring justify-center flex-1">
-                        Ver el programa completo
-                        <lucide-icon name="chevron-right" [size]="18" aria-hidden="true"></lucide-icon>
+                      @if (p.estado !== 'borrador' && p.mis_partes) {
+                        <a [routerLink]="rutaPreparar(p)" class="btn-secondary focus-ring justify-center" title="Mi preparación: el programa con sus notas privadas">
+                          <lucide-icon name="notebook-pen" [size]="16" aria-hidden="true"></lucide-icon>Mis notas
+                        </a>
+                      }
+                    } @else if (p.estado !== 'en_curso') {
+                      <!-- Con la reunión en vivo, sus notas ya están dentro: solo queda «Unirse» -->
+                      <a [routerLink]="rutaPreparar(p)" class="btn-primary-violet est-reunion est-boton focus-ring justify-center flex-1" data-estado="convocada">
+                        <lucide-icon name="notebook-pen" [size]="16" aria-hidden="true"></lucide-icon>
+                        {{ p.estado === 'realizada' || p.estado === 'cancelada' ? 'Ver la reunión' : p.mis_partes ? 'Preparar mi parte' : 'Ver y preparar' }}
                       </a>
                     }
-                    @if (p.id_acta && puedeActas) {
+                    @if (verActa(p)) {
                       <a [routerLink]="['/administracion/actas-reunion', p.id_acta]" class="btn-secondary focus-ring justify-center" title="Abrir el acta de esta reunión">
                         <lucide-icon name="book-open" [size]="16" aria-hidden="true"></lucide-icon>Acta
                       </a>
                     }
                   </div>
-                  @if (gestor && (p.estado === 'borrador' || sinAvisar(p)) && p.fecha >= hoy) {
-                    <p class="ra-nota text-xs text-center text-slate-500 dark:text-slate-400">Los convocados aún no tienen el aviso.</p>
-                  }
                 </div>
               </div>
 
@@ -208,13 +242,13 @@ interface LineaPrograma {
                         }
                       </ol>
                     } @else {
-                      <p class="py-6 text-center text-slate-500 dark:text-slate-400">
+                      <p class="py-6 text-center text-slate-600 dark:text-slate-400">
                         Todavía no tiene partes.
                         @if (gestor) { <a [routerLink]="ruta(p)" class="font-semibold text-brand-purple dark:text-violet-300 hover:underline underline-offset-2">Añadir partes</a> }
                       </p>
                     }
                   } @else if (errorDetalle()) {
-                    <p class="py-6 text-center text-slate-500 dark:text-slate-400">No se pudo cargar el programa. Ábrala para verlo.</p>
+                    <p class="py-6 text-center text-slate-600 dark:text-slate-400">No se pudo cargar el programa. Ábrala para verlo.</p>
                   } @else {
                     <div class="flex flex-col gap-2.5 pt-2" aria-busy="true">
                       @for (_ of [1, 2, 3, 4, 5]; track $index) { <div class="skeleton h-9 w-full"></div> }
@@ -250,12 +284,6 @@ interface LineaPrograma {
         <aside id="panel-todas" role="tabpanel" aria-labelledby="tab-todas"
                [class]="vista() === 'reuniones' ? 'flex' : 'hidden @4xl:flex'" class="entra min-h-0 flex-col gap-3 @4xl:gap-4">
 
-          @if (gestor) {
-            <div class="stats shrink-0 grid grid-cols-2 gap-2">
-              <div class="tile"><span class="tile-n">{{ resumen().delAnio }}</span><span class="tile-t">Reuniones este año</span></div>
-              <div class="tile"><span class="tile-n">{{ resumen().media ? minutos(resumen().media) : '—' }}</span><span class="tile-t">Duración media</span></div>
-            </div>
-          }
 
           <section class="card flex-1 min-h-0 flex flex-col overflow-hidden" aria-label="Lista de reuniones">
             <!-- Buscador y filtros -->
@@ -263,7 +291,7 @@ interface LineaPrograma {
               <div class="flex items-center justify-between gap-3 px-1">
                 <h2 class="eyebrow flex items-baseline gap-2">
                   Reuniones
-                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 tabular-nums normal-case tracking-normal" aria-live="polite">
+                  <span class="text-xs font-semibold text-slate-600 dark:text-slate-400 tabular-nums normal-case tracking-normal" aria-live="polite">
                     {{ filtrando() ? encontradas().length + ' de ' + reuniones().length : reuniones().length }}
                   </span>
                 </h2>
@@ -314,10 +342,12 @@ interface LineaPrograma {
                   <button type="button" class="btn-secondary focus-ring mt-1" (click)="verTodas(q)">Ver todas</button>
                 </div>
               }
-              @if (proximasLista().length) {
-                <h3 class="anio">Programadas</h3>
+              @for (g of proximasPorEtapa(); track g.estado) {
+                <h3 class="anio anio-etapa est-reunion" [attr.data-estado]="g.estado">
+                  <span class="etapa-punto" aria-hidden="true"></span>{{ g.titulo }}<span class="etapa-n tabular-nums">{{ g.reuniones.length }}</span>
+                </h3>
                 <ul>
-                  @for (r of proximasLista(); track r.id_reunion) {
+                  @for (r of g.reuniones; track r.id_reunion) {
                     <li><ng-container *ngTemplateOutlet="fila; context: { $implicit: r, activa: true }" /></li>
                   }
                 </ul>
@@ -335,7 +365,26 @@ interface LineaPrograma {
         </aside>
       </div>
     }
+    }
   </div>
+
+  <!-- ══════ Ajustes (solo gestores) ══════ -->
+  <app-modal [open]="ajustesAbierto()" (closed)="ajustesAbierto.set(false)" title="Ajustes de las reuniones" size="md">
+    <div class="flex flex-col gap-5">
+      <div class="flex items-start gap-3">
+        <button type="button" role="switch" class="switch shrink-0 mt-0.5" [attr.aria-checked]="usarEnVivo()" aria-labelledby="aj-vivo"
+                [disabled]="guardandoAjuste()" (click)="alternarEnVivo()"><span class="toggle-thumb"></span></button>
+        <div>
+          <p id="aj-vivo" class="font-semibold text-slate-900 dark:text-slate-100">Usar la reunión en vivo</p>
+          <p class="caption mt-0.5">Cronómetro de cada tema, quién toma el tiempo y notas compartidas durante la reunión. Si solo programa y genera el acta, déjelo apagado.</p>
+        </div>
+      </div>
+      <button type="button" class="btn-secondary focus-ring self-start" (click)="ajustesAbierto.set(false); categoriasAbierto.set(true)">
+        <lucide-icon name="tag" [size]="16" aria-hidden="true"></lucide-icon>Categorías de las partes
+      </button>
+    </div>
+  </app-modal>
+  <app-categorias-modal [open]="categoriasAbierto()" (openChange)="categoriasAbierto.set($event)" [idCongregacion]="idCongregacionAdmin()" />
 
   <!-- Fila de reunión (lista lateral): al tocarla, su detalle se ve a la izquierda -->
   <ng-template #fila let-r let-activa="activa">
@@ -348,19 +397,19 @@ interface LineaPrograma {
       </div>
       <div class="flex-1 min-w-0">
         <p class="font-semibold text-slate-900 dark:text-slate-100 break-words" [attr.title]="completa(r.fecha)">
-          {{ semana(r.fecha) }}<span class="font-normal text-slate-500 dark:text-slate-400"> · {{ activa ? (hora(r.hora) || 'Sin hora') : (r.num_partes + (r.num_partes === 1 ? ' parte' : ' partes')) }}</span>
+          {{ semana(r.fecha) }}<span class="font-normal text-slate-600 dark:text-slate-400"> · {{ activa ? (hora(r.hora) || 'Sin hora') : (r.num_partes + (r.num_partes === 1 ? ' parte' : ' partes')) }}</span>
         </p>
         <div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
           @if (activa) {
-            <span class="chip-estado" [attr.data-estado]="r.estado">{{ etiquetaEstado(r.estado) }}</span>
-            @if (sinAvisar(r)) { <span class="chip-sin-avisar" title="Está confirmada, pero los convocados todavía no recibieron aviso">Sin avisar</span> }
+            <span class="chip-estado est-reunion" [attr.data-estado]="r.estado">{{ etiquetaEstado(r.estado) }}</span>
             @if (r.id_reunion === proxima()?.id_reunion) { <span class="chip-prox">Próxima</span> }
+            @if (gestor && sinAvisar(r)) { <span class="chip-aviso" title="Todavía no se avisó a los convocados">Sin avisar</span> }
           } @else if (r.id_acta) {
             <span class="chip-acta" data-acta="si" title="Ya tiene acta"><lucide-icon name="check" [size]="13" aria-hidden="true"></lucide-icon>Acta</span>
           } @else if (gestor && llevaActa(r)) {
             <span class="chip-acta" data-acta="no">Sin acta</span>
           }
-          <span class="text-sm text-slate-500 dark:text-slate-400 break-words min-w-0">
+          <span class="text-sm text-slate-600 dark:text-slate-400 break-words min-w-0">
             @if (tipoCorto(r); as t) {<span class="fila-tipo">{{ t }}</span> · }{{ r.lugar || 'Sin lugar' }}
           </span>
         </div>
@@ -384,17 +433,8 @@ interface LineaPrograma {
       font-size: 0.75rem; font-weight: 600; border: 1px solid transparent;
     }
     .chip-estado::before { content: ''; width: 0.375rem; height: 0.375rem; border-radius: 9999px; background: currentColor; }
-    .chip-estado[data-estado='borrador']  { background: #fffbeb; color: #b45309; border-color: #fde68a; }
-    .chip-estado[data-estado='convocada'] { background: #f5f3ff; color: var(--color-brand-purple); border-color: #ddd6fe; }
-    .chip-sin-avisar {
-      display: inline-flex; align-items: center; padding: 0.1875rem 0.625rem; border-radius: 9999px;
-      font-size: 0.75rem; font-weight: 600; border: 1px solid #fde68a; background: #fffbeb; color: #b45309; cursor: default;
-    }
-    :host-context(.dark) .chip-sin-avisar { background: rgba(245,158,11,0.12); color: #fcd34d; border-color: rgba(245,158,11,0.3); }
-    .chip-estado[data-estado='realizada'] { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-    :host-context(.dark) .chip-estado[data-estado='borrador']  { background: rgba(245,158,11,0.12); color: #fcd34d; border-color: rgba(245,158,11,0.3); }
-    :host-context(.dark) .chip-estado[data-estado='convocada'] { background: rgba(139,92,246,0.14); color: #c4b5fd; border-color: rgba(139,92,246,0.3); }
-    :host-context(.dark) .chip-estado[data-estado='realizada'] { background: rgba(16,185,129,0.12); color: #6ee7b7; border-color: rgba(16,185,129,0.3); }
+    .chip-estado { color: var(--est); background: color-mix(in oklab, var(--est) 11%, transparent); border-color: color-mix(in oklab, var(--est) 32%, transparent); }
+    .chip-estado[data-estado='cancelada'] { text-decoration: line-through; text-decoration-thickness: 1px; }
 
     /* Tipo de reunión: violeta, sin punto, para no confundirse con el estado */
     .chip-tipo {
@@ -417,7 +457,7 @@ interface LineaPrograma {
       padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;
     }
     .chip-acta[data-acta='si'] { background: #ecfdf5; color: #047857; }
-    .chip-acta[data-acta='no'] { background: #f1f5f9; color: #62748e; }
+    .chip-acta[data-acta='no'] { background: #f1f5f9; color: #475569; }
     :host-context(.dark) .chip-acta[data-acta='si'] { background: rgba(16,185,129,0.12); color: #6ee7b7; }
     :host-context(.dark) .chip-acta[data-acta='no'] { background: rgba(148,163,184,0.12); color: #90a1b9; }
 
@@ -428,15 +468,11 @@ interface LineaPrograma {
     /* ── Tarjeta de la próxima reunión ─────────────────────── */
     .panel-datos { background: linear-gradient(180deg, rgba(139,92,246,0.06), rgba(139,92,246,0.015)); }
     :host-context(.dark) .panel-datos { background: linear-gradient(180deg, rgba(139,92,246,0.10), rgba(139,92,246,0.02)); }
-    .bloque-fecha { width: 4rem; padding: 0.5rem 0; }
-    @container (min-width: 48rem) { .bloque-fecha { width: 5rem; padding: 0.75rem 0; } }
     /* Teléfono: lo justo arriba (estado, fecha, hora y lugar, botón) para
        dejarle el alto al programa. El título ya dice la fecha. */
-    @container (max-width: 27.99rem) {
-      .bloque-fecha, .meta .meta-sec, .ra-nota { display: none; }
-    }
+
     /* cqi = ancho de la tarjeta: la fecha crece con el espacio real (720p → 4K) */
-    .titulo-fecha { font-size: clamp(1.25rem, 0.9rem + 1.6cqi, 2.25rem); line-height: 1.15; }
+    .titulo-fecha { font-size: 1.5rem; line-height: 1.2; }
     /* Hora, lugar y secretario en cápsulas */
     .meta { display: flex; flex-wrap: wrap; gap: 0.375rem; font-size: 0.875rem; }
     .meta li {
@@ -452,7 +488,7 @@ interface LineaPrograma {
     :host-context(.dark) .franja-programa { background: rgba(15,23,42,0.45); border-bottom-color: rgba(148,163,184,0.18); }
     .dato-prog {
       display: inline-flex; align-items: center; gap: 0.3125rem; padding: 0.125rem 0.625rem;
-      border-radius: 9999px; font-size: 0.8125rem; font-weight: 600; background: #fff; border: 1px solid #e2e8f0; color: #314158;
+      border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #fff; border: 1px solid #e2e8f0; color: #314158;
     }
     .dato-prog-min { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
     :host-context(.dark) .dato-prog { background: #1d293d; border-color: #314158; color: #e2e8f0; }
@@ -466,21 +502,21 @@ interface LineaPrograma {
     }
     :host-context(.dark) .fila { border-color: rgba(148,163,184,0.12); }
     .prog > .fila:last-child { border-bottom: 0; }
-    .num { font-size: 0.875rem; font-weight: 700; color: #90a1b9; font-variant-numeric: tabular-nums; text-align: center; }
+    .num { font-size: 0.875rem; font-weight: 700; color: #62748e; font-variant-numeric: tabular-nums; text-align: center; }
     /* Los textos nunca se recortan: si no caben en un renglón, pasan al siguiente. */
     .t { font-weight: 600; line-height: 1.3; color: #0f172b; overflow-wrap: break-word; text-wrap: pretty; }
     :host-context(.dark) .t { color: #f1f5f9; }
-    .r { font-size: 0.8125rem; font-weight: 500; color: var(--color-brand-purple); }
+    .r { font-size: 0.75rem; font-weight: 500; color: var(--color-brand-purple); }
     :host-context(.dark) .r { color: #c4b5fd; }
     .fila-oracion .t { font-weight: 500; color: #62748e; }
     :host-context(.dark) .fila-oracion .t { color: #90a1b9; }
     .min-pill {
       padding: 0.125rem 0.5rem; border-radius: 9999px; white-space: nowrap;
-      font-size: 0.8125rem; font-weight: 600; background: #ecfdf5; color: #047857;
+      font-size: 0.75rem; font-weight: 600; background: #ecfdf5; color: #047857;
     }
     :host-context(.dark) .min-pill { background: rgba(16,185,129,0.12); color: #6ee7b7; }
 
-    .obj { display: none; font-size: 0.8125rem; line-height: 1.55; color: #62748e; margin-top: 0.1875rem;
+    .obj { display: none; font-size: 0.875rem; line-height: 1.55; color: #62748e; margin-top: 0.1875rem;
            overflow-wrap: break-word; }
     :host-context(.dark) .obj { color: #90a1b9; }
 
@@ -525,8 +561,8 @@ interface LineaPrograma {
     .hoja-fecha[data-prox='si'] { border-color: #ddd6fe; background: #f5f3ff; }
     :host-context(.dark) .hoja-fecha { border-color: #314158; background: rgba(51,65,85,0.35); }
     :host-context(.dark) .hoja-fecha[data-prox='si'] { border-color: rgba(139,92,246,0.4); background: rgba(139,92,246,0.12); }
-    .hoja-mes { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #90a1b9; }
-    .hoja-dia { margin-top: 0.1875rem; font-size: 1.375rem; font-weight: 700; font-variant-numeric: tabular-nums; color: #314158; }
+    .hoja-mes { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #62748e; }
+    .hoja-dia { margin-top: 0.1875rem; font-size: 1.125rem; font-weight: 700; font-variant-numeric: tabular-nums; color: #314158; }
     .hoja-fecha[data-prox='si'] .hoja-mes { color: #7c3aed; }
     .hoja-fecha[data-prox='si'] .hoja-dia { color: var(--color-brand-purple); }
     :host-context(.dark) .hoja-mes { color: #62748e; }
@@ -556,6 +592,11 @@ interface LineaPrograma {
       border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;
     }
     .lista-interna > .anio:first-child { border-top: 0; }
+    /* Rótulo de etapa: punto y nombre con el color del momento; el número, a la derecha */
+    .anio-etapa { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: var(--est); }
+    .etapa-punto { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--est-fill); }
+    .etapa-n { margin-left: auto; font-weight: 600; color: #62748e; }
+    :host-context(.dark) .etapa-n { color: #90a1b9; }
     :host-context(.dark) .anio { color: #90a1b9; background: #1d293d; border-color: rgba(148,163,184,0.12); }
 
     /* En angosto el botón vive junto a las pestañas; en ancho, en la lista */
@@ -566,7 +607,7 @@ interface LineaPrograma {
     .buscador-lupa { position: absolute; left: 0.75rem; color: #90a1b9; pointer-events: none; }
     .buscador input {
       width: 100%; min-height: 2.5rem; padding: 0.5rem 2.5rem 0.5rem 2.375rem; border-radius: 0.75rem;
-      font-size: 0.9375rem; color: #0f172b; background: #f8fafc; border: 1px solid #e2e8f0;
+      font-size: 1rem; color: #0f172b; background: #f8fafc; border: 1px solid #e2e8f0;
       transition: border-color 150ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out;
     }
     .buscador input::placeholder { color: #90a1b9; }
@@ -604,39 +645,25 @@ interface LineaPrograma {
     .filtro[aria-pressed='true'] .filtro-n { background: rgba(255,255,255,0.22); }
 
     /* Dónde coincidió la búsqueda (tema, objetivo, responsable…) */
-    .coincide { margin-top: 0.3125rem; font-size: 0.8125rem; line-height: 1.4; color: #45556c; overflow-wrap: break-word; }
+    .coincide { margin-top: 0.3125rem; font-size: 0.875rem; line-height: 1.4; color: #45556c; overflow-wrap: break-word; }
     .coincide-et { font-weight: 700; color: #62748e; margin-right: 0.25rem; }
     .coincide mark { background: #fef3c7; color: #78350f; border-radius: 0.1875rem; padding: 0 0.0625rem; }
     :host-context(.dark) .coincide { color: #cbd5e1; }
     :host-context(.dark) .coincide-et { color: #90a1b9; }
     :host-context(.dark) .coincide mark { background: rgba(245,158,11,0.28); color: #fde68a; }
 
-    /* ── Resumen ───────────────────────────────────────────── */
-    .tile {
-      display: flex; flex-direction: column-reverse; padding: 0.625rem 0.875rem; border-radius: 0.75rem;
-      background: #fff; border: 1px solid #e2e8f0;
-    }
-    :host-context(.dark) .tile { background: #1d293d; border-color: #314158; }
-    .tile-n { font-size: 1.375rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; color: #0f172b; }
-    .tile-t { font-size: 0.75rem; color: #62748e; }
-    :host-context(.dark) .tile-n { color: #f1f5f9; }
-    :host-context(.dark) .tile-t { color: #90a1b9; }
 
     /* Scroll interno discreto: solo aparece si la lista no cabe */
     .lista-interna { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.45) transparent; overscroll-behavior: contain; }
 
     /* ── Densidad según el alto de la pantalla ─────────────── */
     @media (max-height: 800px) {
-      .stats, .ra-nota, .rotulo-sel { display: none !important; }
       /* Cabecera de la tarjeta más baja: el título ya dice la fecha completa y
          el secretario sale en el PDF; así el programa entero cabe sin scroll. */
       .hero { padding-block: 0.75rem !important; row-gap: 0.5rem; }
-      .bloque-fecha, .meta .meta-sec { display: none; }
-      .titulo-fecha { font-size: 1.375rem; }
       .fila { padding: 0.25rem 0; }
       .r { font-size: 0.75rem; }
       .fila-lista { padding-block: 0.4375rem; }
-      .hoja-dia { font-size: 1.1875rem; }
     }
     @media (min-height: 1000px) {
       .fila { padding: 0.75rem 0; }
@@ -645,14 +672,8 @@ interface LineaPrograma {
     }
     @media (min-height: 1400px) {
       .fila { padding: 1rem 0; }
-      .t { font-size: 1.0625rem; }
     }
 
-    /* Monitores 2K/4K a escala 100 %: todo crece en proporción (como haría el
-       sistema operativo con escala 150–200 %) para que se lea a distancia normal
-       y el contenido ocupe el alto en vez de quedar diminuto. */
-    @media (min-width: 2400px) and (min-height: 1300px) { :host { zoom: 1.2; } }
-    @media (min-width: 3200px) and (min-height: 1800px) { :host { zoom: 1.5; } }
 
     /* Al elegir otra reunión, el detalle aparece con un fundido corto */
     .cambia { animation: cambia 160ms ease-out both; }
@@ -673,6 +694,18 @@ export class ReunionesAncianosListPage implements OnInit {
   private ctx = inject(CongregacionContextService);
 
   readonly gestor = puedeGestionarReunionesAncianos(this.store);
+  /** Reuniones | Participación (se recuerda en la dirección: ?seccion=participacion). */
+  seccion = signal<'reuniones' | 'participacion'>(
+    new URLSearchParams(location.search).get('seccion') === 'participacion' ? 'participacion' : 'reuniones');
+
+  irASeccion(s: 'reuniones' | 'participacion') {
+    this.seccion.set(s);
+    this.router.navigate([], { queryParams: { seccion: s === 'participacion' ? s : null }, replaceUrl: true });
+  }
+
+  idCongregacionAdmin(): number | null {
+    return this.store.isAdministrador() ? this.ctx.effectiveCongregacionId() : null;
+  }
   readonly estadoLabel: Record<EstadoReunion, string> = ESTADO_REUNION_LABEL;
 
   reuniones = signal<ReunionResumen[]>([]);
@@ -684,7 +717,33 @@ export class ReunionesAncianosListPage implements OnInit {
 
   /** Solo el secretario entra al módulo de Actas; los demás leen la carta desde la reunión. */
   readonly puedeActas = puedeEditarActas(this.store);
+  private readonly puedeLeerActas = puedeVerActas(this.store);
+
+  /** Quien edita actas abre la del borrador; el Coordinador, solo la ya finalizada. */
+  verActa(r: { id_acta: number | null; acta_estado?: string | null }): boolean {
+    return !!r.id_acta && (this.puedeActas || (this.puedeLeerActas && r.acta_estado === 'finalizada'));
+  }
   readonly hoy = hoyIso();
+
+  /** La congregación usa la reunión en vivo (apagado por defecto). */
+  readonly usarEnVivo = this.svc.usarEnVivo;
+  ajustesAbierto = signal(false);
+  categoriasAbierto = signal(false);
+  guardandoAjuste = signal(false);
+
+  /** «Iniciar / Unirse en vivo» solo es lo principal cuando ya empezó, o es hoy y la congregación lo usa. */
+  vivoPrimario(r: ReunionResumen): boolean {
+    return r.estado === 'en_curso' || (this.usarEnVivo() && r.estado === 'convocada' && r.fecha === this.hoy);
+  }
+
+  alternarEnVivo() {
+    if (this.guardandoAjuste()) return;
+    this.guardandoAjuste.set(true);
+    this.svc.guardarConfig(!this.usarEnVivo(), this.idCongregacionAdmin()).subscribe({
+      next: () => this.guardandoAjuste.set(false),
+      error: () => this.guardandoAjuste.set(false),
+    });
+  }
 
   /** La reunión que el usuario eligió en la lista (null = la próxima). */
   private seleccionId = signal<number | null>(null);
@@ -714,7 +773,7 @@ export class ReunionesAncianosListPage implements OnInit {
   /** El backend ya ordena: próximas (la más cercana primero) y luego pasadas. */
   proximas = computed(() => {
     const hoy = hoyIso();
-    return this.reuniones().filter(r => r.fecha >= hoy && r.estado !== 'realizada');
+    return this.reuniones().filter(r => r.fecha >= hoy && r.estado !== 'realizada' && r.estado !== 'cancelada');
   });
   proxima = computed(() => this.proximas()[0] ?? null);
   anteriores = computed(() => {
@@ -783,17 +842,11 @@ export class ReunionesAncianosListPage implements OnInit {
     };
     if (this.gestor) {
       poner('por-convocar', 'Por convocar', 'Reuniones en borrador: los convocados aún no tienen el aviso');
-      poner('sin-avisar', 'Sin avisar', 'Reuniones confirmadas cuyos convocados todavía no recibieron aviso');
+      poner('sin-avisar', 'Sin avisar', 'Reuniones convocadas a las que todavía no se les ha avisado');
       poner('propuestas', 'Por revisar', 'Reuniones con puntos propuestos por revisar');
       poner('sin-acta', 'Sin acta', 'Reuniones pasadas que todavía no tienen acta');
     } else {
       poner('propuestas', 'Mis propuestas', 'Reuniones donde usted propuso puntos');
-    }
-    // Un filtro por tipo, solo si hay reuniones de más de un tipo.
-    if (this.variosTipos()) {
-      for (const t of TIPOS_REUNION) {
-        if (todas.some(r => r.tipo === t.clave)) poner(`tipo:${t.clave}`, t.etiqueta, `Solo las reuniones de tipo «${t.etiqueta}»`);
-      }
     }
     return lista;
   });
@@ -823,6 +876,19 @@ export class ReunionesAncianosListPage implements OnInit {
   });
   private encontradasIds = computed(() => new Set(this.encontradas().map(r => r.id_reunion)));
   proximasLista = computed(() => this.proximas().filter(r => this.encontradasIds().has(r.id_reunion)));
+
+  /** Las que vienen, separadas por etapa: primero la que está en curso, luego las convocadas y al final los borradores. */
+  proximasPorEtapa = computed(() => {
+    const etapas: { estado: EstadoReunion; titulo: string }[] = [
+      { estado: 'en_curso', titulo: 'En curso' },
+      { estado: 'convocada', titulo: 'Convocadas' },
+      { estado: 'borrador', titulo: 'Borradores' },
+    ];
+    const lista = this.proximasLista();
+    return etapas
+      .map(e => ({ ...e, reuniones: lista.filter(r => r.estado === e.estado) }))
+      .filter(g => g.reuniones.length);
+  });
 
   /** Si lo buscado está en una parte, cuál: así se ve por qué salió la reunión. */
   private coincidencias = computed(() => {
@@ -888,17 +954,6 @@ export class ReunionesAncianosListPage implements OnInit {
     return grupos;
   });
 
-  resumen = computed(() => {
-    const hoy = hoyIso();
-    const anio = hoy.slice(0, 4);
-    const delAnio = this.reuniones().filter(r => r.fecha.startsWith(anio));
-    const conMinutos = delAnio.filter(r => r.total_minutos > 0);
-    return {
-      delAnio: delAnio.length,
-      media: conMinutos.length ? Math.round(conMinutos.reduce((s, r) => s + r.total_minutos, 0) / conMinutos.length) : 0,
-    };
-  });
-
   readonly completa = fechaCompleta;
   readonly hora = hora12;
   readonly relativo = cuandoRelativo;
@@ -933,6 +988,7 @@ export class ReunionesAncianosListPage implements OnInit {
   }
 
   ngOnInit() {
+    this.svc.cargarConfig(this.idCongregacionAdmin()).subscribe({ error: () => {} });
     this.cargar();
   }
 
@@ -957,15 +1013,15 @@ export class ReunionesAncianosListPage implements OnInit {
     this.vista.set('programa');
   }
 
-  /** Qué reunión es la que se ve, para el rótulo de la tarjeta. */
-  rotulo(r: ReunionResumen): string {
-    if (r.id_reunion === this.proxima()?.id_reunion) return 'Próxima reunión';
-    return r.fecha >= this.hoy && r.estado !== 'realizada' ? 'Reunión programada' : 'Reunión anterior';
-  }
-
   /** El botón de editar dice lo que de verdad toca hacer con esa reunión. */
   textoEditar(r: ReunionResumen): string {
+    if (r.estado === 'realizada' || r.estado === 'cancelada') return 'Ver detalle';
     return r.estado === 'borrador' && r.fecha >= this.hoy ? 'Revisar y convocar' : 'Editar reunión';
+  }
+
+  iconoEditar(r: ReunionResumen): string {
+    const t = this.textoEditar(r);
+    return t === 'Ver detalle' ? 'eye' : t === 'Editar reunión' ? 'edit-2' : 'send';
   }
 
   nueva() {
@@ -974,6 +1030,14 @@ export class ReunionesAncianosListPage implements OnInit {
 
   ruta(r: ReunionResumen) {
     return ['/administracion/reuniones-teocraticas', r.id_reunion];
+  }
+
+  rutaVivo(r: ReunionResumen) {
+    return ['/administracion/reuniones-teocraticas', r.id_reunion, 'en-vivo'];
+  }
+
+  rutaPreparar(r: ReunionResumen) {
+    return ['/administracion/reuniones-teocraticas', r.id_reunion, 'preparar'];
   }
 
   /** En el ng-template la fila llega sin tipo. */

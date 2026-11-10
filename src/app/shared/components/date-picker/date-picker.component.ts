@@ -228,7 +228,7 @@ type ColorScheme = 'orange' | 'violet' | 'blue' | 'rose';
     .dp-trigger-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dp-trigger-label--value { color: #1e293b; font-weight: 500; font-size: 0.875rem; }
     :host-context(.dark) .dp-trigger-label--value { color: #e2e8f0; }
-    .dp-trigger-label--placeholder { color: #94a3b8; font-style: italic; font-size: 0.875rem; }
+    .dp-trigger-label--placeholder { color: #64748b; font-style: italic; font-size: 0.875rem; }
     :host-context(.dark) .dp-trigger-label--placeholder { color: #475569; }
 
     .dp-clear-btn {
