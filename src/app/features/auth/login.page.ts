@@ -6,20 +6,42 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-// Solo los tipos: se borran al compilar, asi que three no entra en el chunk del
-// login. La libreria se carga con import() dinamico al montar la vista, y solo
-// si el usuario no ha pedido reducir el movimiento.
-import type * as THREE from 'three';
 import { AuthPieComponent } from './auth-pie.component';
+
+/** Estado del campo de corrientes: refleja lo que pasa en el formulario. */
+export type ModoCampo = 'libre' | 'atento' | 'pensando' | 'error' | 'exito';
+
+/** Una partícula del campo de corrientes: un trazo que sigue el flujo. */
+interface Corriente { x: number; y: number; edad: number; vida: number; tono: 0 | 1 | 2; }
+
+/** Estrella del anillo: una por carácter escrito (nunca el carácter). */
+interface Estrella { x: number; y: number; vx: number; vy: number; nace: number; }
+
+/** Onda que sale del núcleo cuando llega una chispa. */
+interface Onda { r: number; a: number; }
+
+/** Chispa que viaja desde el campo donde se escribe hasta el núcleo. */
+interface Chispa { x0: number; y0: number; qx: number; qy: number; t0: number; dur: number; estrella: boolean; }
+
+/** Tecla pendiente de convertirse en chispa (la lanza el bucle de dibujo). */
+interface Tecla { el: HTMLElement; estrella: boolean; }
+
 
 @Component({
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthPieComponent],
-  templateUrl: './login.page.html'
+  templateUrl: './login.page.html',
+  styleUrl: './login.page.scss'
 })
 export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('neuralCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('sphereContainer', { static: false }) sphereContainerRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('raiz', { static: false }) raizRef?: ElementRef<HTMLElement>;
+  @ViewChild('visual', { static: false }) visualRef?: ElementRef<HTMLElement>;
+  @ViewChild('lado', { static: false }) ladoRef?: ElementRef<HTMLElement>;
+  /** Hueco sobre el formulario donde vive el núcleo en móvil y tablet vertical. */
+  @ViewChild('hueco', { static: false }) huecoRef?: ElementRef<HTMLElement>;
+  @ViewChild('flow', { static: false }) flowRef?: ElementRef<HTMLCanvasElement>;
+  /** Lienzo aparte para chispas, ondas y anillo: se limpia cada fotograma (sin estelas). */
+  @ViewChild('stars', { static: false }) starsRef?: ElementRef<HTMLCanvasElement>;
 
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
@@ -36,12 +58,44 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   puedeRecordar = signal(false);
   recordarDispositivo = signal(false);
   showPassword = signal(false);
+  /** Bloq Mayús encendido mientras se escribe la contraseña. */
+  mayusActivas = signal(false);
+  /** Sacude el formulario un instante cuando algo falla. */
+  sacudir = signal(false);
 
-  // Hacker / AI text animation
-  displayTitle    = signal('···');
-  displayGAC      = signal('·····');
-  displaySubtitle = signal('·························');
-  private hackerInterval: any = null;
+  /**
+   * El campo de corrientes acompaña al formulario: libre en reposo, converge al
+   * escribir, gira mientras se comprueba, se dispersa en rosa si falla y sale
+   * hacia adelante al entrar. `modo` y lo demás lo lee el bucle de dibujo
+   * (fuera de Angular); la señal solo pinta la línea de estado.
+   */
+  estadoCampo = signal<ModoCampo>('libre');
+  readonly textoEstado: Record<ModoCampo, string> = {
+    libre: 'Gestión de congregaciones',
+    atento: 'Escribiendo',
+    pensando: 'Comprobando tus datos',
+    error: 'Los datos no coinciden',
+    exito: 'Bienvenido',
+  };
+  private modo: ModoCampo = 'libre';
+  private energia = 0;
+  private enFoco = false;
+  private modoTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Cuántas estrellas debe tener el anillo: largo de la contraseña o del código. */
+  private estrellasObjetivo = 0;
+  /** Teclas pulsadas que aún no salieron como chispa. */
+  private teclas: Tecla[] = [];
+
+  /** «Buenos días / Buenas tardes / Buenas noches» según la hora del equipo. */
+  readonly saludo = (() => {
+    const h = new Date().getHours();
+    return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+  })();
+  /** «Martes, 10 de noviembre». */
+  readonly fechaHoy = (() => {
+    const t = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  })();
 
   form = this.fb.nonNullable.group({
     username: ['', Validators.required],
@@ -52,393 +106,605 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly EMAIL_KEY = 'app_login_email_v1';
   private readonly EMAIL_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
-  // Canvas state
-  private neuralAnimId = 0;
-  private neuralCtx: CanvasRenderingContext2D | null = null;
-  private resizeObs: ResizeObserver | null = null;
- 
-  // Three.js state
-  private threeScene: THREE.Scene | null = null;
-  private threeCamera: THREE.PerspectiveCamera | null = null;
-  private threeRenderer: THREE.WebGLRenderer | null = null;
-  private threeAnimId = 0;
-  private mainGroup: THREE.Group | null = null;
-  private plasmaMat: THREE.ShaderMaterial | null = null;
-  private pMat: THREE.ShaderMaterial | null = null;
-  private threeTimer: THREE.Timer | null = null;
-
-  /** El usuario pidio al sistema reducir animaciones: no montamos los fondos. */
+  /** El usuario pidió al sistema reducir animaciones: el campo se pinta quieto. */
   private readonly prefiereMenosMovimiento =
     typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /** Evita montar la escena si la vista murio mientras se cargaba three. */
-  private destruido = false;
+  private sacudirTimer: ReturnType<typeof setTimeout> | null = null;
+  private detenerCampo: (() => void) | null = null;
+  /** Centro del núcleo en pantalla (lo calcula el motor; lo usa la cortina). */
+  private nucleo = { x: 0, y: 0, r: 40 };
 
   ngOnInit(): void {
-    const raw = localStorage.getItem(this.EMAIL_KEY);
-    if (raw) {
-      try {
-        const obj = JSON.parse(raw);
-        if (obj?.email && obj?.ts && (Date.now() - obj.ts) <= this.EMAIL_TTL_MS) {
-          this.form.patchValue({ username: obj.email, remember: true });
-        } else {
-          localStorage.removeItem(this.EMAIL_KEY);
-        }
-      } catch (e) {
+    // Solo importa el largo: el anillo nunca conoce los caracteres.
+    this.form.controls.password.valueChanges.subscribe(v => {
+      if (!this.desafio()) this.estrellasObjetivo = v.length;
+    });
+
+    try {
+      const raw = localStorage.getItem(this.EMAIL_KEY);
+      if (!raw) return;
+      const obj = JSON.parse(raw);
+      if (obj?.email && obj?.ts && (Date.now() - obj.ts) <= this.EMAIL_TTL_MS) {
+        this.form.patchValue({ username: obj.email, remember: true });
+      } else {
         localStorage.removeItem(this.EMAIL_KEY);
       }
+    } catch {
+      try { localStorage.removeItem(this.EMAIL_KEY); } catch { }
     }
   }
 
   ngAfterViewInit(): void {
-    if (!this.prefiereMenosMovimiento) {
-      this.initNeuralCanvas();
-      void this.initPlasmaSphere();
-    }
-    // Auto-trigger cinematic decrypt on load
-    setTimeout(() => this.triggerHackerText(), 400);
+    this.ngZone.runOutsideAngular(() => this.iniciarCampo());
   }
 
   ngOnDestroy(): void {
-    this.destruido = true;
-    if (this.neuralAnimId) cancelAnimationFrame(this.neuralAnimId);
-    if (this.threeAnimId) cancelAnimationFrame(this.threeAnimId);
-    if (this.resizeObs) this.resizeObs.disconnect();
-    if (this.hackerInterval) clearInterval(this.hackerInterval);
-    // Libera el contexto WebGL: el navegador solo admite unos pocos vivos a la
-    // vez y entrar y salir del login los iba acumulando.
-    this.threeRenderer?.dispose();
-    this.threeRenderer = null;
-    this.threeTimer = null;
+    this.detenerCampo?.();
+    if (this.sacudirTimer) clearTimeout(this.sacudirTimer);
+    if (this.modoTimer) clearTimeout(this.modoTimer);
   }
 
-  /* ═══════════════════════════════════════════ */
-  /* Hacker Text: Minimal Futuristic Reveal      */
-  /* ═══════════════════════════════════════════ */
-  private readonly HEX = '0123456789ABCDEF';
-
-  triggerHackerText(): void {
-    if (this.hackerInterval) return;
-
-    const title = 'GAC';
-    const gac   = 'Suite';
-    const sub   = 'Gestión de Congregaciones';
-
-    // Frames × 45ms:
-    // F1-12  : reveal title left-to-right (540ms)
-    // F13-18 : reveal GAC (270ms)
-    // F19+   : typewriter subtitle (sub.length × 45ms ≈ 630ms)
-    const FLASH = 0, TITLE = 12, GAC = 18, TOTAL = GAC + sub.length + 2;
-    let f = 0;
-    const ease = (t: number) => t < 0.5 ? 2*t*t : -1 + (4-2*t)*t;
-    const hex  = (len: number) => Array.from({length: len}, () => this.HEX[Math.floor(Math.random()*16)]).join('');
-    const lock = (word: string, rev: number) =>
-      word.slice(0, rev) + hex(word.length - rev);
-
-    this.displaySubtitle.set('·'.repeat(sub.length));
-
-    this.hackerInterval = setInterval(() => {
-      this.ngZone.run(() => {
-        f++;
-
-        if (f <= TITLE) {
-          const t = ease(f / TITLE);
-          this.displayTitle.set(lock(title, Math.floor(t * title.length)));
-          this.displayGAC.set('·'.repeat(gac.length));
-
-        } else if (f <= GAC) {
-          const t = ease((f - TITLE) / (GAC - TITLE));
-          this.displayTitle.set(title);
-          this.displayGAC.set(lock(gac, Math.floor(t * gac.length)));
-
-        } else {
-          const rev = Math.min(f - GAC, sub.length);
-          this.displayTitle.set(title);
-          this.displayGAC.set(gac);
-          this.displaySubtitle.set(
-            sub.slice(0, rev) + '·'.repeat(sub.length - rev)
-          );
-        }
-
-        if (f >= TOTAL) {
-          this.displayTitle.set(title);
-          this.displayGAC.set(gac);
-          this.displaySubtitle.set(sub);
-          clearInterval(this.hackerInterval);
-          this.hackerInterval = null;
-        }
-      });
-    }, 45);
+  private ponerModo(m: ModoCampo): void {
+    if (this.modoTimer) { clearTimeout(this.modoTimer); this.modoTimer = null; }
+    this.modo = m;
+    this.estadoCampo.set(m);
   }
 
-  /* ═══════════════════════════════════════════ */
-  /* Neural Canvas (minimal organic neurons)     */
-  /* ═══════════════════════════════════════════ */
-  private initNeuralCanvas(): void {
-    const canvas = this.canvasRef?.nativeElement;
-    if (!canvas) return;
-    this.neuralCtx = canvas.getContext('2d');
-    if (!this.neuralCtx) return;
+  /** Vuelve al reposo (o a «atento» si sigue un campo enfocado). */
+  private reposo(): void {
+    this.ponerModo(this.enFoco ? 'atento' : 'libre');
+  }
 
-    const setSize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      canvas.style.width = window.innerWidth + 'px';
-      canvas.style.height = window.innerHeight + 'px';
-      this.neuralCtx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+  /** Error: el campo se dispersa un momento y luego vuelve a la calma. */
+  private modoError(): void {
+    this.ponerModo('error');
+    this.modoTimer = setTimeout(() => this.reposo(), 1400);
+  }
+
+  alEnfocar(): void {
+    this.enFoco = true;
+    if (this.modo === 'libre') this.ponerModo('atento');
+  }
+
+  alDesenfocar(): void {
+    this.enFoco = false;
+    // focusout llega antes que el focusin del siguiente campo: se espera un tick.
+    setTimeout(() => { if (!this.enFoco && this.modo === 'atento') this.ponerModo('libre'); });
+  }
+
+  /** Cada tecla da un impulso al flujo y lanza una chispa desde el campo. */
+  alEscribir(e: Event): void {
+    this.energia = Math.min(2.2, this.energia + 0.7);
+    const el = e.target as HTMLElement | null;
+    if (!el || el.tagName !== 'INPUT' || (el as HTMLInputElement).type === 'checkbox') return;
+    const esClave = el.id === 'password' || el.id === 'codigo2fa';
+    if (this.desafio()) this.estrellasObjetivo = this.codigo().length;
+    // Borrar no lanza chispa: el anillo pierde la estrella al instante.
+    if ((e as InputEvent).inputType?.startsWith('delete')) return;
+    if (this.teclas.length < 24) this.teclas.push({ el, estrella: esClave });
+  }
+
+  campoInvalido(campo: 'username' | 'password'): boolean {
+    const c = this.form.controls[campo];
+    return c.touched && c.invalid;
+  }
+
+  revisarMayus(e: Event): void {
+    const ev = e as KeyboardEvent;
+    if (typeof ev.getModifierState === 'function') this.mayusActivas.set(ev.getModifierState('CapsLock'));
+  }
+
+  /** La cortina de entrada nace en el núcleo y cubre la pantalla. */
+  private abrirCortina(): void {
+    const raiz = this.raizRef?.nativeElement;
+    if (!raiz) return;
+    raiz.style.setProperty('--cx', `${Math.round(this.nucleo.x)}px`);
+    raiz.style.setProperty('--cy', `${Math.round(this.nucleo.y)}px`);
+  }
+
+  private sacudirFormulario(): void {
+    if (this.prefiereMenosMovimiento) return;
+    this.sacudir.set(false);
+    if (this.sacudirTimer) clearTimeout(this.sacudirTimer);
+    // Un fotograma para que la clase vuelva a aplicarse aunque ya estuviera puesta.
+    requestAnimationFrame(() => {
+      this.sacudir.set(true);
+      this.sacudirTimer = setTimeout(() => this.sacudir.set(false), 450);
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     Campo de corrientes (toda la pantalla)
+     - Corrientes: trazos finos que siguen un campo de ángulos que
+       cambia despacio; cerca del puntero se arremolinan.
+     - Chispas: cada tecla sale del campo donde se escribe y viaja
+       en curva hasta el núcleo.
+     - Anillo: cada carácter de la contraseña (o del código) es una
+       estrella en un círculo alrededor del núcleo; un arco las une.
+     Rendimiento: un trazo por color y fotograma, densidad de píxel
+     ≤ 1,5, pausa con la pestaña oculta, bucle fuera de Angular.
+     ═══════════════════════════════════════════════════════════ */
+  private iniciarCampo(): void {
+    const visual = this.visualRef?.nativeElement;
+    const lado = this.ladoRef?.nativeElement;
+    const hueco = this.huecoRef?.nativeElement;
+    const canvas = this.flowRef?.nativeElement;
+    const capa = this.starsRef?.nativeElement;
+    const ctx = canvas?.getContext('2d');
+    const sx = capa?.getContext('2d');
+    if (!visual || !lado || !hueco || !canvas || !capa || !ctx || !sx) return;
+
+    const PALETAS: Record<ModoCampo, string[]> = {
+      libre:    ['rgba(167, 139, 250, 0.40)', 'rgba(233, 225, 255, 0.28)', 'rgba(251, 191, 36, 0.38)'],
+      atento:   ['rgba(167, 139, 250, 0.48)', 'rgba(233, 225, 255, 0.34)', 'rgba(251, 191, 36, 0.42)'],
+      pensando: ['rgba(196, 181, 253, 0.46)', 'rgba(240, 236, 255, 0.32)', 'rgba(251, 191, 36, 0.42)'],
+      error:    ['rgba(251, 113, 133, 0.50)', 'rgba(255, 228, 230, 0.34)', 'rgba(251, 191, 36, 0.40)'],
+      exito:    ['rgba(196, 181, 253, 0.60)', 'rgba(255, 255, 255, 0.50)', 'rgba(110, 231, 183, 0.55)'],
     };
-    setSize();
+    // Cuánto pesa la dirección del modo frente al flujo libre, cuánto gira
+    // alrededor del núcleo (0 = directo, π/2 = órbita) y a qué velocidad.
+    const AJUSTE: Record<ModoCampo, { peso: number; giro: number; vel: number }> = {
+      libre:    { peso: 0,    giro: 0,    vel: 1 },
+      atento:   { peso: 0.3,  giro: 0.95, vel: 1.1 },
+      pensando: { peso: 0.7,  giro: 1.4,  vel: 1.35 },
+      error:    { peso: 0.6,  giro: 0,    vel: 2.2 },
+      exito:    { peso: 0.88, giro: 0,    vel: 3.2 },
+    };
 
-    this.resizeObs = new ResizeObserver(() => setSize());
-    this.resizeObs.observe(document.body);
+    let w = 0, h = 0, escala = 1;
+    // El lienzo de corrientes empieza en `ox`: en escritorio no se pinta bajo
+    // el formulario (el velo lo tapaba casi entero y era trabajo perdido).
+    let ox = 0;
+    // Calidad adaptativa: baja resolución y corrientes si el equipo no llega
+    // a ~40 fps. `muestras` acumula la duración de los últimos fotogramas.
+    let calidad = 1, muestras = 0, sumaDt = 0, bajadas = 0;
+    let bordeIzq: CanvasGradient | null = null;
+    let corrientes: Corriente[] = [];
+    let raf = 0, t = Math.random() * 1e4, ultimo = 0;
+    // Puntero (objetivo y posición suavizada), en píxeles de pantalla.
+    let pxT = -1e4, pyT = -1e4, px = -1e4, py = -1e4;
 
-    // Fuera de la zona: el bucle no toca estado de la vista, asi que no debe
-    // provocar un ciclo de deteccion de cambios por cada frame.
-    this.ngZone.runOutsideAngular(() => this.animateNeural());
-  }
+    const nueva = (c?: Corriente): Corriente => {
+      const r = Math.random();
+      const n = c ?? { x: 0, y: 0, edad: 0, vida: 0, tono: 0 };
+      n.x = ox + Math.random() * (w - ox);
+      n.y = Math.random() * h;
+      n.edad = 0;
+      n.vida = 260 + Math.random() * 420;
+      n.tono = r < 0.04 ? 2 : r < 0.3 ? 1 : 0;
+      return n;
+    };
 
-  private animateNeural = (): void => {
-    if (!this.neuralCtx) return;
-    const ctx = this.neuralCtx;
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const t = Date.now() * 0.0002;
+    /** Dónde vive el núcleo: centro del espacio libre a la derecha (escritorio)
+        o del hueco sobre el formulario (móvil). */
+    const ubicarNucleo = () => {
+      if (window.innerWidth >= 1024) {
+        const borde = lado.getBoundingClientRect().right;
+        const libre = Math.max(200, w - borde);
+        this.nucleo.x = borde + libre * 0.52;
+        this.nucleo.y = h * 0.5;
+        this.nucleo.r = Math.max(30, Math.min(78, Math.min(libre, h) * 0.12));
+      } else {
+        const g = hueco.getBoundingClientRect();
+        this.nucleo.x = w / 2;
+        this.nucleo.y = g.top + g.height / 2;
+        this.nucleo.r = Math.max(16, Math.min(56, Math.min(g.height, w) * 0.3));
+      }
+      visual.style.setProperty('--nx', `${Math.round(this.nucleo.x)}px`);
+      visual.style.setProperty('--ny', `${Math.round(this.nucleo.y)}px`);
+    };
 
-    ctx.clearRect(0, 0, w, h);
+    /** `conservar`: al bajar la calidad se mantienen la imagen y las corrientes
+        (redimensionar el lienzo lo borra y las estelas volvían a empezar). */
+    const medir = (conservar = false) => {
+      let copia: HTMLCanvasElement | null = null;
+      if (conservar && canvas.width) {
+        copia = document.createElement('canvas');
+        copia.width = canvas.width; copia.height = canvas.height;
+        copia.getContext('2d')?.drawImage(canvas, 0, 0);
+      }
+      w = Math.max(1, visual.offsetWidth);
+      h = Math.max(1, visual.offsetHeight);
+      ox = window.innerWidth >= 1024 ? Math.max(0, lado.offsetWidth - 160) : 0;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      // Pintar es lo caro (no el cálculo): el lienzo de corrientes se limita a
+      // ~1,6 millones de píxeles internos y el CSS lo escala. Las líneas finas
+      // no pierden calidad visible.
+      escala = Math.min(dpr, Math.sqrt(1.6e6 / ((w - ox) * h))) * calidad;
+      canvas.style.left = `${ox}px`;
+      canvas.style.width = `${w - ox}px`;
+      canvas.width = Math.round((w - ox) * escala);
+      canvas.height = Math.round(h * escala);
+      ctx.setTransform(escala, 0, 0, escala, -ox * escala, 0);
+      bordeIzq = null;
+      if (ox > 0) {
+        // Progresivo: las estelas crecen mucho cuando el borrado es pequeño,
+        // así que la caída va concentrada al principio para que no se vea corte.
+        bordeIzq = ctx.createLinearGradient(ox, 0, ox + 320, 0);
+        bordeIzq.addColorStop(0, 'rgba(0, 0, 0, 0.55)');
+        bordeIzq.addColorStop(0.3, 'rgba(0, 0, 0, 0.14)');
+        bordeIzq.addColorStop(0.65, 'rgba(0, 0, 0, 0.03)');
+        bordeIzq.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      }
+      // La capa de chispas y anillo sí va a resolución completa (son pocos
+      // trazos y deben verse nítidos), pero solo se pinta cuando hay algo.
+      capa.width = Math.round(w * dpr);
+      capa.height = Math.round(h * dpr);
+      sx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const cuantas = Math.max(140, Math.min(800, Math.round(((w - ox) * h) / 2000 * calidad)));
+      if (copia) {
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(copia, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+        corrientes.length = Math.min(corrientes.length, cuantas);
+      } else {
+        corrientes = Array.from({ length: cuantas }, () => nueva());
+        // Arrancan a distintas edades para no nacer todas a la vez.
+        for (const c of corrientes) c.edad = Math.random() * c.vida;
+      }
+      ubicarNucleo();
+    };
 
-    const cx = w / 2;
-    const cy = h / 2;
-    const maxR = Math.max(w, h) * 0.6;
+    /** Diferencia de ángulo hacia `b`. Si son casi opuestos se gira siempre en
+        el mismo sentido: elegir el lado más corto cambiaba de un fotograma a
+        otro y dejaba una franja dentada donde se encontraban los flujos. */
+    const hacia = (a: number, b: number) => {
+      const d = Math.atan2(Math.sin(b - a), Math.cos(b - a));
+      return Math.abs(d) > 2.7 ? Math.abs(d) : d;
+    };
 
-    // Organic Branching Neurons
-    for (let i = 0; i < 15; i++) {
-      const seed = i * 23.4;
-      // Posición del soma (cuerpo celular)
-      const nx = cx + Math.sin(seed * 0.7 + t * 0.3) * Math.cos(seed * 0.3) * w * 0.45;
-      const ny = cy + Math.sin(seed * 0.5 + t * 0.25) * Math.cos(seed * 0.8 + t * 0.2) * h * 0.45;
+    // Suma de ondas lentas: curvas amplias que se van deformando con el
+    // tiempo, con una deriva suave hacia arriba a la derecha.
+    const angulo = (x: number, y: number) =>
+      (Math.sin(x * 0.0034 + t * 0.00016) + Math.cos(y * 0.0041 - t * 0.00012) +
+       Math.sin((x - y) * 0.0019 + t * 0.00009) * 0.8) * 1.15 - 0.3;
 
-      const dist = Math.sqrt((nx - cx)**2 + (ny - cy)**2);
-      const fade = Math.max(0, 1 - dist / maxR);
-      if (fade < 0.1) continue;
+    const paso = (dt: number, desvanecer: boolean) => {
+      t += dt;
+      px += (pxT - px) * 0.1;
+      py += (pyT - py) * 0.1;
 
-      const pulse = (Math.sin(t * 4 + seed) + 1) / 2;
-      const alpha = fade * 0.15;
+      const modo = this.modo;
+      const { peso, giro, vel } = AJUSTE[modo];
+      const colores = PALETAS[modo];
+      const cx = this.nucleo.x, cy = this.nucleo.y;
 
-      // Dibujar dendritas (ramas) saliendo del soma
-      const branches = 4;
-      for (let b = 0; b < branches; b++) {
-        const bSeed = seed + b * 5.7;
-        ctx.beginPath();
-        ctx.moveTo(nx, ny);
-
-        let lx = nx;
-        let ly = ny;
-        const steps = 40;
-        for (let s = 1; s <= steps; s++) {
-          const angle = (b / branches) * Math.PI * 2 + Math.sin(bSeed * 1.3 + s * 0.15 + t) * 0.8;
-          const length = 4;
-          const targetX = lx + Math.cos(angle) * length;
-          const targetY = ly + Math.sin(angle) * length;
-
-          ctx.lineTo(targetX, targetY);
-          lx = targetX;
-          ly = targetY;
+      if (desvanecer) {
+        // Borra un poco del fotograma anterior: deja estelas que se apagan.
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = modo === 'exito' ? 'rgba(0, 0, 0, 0.06)' : 'rgba(0, 0, 0, 0.028)';
+        ctx.fillRect(ox, 0, w - ox, h);
+        // Borde izquierdo (escritorio): se borra más fuerte para que funda con
+        // el velo. Antes era un mask-image en CSS, que costaba ~4 fps.
+        if (ox > 0 && bordeIzq) {
+          ctx.fillStyle = bordeIzq;
+          ctx.fillRect(ox, 0, 320, h);
         }
-        ctx.strokeStyle = `rgba(139, 92, 246, ${alpha * 0.4})`;
-        ctx.lineWidth = 0.5;
+      }
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.lineWidth = 1;
+
+      this.energia *= 0.94;
+      const v = 0.85 * (dt / 16.7) * vel * (1 + this.energia);
+      const R = Math.min(190, w * 0.3);
+      // Sin puntero en la ventana (táctil o fuera): R2 = 0 y no se calcula.
+      const R2 = px > -5000 ? R * R : 0;
+      for (let tono = 0; tono < 3; tono++) {
+        ctx.strokeStyle = colores[tono];
+        ctx.beginPath();
+        for (const c of corrientes) {
+          if (c.tono !== tono) continue;
+          let a = angulo(c.x, c.y);
+
+          if (peso > 0) {
+            // Se gira el ángulo hacia la dirección del modo por el camino más
+            // corto (sumar vectores opuestos daba casi cero y trazos en zigzag).
+            const kx = cx - c.x, ky = cy - c.y;
+            const kd = Math.sqrt(kx * kx + ky * ky);
+            let objetivo: number;
+            let fuerza = peso;
+            if (modo === 'exito') objetivo = -0.18;
+            else if (modo === 'error') objetivo = Math.atan2(-ky, -kx);
+            else {
+              // Llegó al núcleo: renace en otro sitio para que el flujo no se agote.
+              if (kd < 16) { nueva(c); continue; }
+              objetivo = Math.atan2(ky, kx) + giro;
+              // La atracción solo actúa cerca del núcleo: si toda la pantalla
+              // convergía a la vez, las corrientes se apilaban en una lámina.
+              fuerza *= Math.max(0, 1 - kd / (this.nucleo.r * (modo === 'atento' ? 6 : 9)));
+            }
+            a += hacia(a, objetivo) * fuerza;
+          }
+
+          const dx = c.x - px, dy = c.y - py;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < R2) {
+            const d = Math.sqrt(d2);
+            // Remolino alrededor del puntero, más fuerte cuanto más cerca.
+            const f = (1 - d / R) * 0.9;
+            const ta = Math.atan2(dy, dx) + Math.PI / 2;
+            a += hacia(a, ta) * f;
+          }
+
+          const k = v * (tono === 2 ? 1.3 : 1);
+          const nx = c.x + Math.cos(a) * k;
+          const ny = c.y + Math.sin(a) * k;
+          ctx.moveTo(c.x, c.y);
+          ctx.lineTo(nx, ny);
+          c.x = nx; c.y = ny; c.edad++;
+          if (c.edad > c.vida || nx < ox - 10 || ny < -10 || nx > w + 10 || ny > h + 10) nueva(c);
+        }
         ctx.stroke();
       }
+    };
 
-      // Dibujar Soma
-      ctx.beginPath();
-      ctx.arc(nx, ny, 2 + pulse * 1.5, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(167, 139, 250, ${alpha * (1 + pulse)})`;
-      ctx.fill();
+    /* Capa superior: chispas, ondas y anillo (se limpia cada fotograma). */
+    const estrellas: Estrella[] = [];
+    const ondas: Onda[] = [];
+    const chispas: Chispa[] = [];
+    let llegadas = 0;
+    let modoPrevio: ModoCampo = 'libre';
+    let crecer = 1;
 
-      // Soma Glow
-      ctx.beginPath();
-      ctx.arc(nx, ny, 6, 0, Math.PI * 2);
-      const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, 8);
-      grad.addColorStop(0, `rgba(139, 92, 246, ${alpha * 0.5})`);
-      grad.addColorStop(1, 'rgba(139, 92, 246, 0)');
-      ctx.fillStyle = grad;
-      ctx.fill();
-    }
+    const curva = (c: Chispa, p: number) => {
+      const u = 1 - p;
+      return {
+        x: u * u * c.x0 + 2 * u * p * c.qx + p * p * this.nucleo.x,
+        y: u * u * c.y0 + 2 * u * p * c.qy + p * p * this.nucleo.y,
+      };
+    };
+    const suave = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
 
-    this.neuralAnimId = requestAnimationFrame(this.animateNeural);
-  };
+    let capaSucia = false;
+    const dibujarCapa = (dt: number) => {
+      const modo = this.modo;
+      const { x: cx, y: cy, r: R } = this.nucleo;
+      const f = dt / 16.7;
+      // Casi todo el tiempo no hay chispas, ondas ni anillo: entonces la capa
+      // ni se borra ni se dibuja. Además se oculta: una capa a pantalla
+      // completa, aunque esté vacía, se compone en cada fotograma (medido: de
+      // 30 a 44 fps sin ella).
+      const vacia = !this.teclas.length && !chispas.length && !ondas.length &&
+        !estrellas.length && !(this.estrellasObjetivo && llegadas);
+      if (vacia) {
+        if (capaSucia) { sx.clearRect(0, 0, w, h); capa.style.display = 'none'; capaSucia = false; }
+        crecer = 1;
+        modoPrevio = modo;
+        return;
+      }
+      if (!capaSucia) capa.style.display = '';
+      capaSucia = true;
+      sx.clearRect(0, 0, w, h);
+      sx.globalCompositeOperation = 'lighter';
+      const color = modo === 'error' ? '251, 113, 133' : modo === 'exito' ? '220, 252, 231' : '221, 214, 254';
 
-  /* ═══════════════════════════════════════════ */
-  /* Three.js Plasma Sphere                      */
-  /* ═══════════════════════════════════════════ */
-  private async initPlasmaSphere(): Promise<void> {
-    const container = this.sphereContainerRef?.nativeElement;
-    if (!container) return;
+      // Nuevas chispas: salen del borde derecho del campo (o de arriba en móvil).
+      while (this.teclas.length) {
+        const { el, estrella } = this.teclas.shift()!;
+        const r = el.getBoundingClientRect();
+        const ancho = window.innerWidth >= 1024;
+        const x0 = ancho ? r.right - 18 : r.left + r.width * (0.35 + Math.random() * 0.3);
+        const y0 = ancho ? r.top + r.height / 2 : r.top;
+        const lado = Math.random() < 0.5 ? -1 : 1;
+        chispas.push({
+          x0, y0,
+          qx: (x0 + cx) / 2 + (ancho ? 0 : lado * (40 + Math.random() * 60)),
+          qy: ancho ? Math.min(y0, cy) - 40 - Math.random() * 90 * lado : (y0 + cy) / 2,
+          t0: t, dur: 620 + Math.random() * 220, estrella,
+        });
+      }
 
-    // Carga diferida: three pesa mas que todo el resto del login junto y solo
-    // sirve para este fondo decorativo. Se descarga despues del primer pintado.
-    const THREE = await import('three');
-    // La vista pudo destruirse mientras se descargaba la libreria.
-    if (this.destruido) return;
-    this.threeTimer = new THREE.Timer();
+      // Chispas en vuelo: cabeza brillante y cola corta que se apaga.
+      sx.lineCap = 'round';
+      for (let i = chispas.length - 1; i >= 0; i--) {
+        const c = chispas[i];
+        const p = Math.min(1, (t - c.t0) / c.dur);
+        const e = suave(p);
+        for (let k = 0; k < 7; k++) {
+          const a0 = Math.max(0, e - k * 0.03), a1 = Math.max(0, e - (k + 1) * 0.03);
+          if (a0 === a1) break;
+          const q0 = curva(c, a0), q1 = curva(c, a1);
+          sx.strokeStyle = `rgba(${color}, ${0.8 * (1 - k / 7)})`;
+          sx.lineWidth = 2 * (1 - k / 7) + 0.4;
+          sx.beginPath(); sx.moveTo(q0.x, q0.y); sx.lineTo(q1.x, q1.y); sx.stroke();
+        }
+        const cab = curva(c, e);
+        sx.fillStyle = `rgba(${color}, 0.18)`;
+        sx.beginPath(); sx.arc(cab.x, cab.y, 6, 0, Math.PI * 2); sx.fill();
+        sx.fillStyle = `rgba(${color}, 1)`;
+        sx.beginPath(); sx.arc(cab.x, cab.y, 1.8, 0, Math.PI * 2); sx.fill();
+        if (p >= 1) {
+          chispas.splice(i, 1);
+          ondas.push({ r: R * 0.35, a: 0.45 });
+          if (c.estrella) llegadas++;
+        }
+      }
 
-    const rect = container.getBoundingClientRect();
-    const size = Math.round(rect.width) || 160;
-    const scene = new THREE.Scene();
-    this.threeScene = scene;
+      // Ondas que salen del núcleo al llegar cada chispa.
+      sx.lineWidth = 1.25;
+      for (let i = ondas.length - 1; i >= 0; i--) {
+        const o = ondas[i];
+        o.r += 2.6 * f;
+        o.a *= Math.pow(0.95, f);
+        if (o.a < 0.02) { ondas.splice(i, 1); continue; }
+        sx.strokeStyle = `rgba(${color}, ${o.a})`;
+        sx.beginPath(); sx.arc(cx, cy, o.r, 0, Math.PI * 2); sx.stroke();
+      }
 
-    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
-    camera.position.z = 2.6;
-    this.threeCamera = camera;
+      // Anillo: estrellas = caracteres que ya llegaron (y que siguen escritos).
+      llegadas = Math.min(llegadas, this.estrellasObjetivo);
+      const cuantas = Math.min(llegadas, 36);
+      if (modo !== 'error') {
+        while (estrellas.length < cuantas) estrellas.push({ x: cx, y: cy, vx: 0, vy: 0, nace: t });
+        if (estrellas.length > cuantas) estrellas.length = cuantas;
+      }
+      // Al fallar, cada estrella sale despedida y cae.
+      if (modo === 'error' && modoPrevio !== 'error') {
+        for (const e of estrellas) {
+          const ang = Math.random() * Math.PI * 2;
+          const vel = 1.5 + Math.random() * 2.5;
+          e.vx = Math.cos(ang) * vel;
+          e.vy = Math.sin(ang) * vel - 1.5;
+        }
+      }
+      if (modoPrevio === 'error' && modo !== 'error') {
+        // Pasado el error, el anillo se rehace desde el núcleo.
+        for (const e of estrellas) { e.x = cx; e.y = cy; e.nace = t; }
+      }
+      crecer = modo === 'exito' ? crecer + (7 - crecer) * 0.05 * f : 1;
+      modoPrevio = modo;
+      if (!estrellas.length) return;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(size, size);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000000, 0);
+      // 12 estrellas por vuelta (6 en el código de dos pasos: lo cierra entero).
+      const porVuelta = this.desafio() ? 6 : 12;
+      const pasoAng = (Math.PI * 2) / porVuelta;
+      const giro = t * 0.00018;
+      const radio = (vuelta: number) => (R + vuelta * R * 0.42) * crecer;
+      const alfa = modo === 'exito' ? Math.max(0, 1.5 - crecer * 0.25) : 1;
 
-    const canvasEl = renderer.domElement;
-    canvasEl.style.width = '100%';
-    canvasEl.style.height = '100%';
-    canvasEl.style.borderRadius = '50%';
-    container.appendChild(canvasEl);
-    this.threeRenderer = renderer;
+      if (modo !== 'error') {
+        // Guía tenue de cada vuelta y arco brillante con lo ya escrito.
+        const vueltas = Math.ceil(estrellas.length / porVuelta);
+        for (let v = 0; v < vueltas; v++) {
+          const enVuelta = Math.min(porVuelta, estrellas.length - v * porVuelta);
+          const sentido = v % 2 ? -1 : 1;
+          const a0 = -Math.PI / 2 + giro * sentido;
+          sx.lineWidth = 1;
+          sx.strokeStyle = `rgba(${color}, ${0.07 * alfa})`;
+          sx.beginPath(); sx.arc(cx, cy, radio(v), 0, Math.PI * 2); sx.stroke();
+          if (enVuelta > 1) {
+            sx.lineWidth = 1.5;
+            sx.strokeStyle = `rgba(${color}, ${0.45 * alfa})`;
+            sx.beginPath();
+            if (enVuelta === porVuelta) sx.arc(cx, cy, radio(v), 0, Math.PI * 2);
+            else sx.arc(cx, cy, radio(v), a0, a0 + (enVuelta - 1) * pasoAng * sentido, sentido < 0);
+            sx.stroke();
+          }
+        }
+      }
 
-    const group = new THREE.Group();
-    scene.add(group);
-    this.mainGroup = group;
+      estrellas.forEach((e, i) => {
+        if (modo === 'error') {
+          e.x += e.vx * f; e.y += e.vy * f; e.vy += 0.16 * f;
+          return;
+        }
+        const v = Math.floor(i / porVuelta);
+        const sentido = v % 2 ? -1 : 1;
+        const ang = -Math.PI / 2 + giro * sentido + (i % porVuelta) * pasoAng * sentido;
+        const tx = cx + Math.cos(ang) * radio(v), ty = cy + Math.sin(ang) * radio(v);
+        e.x += (tx - e.x) * 0.2 * f;
+        e.y += (ty - e.y) * 0.2 * f;
+      });
 
-    scene.add(new THREE.AmbientLight(0xfdf4ff, 0.9));
-    const pl = new THREE.PointLight(0xe879f9, 8, 20);
-    pl.position.set(0, 0, 1);
-    scene.add(pl);
+      // Estrellas: halo y punto brillante; las nuevas nacen con destello.
+      for (const e of estrellas) {
+        const edad = Math.min(1, (t - e.nace) / 400);
+        const brillo = 1 + (1 - edad) * 1.6;
+        sx.fillStyle = `rgba(${color}, ${0.12 * alfa * brillo})`;
+        sx.beginPath(); sx.arc(e.x, e.y, 6 * brillo, 0, Math.PI * 2); sx.fill();
+        sx.fillStyle = `rgba(${color}, ${0.95 * alfa})`;
+        sx.beginPath(); sx.arc(e.x, e.y, 2, 0, Math.PI * 2); sx.fill();
+      }
+    };
 
-    const shellVert = `
-      varying vec3 vNormal; varying vec3 vViewPos;
-      void main(){
-        vNormal=normalize(normalMatrix*normal);
-        vec4 mv=modelViewMatrix*vec4(position,1.0);
-        vViewPos=-mv.xyz;
-        gl_Position=projectionMatrix*mv;
-      }`;
-    const shellFrag = `
-      varying vec3 vNormal; varying vec3 vViewPos;
-      uniform vec3 uColor; uniform float uOpacity;
-      void main(){
-        float f=pow(1.0-dot(normalize(vNormal),normalize(vViewPos)),2.5);
-        gl_FragColor=vec4(uColor,f*uOpacity);
-      }`;
+    /** Cada 90 fotogramas: si la media pasa de 24 ms (< ~40 fps), baja la
+        resolución y las corrientes un 15 %. Como mucho dos veces (72 %):
+        más abajo las líneas se notaban borrosas. */
+    const ajustarCalidad = (dt: number) => {
+      if (bajadas >= 2) return;
+      sumaDt += dt; muestras++;
+      if (muestras < 90) return;
+      const media = sumaDt / muestras;
+      sumaDt = 0; muestras = 0;
+      if (media > 24) {
+        calidad *= 0.85;
+        bajadas++;
+        medir(true);
+      }
+    };
 
-    const shellGeo = new THREE.SphereGeometry(1.0, 64, 64);
-    group.add(new THREE.Mesh(shellGeo, new THREE.ShaderMaterial({
-      vertexShader: shellVert, fragmentShader: shellFrag,
-      uniforms: { uColor: { value: new THREE.Color(0x4c1d95) }, uOpacity: { value: 0.15 } },
-      transparent: true, blending: THREE.AdditiveBlending, side: THREE.BackSide, depthWrite: false
-    })));
+    const bucle = (ahora: number) => {
+      const dt = ultimo ? Math.min(40, ahora - ultimo) : 16.7;
+      ultimo = ahora;
+      paso(dt, true);
+      dibujarCapa(dt);
+      ajustarCalidad(dt);
+      raf = requestAnimationFrame(bucle);
+    };
+    const arrancar = () => {
+      if (raf || document.hidden || this.prefiereMenosMovimiento) return;
+      ultimo = 0; sumaDt = 0; muestras = 0;
+      raf = requestAnimationFrame(bucle);
+    };
+    const parar = () => { if (raf) cancelAnimationFrame(raf); raf = 0; };
 
-    const plasmaGeo = new THREE.SphereGeometry(0.94, 64, 64);
-    this.plasmaMat = new THREE.ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0 },
-        uScale: { value: 0.13 },
-        uBrightness: { value: 1.7 },
-        uThreshold: { value: 0.04 },
-        uColorDeep: { value: new THREE.Color(0x170c2e) },
-        uColorMid: { value: new THREE.Color(0x9333ea) },
-        uColorBright: { value: new THREE.Color(0xe879f9) },
-      },
-      vertexShader: `
-        varying vec3 vPosition; varying vec3 vNormal; varying vec3 vViewPos;
-        void main(){
-          vPosition=position;
-          vNormal=normalize(normalMatrix*normal);
-          vec4 mv=modelViewMatrix*vec4(position,1.0);
-          vViewPos=-mv.xyz;
-          gl_Position=projectionMatrix*mv;
-        }`,
-      fragmentShader: `
-        uniform float uTime,uScale,uBrightness,uThreshold;
-        uniform vec3 uColorDeep,uColorMid,uColorBright;
-        varying vec3 vPosition,vNormal,vViewPos;
-        ${GLSL_NOISE}
-        void main(){
-          float n=fbm(vPosition*uScale*10.0+uTime*0.5);
-          float a=smoothstep(uThreshold,uThreshold+0.3,n);
-          vec3 c=mix(uColorDeep,uColorMid,a);
-          c=mix(c,uColorBright,smoothstep(0.6,1.0,n));
-          float d=dot(normalize(vNormal),vec3(0.0,0.0,1.0));
-          d=smoothstep(-0.2,0.6,d);
-          float fa=a*(0.02+0.98*d);
-          gl_FragColor=vec4(c*uBrightness,fa);
-        }`,
-      transparent: true, blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide, depthWrite: false
+    const pintarQuieto = () => {
+      ctx.clearRect(0, 0, w, h);
+      for (let i = 0; i < 140; i++) paso(16.7, false);
+    };
+
+    medir();
+    if (this.prefiereMenosMovimiento) pintarQuieto(); else arrancar();
+
+    // Se mide en el fotograma siguiente (redimensionar dentro del aviso
+    // provocaba «ResizeObserver loop»). Si cambió el tamaño de la pantalla se
+    // rehace todo; si solo cambió el formulario, se reubica el núcleo.
+    let rafMedir = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(rafMedir);
+      rafMedir = requestAnimationFrame(() => {
+        if (visual.offsetWidth !== w || visual.offsetHeight !== h) {
+          medir();
+          if (this.prefiereMenosMovimiento) pintarQuieto();
+        } else {
+          ubicarNucleo();
+        }
+      });
     });
-    group.add(new THREE.Mesh(plasmaGeo, this.plasmaMat));
+    ro.observe(visual);
+    ro.observe(lado);
+    ro.observe(hueco);
 
-    const pCount = 200;
-    const pPos = new Float32Array(pCount * 3);
-    for (let i = 0; i < pCount; i++) {
-      const r = 0.95 * Math.cbrt(Math.random());
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      pPos[i*3] = r * Math.sin(phi) * Math.cos(theta);
-      pPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
-      pPos[i*3+2] = r * Math.cos(phi);
-    }
-    const pGeo = new THREE.BufferGeometry();
-    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-    this.pMat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 }, uColor: { value: new THREE.Color(0xfae8ff) } },
-      vertexShader: `
-        uniform float uTime;
-        void main(){
-          vec3 pos=position;
-          pos.y+=sin(uTime*0.2+pos.x)*0.02;
-          vec4 mv=modelViewMatrix*vec4(pos,1.0);
-          gl_Position=projectionMatrix*mv;
-          gl_PointSize=4.0 * (1.0/-mv.z);
-        }`,
-      fragmentShader: `
-        uniform vec3 uColor;
-        void main(){
-          if(length(gl_PointCoord-0.5)>0.5)discard;
-          gl_FragColor=vec4(uColor,0.8);
-        }`,
-      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
-    });
-    group.add(new THREE.Points(pGeo, this.pMat));
+    const alCambiarPestana = () => (document.hidden ? parar() : arrancar());
+    document.addEventListener('visibilitychange', alCambiarPestana);
 
-    // Igual que el canvas neuronal: 60 fps de render WebGL no deben disparar
-    // 60 ciclos de deteccion de cambios por segundo.
-    this.ngZone.runOutsideAngular(() => this.animateSphere());
+    // El fondo está detrás del contenido: el puntero se sigue en toda la ventana.
+    const mover = (e: PointerEvent) => { pxT = e.clientX; pyT = e.clientY; };
+    const salir = () => { pxT = -1e4; pyT = -1e4; };
+    window.addEventListener('pointermove', mover, { passive: true });
+    document.addEventListener('pointerleave', salir);
+
+    this.detenerCampo = () => {
+      parar();
+      cancelAnimationFrame(rafMedir);
+      ro.disconnect();
+      document.removeEventListener('visibilitychange', alCambiarPestana);
+      window.removeEventListener('pointermove', mover);
+      document.removeEventListener('pointerleave', salir);
+    };
   }
 
-  private animateSphere = (): void => {
-    if (!this.threeTimer) return;
-    this.threeAnimId = requestAnimationFrame(this.animateSphere);
-    this.threeTimer.update();
-    const t = this.threeTimer.getElapsed() * 0.78;
-    if (this.plasmaMat) this.plasmaMat.uniforms['uTime'].value = t;
-    if (this.pMat) this.pMat.uniforms['uTime'].value = t;
-    if (this.mainGroup) {
-      this.mainGroup.rotation.x += 0.002;
-      this.mainGroup.rotation.y += 0.004;
-    }
-    if (this.threeRenderer && this.threeScene && this.threeCamera) {
-      this.threeRenderer.render(this.threeScene, this.threeCamera);
-    }
-  };
-
   onSubmit() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      // El botón no se deshabilita: un botón apagado parece roto. Al pulsarlo
+      // se marcan los campos que faltan y se dice cuál.
+      this.form.markAllAsTouched();
+      this.sacudirFormulario();
+      this.modoError();
+      return;
+    }
     this.loading.set(true); this.error.set(null);
+    this.ponerModo('pensando');
     const { username, password, remember } = this.form.getRawValue() as { username: string; password: string; remember: boolean };
     this.auth.login({ username, password }).subscribe({
       next: (res) => {
         this.recordarCorreo(username, remember);
         if (res.requiere_2fa && res.desafio) {
           this.loading.set(false);
+          this.estrellasObjetivo = 0;
+          this.reposo();
           this.desafio.set(res.desafio);
           this.puedeRecordar.set(!!res.puede_recordar);
           this.recordarDispositivo.set(false);
@@ -450,6 +716,8 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
       error: (err) => {
         this.loading.set(false);
         this.error.set(err?.error?.detail ?? 'No se pudo iniciar sesión');
+        this.sacudirFormulario();
+        this.modoError();
       }
     });
   }
@@ -459,12 +727,16 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     if (!desafio || this.codigo().trim().length < 6) return;
     this.loading.set(true); this.error.set(null);
     const recordar = this.puedeRecordar() && this.recordarDispositivo();
+    this.ponerModo('pensando');
     this.auth.verificarDosPasos(desafio, this.codigo().trim(), recordar).subscribe({
       next: () => this.entrar(),
       error: (err) => {
         this.loading.set(false);
         this.codigo.set('');
+        this.estrellasObjetivo = 0;
         this.error.set(err?.error?.detail ?? 'No se pudo verificar el código');
+        this.sacudirFormulario();
+        this.modoError();
         // Desafío vencido o agotado: de vuelta al primer paso.
         if (err?.status === 401 || err?.status === 423) this.cancelarDosPasos(err?.error?.detail);
       }
@@ -472,6 +744,7 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   cancelarDosPasos(mensaje?: string) {
+    this.estrellasObjetivo = this.form.controls.password.value.length;
     this.desafio.set(null);
     this.codigo.set('');
     this.usarRecuperacion.set(false);
@@ -479,10 +752,14 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private entrar() {
-    this.auth.me().subscribe({
-      next: () => { this.loading.set(false); this.router.navigateByUrl('/'); },
-      error: () => { this.loading.set(false); this.router.navigateByUrl('/'); }
-    });
+    // Las corrientes salen hacia adelante un instante antes de cambiar de pantalla.
+    const ir = () => {
+      this.loading.set(false);
+      this.abrirCortina();
+      this.ponerModo('exito');
+      setTimeout(() => this.router.navigateByUrl('/'), this.prefiereMenosMovimiento ? 0 : 900);
+    };
+    this.auth.me().subscribe({ next: ir, error: ir });
   }
 
   private recordarCorreo(username: string, remember: boolean) {
@@ -495,120 +772,3 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     } catch { }
   }
 }
- 
-const GRAD3 = [
-  [1, 1, 0], [-1, 1, 0], [1, -1, 0], [-1, -1, 0],
-  [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
-  [0, 1, 1], [0, -1, 1], [0, 1, -1], [0, -1, -1]
-];
-const P = new Uint8Array(512);
-const PERM = new Uint8Array(512);
-(() => {
-  const p = new Uint8Array(256);
-  for (let i = 0; i < 256; i++) p[i] = i;
-  for (let i = 255; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [p[i], p[j]] = [p[j], p[i]];
-  }
-  for (let i = 0; i < 512; i++) {
-    P[i] = p[i & 255];
-    PERM[i] = P[i];
-  }
-})();
- 
-function simplex3(x: number, y: number, z: number): number {
-  const s = (x + y + z) * (1 / 3);
-  const i = Math.floor(x + s), j = Math.floor(y + s), k = Math.floor(z + s);
-  const t = (i + j + k) * (1 / 6);
-  const x0 = x - i + t, y0 = y - j + t, z0 = z - k + t;
-  let i1, j1, k1, i2, j2, k2;
-  if (x0 >= y0) {
-    if (y0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
-    else if (x0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1; }
-    else { i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1; }
-  } else {
-    if (y0 < z0) { i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1; }
-    else if (x0 < z0) { i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1; }
-    else { i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
-  }
-  const x1 = x0 - i1 + 1 / 6, y1 = y0 - j1 + 1 / 6, z1 = z0 - k1 + 1 / 6;
-  const x2 = x0 - i2 + 1 / 3, y2 = y0 - j2 + 1 / 3, z2 = z0 - k2 + 1 / 3;
-  const x3 = x0 - 1 / 2, y3 = y0 - 1 / 2, z3 = z0 - 1 / 2;
-  const ii = i & 255, jj = j & 255, kk = k & 255;
-  let n0 = 0, n1 = 0, n2 = 0, n3 = 0;
-  let t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
-  if (t0 > 0) {
-    const gi = (PERM[ii + PERM[jj + PERM[kk]]] % 12);
-    t0 *= t0; n0 = t0 * t0 * (GRAD3[gi][0] * x0 + GRAD3[gi][1] * y0 + GRAD3[gi][2] * z0);
-  }
-  let t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
-  if (t1 > 0) {
-    const gi = (PERM[ii + i1 + PERM[jj + j1 + PERM[kk + k1]]] % 12);
-    t1 *= t1; n1 = t1 * t1 * (GRAD3[gi][0] * x1 + GRAD3[gi][1] * y1 + GRAD3[gi][2] * z1);
-  }
-  let t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
-  if (t2 > 0) {
-    const gi = (PERM[ii + i2 + PERM[jj + j2 + PERM[kk + k2]]] % 12);
-    t2 *= t2; n2 = t2 * t2 * (GRAD3[gi][0] * x2 + GRAD3[gi][1] * y2 + GRAD3[gi][2] * z2);
-  }
-  let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
-  if (t3 > 0) {
-    const gi = (PERM[ii + 1 + PERM[jj + 1 + PERM[kk + 1]]] % 12);
-    t3 *= t3; n3 = t3 * t3 * (GRAD3[gi][0] * x3 + GRAD3[gi][1] * y3 + GRAD3[gi][2] * z3);
-  }
-  return 32 * (n0 + n1 + n2 + n3);
-}
- 
-const GLSL_NOISE = `
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-  float snoise(vec3 v) {
-    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-    vec3 i  = floor(v + dot(v, C.yyy));
-    vec3 x0 = v - i + dot(i, C.xxx);
-    vec3 g = step(x0.yzx, x0.xyz);
-    vec3 l = 1.0 - g;
-    vec3 i1 = min( g.xyz, l.zxy );
-    vec3 i2 = max( g.xyz, l.zxy );
-    vec3 x1 = x0 - i1 + C.xxx;
-    vec3 x2 = x0 - i2 + C.yyy;
-    vec3 x3 = x0 - D.yyy;
-    i = mod289(i);
-    vec4 p = permute( permute( permute(
-               i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-             + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
-             + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
-    float n_ = 0.142857142857;
-    vec3  ns = n_ * D.wyz - D.xzx;
-    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-    vec4 x_ = floor(j * ns.z);
-    vec4 y_ = floor(j - 7.0 * x_ );
-    vec4 x = x_ *ns.x + ns.yyyy;
-    vec4 y = y_ *ns.x + ns.yyyy;
-    vec4 h = 1.0 - abs(x) - abs(y);
-    vec4 b0 = vec4( x.xy, y.xy );
-    vec4 b1 = vec4( x.zw, y.zw );
-    vec4 s0 = floor(b0)*2.0 + 1.0;
-    vec4 s1 = floor(b1)*2.0 + 1.0;
-    vec4 sh = -step(h, vec4(0.0));
-    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
-    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
-    vec3 p0 = vec3(a0.xy,h.x);
-    vec3 p1 = vec3(a0.zw,h.y);
-    vec3 p2 = vec3(a1.xy,h.z);
-    vec3 p3 = vec3(a1.zw,h.w);
-    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-    m = m * m;
-    return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
-  }
-  float fbm(vec3 p) {
-    float v = 0.0; float a = 0.5;
-    for (int i = 0; i < 3; i++) { v += a * snoise(p); p *= 2.0; a *= 0.5; }
-    return v;
-  }
-`;

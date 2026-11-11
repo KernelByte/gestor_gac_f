@@ -1,269 +1,183 @@
-<div
-  class="login-shell min-h-[100dvh] bg-slate-950 flex flex-col relative overflow-y-auto overflow-x-hidden font-sans selection:bg-brand-purple selection:text-white">
+<div #raiz class="acc login-shell" [class.acc-entrando]="estadoCampo() === 'exito'">
 
-  <!-- ═══════════════════════════════════════════ -->
-  <!-- LAYER 1: Blob Animated Background          -->
-  <!-- ═══════════════════════════════════════════ -->
-  <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
-    <div
-      class="absolute bottom-[-10%] left-[-10%] w-[90vw] h-[90vw] sm:w-[32rem] sm:h-[32rem] lg:w-[40rem] lg:h-[40rem] bg-brand-purple/20 rounded-full blur-[80px] sm:blur-[120px] animate-blob mix-blend-screen">
-    </div>
-    <div
-      class="absolute top-[-10%] right-[-10%] w-[90vw] h-[90vw] sm:w-[32rem] sm:h-[32rem] lg:w-[40rem] lg:h-[40rem] bg-indigo-600/15 rounded-full blur-[80px] sm:blur-[120px] animate-blob animation-delay-2000 mix-blend-screen">
-    </div>
-    <div
-      class="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vw] sm:w-[50rem] sm:h-[50rem] bg-brand-purple/5 rounded-full blur-[80px] sm:blur-[100px]">
-    </div>
-    <div
-      class="absolute inset-0 bg-[url('/assets/noise.svg')] opacity-20 mix-blend-soft-light">
-    </div>
+  <!-- ═══════════ Fondo vivo: toda la pantalla, detrás del contenido ═══════════
+       Corrientes libres; cada tecla lanza una chispa desde el campo hasta el
+       núcleo, y la contraseña va cerrando un anillo de estrellas. -->
+  <div #visual class="acc-visual" aria-hidden="true" [attr.data-modo]="estadoCampo()">
+    <div class="acc-core"></div>
+    <canvas #flow class="acc-flow acc-flow-corrientes"></canvas>
+    <div class="acc-scrim"></div>
+    <canvas #stars class="acc-flow" style="display:none"></canvas>
+
   </div>
 
-  <!-- ═══════════════════════════════════════════ -->
-  <!-- LAYER 2: Neural Canvas (organic particles) -->
-  <!-- ═══════════════════════════════════════════ -->
-  <canvas #neuralCanvas class="fixed inset-0 z-[1] pointer-events-none"></canvas>
+  <!-- ═══════════ Formulario ═══════════ -->
+  <main #lado class="acc-side">
+    <header class="acc-brand acc-in" style="--d:0">
+      <img src="images/logo-gac-96.webp" alt="" width="32" height="32" class="acc-logo">
+      <span class="acc-wordmark">GAC</span>
+      <!-- Línea de estado: dice con palabras lo que muestra el fondo -->
+      <p class="acc-caption" aria-hidden="true" [attr.data-modo]="estadoCampo()">
+        <span class="acc-caption-dot"></span>
+        @switch (estadoCampo()) {
+          @case ('libre') { <span class="acc-caption-txt">{{ textoEstado.libre }}</span> }
+          @case ('atento') { <span class="acc-caption-txt">{{ textoEstado.atento }}</span> }
+          @case ('pensando') { <span class="acc-caption-txt">{{ textoEstado.pensando }}</span> }
+          @case ('error') { <span class="acc-caption-txt">{{ textoEstado.error }}</span> }
+          @case ('exito') { <span class="acc-caption-txt">{{ textoEstado.exito }}</span> }
+        }
+      </p>
+    </header>
 
-  <!-- ═══════════════════════════════════════════ -->
-  <!-- CONTENT — flex-1 centra cuando cabe,        -->
-  <!-- py-safe permite scroll cuando no cabe       -->
-  <!-- ═══════════════════════════════════════════ -->
-  <div class="flex-1 flex flex-col items-center justify-center px-4 relative z-10"
-    style="padding-top: max(2rem, env(safe-area-inset-top)); padding-bottom: max(2rem, env(safe-area-inset-bottom));">
+    <!-- Móvil y tablet vertical: espacio libre donde vive el núcleo -->
+    <div #hueco class="acc-hueco" aria-hidden="true"></div>
 
-  <div class="w-full max-w-sm sm:max-w-md flex flex-col items-center">
-
-    <!-- Branding Section -->
-    <div class="flex flex-col items-center mb-4 sm:mb-8 md:mb-10 w-full animate-fadeIn cursor-pointer select-none"
-      (click)="triggerHackerText()">
-      <div class="text-center space-y-1.5 sm:space-y-2">
-        <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-white drop-shadow-xl">
-          <span class="login-hacker-text">{{ displayTitle() }}</span>
-          <span
-            class="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple via-violet-400 to-indigo-400 saturate-150 animate-shine bg-[length:200%_auto] login-hacker-text">
-            {{ displayGAC() }}</span>
-        </h2>
-        <div class="flex items-center justify-center gap-3 opacity-60 mt-1">
-          <div class="h-px w-10 bg-gradient-to-r from-transparent to-slate-500"></div>
-          <p class="text-[0.625rem] sm:text-[0.6875rem] text-slate-300 font-bold tracking-[0.3em] sm:tracking-[0.35em] uppercase antialiased min-w-[110px] sm:min-w-[130px] text-center">
-            {{ displaySubtitle() }}
+    <div class="acc-body" (focusin)="alEnfocar()" (focusout)="alDesenfocar()" (input)="alEscribir($event)">
+      @if (desafio()) {
+        <!-- Segundo paso: verificación en dos pasos -->
+        <div class="acc-head acc-step">
+          <p class="acc-kicker">Paso 2 de 2</p>
+          <h1 class="acc-title">Verificación en dos pasos</h1>
+          <p class="acc-sub">
+            @if (!usarRecuperacion()) {
+              Abre la aplicación de verificación de tu teléfono (por ejemplo, Google Authenticator) y escribe el código de 6 números de <b>GAC</b>.
+            } @else {
+              Escribe uno de los códigos de recuperación que guardaste al activar la verificación. Cada código sirve una sola vez.
+            }
           </p>
-          <div class="h-px w-10 bg-gradient-to-l from-transparent to-slate-500"></div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- Main Card -->
-    <div
-      class="login-card w-full bg-slate-900/60 sm:bg-slate-900/35 backdrop-blur-2xl sm:backdrop-blur-3xl rounded-2xl sm:rounded-[2rem] border border-white/[0.08] shadow-[0_8px_40px_rgb(0,0,0,0.5)] sm:shadow-[0_8px_60px_rgb(0,0,0,0.7)] p-5 sm:p-8 transition-all duration-500 relative overflow-hidden ring-1 ring-white/[0.04]">
-
-      <!-- Animated border glow -->
-      <div class="absolute inset-0 rounded-[2rem] login-border-glow pointer-events-none"></div>
-
-      <!-- Card Header -->
-      <div class="mb-4 sm:mb-6 text-center relative z-10 login-form-item" style="--i:0">
-        <h1 class="font-display text-xl sm:text-2xl font-black text-white mb-1.5 sm:mb-2 tracking-tight">Bienvenido</h1>
-        <p class="text-slate-400 text-xs sm:text-sm font-medium">
-          Accede a tu panel de control
-        </p>
-      </div>
-
-      <!-- Segundo paso: verificación en dos pasos -->
-      <form *ngIf="desafio()" (submit)="$event.preventDefault(); onVerificar()" class="space-y-4 sm:space-y-5 relative z-10 animate-fadeIn">
-        <div class="rounded-xl bg-slate-950/40 border border-slate-700/60 p-4 text-sm text-slate-300 leading-relaxed">
-          <ng-container *ngIf="!usarRecuperacion(); else textoRecuperacion">
-            Abre la aplicación de verificación en tu teléfono (por ejemplo, Google Authenticator)
-            y escribe el código de 6 números que aparece para <b class="text-white">GAC</b>.
-          </ng-container>
-          <ng-template #textoRecuperacion>
-            Escribe uno de los códigos de recuperación que guardaste al activar la verificación.
-            Cada código sirve una sola vez.
-          </ng-template>
         </div>
 
-        <div class="space-y-1.5">
-          <label for="codigo2fa" class="block text-sm font-semibold text-slate-300 ml-1">
-            {{ usarRecuperacion() ? 'Código de recuperación' : 'Código de verificación' }}
-          </label>
-          <input id="codigo2fa" #codigoInput [value]="codigo()" (input)="codigo.set(codigoInput.value)"
-            [attr.inputmode]="usarRecuperacion() ? 'text' : 'numeric'"
-            [attr.maxlength]="usarRecuperacion() ? 11 : 6"
-            autocomplete="one-time-code" autofocus
-            class="w-full h-12 sm:h-14 bg-slate-950/50 border border-slate-700/60 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200 text-center tracking-[0.4em] font-mono text-xl"
-            [placeholder]="usarRecuperacion() ? 'XXXXX-XXXXX' : '000000'">
-        </div>
+        <form (submit)="$event.preventDefault(); onVerificar()" class="acc-form acc-step" [class.acc-shake]="sacudir()">
+          <div class="acc-field">
+            <label for="codigo2fa" class="acc-label">
+              {{ usarRecuperacion() ? 'Código de recuperación' : 'Código de verificación' }}
+            </label>
+            <input id="codigo2fa" #codigoInput [value]="codigo()" (input)="codigo.set(codigoInput.value)"
+              [attr.inputmode]="usarRecuperacion() ? 'text' : 'numeric'"
+              [attr.maxlength]="usarRecuperacion() ? 11 : 6"
+              autocomplete="one-time-code" autofocus spellcheck="false" autocapitalize="off"
+              class="acc-input acc-input-code"
+              [placeholder]="usarRecuperacion() ? 'XXXXX-XXXXX' : '000000'">
+          </div>
 
-        <label *ngIf="puedeRecordar()" class="flex items-start gap-3 cursor-pointer select-none rounded-xl p-3 hover:bg-white/5 transition-colors">
-          <input type="checkbox" [checked]="recordarDispositivo()" (change)="recordarDispositivo.set($any($event.target).checked)"
-            class="mt-0.5 w-5 h-5 shrink-0 rounded border-slate-700 bg-slate-950/50 text-brand-purple focus:ring-brand-purple focus:ring-offset-slate-900 cursor-pointer">
-          <span class="text-sm text-slate-300 leading-snug">
-            Confiar en este dispositivo durante 90 días
-            <span class="block text-xs text-slate-500 mt-0.5">No se le pedirá el código en este navegador. Úselo solo en un equipo personal.</span>
-          </span>
-        </label>
+          @if (puedeRecordar()) {
+            <label class="acc-check acc-check-block">
+              <input type="checkbox" [checked]="recordarDispositivo()" (change)="recordarDispositivo.set($any($event.target).checked)">
+              <span>
+                Confiar en este dispositivo durante 90 días
+                <small>No se te pedirá el código en este navegador. Úsalo solo en un equipo personal.</small>
+              </span>
+            </label>
+          }
 
-        <button type="submit" [disabled]="loading() || codigo().trim().length < 6"
-          class="w-full flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-brand-purple to-violet-600 hover:to-brand-purple focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-brand-purple disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.97]">
-          {{ loading() ? 'Verificando…' : 'Verificar y entrar' }}
-        </button>
-
-        <div class="flex flex-col sm:flex-row sm:justify-between gap-2 text-sm">
-          <button type="button" (click)="usarRecuperacion.set(!usarRecuperacion()); codigo.set('')"
-            class="font-semibold text-purple-400 hover:text-violet-300 transition-colors text-left">
-            {{ usarRecuperacion() ? 'Usar el código del teléfono' : 'No tengo el teléfono: usar código de recuperación' }}
-          </button>
-          <button type="button" (click)="cancelarDosPasos()" class="font-semibold text-slate-400 hover:text-white transition-colors text-left">
-            Volver
-          </button>
-        </div>
-
-        <div *ngIf="error()" role="alert"
-          class="text-center text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl animate-fadeIn font-medium">
-          {{ error() }}
-        </div>
-      </form>
-
-      <form *ngIf="!desafio()" [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4 sm:space-y-5 relative z-10">
-
-        <!-- Username Input -->
-        <div class="space-y-1.5 login-form-item" style="--i:1">
-          <label for="username" class="block text-sm font-semibold text-slate-300 ml-1">
-            Correo electrónico
-          </label>
-          <div class="relative group">
-            <div
-              class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-200 group-focus-within:text-brand-purple text-slate-500">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-              </svg>
+          @if (error()) {
+            <div class="acc-error" role="alert">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+              <span>{{ error() }}</span>
             </div>
+          }
+
+          <button type="submit" class="acc-btn" [disabled]="loading() || codigo().trim().length < 6">
+            @if (loading()) { <span class="acc-spinner" aria-hidden="true"></span><span>Verificando…</span> }
+            @else { <span>Verificar y entrar</span> }
+          </button>
+
+          <div class="acc-alt-row">
+            <button type="button" class="acc-link" (click)="usarRecuperacion.set(!usarRecuperacion()); codigo.set('')">
+              {{ usarRecuperacion() ? 'Usar el código del teléfono' : 'No tengo el teléfono: usar código de recuperación' }}
+            </button>
+            <button type="button" class="acc-link acc-link-muted" (click)="cancelarDosPasos()">Volver</button>
+          </div>
+        </form>
+
+      } @else {
+        <!-- Primer paso: correo y contraseña -->
+        <div class="acc-head">
+          <p class="acc-kicker acc-in" style="--d:1">{{ fechaHoy }}</p>
+          <h1 class="acc-title acc-in" style="--d:2">{{ saludo }}</h1>
+          <p class="acc-sub acc-in" style="--d:3">Inicia sesión para continuar.</p>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="acc-form" [class.acc-shake]="sacudir()" novalidate>
+
+          <div class="acc-field acc-in" style="--d:4">
+            <label for="username" class="acc-label">Correo electrónico</label>
             <input id="username" type="email" formControlName="username" inputmode="email"
-              class="w-full h-11 sm:h-12 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block pl-11 pr-4 placeholder-slate-600 transition-all duration-200 hover:border-slate-600 group-focus-within:bg-slate-950/80"
-              placeholder="nombre@ejemplo.com">
+              autocomplete="username" autocapitalize="off" spellcheck="false"
+              class="acc-input" placeholder="nombre@ejemplo.com"
+              [attr.aria-invalid]="campoInvalido('username')"
+              [attr.aria-describedby]="campoInvalido('username') ? 'username-err' : null">
+            @if (campoInvalido('username')) {
+              <p id="username-err" class="acc-field-err">Escribe tu correo electrónico.</p>
+            }
           </div>
-          <div *ngIf="form.controls.username.touched && form.controls.username.invalid"
-            class="text-xs text-rose-400 font-medium flex items-center gap-1 animate-fadeIn ml-1">
-            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Correo electrónico requerido
-          </div>
-        </div>
 
-        <!-- Password Input -->
-        <div class="space-y-1.5 login-form-item" style="--i:2">
-          <label for="password" class="block text-sm font-semibold text-slate-300 ml-1">
-            Contraseña
-          </label>
-          <div class="relative group">
-            <div
-              class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-200 group-focus-within:text-brand-purple text-slate-500">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
+          <div class="acc-field acc-in" style="--d:5">
+            <div class="acc-label-row">
+              <label for="password" class="acc-label">Contraseña</label>
+              <a routerLink="/auth/forgot-password" class="acc-link acc-link-sm">¿La olvidaste?</a>
             </div>
-            <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password"
-              class="w-full h-11 sm:h-12 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block pl-11 pr-12 placeholder-slate-600 transition-all duration-200 hover:border-slate-600 group-focus-within:bg-slate-950/80"
-              placeholder="••••••••••••">
-            <button type="button" (click)="showPassword.set(!showPassword())"
-              class="absolute inset-y-0 right-0 flex items-center pr-3 pl-3 text-slate-500 hover:text-brand-purple transition-colors focus:outline-none h-full w-12 justify-center">
-              <svg *ngIf="!showPassword()" class="w-5 h-5 login-eye-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              <svg *ngIf="showPassword()" class="w-5 h-5 login-eye-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-              </svg>
+            <div class="acc-control">
+              <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password"
+                autocomplete="current-password"
+                class="acc-input acc-input-pass" placeholder="Tu contraseña"
+                (keyup)="revisarMayus($event)" (keydown)="revisarMayus($event)" (blur)="mayusActivas.set(false)"
+                [attr.aria-invalid]="campoInvalido('password')"
+                [attr.aria-describedby]="campoInvalido('password') ? 'password-err' : (mayusActivas() ? 'password-caps' : null)">
+              <button type="button" class="acc-eye" (click)="showPassword.set(!showPassword())"
+                [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                [attr.aria-pressed]="showPassword()">
+                @if (!showPassword()) {
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.9 4.24A9 9 0 0 1 12 4c6.5 0 10 8 10 8a18 18 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24M17.94 17.94A10 10 0 0 1 12 20c-6.5 0-10-8-10-8a18 18 0 0 1 5.06-5.94M2 2l20 20"/></svg>
+                }
+              </button>
+            </div>
+            @if (campoInvalido('password')) {
+              <p id="password-err" class="acc-field-err">Escribe tu contraseña.</p>
+            } @else if (mayusActivas()) {
+              <p id="password-caps" class="acc-field-hint">Las mayúsculas están activadas.</p>
+            }
+          </div>
+
+          <label class="acc-check acc-in" style="--d:6">
+            <input id="remember" type="checkbox" formControlName="remember">
+            <span>Recordar mi correo en este equipo</span>
+          </label>
+
+          @if (error()) {
+            <div class="acc-error" role="alert">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+              <span>{{ error() }}</span>
+            </div>
+          }
+
+          <div class="acc-in" style="--d:7">
+            <button type="submit" class="acc-btn" [disabled]="loading()">
+              @if (loading()) {
+                <span class="acc-spinner" aria-hidden="true"></span><span>Entrando…</span>
+              } @else {
+                <span>Entrar</span>
+                <svg class="acc-btn-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              }
             </button>
           </div>
-          <div *ngIf="form.controls.password.touched && form.controls.password.invalid"
-            class="text-xs text-rose-400 font-medium flex items-center gap-1 animate-fadeIn ml-1">
-            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            Contraseña requerida
-          </div>
-        </div>
+        </form>
 
-        <!-- Remember Me & Forgot Password -->
-        <div class="flex flex-col gap-y-2 sm:flex-row sm:items-center sm:justify-between pt-1 login-form-item" style="--i:3">
-          <label class="flex items-center group cursor-pointer pl-1 select-none">
-            <input id="remember" type="checkbox" formControlName="remember"
-              class="w-4 h-4 sm:w-5 sm:h-5 rounded border-slate-700 bg-slate-950/50 text-brand-purple focus:ring-brand-purple focus:ring-offset-slate-900 transition-colors cursor-pointer">
-            <span class="ml-2 sm:ml-3 text-sm text-slate-300 group-hover:text-white transition-colors">
-              Recordarme
-            </span>
-          </label>
-          <a routerLink="/auth/forgot-password"
-            class="login-forgot-link text-sm font-semibold text-purple-400 hover:text-violet-300 transition-colors pl-1 sm:px-1 whitespace-nowrap self-start sm:self-auto">
-            ¿Olvidaste tu contraseña?
+        <div class="acc-links acc-in" style="--d:8">
+          <a routerLink="/auth/solicitar-acceso" class="acc-link acc-link-muted">Solicitar acceso para mi congregación</a>
+          <a routerLink="/legal/seguridad" class="acc-link acc-link-muted acc-secure">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Tus datos solo los ve tu congregación
           </a>
         </div>
-
-        <!-- Submit Button -->
-        <div class="pt-1 sm:pt-2 login-form-item" style="--i:4">
-          <button type="submit" [disabled]="form.invalid || loading()"
-            class="group relative w-full flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-brand-purple to-violet-600 hover:to-brand-purple hover:-translate-y-0.5 hover:shadow-[0_6px_40px_rgba(109,40,217,0.65)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-brand-purple disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-200 active:scale-[0.97] active:translate-y-0 overflow-hidden shadow-lg shadow-purple-900/30">
-            <div
-              class="absolute inset-0 -translate-x-full group-hover:animate-[shine_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent">
-            </div>
-            <div *ngIf="loading()" class="absolute inset-0 flex items-center justify-center bg-inherit">
-              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                </path>
-              </svg>
-            </div>
-            <span [class.opacity-0]="loading()">Iniciar Sesión</span>
-          </button>
-
-          <div *ngIf="error()"
-            class="mt-4 text-center text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl flex items-center justify-center gap-2 animate-fadeIn font-medium">
-            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span>{{ error() }}</span>
-          </div>
-
-          <a routerLink="/legal/seguridad"
-            class="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors py-2">
-            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-            <span>Tus datos solo los ve tu congregación. <span class="underline underline-offset-2">Cómo los cuidamos</span></span>
-          </a>
-        </div>
-
-      </form>
-
-      <!-- Support Link -->
-      <div class="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-white/5 text-center relative z-10 login-form-item" style="--i:5">
-        <p class="text-xs text-slate-600 font-medium tracking-tight flex flex-col gap-0.5 sm:block">
-          <span>¿Deseas gestionar tu congregación?</span>
-          <a routerLink="/auth/solicitar-acceso"
-            class="text-slate-500 hover:text-brand-purple transition-all duration-300 underline underline-offset-4 decoration-slate-800/50 hover:decoration-brand-purple/50 sm:ml-1.5">
-            Iniciar proceso de ingreso
-          </a>
-        </p>
-      </div>
-
+      }
     </div>
 
-    <!-- Footer -->
-    <app-auth-pie class="mt-4 sm:mt-6 z-10 w-full pb-1"></app-auth-pie>
+    <app-auth-pie class="acc-foot"></app-auth-pie>
+  </main>
 
-  </div>
-
-  </div>
+  <!-- Cortina de entrada: nace en el núcleo y cubre la pantalla al iniciar sesión -->
+  <div class="acc-cortina" aria-hidden="true"></div>
 </div>
