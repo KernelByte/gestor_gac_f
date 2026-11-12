@@ -251,7 +251,8 @@ export class HomePage implements OnInit {
 
   readonly saludo = (() => {
     const h = new Date().getHours();
-    return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+    // De medianoche al amanecer es «noches»: antes de las 5 no es «días».
+    return h >= 5 && h < 12 ? 'Buenos días' : h >= 12 && h < 19 ? 'Buenas tardes' : 'Buenas noches';
   })();
   readonly fecha = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
   readonly nombre = computed(() => {

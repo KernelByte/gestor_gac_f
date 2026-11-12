@@ -5,160 +5,128 @@ import { lastValueFrom } from 'rxjs';
 import { DosPasosService } from '../../../core/auth/dos-pasos.service';
 
 /**
- * Pasos para activar la verificación en dos pasos:
- *   1. Explicación + "Empezar".
- *   2. QR (o clave para escribir a mano) + código de 6 números.
- *   3. Códigos de recuperación, una sola vez, para descargar o imprimir.
- * Lo usan el aviso obligatorio para administradores y el Perfil.
+ * Pasos para activar la verificación en dos pasos, uno por pantalla:
+ *   1. Contraseña (y qué aplicación instalar).
+ *   2. Vincular la aplicación: abrirla con un toque (teléfono) o escanear el QR
+ *      (computador) y escribir el número de 6 cifras.
+ *   3. Códigos de recuperación, una sola vez, para descargar.
+ * Lo usan el aviso obligatorio para administradores y el Perfil (dentro de un modal).
  */
 @Component({
   standalone: true,
   selector: 'app-activar-dos-pasos',
   imports: [CommonModule],
   template: `
-    <!-- Indicador de progreso -->
-    <ol class="progreso" aria-label="Progreso">
-      <li *ngFor="let t of etapas; let i = index" [class.hecho]="paso() > i + 1" [class.actual]="paso() === i + 1"
-        [attr.aria-current]="paso() === i + 1 ? 'step' : null">
-        <span class="bola">
-          <svg *ngIf="paso() > i + 1" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
-          <ng-container *ngIf="paso() <= i + 1">{{ i + 1 }}</ng-container>
-        </span>
-        <span class="rotulo">{{ t }}</span>
-      </li>
-    </ol>
+    <!-- Progreso: «Paso 2 de 3» y tres tramos -->
+    <div class="progreso" role="group" [attr.aria-label]="'Paso ' + paso() + ' de 3'">
+      <div class="flex items-baseline justify-between gap-3">
+        <span class="paso-n">Paso {{ paso() }} de 3</span>
+        <span class="paso-t">{{ etapas[paso() - 1] }}</span>
+      </div>
+      <div class="tramos" aria-hidden="true">
+        <span *ngFor="let t of etapas; let i = index" [class.on]="paso() >= i + 1"></span>
+      </div>
+    </div>
 
     <!-- Paso 1 -->
     <div *ngIf="paso() === 1" class="cuerpo">
-      <h3 class="titulo">Antes de empezar, necesitas una aplicación en tu teléfono</h3>
       <p class="texto">
-        Instala <b>Google Authenticator</b> o <b>Microsoft Authenticator</b> (son gratuitas). Genera el número de 6 cifras
-        que te pediremos cada vez que entres.
+        Necesitas <b>Google Authenticator</b> o <b>Microsoft Authenticator</b> en tu teléfono (son gratis).
+        Si aún no la tienes, instálala primero.
       </p>
-      <div class="mb-5">
-        <label for="password-activar" class="etiqueta">Escribe tu contraseña para continuar</label>
+      <div>
+        <label for="password-activar" class="etiqueta">Tu contraseña</label>
         <input id="password-activar" #p type="password" [value]="password()" (input)="password.set(p.value)"
-          (keydown.enter)="empezar()" autocomplete="current-password" class="campo campo-texto">
+          (keydown.enter)="empezar()" autocomplete="current-password" class="form-control" placeholder="Escríbela para continuar">
       </div>
-      <button type="button" (click)="empezar()" [disabled]="cargando() || !password()" class="btn-principal">
-        {{ cargando() ? 'Preparando…' : 'Ya la tengo, empezar' }}
+      <button type="button" (click)="empezar()" [disabled]="cargando() || !password()" class="btn-primary btn-lg w-full">
+        <span *ngIf="cargando()" class="spinner-sm"></span>
+        {{ cargando() ? 'Preparando…' : 'Continuar' }}
       </button>
     </div>
 
     <!-- Paso 2 -->
     <div *ngIf="paso() === 2" class="cuerpo">
-      <h3 class="titulo">Escanea el código y escribe el número que veas</h3>
-      <div class="flex flex-wrap items-start gap-6">
-        <div class="qr" [innerHTML]="qr()"></div>
-        <div class="flex-1 min-w-[15rem] space-y-5">
-          <div>
-            <p class="texto">Abre la aplicación, elige <b>añadir cuenta</b> y apunta la cámara al código.</p>
-            <details class="mt-2">
-              <summary class="enlace">¿No puedes escanearlo?</summary>
-              <p class="texto mt-2">Escribe esta clave en la aplicación:</p>
-              <p class="clave">{{ secreto() }}</p>
-            </details>
-          </div>
-          <div>
-            <label for="codigo-activar" class="etiqueta">Número de 6 cifras</label>
-            <input id="codigo-activar" #c [value]="codigo()" (input)="codigo.set(c.value)" (keydown.enter)="activar()"
-              inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="campo" placeholder="000000">
-          </div>
-          <button type="button" (click)="activar()" [disabled]="cargando() || codigo().trim().length !== 6" class="btn-principal">
-            {{ cargando() ? 'Comprobando…' : 'Activar verificación' }}
-          </button>
+      <!-- Teléfono: un toque abre la aplicación con la cuenta ya cargada -->
+      <a *ngIf="enlace()" [href]="enlace()" class="btn-secondary btn-lg w-full">Abrir en mi aplicación</a>
+
+      <div class="vincular">
+        <div class="qr" [innerHTML]="qr()" role="img" aria-label="Código QR para la aplicación"></div>
+        <div class="min-w-0">
+          <p class="texto"><b>¿Estás en un computador?</b> En la aplicación elige <i>añadir cuenta</i> y apunta la cámara al código.</p>
+          <details class="mt-2">
+            <summary class="enlace">Prefiero escribir una clave</summary>
+            <p class="clave">{{ secreto() }}</p>
+          </details>
         </div>
       </div>
+
+      <div>
+        <label for="codigo-activar" class="etiqueta">Número de 6 cifras que muestra la aplicación</label>
+        <input id="codigo-activar" #c [value]="codigo()" (input)="codigo.set(c.value)" (keydown.enter)="activar()"
+          inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="campo" placeholder="000000">
+      </div>
+      <button type="button" (click)="activar()" [disabled]="cargando() || codigo().trim().length !== 6" class="btn-primary btn-lg w-full">
+        <span *ngIf="cargando()" class="spinner-sm"></span>
+        {{ cargando() ? 'Comprobando…' : 'Activar' }}
+      </button>
     </div>
 
     <!-- Paso 3 -->
     <div *ngIf="paso() === 3" class="cuerpo">
-      <h3 class="titulo">Listo. Ahora guarda tus códigos de recuperación</h3>
       <p class="aviso">
-        Si pierdes el teléfono, cada código te deja entrar una vez. <b>No se volverán a mostrar</b>, guárdalos en un lugar seguro.
+        Ya está activa. Guarda estos códigos: si pierdes el teléfono, cada uno te deja entrar una vez.
+        <b>No se volverán a mostrar.</b>
       </p>
       <ul class="codigos">
         <li *ngFor="let c of codigos()">{{ c }}</li>
       </ul>
-      <div class="flex flex-wrap justify-end gap-3">
-        <button type="button" (click)="descargarCodigos()" class="btn-secundario">Descargar códigos</button>
-        <button type="button" (click)="terminado.emit()" class="btn-principal">Ya los guardé</button>
-      </div>
+      <button type="button" (click)="descargarCodigos()" class="btn-secondary btn-lg w-full">Descargar códigos</button>
+      <button type="button" (click)="terminado.emit()" class="btn-primary btn-lg w-full">Ya los guardé</button>
     </div>
 
-    <p *ngIf="error()" role="alert" class="mt-4 text-sm font-semibold text-red-600 dark:text-red-400">{{ error() }}</p>
+    <p *ngIf="error()" role="alert" class="mt-3 text-sm font-semibold text-red-600 dark:text-red-400">{{ error() }}</p>
   `,
   styles: [`
     :host { display: block; }
-    .progreso { list-style: none; margin: 0 0 1.5rem; padding: 0; display: flex; align-items: center; gap: .5rem; }
-    .progreso li { display: flex; align-items: center; gap: .5rem; color: rgb(100 116 139); font-size: .875rem; font-weight: 600; }
-    .progreso li + li::before { content: ''; width: 1.5rem; height: 2px; border-radius: 2px; background: rgb(203 213 225); margin-right: .25rem; }
-    .bola { width: 1.75rem; height: 1.75rem; border-radius: 9999px; display: grid; place-items: center; font-size: .8125rem; font-weight: 800;
-      background: rgb(241 245 249); color: rgb(100 116 139); transition: background-color .2s, color .2s; }
-    .actual { color: rgb(30 41 59); }
-    .actual .bola { background: #6d28d9; color: #fff; }
-    .hecho .bola { background: rgb(16 185 129 / .18); color: #047857; }
-    .rotulo { display: none; }
-    .actual .rotulo { display: inline; }
-    @media (min-width: 640px) { .rotulo { display: inline; } }
-    :host-context(.dark) .progreso li { color: rgb(148 163 184); }
-    :host-context(.dark) .progreso li + li::before { background: rgb(71 85 105); }
-    :host-context(.dark) .bola { background: rgb(30 41 59); color: rgb(148 163 184); }
-    :host-context(.dark) .actual { color: #f1f5f9; }
-    :host-context(.dark) .actual .bola { background: #7c3aed; color: #fff; }
-    :host-context(.dark) .hecho .bola { background: rgb(16 185 129 / .2); color: #6ee7b7; }
+    .progreso { margin-bottom: 1rem; }
+    .paso-n { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--dash-texto-suave); }
+    .paso-t { font-size: .875rem; font-weight: 700; color: var(--dash-tesela-fg); }
+    .tramos { display: grid; grid-template-columns: repeat(3, 1fr); gap: .375rem; margin-top: .5rem; }
+    .tramos span { height: .25rem; border-radius: 999px; background: var(--dash-borde);
+      transition: background-color .28s cubic-bezier(.23, 1, .32, 1); }
+    .tramos span.on { background: var(--accent); }
 
-    .cuerpo { animation: entra .22s cubic-bezier(.22,1,.36,1); }
-    .titulo { font-size: 1.0625rem; font-weight: 700; line-height: 1.35; color: rgb(30 41 59); margin-bottom: .75rem; }
-    :host-context(.dark) .titulo { color: #f1f5f9; }
-    .texto { font-size: .9375rem; line-height: 1.55; color: rgb(71 85 105); max-width: 62ch; }
-    :host-context(.dark) .texto { color: rgb(203 213 225); }
-    .cuerpo > .texto { margin-bottom: 1.25rem; }
-    .enlace { cursor: pointer; font-size: .875rem; font-weight: 700; color: #6d28d9; }
-    :host-context(.dark) .enlace { color: #c4b5fd; }
+    .cuerpo { display: flex; flex-direction: column; gap: 1rem; animation: entra .22s cubic-bezier(.22,1,.36,1); }
+    .texto { font-size: .875rem; line-height: 1.5; color: var(--dash-texto-suave); max-width: 62ch; }
+    .texto b { color: var(--dash-tesela-fg); }
+    .etiqueta { display: block; margin-bottom: .375rem; font-size: .875rem; font-weight: 600; color: var(--dash-tesela-fg); }
+    .enlace { cursor: pointer; font-size: .875rem; font-weight: 600; color: var(--accent); }
     .mt-2 { margin-top: .5rem; }
-    .clave { margin-top: .5rem; padding: .625rem .875rem; border-radius: .625rem; background: rgb(241 245 249); user-select: all; word-break: break-all;
-      font-family: ui-monospace, monospace; font-size: .875rem; font-weight: 700; color: rgb(30 41 59); }
-    :host-context(.dark) .clave { background: rgb(30 41 59); color: #f1f5f9; }
+    .clave { margin-top: .5rem; padding: .625rem .875rem; border-radius: .625rem; background: var(--dash-tesela); user-select: all; word-break: break-all;
+      font-family: ui-monospace, monospace; font-size: .875rem; font-weight: 700; color: var(--dash-tesela-fg); }
 
-    .qr { flex-shrink: 0; padding: .75rem; background: #fff; border-radius: 1rem; border: 1px solid rgb(226 232 240); }
-    .qr ::ng-deep svg { display: block; width: 10.5rem; height: 10.5rem; }
+    /* QR y su explicación: lado a lado si cabe, apilados si no (según el ancho del propio asistente) */
+    :host { container-type: inline-size; }
+    .vincular { display: flex; flex-direction: column; align-items: center; gap: .75rem; text-align: center; }
+    .vincular .texto { margin-inline: auto; }
+    @container (min-width: 30rem) { .vincular { flex-direction: row; text-align: left; gap: 1.25rem; } }
+    .qr { flex-shrink: 0; padding: .5rem; background: #fff; border-radius: .75rem; border: 1px solid var(--dash-borde); }
+    .qr ::ng-deep svg { display: block; width: 8.5rem; height: 8.5rem; }
 
-    .etiqueta { display: block; margin-bottom: .375rem; font-size: .875rem; font-weight: 700; color: rgb(51 65 85); }
-    :host-context(.dark) .etiqueta { color: #e2e8f0; }
-    .campo { width: 100%; height: 3.25rem; border-radius: .75rem; border: 1px solid rgb(203 213 225); background: rgb(248 250 252); color: rgb(15 23 42);
+    .campo { width: 100%; height: 3.25rem; border-radius: .75rem; border: 1px solid var(--dash-borde); background: var(--dash-hover); color: var(--dash-tesela-fg);
       text-align: center; font-family: ui-monospace, monospace; font-size: 1.5rem; letter-spacing: .4em; padding: 0 .75rem;
       transition: border-color .15s, box-shadow .15s; }
-    .campo:focus { outline: none; border-color: #6d28d9; box-shadow: 0 0 0 3px rgb(109 40 217 / .2); }
-    :host-context(.dark) .campo { border-color: rgb(71 85 105); background: rgb(30 41 59); color: #fff; }
-    .campo-texto { text-align: left; font-family: inherit; font-size: 1rem; letter-spacing: normal; }
-    .mb-5 { margin-bottom: 1.25rem; }
+    .campo:focus { outline: none; border-color: var(--accent-focus); box-shadow: 0 0 0 3px var(--accent-ring); }
 
-    .aviso { margin-bottom: 1rem; padding: .75rem 1rem; border-radius: .75rem; font-size: .9375rem; line-height: 1.5;
-      background: rgb(245 158 11 / .12); color: #92400e; }
-    :host-context(.dark) .aviso { color: #fcd34d; }
-    .codigos { list-style: none; margin: 0 0 1.25rem; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem;
-      font-family: ui-monospace, monospace; font-size: .9375rem; font-weight: 700; color: rgb(30 41 59); }
-    @media (min-width: 640px) { .codigos { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-    .codigos li { padding: .625rem .5rem; border-radius: .625rem; text-align: center; background: rgb(241 245 249); user-select: all; }
-    :host-context(.dark) .codigos { color: #f1f5f9; }
-    :host-context(.dark) .codigos li { background: rgb(30 41 59); }
-
-    .btn-principal, .btn-secundario { min-height: 3rem; padding: 0 1.5rem; border-radius: .75rem; font-weight: 700; font-size: .9375rem;
-      transition: background-color .15s, transform .12s cubic-bezier(.22,1,.36,1); }
-    .btn-principal:active, .btn-secundario:active { transform: scale(.97); }
-    .cuerpo > .btn-principal, .space-y-5 > .btn-principal { width: 100%; }
-    .btn-principal { background: #6d28d9; color: #fff; }
-    .btn-principal:hover:not(:disabled) { background: #5b21b6; }
-    .btn-principal:disabled { opacity: .5; cursor: not-allowed; }
-    .btn-secundario { border: 1px solid rgb(203 213 225); color: rgb(51 65 85); }
-    .btn-secundario:hover { background: rgb(241 245 249); }
-    :host-context(.dark) .btn-secundario { border-color: rgb(71 85 105); color: #e2e8f0; }
-    :host-context(.dark) .btn-secundario:hover { background: rgb(30 41 59); }
-    .btn-principal:focus-visible, .btn-secundario:focus-visible { outline: 2px solid #6d28d9; outline-offset: 2px; }
+    .aviso { padding: .75rem 1rem; border-radius: .75rem; font-size: .875rem; line-height: 1.5;
+      background: var(--estado-aviso-bg); color: var(--estado-aviso-fg); }
+    .codigos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem;
+      font-family: ui-monospace, monospace; font-size: .9375rem; font-weight: 700; color: var(--dash-tesela-fg); }
+    .codigos li { padding: .625rem .5rem; border-radius: .625rem; text-align: center; background: var(--dash-tesela); user-select: all; }
 
     @keyframes entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-    @media (prefers-reduced-motion: reduce) { .cuerpo { animation: none; } .bola, .btn-principal, .btn-secundario { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .cuerpo { animation: none; } .tramos span { transition: none; } }
   `],
 })
 export class ActivarDosPasosComponent {
@@ -170,12 +138,14 @@ export class ActivarDosPasosComponent {
   /** Se emite en cuanto el backend activa (ya hay sesión nueva). */
   @Output() activado = new EventEmitter<void>();
 
-  etapas = ['Aplicación', 'Escanear', 'Guardar códigos'];
+  etapas = ['Tu contraseña', 'Vincular la aplicación', 'Guardar códigos'];
   paso = signal<1 | 2 | 3>(1);
   cargando = signal(false);
   error = signal<string | null>(null);
   qr = signal<SafeHtml>('');
   secreto = signal('');
+  /** otpauth://… para abrir la aplicación de códigos en el mismo teléfono. */
+  enlace = signal('');
   codigo = signal('');
   password = signal('');
   codigos = signal<string[]>([]);
@@ -191,6 +161,8 @@ export class ActivarDosPasosComponent {
         && !/<script|<foreignObject|\son\w+\s*=|javascript:/i.test(r.qr_svg);
       this.qr.set(this.sanitizer.bypassSecurityTrustHtml(qrOk ? r.qr_svg : ''));
       this.secreto.set(r.secreto);
+      // Solo se acepta el esquema otpauth: nunca otro enlace.
+      this.enlace.set(typeof r.uri === 'string' && /^otpauth:\/\/totp\//i.test(r.uri) ? r.uri : '');
       this.paso.set(2);
     } catch (e: any) {
       this.error.set(e?.error?.detail ?? 'No se pudo empezar. Inténtalo otra vez.');

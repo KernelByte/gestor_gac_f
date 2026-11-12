@@ -590,6 +590,9 @@ export class TimeAgoPipe implements PipeTransform {
                 [ngClass]="collapsed() ? 'justify-center' : 'justify-between'"
                 (click)="toggleUserMenu()"
                 title="Menú de Usuario"
+                aria-label="Menú de usuario"
+                aria-haspopup="menu"
+                [attr.aria-expanded]="userMenuOpen()"
               >
                 <div class="flex items-center gap-2.5 min-w-0">
                   <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-600 dark:to-indigo-900 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-inner [text-shadow:_0_1px_2px_rgb(0_0_0_/_40%)] group-hover:scale-110 transition-transform duration-200 ease-out">
@@ -597,10 +600,10 @@ export class TimeAgoPipe implements PipeTransform {
                   </div>
                   <div *ngIf="!collapsed()" class="flex flex-col items-start min-w-0 text-left">
                      <span class="text-sm font-bold text-slate-800 dark:text-white truncate max-w-full leading-tight">{{ u.nombre || u.username }}</span>
-                     <span class="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-normal leading-tight mt-1 max-w-full break-words" [title]="etiquetaRol(u.roles?.[0]) || 'User'">{{ etiquetaRol(u.roles?.[0]) || 'User' }}</span>
+                     <span class="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide leading-tight mt-0.5 max-w-full break-words" [title]="etiquetaRol(u.roles?.[0]) || 'User'">{{ etiquetaRol(u.roles?.[0]) || 'User' }}</span>
                   </div>
                 </div>
-                <svg *ngIf="!collapsed()" class="w-4 h-4 text-slate-500 transition-transform group-hover:text-slate-700 mr-1 shrink-0" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                <svg *ngIf="!collapsed()" class="w-4 h-4 text-slate-500 dark:text-slate-400 transition-transform group-hover:text-slate-700 dark:group-hover:text-slate-200 mr-1 shrink-0" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
               </button>
 
               <!-- User Menu Popup (upwards) -->

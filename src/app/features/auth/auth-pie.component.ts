@@ -14,10 +14,10 @@ import { environment } from '../../../environments/environment';
   selector: 'app-auth-pie',
   imports: [RouterLink],
   template: `
-    <footer class="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 sm:gap-x-7 text-xs text-slate-500 font-medium tracking-wide w-full opacity-80 hover:opacity-100 transition-opacity">
-      <a routerLink="/legal/terminos" class="hover:text-slate-300 transition-colors p-2">Términos</a>
-      <a routerLink="/legal/privacidad" class="hover:text-slate-300 transition-colors p-2">Privacidad</a>
-      <span class="text-slate-600 p-2">© {{ anio }} GAC • v{{ version }}</span>
+    <footer class="flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-5 text-xs text-slate-400 font-medium tracking-wide w-full">
+      <a routerLink="/legal/terminos" class="inline-flex items-center min-h-8 [@media(pointer:coarse)]:min-h-11 px-2 hover:text-slate-200 transition-colors">Términos</a>
+      <a routerLink="/legal/privacidad" class="inline-flex items-center min-h-8 [@media(pointer:coarse)]:min-h-11 px-2 hover:text-slate-200 transition-colors">Privacidad</a>
+      <span class="inline-flex items-center min-h-8 [@media(pointer:coarse)]:min-h-11 px-2">© {{ anio }} GAC • v{{ version }}</span>
     </footer>
   `,
 })

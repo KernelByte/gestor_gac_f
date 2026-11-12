@@ -1,14 +1,15 @@
 <div #raiz class="acc login-shell" [class.acc-entrando]="estadoCampo() === 'exito'">
 
   <!-- ═══════════ Fondo vivo: toda la pantalla, detrás del contenido ═══════════
-       Corrientes libres; cada tecla lanza una chispa desde el campo hasta el
-       núcleo, y la contraseña va cerrando un anillo de estrellas. -->
+       Corrientes libres; el correo lanza una onda de lectura desde el campo y
+       la contraseña va alineando los aros de la cerradura (solo según su
+       largo, nunca su contenido). -->
   <div #visual class="acc-visual" aria-hidden="true" [attr.data-modo]="estadoCampo()">
     <div class="acc-core"></div>
     <canvas #flow class="acc-flow acc-flow-corrientes"></canvas>
     <div class="acc-scrim"></div>
-    <canvas #stars class="acc-flow" style="display:none"></canvas>
-
+    <!-- Dial de la cerradura: corrientes ya acomodadas, sin estela -->
+    <canvas #capa class="acc-flow" style="display:none"></canvas>
   </div>
 
   <!-- ═══════════ Formulario ═══════════ -->
@@ -83,7 +84,7 @@
           </button>
 
           <div class="acc-alt-row">
-            <button type="button" class="acc-link" (click)="usarRecuperacion.set(!usarRecuperacion()); codigo.set('')">
+            <button type="button" class="acc-link" (click)="alternarRecuperacion()">
               {{ usarRecuperacion() ? 'Usar el código del teléfono' : 'No tengo el teléfono: usar código de recuperación' }}
             </button>
             <button type="button" class="acc-link acc-link-muted" (click)="cancelarDosPasos()">Volver</button>
@@ -167,16 +168,25 @@
 
         <div class="acc-links acc-in" style="--d:8">
           <a routerLink="/auth/solicitar-acceso" class="acc-link acc-link-muted">Solicitar acceso para mi congregación</a>
-          <a routerLink="/legal/seguridad" class="acc-link acc-link-muted acc-secure">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Tus datos solo los ve tu congregación
-          </a>
         </div>
       }
     </div>
 
     <app-auth-pie class="acc-foot"></app-auth-pie>
   </main>
+
+  <!-- Estado del servicio: en escritorio siempre; en móvil solo si hay problema -->
+  <p class="acc-status" [attr.data-estado]="servicio()" role="status">
+    <span class="acc-status-dot" aria-hidden="true"></span>
+    @switch (servicio()) {
+      @case ('caido') { <span>Sin conexión con el servidor</span> }
+      @case ('comprobando') { <span>Comprobando conexión</span> }
+      @default {
+        @if (conexionCifrada) { <span>Conexión cifrada</span><span class="acc-status-sep" aria-hidden="true">·</span> }
+        <span>Servicio en línea</span>
+      }
+    }
+  </p>
 
   <!-- Cortina de entrada: nace en el núcleo y cubre la pantalla al iniciar sesión -->
   <div class="acc-cortina" aria-hidden="true"></div>
