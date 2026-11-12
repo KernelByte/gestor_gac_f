@@ -1,4 +1,5 @@
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 import {
   Component, Input, OnChanges, SimpleChanges, signal, computed,
   inject, ChangeDetectionStrategy, OnInit, OnDestroy, ElementRef,
@@ -12,12 +13,13 @@ import {
   EntregaPortalService,
   RegistrosOut, TotalesOut, ContactoPublicador, AsistenciaS88Out,
   DocumentoItem, PublicadorRegistro, GrupoRegistro, AgendaOut, AgendaItemPortal,
-  TarjetaTotal, FilaMensualTotal, MesEnCurso
+  TarjetaTotal, FilaMensualTotal, MesEnCurso, EnlaceAcompanante
 } from '../services/entrega-portal.service';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { ThemeService } from '../../../../core/services/theme.service';
 import { SECCIONES_CONFIG, SeccionConfig, SeccionGrupo } from './agenda-secciones.config';
 import { anoServicioDe } from '../../../../core/utils/fecha.util';
+import { Observable, Subject, takeUntil } from 'rxjs';
 
 type Seccion = 'registros' | 'totales' | 'contactos' | 'asistencia' | 'documentos' | 'agenda';
 
@@ -52,7 +54,7 @@ const ICONOS_SECCION: Record<string, string> = {
   standalone: true,
   selector: 'app-entrega-portal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, NgTemplateOutlet, NgxEchartsDirective, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, NgTemplateOutlet, NgxEchartsDirective, EmptyStateComponent, ModalComponent],
   templateUrl: './entrega-portal.component.html',
   styleUrl: './entrega-portal.component.scss',
 })
@@ -60,6 +62,9 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
   @Input() modo: 'publico' | 'interno' = 'publico';
   @Input() token: string = '';
   @Input() idVisita: number = 0;
+  /** Metadatos ya pedidos por quien monta el portal (la página pública los
+   *  usa para validar el enlace): con ellos no se repite la petición. */
+  @Input() metadataInicial: any | null = null;
 
   private svc = inject(EntregaPortalService);
   private injector = inject(Injector);
@@ -75,6 +80,7 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
   // ── Estado ──────────────────────────────────────────────────────────────────
   seccionActiva = signal<Seccion>('registros');
   subTabRegistros = signal<'activos' | 'prec_reg' | 'inactivos'>('activos');
+  vistaResumen = signal<'tablas' | 'graficas'>('tablas');
   anioSel = signal<number>(new Date().getFullYear());
   cargando = signal(false);
   error = signal<string | null>(null);
@@ -340,7 +346,12 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     return Number.isFinite(id) && id > 0 ? { id, nombre } : null;
   }
 
-  private gruposExpandidos = signal<Set<number | null>>(new Set());
+  /** Grupo que se está viendo en «Activos». undefined = aún no se eligió: se
+   *  toma el primero, así la pantalla nunca aterriza vacía. */
+  grupoSel = signal<number | null | undefined>(undefined);
+  /** Fila marcada con un toque: un resalte fijo para no perderla al mirar los
+   *  meses de una tabla ancha. */
+  filaSel = signal<number | null>(null);
   private pubsExpandidos = signal<Set<number>>(new Set());
 
   // ── Computed ─────────────────────────────────────────────────────────────────
@@ -393,12 +404,6 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
       .sort((a: any, b: any) => a.nombre_completo.localeCompare(b.nombre_completo))
   );
 
-  /** ¿Hay algún precursor con consideración especial? Decide si la clave de la
-   *  leyenda aparece: en la mayoría de congregaciones no hay ningún caso. */
-  hayConsideraciones = computed(() =>
-    this.precRegPlanos().some((p: any) => !!p.consideracion_motivo)
-  );
-
   totalActivos = computed(() => this.gruposActivosFiltrados().reduce((s, g) => s + g.publicadores.length, 0));
 
   totalPrecRegulares = computed(() => this.gruposPrecRegFiltrados().reduce((s, g) => s + g.publicadores.length, 0));
@@ -410,7 +415,12 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
   contactosFiltrados = computed(() => {
     const q = this.filtroContactos().toLowerCase().trim();
     const list = this.contactos() ?? [];
-    return q ? list.filter(cp => cp.nombre_publicador.toLowerCase().includes(q)) : list;
+    // Busca también por el nombre del familiar: a veces se recuerda a quién
+    // hay que llamar, no de quién es el contacto.
+    return q
+      ? list.filter(cp => cp.nombre_publicador.toLowerCase().includes(q)
+          || cp.contactos.some(c => (c.nombre ?? '').toLowerCase().includes(q)))
+      : list;
   });
 
   tarjetasTotales = computed(() => {
@@ -493,86 +503,218 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     return prom;
   }
 
-  totalesChartOptions = computed<{ participacion: EChartsOption | null; cursos: EChartsOption | null }>(() => {
+  // ── Gráficas del resumen ───────────────────────────────────────────────────
+  // Cuatro preguntas que se hace un superintendente al llegar, cada una con su
+  // respuesta en una cifra arriba y la tendencia mes a mes debajo:
+  //   ¿cuántos predican? · ¿cómo van los precursores regulares? ·
+  //   ¿cuántos cursos hay? · ¿cuánta asistencia hay?
+  // Paleta validada (dataviz): azul y naranja, una sola escala por gráfica.
+
+  /** Meses con datos completos para las gráficas: sin el mes en curso ni los
+   *  que tienen muy pocos informes (menos de la cuarta parte del mes más
+   *  completo). Un mes a medio informar se leería como una caída. */
+  private mesesCompletos = computed<Set<number>>(() => {
     const t = this.totales();
-    if (!t) return { participacion: null, cursos: null };
+    if (!t) return new Set();
+    const filas = t.total_publicadores.filas;
+    const max = Math.max(0, ...filas.map(f => f.participaciones));
+    return new Set(filas
+      .filter(f => !this.esMesEnCurso(f.mes) && f.participaciones >= max * 0.25)
+      .map(f => f.mes));
+  });
 
-    const tarjetas = [t.total_publicadores, t.total_precursores_regulares, t.total_precursores_auxiliares];
-    const colores = ['#6D28D9', '#0EA5E9', '#10B981'];
-    const nombres = ['Publicadores', 'Prec. Regulares', 'Prec. Auxiliares'];
-    const meses = tarjetas[0].filas.map(f => f.mes_nombre.slice(0, 3));
+  /** Meses que se dejaron fuera, para decirlo bajo las gráficas. */
+  mesesFueraGraficas = computed(() => {
+    const t = this.totales();
+    if (!t) return '';
+    const fuera = t.total_publicadores.filas
+      .filter(f => !this.mesesCompletos().has(f.mes))
+      .map(f => f.mes_nombre.toLowerCase());
+    if (!fuera.length) return '';
+    const lista = fuera.length === 1 ? fuera[0] : `${fuera.slice(0, -1).join(', ')} y ${fuera[fuera.length - 1]}`;
+    return `No se incluye${fuera.length > 1 ? 'n' : ''} ${lista}: aún no tiene${fuera.length > 1 ? 'n' : ''} los informes completos.`;
+  });
 
+  /** Colores por tema. Azul y naranja pasan las comprobaciones de daltonismo
+   *  y contraste en claro y oscuro. */
+  private paletaGraficas = computed(() => {
     const dark = this.theme.darkMode();
-    const axisStyle = {
-      axisLine: { lineStyle: { color: dark ? '#334155' : '#e2e8f0' } },
-      axisLabel: { color: dark ? '#94a3b8' : '#64748b', fontSize: 10 },
-      splitLine: { lineStyle: { color: dark ? 'rgba(51,65,85,0.7)' : 'rgba(148,163,184,0.15)' } },
+    return {
+      azul: dark ? '#3987e5' : '#2a78d6',
+      naranja: dark ? '#d95926' : '#eb6834',
+      texto: dark ? '#94a3b8' : '#64748b',
+      textoFuerte: dark ? '#e2e8f0' : '#334155',
+      eje: dark ? '#334155' : '#e2e8f0',
+      rejilla: dark ? 'rgba(51,65,85,0.55)' : 'rgba(148,163,184,0.18)',
+      superficie: dark ? '#0f172a' : '#ffffff',
     };
-    const tooltip = {
-      trigger: 'axis' as const,
-      backgroundColor: dark ? 'rgba(15,23,42,0.96)' : 'rgba(30,41,59,0.92)',
-      borderWidth: 0,
-      textStyle: { color: '#f1f5f9', fontSize: 12 },
-    };
-    const legend = {
-      bottom: 0,
-      textStyle: { color: dark ? '#94a3b8' : '#64748b', fontSize: 10 },
-      icon: 'circle',
-      itemWidth: 8,
-      itemHeight: 8,
-    };
+  });
 
-    // Solo precursores (índices 1 y 2)
-    const precursores = [
-      { tarjeta: t.total_precursores_regulares, nombre: 'Prec. Regulares', color: colores[1] },
-      { tarjeta: t.total_precursores_auxiliares, nombre: 'Prec. Auxiliares', color: colores[2] },
-    ];
+  private sinMovimiento = typeof matchMedia !== 'undefined'
+    && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const participacion: EChartsOption = {
+  /** Base común: ejes discretos, tooltip legible y entrada suave de las barras. */
+  private baseGrafica(meses: string[], conLeyenda: boolean, sufijo = ''): EChartsOption {
+    const c = this.paletaGraficas();
+    return {
+      animation: !this.sinMovimiento,
+      animationDuration: 500,
+      animationEasing: 'cubicOut',
+      animationDelay: (i: number) => i * 30,
+      textStyle: { fontFamily: 'Manrope, system-ui, sans-serif' },
+      grid: { top: 12, right: 12, bottom: conLeyenda ? 44 : 24, left: 44 },
       tooltip: {
-        ...tooltip,
-        valueFormatter: (v: any) => v != null ? `${v} h` : '—',
+        trigger: 'axis',
+        axisPointer: { type: 'shadow', shadowStyle: { color: c.rejilla } },
+        backgroundColor: c.superficie, borderColor: c.eje, borderWidth: 1,
+        textStyle: { color: c.textoFuerte, fontSize: 13 },
+        valueFormatter: (v: any) => v == null ? '—' : `${(+v).toLocaleString('es-CO', { maximumFractionDigits: 1 })}${sufijo}`,
       },
-      legend,
-      grid: { top: 8, right: 12, bottom: 50, left: 40 },
-      xAxis: { type: 'category', data: meses, ...axisStyle, axisTick: { show: false } },
+      legend: conLeyenda ? {
+        bottom: 0, icon: 'circle', itemWidth: 10, itemHeight: 10, itemGap: 18,
+        textStyle: { color: c.texto, fontSize: 12 },
+      } : undefined,
+      xAxis: {
+        type: 'category', data: meses, axisTick: { show: false },
+        axisLine: { lineStyle: { color: c.eje } },
+        axisLabel: { color: c.texto, fontSize: 12 },
+      },
       yAxis: {
         type: 'value',
-        axisLabel: { ...axisStyle.axisLabel, formatter: '{value} h' },
-        splitLine: axisStyle.splitLine,
+        axisLabel: { color: c.texto, fontSize: 12 },
+        splitLine: { lineStyle: { color: c.rejilla } },
       },
-      series: precursores.map(p => ({
-        name: p.nombre,
-        type: 'bar' as const,
-        color: p.color,
-        barMaxWidth: 20,
-        itemStyle: { borderRadius: [4, 4, 0, 0], color: p.color },
-        data: p.tarjeta.filas.map(f =>
-          f.participaciones > 0 && f.horas != null
-            ? +(f.horas / f.participaciones).toFixed(1)
-            : null
-        ),
-      })),
+    };
+  }
+
+  private media(vals: number[]): number {
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+  }
+
+  graficas = computed(() => {
+    const t = this.totales();
+    if (!t) return null;
+    const c = this.paletaGraficas();
+    const ok = this.mesesCompletos();
+    const corto = (f: FilaMensualTotal) => f.mes_nombre.slice(0, 3);
+    const pubs = t.total_publicadores.filas.filter(f => ok.has(f.mes));
+    const regs = t.total_precursores_regulares.filas.filter(f => ok.has(f.mes));
+    const meses = pubs.map(corto);
+    const barra = { barMaxWidth: 28, itemStyle: { borderRadius: [4, 4, 0, 0] } };
+
+    // 1 · ¿Cuántos predican? Barras apiladas: predicó + irregular = total.
+    const predico = pubs.map(f => f.participaciones);
+    const irregular = pubs.map(f => Math.max(0, f.total_activos - f.participaciones));
+    const pPredico = this.media(predico);
+    const pTotal = this.media(pubs.map(f => f.total_activos));
+    const participacion: EChartsOption = {
+      ...this.baseGrafica(meses, true),
+      series: [
+        { name: 'Predicó', type: 'bar', stack: 'p', data: predico, color: c.azul,
+          barMaxWidth: 28, itemStyle: { borderColor: c.superficie, borderWidth: 1 } },
+        { name: 'Irregular', type: 'bar', stack: 'p', data: irregular, color: c.naranja,
+          barMaxWidth: 28, itemStyle: { borderRadius: [4, 4, 0, 0], borderColor: c.superficie, borderWidth: 1 } },
+      ],
     };
 
+    // 2 · Precursores regulares: promedio de horas por persona contra la meta.
+    const horasReg = regs.map(f => f.participaciones && f.horas != null ? +(f.horas / f.participaciones).toFixed(1) : null);
+    const pHoras = this.media(horasReg.filter((v): v is number => v != null));
+    const META = 50;
+    const precursores: EChartsOption = {
+      ...this.baseGrafica(meses, false, ' h'),
+      yAxis: {
+        type: 'value', max: (v: any) => Math.max(60, Math.ceil(v.max / 10) * 10),
+        axisLabel: { color: c.texto, fontSize: 12, formatter: '{value} h' },
+        splitLine: { lineStyle: { color: c.rejilla } },
+      },
+      series: [{
+        name: 'Promedio por precursor', type: 'bar', data: horasReg, color: c.azul, ...barra,
+        markLine: {
+          silent: true, symbol: 'none',
+          lineStyle: { color: c.textoFuerte, type: 'dashed', width: 1.5 },
+          label: { formatter: `Meta ${META} h`, color: c.textoFuerte, fontSize: 12, position: 'insideEndTop' },
+          data: [{ yAxis: META }],
+        },
+      }],
+    };
+
+    // 3 · Cursos bíblicos: el total de la congregación; el desglose, al pasar.
+    const tarjetas = [t.total_publicadores, t.total_precursores_regulares, t.total_precursores_auxiliares];
+    const nombres = ['Publicadores', 'Precursores regulares', 'Precursores auxiliares'];
+    const cursosTotal = pubs.map(f => tarjetas.reduce((s, tj) => s + (tj.filas.find(x => x.mes === f.mes)?.cursos_biblicos ?? 0), 0));
+    const pCursos = this.media(cursosTotal);
     const cursos: EChartsOption = {
-      tooltip,
-      legend,
-      grid: { top: 8, right: 12, bottom: 50, left: 36 },
-      xAxis: { type: 'category', data: meses, ...axisStyle, axisTick: { show: false } },
-      yAxis: { type: 'value', ...axisStyle },
-      series: tarjetas.map((tarjeta, i) => ({
-        name: nombres[i],
-        type: 'bar' as const,
-        color: colores[i],
-        barMaxWidth: 16,
-        itemStyle: { borderRadius: [4, 4, 0, 0], color: colores[i] },
-        data: tarjeta.filas.map(f => f.cursos_biblicos),
-      })),
+      ...this.baseGrafica(meses, false),
+      tooltip: {
+        ...(this.baseGrafica(meses, false).tooltip as object),
+        formatter: (ps: any) => {
+          const p = Array.isArray(ps) ? ps[0] : ps;
+          const mes = pubs[p.dataIndex]?.mes;
+          const lineas = tarjetas.map((tj, i) =>
+            `<div style="display:flex;justify-content:space-between;gap:16px"><span>${nombres[i]}</span><b>${tj.filas.find(x => x.mes === mes)?.cursos_biblicos ?? 0}</b></div>`);
+          return `<div style="font-weight:700;margin-bottom:4px">${p.name} · ${p.value} cursos</div>${lineas.join('')}`;
+        },
+      },
+      series: [{ name: 'Cursos', type: 'bar', data: cursosTotal, color: c.azul, ...barra }],
     };
 
-    return { participacion, cursos };
+    return {
+      participacion, precursores, cursos,
+      resumen: {
+        predico: Math.round(pPredico),
+        total: Math.round(pTotal),
+        pct: pTotal ? Math.round((pPredico / pTotal) * 100) : 0,
+        horas: pHoras,
+        meta: META,
+        cursos: Math.round(pCursos),
+      },
+    };
   });
+
+  /** 4 · Asistencia: promedio por reunión, entre semana y fin de semana. */
+  graficaAsistencia = computed(() => {
+    const bloque = this.bloquesS88()[0];
+    if (!bloque) return null;
+    const c = this.paletaGraficas();
+    const meses = bloque.meses.filter((m: any) => m.midweek_promedio || m.weekend_promedio);
+    if (!meses.length) return null;
+    const entre = meses.map((m: any) => m.midweek_promedio ?? null);
+    const fin = meses.map((m: any) => m.weekend_promedio ?? null);
+    const linea = (name: string, data: any[], color: string) => ({
+      name, type: 'line' as const, data, color, smooth: false, connectNulls: false,
+      lineStyle: { width: 2 }, symbol: 'circle', symbolSize: 8,
+      itemStyle: { borderColor: c.superficie, borderWidth: 2 },
+    });
+    const opciones: EChartsOption = {
+      ...this.baseGrafica(meses.map((m: any) => m.nombre_mes.slice(0, 3)), true),
+      tooltip: { ...(this.baseGrafica([], true).tooltip as object), axisPointer: { type: 'line', lineStyle: { color: c.eje } } },
+      yAxis: {
+        type: 'value', scale: true,
+        axisLabel: { color: c.texto, fontSize: 12 },
+        splitLine: { lineStyle: { color: c.rejilla } },
+      },
+      series: [linea('Fin de semana', fin, c.azul), linea('Entre semana', entre, c.naranja)],
+    };
+    const num = (v: number[]) => Math.round(this.media(v.filter(x => x != null && x > 0)));
+    return { opciones, fin: num(fin), entre: num(entre) };
+  });
+
+  /** Al abrir las gráficas se trae la asistencia sin tapar la pantalla de carga. */
+  verGraficas() {
+    this.vistaResumen.set('graficas');
+    if (this.asistencia()) return;
+    this.errorAsistenciaGrafica.set(false);
+    const anio = this.anioSel();
+    const obs = this.modo === 'publico'
+      ? this.svc.asistenciaPublico(this.token, anio)
+      : this.svc.asistenciaInterno(this.idVisita, anio);
+    // Sin marcar el fallo, la tarjeta de asistencia giraba para siempre.
+    this.deEstaVisita(obs).subscribe({ next: d => this.asistencia.set(d), error: () => this.errorAsistenciaGrafica.set(true) });
+  }
+
+  /** La asistencia de las gráficas no llegó: se dice en vez de girar sin fin. */
+  errorAsistenciaGrafica = signal(false);
 
   mesesHeaders = computed(() => {
     const r = this.registros();
@@ -590,14 +732,84 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
 
   private readonly seccionesBase = [
     { id: 'registros' as Seccion, label: 'Registros de predicación', labelCorto: 'Registros', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
-    { id: 'totales' as Seccion, label: 'Totales por grupo', labelCorto: 'Totales', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>' },
+    { id: 'totales' as Seccion, label: 'Resumen mensual', labelCorto: 'Resumen', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>' },
     { id: 'contactos' as Seccion, label: 'Contactos de emergencia', labelCorto: 'Contactos', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>' },
-    { id: 'asistencia' as Seccion, label: 'Asistencia (S-88)', labelCorto: 'Asistencia', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>' },
+    { id: 'asistencia' as Seccion, label: 'Asistencia a reuniones', labelCorto: 'Asistencia', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>' },
     { id: 'documentos' as Seccion, label: 'Documentos', labelCorto: 'Documentos', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>' },
   ];
 
+  // ── Enlace para la esposa / acompañante ─────────────────────────────────────
+
+  /** El enlace abierto es el de la esposa: solo ve la agenda. */
+  esAcompanante = computed(() => this.metadata()?.alcance === 'acompanante');
+  /** La agenda respondió vacía o con error (para el mensaje de la esposa). */
+  agendaVacia = signal(false);
+
+  compartirAbierto = signal(false);
+  enlaceAcomp = signal<EnlaceAcompanante | null>(null);
+  acompCargando = signal(false);
+  acompError = signal<string | null>(null);
+  acompCopiado = signal(false);
+  acompQuitado = signal(false);
+
+  abrirCompartir() {
+    this.compartirAbierto.set(true);
+    this.acompError.set(null);
+    this.acompCopiado.set(false);
+    this.acompQuitado.set(false);
+    this.acompCargando.set(true);
+    this.svc.acompananteObtener(this.token).subscribe({
+      next: (e) => { this.enlaceAcomp.set(e); this.acompCargando.set(false); },
+      error: () => { this.acompError.set('No se pudo consultar el enlace. Revise su conexión.'); this.acompCargando.set(false); },
+    });
+  }
+
+  crearEnlaceAcomp() {
+    this.acompCargando.set(true);
+    this.acompError.set(null);
+    this.acompQuitado.set(false);
+    this.svc.acompananteCrear(this.token).subscribe({
+      next: (e) => { this.enlaceAcomp.set(e); this.acompCargando.set(false); },
+      error: () => { this.acompError.set('No se pudo crear el enlace. Inténtelo de nuevo.'); this.acompCargando.set(false); },
+    });
+  }
+
+  quitarEnlaceAcomp() {
+    this.acompCargando.set(true);
+    this.acompError.set(null);
+    this.svc.acompananteRevocar(this.token).subscribe({
+      next: () => {
+        this.enlaceAcomp.set(null);
+        this.acompQuitado.set(true);
+        this.acompCargando.set(false);
+      },
+      error: () => { this.acompError.set('No se pudo quitar el acceso. Inténtelo de nuevo.'); this.acompCargando.set(false); },
+    });
+  }
+
+  async copiarEnlaceAcomp() {
+    const e = this.enlaceAcomp();
+    if (!e) return;
+    try {
+      await navigator.clipboard.writeText(e.url);
+      this.acompCopiado.set(true);
+      setTimeout(() => this.acompCopiado.set(false), 2500);
+    } catch {
+      this.acompError.set('No se pudo copiar. Mantenga presionado el enlace para copiarlo.');
+    }
+  }
+
+  whatsappAcomp(): string {
+    const e = this.enlaceAcomp();
+    const nombre = this.metadata()?.nombre_congregacion;
+    const texto = `Agenda de la visita${nombre ? ' a ' + nombre : ''}: ${e?.url ?? ''}`;
+    return `https://wa.me/?text=${encodeURIComponent(texto)}`;
+  }
+
   secciones = computed(() => {
-    const base = this.seccionesBase;
+    // La esposa solo tiene la agenda: el servidor le niega el resto, y aquí ni
+    // se le muestran las pestañas.
+    const base = this.esAcompanante() ? [] : this.seccionesBase;
     const todas = this.agenda()
       ? [{ id: 'agenda' as Seccion, label: 'Agenda', labelCorto: 'Agenda', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>' }, ...base]
       : base;
@@ -619,7 +831,16 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     }, { injector: this.injector });
   }
 
+  /** Se emite al cambiar de visita (y al destruir): corta las cargas de la
+   *  visita anterior para que una respuesta tardía no pise los datos nuevos. */
+  private cambioVisita$ = new Subject<void>();
+  private deEstaVisita<T>(obs: Observable<T>): Observable<T> {
+    return obs.pipe(takeUntil(this.cambioVisita$));
+  }
+
   ngOnDestroy() {
+    this.cambioVisita$.next();
+    this.cambioVisita$.complete();
     this.navRO?.disconnect();
     // El blob de la tarjeta vive hasta que se revoque: sin esto queda retenido
     // si el portal se destruye con el visor abierto.
@@ -639,6 +860,12 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     // /registros) se hacía dos veces. Solo se recarga si cambia de visita
     // con el componente ya vivo.
     if (!cambio || cambio.firstChange) return;
+    // Lo que aún venía en camino es de la visita anterior: se descarta.
+    this.cambioVisita$.next();
+    this.cargando.set(false);
+    this.errorContactos.set(null);
+    this.errorDocumentos.set(null);
+    this.errorAsistenciaGrafica.set(false);
     // Los datos cacheados son de la visita anterior: sin vaciarlos,
     // cargarSeccion() los daba por buenos y mostraba la visita equivocada.
     this.registros.set(null);
@@ -649,7 +876,8 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     this.agenda.set(null);
     this.metadata.set(null);
     this.error.set(null);
-    this.gruposExpandidos.set(new Set());
+    this.grupoSel.set(undefined);
+    this.filaSel.set(null);
     this.seccionActiva.set('registros');
     this.inicializar();
   }
@@ -658,12 +886,25 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     if (this.modo === 'publico' && !this.token) return;
     if (this.modo === 'interno' && !this.idVisita) return;
 
-    // Cargar metadata solo en modo público
-    if (this.modo === 'publico') {
-      this.svc.metadataPublico(this.token).subscribe({
-        next: (d) => this.metadata.set(d),
-        error: () => {},
+    // Cargar metadata solo en modo público. Hay que saber el alcance del
+    // enlace antes de pedir nada: con el de la esposa solo se pide la agenda.
+    if (this.modo === 'publico' && this.metadataInicial) {
+      this.metadata.set(this.metadataInicial);
+    } else if (this.modo === 'publico') {
+      this.deEstaVisita(this.svc.metadataPublico(this.token)).subscribe({
+        next: (d) => { this.metadata.set(d); this.cargarSegunAlcance(); },
+        error: () => this.cargarSegunAlcance(),
       });
+      return;
+    }
+    this.cargarSegunAlcance();
+  }
+
+  private cargarSegunAlcance() {
+    if (this.esAcompanante()) {
+      this.seccionActiva.set('agenda');
+      this.cargarAgenda();
+      return;
     }
 
     // Año de servicio: el de la visita (lo dice el servidor según sus fechas, o la foto
@@ -671,7 +912,7 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     // septiembre o un enlace abierto tras el cambio de año pedía un año que la visita no tiene.
     this.anioSel.set(this.calcularAnioServicio());
     const anios$ = this.modo === 'publico' ? this.svc.aniosPublico(this.token) : this.svc.aniosInterno(this.idVisita!);
-    anios$.subscribe({
+    this.deEstaVisita(anios$).subscribe({
       next: ({ anios }) => {
         if (anios?.length) this.anioSel.set(anios[0]);
         this.cargarSeccion(this.seccionActiva());
@@ -733,15 +974,10 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     const obs = this.modo === 'publico'
       ? this.svc.registrosPublico(this.token, anio)
       : this.svc.registrosInterno(this.idVisita, anio);
-    obs.subscribe({
+    this.deEstaVisita(obs).subscribe({
       next: (d) => {
         this.registros.set(d);
         this.cargando.set(false);
-        // El primer grupo se abre solo: la pantalla nunca aterriza vacía.
-        if (this.gruposExpandidos().size === 0) {
-          const primero = this.gruposActivosFiltrados()[0];
-          if (primero) this.toggleGrupo(primero.grupo_id);
-        }
       },
       error: () => { this.error.set('Error cargando registros.'); this.cargando.set(false); },
     });
@@ -752,7 +988,7 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     const obs = this.modo === 'publico'
       ? this.svc.totalesPublico(this.token, anio)
       : this.svc.totalesInterno(this.idVisita, anio);
-    obs.subscribe({
+    this.deEstaVisita(obs).subscribe({
       next: (d) => { this.totales.set(d); this.cargando.set(false); },
       error: () => { this.error.set('Error cargando totales.'); this.cargando.set(false); },
     });
@@ -763,7 +999,7 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     const obs = this.modo === 'publico'
       ? this.svc.contactosPublico(this.token)
       : this.svc.contactosInterno(this.idVisita);
-    obs.subscribe({
+    this.deEstaVisita(obs).subscribe({
       next: (d) => this.contactos.set(d),
       error: () => this.errorContactos.set('No se pudieron cargar los contactos.'),
     });
@@ -778,7 +1014,7 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     const obs = this.modo === 'publico'
       ? this.svc.asistenciaPublico(this.token, anio)
       : this.svc.asistenciaInterno(this.idVisita, anio);
-    obs.subscribe({
+    this.deEstaVisita(obs).subscribe({
       next: (d) => { this.asistencia.set(d); this.cargando.set(false); },
       error: () => { this.error.set('Error cargando asistencia.'); this.cargando.set(false); },
     });
@@ -789,7 +1025,7 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     const obs = this.modo === 'publico'
       ? this.svc.documentosPublico(this.token)
       : this.svc.documentosInterno(this.idVisita);
-    obs.subscribe({
+    this.deEstaVisita(obs).subscribe({
       next: (d) => this.documentos.set(d),
       error: () => this.errorDocumentos.set('No se pudieron cargar los documentos.'),
     });
@@ -803,7 +1039,7 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     const obs = this.modo === 'publico'
       ? this.svc.agendaPublico(this.token)
       : this.svc.agendaInterno(this.idVisita);
-    obs.subscribe({
+    this.deEstaVisita(obs).subscribe({
       next: (d) => {
         this.agenda.set(d);
         // Si el usuario no ha navegado aún, mostrar agenda primero
@@ -811,7 +1047,7 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
           this.seccionActiva.set('agenda');
         }
       },
-      error: () => this.agenda.set(null),
+      error: () => { this.agenda.set(null); this.agendaVacia.set(true); },
     });
   }
 
@@ -1021,33 +1257,36 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
-  // ── Expandir/colapsar grupos y publicadores ───────────────────────────────
+  // ── Grupo visible y fila marcada ──────────────────────────────────────────
 
-  toggleGrupo(id: number | null) {
-    this.gruposExpandidos.update(s => {
-      const copy = new Set(s);
-      if (copy.has(id)) copy.delete(id);
-      else copy.add(id);
-      return copy;
-    });
-  }
-
-  grupoExpandido(id: number | null): boolean {
-    return this.gruposExpandidos().has(id);
-  }
-
-  todosExpandidos = computed(() => {
+  /** Grupo que se muestra: el elegido, o el primero si aún no se eligió o si
+   *  el elegido ya no existe (cambio de visita). */
+  grupoActual = computed(() => {
     const grupos = this.gruposActivosFiltrados();
-    const abiertos = this.gruposExpandidos();
-    return grupos.length > 0 && grupos.every(g => abiertos.has(g.grupo_id));
+    const sel = this.grupoSel();
+    return grupos.find(g => g.grupo_id === sel) ?? grupos[0] ?? null;
   });
 
-  toggleTodosGrupos() {
-    if (this.todosExpandidos()) {
-      this.gruposExpandidos.set(new Set());
-    } else {
-      this.gruposExpandidos.set(new Set(this.gruposActivosFiltrados().map(g => g.grupo_id)));
-    }
+  /** Al buscar: solo los grupos donde alguien coincide. */
+  gruposConCoincidencias = computed(() => {
+    const q = this.filtroPublicadores().toLowerCase().trim();
+    const grupos = this.gruposActivosFiltrados();
+    if (!q) return grupos;
+    return grupos.filter(g => g.publicadores.some((p: any) => p.nombre_completo.toLowerCase().includes(q)));
+  });
+
+  /** «Grupo 1», «Sin grupo»: el nombre del servidor trae un «#» de más. */
+  etiquetaGrupo(g: any): string {
+    return g.grupo_numero ? `Grupo ${g.grupo_numero}` : (g.grupo_nombre || 'Sin grupo');
+  }
+
+  elegirGrupo(id: number | null) {
+    this.grupoSel.set(id);
+    this.filaSel.set(null);
+  }
+
+  marcarFila(id: number) {
+    this.filaSel.update(actual => actual === id ? null : id);
   }
 
   togglePub(id: number) {
@@ -1065,22 +1304,23 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
 
   // ── Helpers privilegios ──────────────────────────────────────────────────────
 
+  esAuxiliar(priv: string | null): boolean {
+    return (priv ?? '').toLowerCase().includes('auxiliar');
+  }
+
   privLabel(priv: string | null): string {
     if (!priv) return '';
     const p = priv.toLowerCase();
-    if (p.includes('anciano')) return 'Anc.';
-    if (p.includes('siervo')) return 'Sie.';
-    if (p.includes('especial')) return 'P.Esp.';
-    if (p.includes('misionero')) return 'P.Mis.';
-    if (p.includes('regular')) return 'P.Reg.';
-    if (p.includes('auxiliar')) return 'P.Aux.';
-    if (p.includes('precursor')) return 'Prec.';
-    return priv.slice(0, 5);
-  }
-
-  /** Meses en que el publicador sirvió como precursor auxiliar. */
-  mesesAux(pub: any): any[] {
-    return (pub?.historial ?? []).filter((h: any) => h.precursor_auxiliar);
+    // Palabras completas: quien abre el enlace por primera vez no tiene por
+    // qué conocer las abreviaturas internas.
+    if (p.includes('anciano')) return 'Anciano';
+    if (p.includes('siervo')) return 'Siervo ministerial';
+    if (p.includes('especial')) return 'Precursor especial';
+    if (p.includes('misionero')) return 'Misionero';
+    if (p.includes('regular')) return 'Precursor regular';
+    if (p.includes('auxiliar')) return 'Precursor auxiliar';
+    if (p.includes('precursor')) return 'Precursor';
+    return priv;
   }
 
   // ── Nombramiento de precursor regular a mitad del año de servicio ───────────
@@ -1157,38 +1397,53 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     return !!primero && primero.mes === h.mes;
   }
 
+  /** «56 h», «56 h + 30 créditos» o «30 créditos»: las horas de crédito
+   *  (Betel, Salón de Asambleas) se dicen aparte para que la suma cuadre. */
+  private horasTexto(h: any): string {
+    const campo = h.horas ? `${h.horas} h` : '';
+    const credito = h.horas_credito
+      ? `${h.horas_credito} ${h.horas_credito === 1 ? 'crédito' : 'créditos'}`
+      : '';
+    return [campo, credito].filter(Boolean).join(' + ');
+  }
+
   /** Tooltip de la celda de un mes. */
   tituloMes(h: any, pub?: any): string {
+    const horas = this.horasTexto(h);
+    const conHoras = (base: string) => horas ? `${base} · ${horas}` : base;
+
     if (pub && this.esMesFueraNombramiento(pub, h)) {
       const desde = this.inicioPregLabel(pub);
       const detalle = desde ? `antes del nombramiento como precursor (${desde})` : 'antes del nombramiento como precursor';
-      return h.horas
-        ? `${h.mes_nombre}: ${detalle} · ${h.horas} h — no cuentan en el total`
+      return horas
+        ? `${h.mes_nombre}: ${detalle} · ${horas} — no cuentan en el total`
         : `${h.mes_nombre}: ${detalle}`;
     }
-    if (h.precursor_auxiliar) {
-      return h.horas
-        ? `${h.mes_nombre}: Precursor auxiliar · ${h.horas} h`
-        : `${h.mes_nombre}: Precursor auxiliar`;
-    }
+    if (h.precursor_auxiliar) return conHoras(`${h.mes_nombre}: Precursor auxiliar`);
     // Meses de precursor regular/especial/misionero: nombrar el privilegio en
     // vez de "Participó", para que las horas no se confundan con las de un
     // publicador normal cuando la persona ya no es precursor hoy.
     if (h.precursor_regular) {
       const priv = h.privilegio_mes || 'Precursor regular';
-      return h.horas
-        ? `${h.mes_nombre}: ${priv} · ${h.horas} h`
-        : `${h.mes_nombre}: ${priv}`;
+      // En la pestaña de precursores (se pasa `pub`) el privilegio regular ya
+      // lo dice la propia fila: repetirlo alargaba el mensaje sin aportar. Los
+      // especiales y misioneros sí se nombran, porque difieren de ese caso.
+      const esRegular = !!pub && priv.toLowerCase().includes('regular');
+      if (esRegular) {
+        if (horas) return `${h.mes_nombre}: ${horas}`;
+        return this.esMesEnCurso(h.mes)
+          ? `${h.mes_nombre}: todavía sin informe (el mes sigue en curso)`
+          : `${h.mes_nombre}: sin horas informadas`;
+      }
+      return conHoras(`${h.mes_nombre}: ${priv}`);
     }
-    if (h.participo && h.horas) return `${h.mes_nombre}: Participó · ${h.horas} h`;
-    return `${h.mes_nombre}: ${h.participo ? 'Participó' : 'No participó'}`;
-  }
-
-  /** Tooltip de la etiqueta "Aux." con el detalle de meses y horas. */
-  tooltipAux(pub: any): string {
-    const meses = this.mesesAux(pub)
-      .map((h: any) => h.horas ? `${h.mes_nombre} (${h.horas} h)` : h.mes_nombre);
-    return `Precursor auxiliar en: ${meses.join(', ')}`;
+    if (h.participo) return conHoras(`${h.mes_nombre}: Participó`);
+    // Sin informe de campo pero con crédito: no se dice «No participó».
+    if (h.horas_credito) return conHoras(`${h.mes_nombre}: Horas acreditadas`);
+    // Mes que aún se está informando: sin informe todavía no significa que no
+    // haya participado, así que no se afirma.
+    if (this.esMesEnCurso(h.mes)) return `${h.mes_nombre}: todavía sin informe (el mes sigue en curso)`;
+    return `${h.mes_nombre}: No participó`;
   }
 
   // ── Helpers documentos ───────────────────────────────────────────────────────
@@ -1208,28 +1463,54 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
 
   // ── Helpers S-88 ─────────────────────────────────────────────────────────────
 
-  fmtS88(mes: any, tipo: string, campo: string): string {
-    if (!mes) return '';
-    const prefix = tipo === 'midweek' ? 'midweek' : 'weekend';
-    const keys: Record<string, string> = {
-      reun: `${prefix}_reuniones`,
-      total: `${prefix}_total`,
-      prom: `${prefix}_promedio`,
-    };
-    const val = mes[keys[campo]];
-    if (val == null || val === 0) return '';
-    if (campo === 'prom') return Number(val).toFixed(2);
-    return String(val);
+  /**
+   * Bloques de la tabla de asistencia. Con ventana de visita (los 12 meses
+   * anteriores) los meses caen en dos años de servicio —p. ej. 9 + 3— y se
+   * muestran como un solo periodo continuo. Sin ventana es el S-88 clásico:
+   * año anterior y año actual, cada uno en su tabla. Antes la plantilla
+   * recorría los índices 0–11 de ambos años y, con la ventana, leía meses
+   * inexistentes: la tabla salía cortada y la del fin de semana no se pintaba.
+   */
+  bloquesS88 = computed<{ titulo: string; meses: any[]; conAnio: boolean }[]>(() => {
+    const a = this.asistencia();
+    if (!a) return [];
+    const ant = a.ano_anterior?.meses ?? [];
+    const act = a.ano_actual?.meses ?? [];
+    if (a.ventana) {
+      return [{ titulo: `${a.ventana.desde} a ${a.ventana.hasta}`, meses: [...ant, ...act], conAnio: true }];
+    }
+    return [
+      { titulo: `Año de servicio ${a.ano_actual?.ano_servicio}`, meses: act, conAnio: false },
+      { titulo: `Año de servicio ${a.ano_anterior?.ano_servicio}`, meses: ant, conAnio: false },
+    ];
+  });
+
+  fmtS88(mes: any, tipo: 'midweek' | 'weekend', campo: 'reun' | 'total' | 'prom'): string {
+    if (!mes) return '—';
+    const keys = { reun: 'reuniones', total: 'total', prom: 'promedio' } as const;
+    const val = mes[`${tipo}_${keys[campo]}`];
+    if (val == null || val === 0) return '—';
+    return campo === 'prom' ? this.numero(Number(val)) : String(val);
   }
 
-  promS88(resumen: any, tipo: string): string {
-    if (!resumen?.meses) return '';
-    const prefix = tipo === 'midweek' ? 'midweek' : 'weekend';
-    const key = `${prefix}_promedio`;
-    const vals = resumen.meses
-      .map((m: any) => m[key])
+  /** Promedio de los meses que tuvieron reuniones (los vacíos no cuentan). */
+  promS88(meses: any[], tipo: 'midweek' | 'weekend'): string {
+    const vals = (meses ?? [])
+      .map((m: any) => m[`${tipo}_promedio`])
       .filter((v: any) => v != null && v > 0) as number[];
-    if (!vals.length) return '';
-    return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2);
+    if (!vals.length) return '—';
+    return this.numero(vals.reduce((x, y) => x + y, 0) / vals.length);
+  }
+
+  private numero(v: number): string {
+    return v.toLocaleString('es-CO', { maximumFractionDigits: 1 });
+  }
+
+  /** 1 234 567 → "1,2 MB". El servidor manda bytes; antes se pintaban como KB. */
+  tamanoLegible(bytes: number | null | undefined): string {
+    const b = Number(bytes) || 0;
+    if (b < 1024) return `${b} B`;
+    if (b < 1024 * 1024) return `${this.numero(b / 1024)} KB`;
+    return `${this.numero(b / (1024 * 1024))} MB`;
   }
 }

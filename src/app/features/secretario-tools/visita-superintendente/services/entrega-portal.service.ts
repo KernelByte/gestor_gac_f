@@ -139,6 +139,11 @@ export interface ContactoItem {
   solo_urgencias: boolean;
 }
 
+export interface EnlaceAcompanante {
+  url: string;
+  expira_en: string;
+}
+
 export interface ContactoPublicador {
   id_publicador: number;
   nombre_publicador: string;
@@ -354,6 +359,19 @@ export class EntregaPortalService {
       `${this.internoBase(idVisita)}/tarjeta-pdf`,
       { responseType: 'blob', params }
     );
+  }
+
+  // ── Enlace para la esposa / acompañante (solo agenda, sin lo sensible) ──
+  acompananteObtener(token: string): Observable<EnlaceAcompanante | null> {
+    return this.http.get<EnlaceAcompanante | null>(`${this.publicBase(token)}/acompanante`);
+  }
+
+  acompananteCrear(token: string): Observable<EnlaceAcompanante> {
+    return this.http.post<EnlaceAcompanante>(`${this.publicBase(token)}/acompanante`, {});
+  }
+
+  acompananteRevocar(token: string): Observable<{ revocados: number }> {
+    return this.http.delete<{ revocados: number }>(`${this.publicBase(token)}/acompanante`);
   }
 
   agendaPublico(token: string): Observable<AgendaOut> {

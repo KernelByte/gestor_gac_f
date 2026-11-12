@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -19,9 +19,13 @@ interface VistaPublicaBasic {
   selector: 'app-public-visita',
   imports: [CommonModule, EntregaPortalComponent],
   template: `
-<div class="min-h-dvh flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors">
+<div class="raiz min-h-dvh flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors">
 
-  <!-- ───── HEADER (marca + tema) ───── -->
+  <!-- ───── HEADER (marca + tema) ─────
+       Solo mientras se verifica el enlace o si falla: con el portal cargado,
+       la cabecera del portal ya lleva congregación, tema y descarga, y dos
+       barras apiladas le quitaban ~4rem de pantalla a las tablas. -->
+  @if (!portalListo()) {
   <header class="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md">
     <div class="px-4 sm:px-5 h-16 flex items-center justify-between gap-3">
       <!-- Marca -->
@@ -62,6 +66,7 @@ interface VistaPublicaBasic {
       </button>
     </div>
   </header>
+  }
 
   <!-- Estado: cargando metadatos -->
   @if (loadingMeta()) {
@@ -89,24 +94,29 @@ interface VistaPublicaBasic {
   }
 
   <!-- Portal con todos los datos -->
-  @if (token && meta() && !loadingMeta() && !errorAcceso()) {
+  @if (portalListo()) {
     <div class="flex-1 flex flex-col min-h-0">
       <app-entrega-portal
         modo="publico"
         [token]="token"
+        [metadataInicial]="meta()"
         class="flex-1">
       </app-entrega-portal>
     </div>
 
-    <footer class="text-center py-4 px-4 text-xs text-slate-400 dark:text-slate-500 border-t border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900">
-      Sistema GAC &mdash; Gestión y Administración de Congregaciones
-    </footer>
   }
 
 </div>
   `,
   styles: [`
     :host { display: block; }
+    /* Pantalla de escritorio o tablet: el portal ocupa exactamente el alto de la
+       ventana y la tabla se estira para llenar lo que quede, sin calcular
+       alturas a mano. En móvil la página se desplaza como de costumbre. */
+    @media (min-width: 768px) and (min-height: 520px) {
+      .raiz { height: 100dvh; overflow: hidden; }
+      app-entrega-portal { display: flex; flex-direction: column; min-height: 0; }
+    }
   `],
 })
 export class PublicVisitaPage implements OnInit {
@@ -118,6 +128,7 @@ export class PublicVisitaPage implements OnInit {
   meta = signal<VistaPublicaBasic | null>(null);
   loadingMeta = signal(true);
   errorAcceso = signal<string | null>(null);
+  portalListo = computed(() => !!this.token && !!this.meta() && !this.loadingMeta() && !this.errorAcceso());
 
   ngOnInit() {
     this.token = this.route.snapshot.params['token'];
