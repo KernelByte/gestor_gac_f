@@ -15,6 +15,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { nombreMostrado } from '../../../core/utils/nombre.util';
 import { SalidaEditorComponent } from '../components/salida-editor.component';
 import { SemanaTipoComponent } from '../components/semana-tipo.component';
+import { MarcaZoomComponent } from '../components/marca-zoom.component';
 import { exportarElemento } from '../utils/territorio-export.util';
 import {
   FilaSemanaTipo, GrupoOpcion, ModoCrear, Periodo, PersonaRef, SalidaForm, SalidaProgramada, SalidasProgramaService,
@@ -38,7 +39,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
   standalone: true,
   selector: 'app-horarios-page',
   host: { class: 'tema-territorios', '(document:click)': 'alClicFuera($event)' },
-  imports: [CommonModule, PageHeaderComponent, SalidaEditorComponent, SemanaTipoComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
+  imports: [CommonModule, PageHeaderComponent, SalidaEditorComponent, SemanaTipoComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent, MarcaZoomComponent],
   template: `
     <div class="flex flex-col h-full min-h-0 gap-4">
       <app-page-header
@@ -192,7 +193,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                     <span class="min-w-0 flex-1 space-y-1">
                       @for (f of d.filas; track $index) {
                         <span class="block text-sm leading-snug text-slate-700 dark:text-slate-200">
-                          <b class="tabular-nums">{{ hora(f.hora_inicio) || 'Sin hora' }}</b> · {{ f.lugar || 'Sin lugar' }}
+                          <b class="tabular-nums">{{ hora(f.hora_inicio) || 'Sin hora' }}</b> · @if (f.por_zoom) { <app-marca-zoom class="align-middle" [tam]="14" /> Zoom } @else { {{ f.lugar || 'Sin lugar' }} }
                           <span class="text-slate-500 dark:text-slate-400"> · {{ f.capitanes.length ? nombresDe(f.capitanes) : 'Capitán: se turnan' }}</span>
                         </span>
                       }
@@ -232,9 +233,15 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                 </header>
                 <div class="xl:flex-1 xl:min-h-0 xl:overflow-y-auto pt-3 pb-1 space-y-3 scroll-fino">
                   @for (s of d.salidas; track s.id_horario) {
-                    <button type="button" (click)="editar(s)" [disabled]="!puedeEditar()" class="tarjeta">
+                    <button type="button" (click)="editar(s)" [disabled]="!puedeEditar()" class="tarjeta" [class.tarjeta--zoom]="s.por_zoom">
                       <span class="block text-base font-bold text-slate-900 dark:text-white tabular-nums">{{ hora(s.hora_inicio) || 'Sin hora' }}</span>
-                      <span class="block mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug">{{ s.lugar || 'Sin lugar' }}</span>
+                      @if (s.por_zoom) {
+                        <span class="mt-1.5 flex items-center gap-1.5 text-sm font-semibold text-blue-700 dark:text-blue-300 leading-snug">
+                          <app-marca-zoom [tam]="18" /> Zoom
+                        </span>
+                      } @else {
+                        <span class="block mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug">{{ s.lugar || 'Sin lugar' }}</span>
+                      }
                       @if (s.grupos.length) {
                         <span class="block mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ gruposCorto(s) }}</span>
                       }
@@ -248,13 +255,13 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                           @else { Sin capitán }
                         </span>
                       </span>
-                      @if (s.codigo_territorio) {
+                      @if (s.codigo_territorio && !s.por_zoom) {
                         <span class="mt-2.5 inline-flex items-center gap-1 max-w-full px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-900/25 text-emerald-800 dark:text-emerald-300 text-xs font-bold" [title]="s.nombre_territorio ?? ''">
                           <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
                           <span class="truncate">{{ s.codigo_territorio }}</span>
                         </span>
                       }
-                      @if (s.nombre_barrio) {
+                      @if (s.nombre_barrio && !s.por_zoom) {
                         <span class="mt-1.5 block text-xs text-slate-500 dark:text-slate-400">Barrio {{ s.nombre_barrio }}</span>
                       }
                       @if (plan(s); as p) {
@@ -297,10 +304,15 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                   <div class="flex-1 min-h-0 overflow-y-auto px-1.5 pb-1.5 space-y-1 scroll-fino">
                     @for (s of c.salidas; track s.id_horario) {
                       <button type="button" (click)="editar(s)" [disabled]="!puedeEditar()" [title]="detalle(s)"
-                        class="w-full text-left px-2 py-1 rounded-md text-xs leading-tight bg-emerald-50/80 dark:bg-emerald-900/20 enabled:hover:bg-emerald-100 dark:enabled:hover:bg-emerald-900/40 transition-colors"
+                        class="w-full text-left px-2 py-1 rounded-md text-xs leading-tight transition-colors"
+                        [class]="s.por_zoom ? 'bg-blue-50 dark:bg-blue-900/25 enabled:hover:bg-blue-100 dark:enabled:hover:bg-blue-900/40' : 'bg-emerald-50/80 dark:bg-emerald-900/20 enabled:hover:bg-emerald-100 dark:enabled:hover:bg-emerald-900/40'"
                         [class.ring-1]="!s.capitanes.length" [class.ring-amber-400]="!s.capitanes.length">
                         <span class="font-bold text-slate-900 dark:text-white tabular-nums">{{ horaCorta(s.hora_inicio) }}</span>
-                        <span class="text-slate-700 dark:text-slate-200"> {{ s.lugar || 'Sin lugar' }}</span>
+                        @if (s.por_zoom) {
+                          <span class="inline-flex items-center gap-1 align-middle text-blue-800 dark:text-blue-200 font-semibold"> <app-marca-zoom [tam]="13" />Zoom</span>
+                        } @else {
+                          <span class="text-slate-700 dark:text-slate-200"> {{ s.lugar || 'Sin lugar' }}</span>
+                        }
                       </button>
                     }
                   </div>
@@ -318,8 +330,12 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                     @for (s of c.salidas; track s.id_horario) {
                       <button type="button" (click)="editar(s)" [disabled]="!puedeEditar()" class="tarjeta">
                         <span class="text-base font-bold text-slate-900 dark:text-white tabular-nums">{{ hora(s.hora_inicio) }}</span>
-                        <span class="text-sm font-bold text-slate-800 dark:text-slate-100"> · {{ s.lugar || 'Sin lugar' }}</span>
-                        <span class="block mt-1 text-sm text-slate-600 dark:text-slate-300">{{ capitanes(s) || 'Sin capitán' }}@if (s.codigo_territorio) { · {{ s.codigo_territorio }} }</span>
+                        @if (s.por_zoom) {
+                          <span class="inline-flex items-center gap-1.5 align-middle ml-1.5 text-sm font-bold text-blue-700 dark:text-blue-300"><app-marca-zoom [tam]="16" />Zoom</span>
+                        } @else {
+                          <span class="text-sm font-bold text-slate-800 dark:text-slate-100"> · {{ s.lugar || 'Sin lugar' }}</span>
+                        }
+                        <span class="block mt-1 text-sm text-slate-600 dark:text-slate-300">{{ capitanes(s) || 'Sin capitán' }}@if (s.codigo_territorio && !s.por_zoom) { · {{ s.codigo_territorio }} }</span>
                         @if (plan(s); as p) { <span class="block mt-1 text-xs font-semibold text-slate-600 dark:text-slate-300">{{ p.texto }}</span> }
                       </button>
                     }
@@ -361,7 +377,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                     <td style="padding:10px 12px;font-weight:700;white-space:nowrap;vertical-align:top;">{{ hora(s.hora_inicio) }}</td>
                     <td style="padding:10px 12px;vertical-align:top;">{{ s.lugar }}@if (s.grupos.length) {<div style="font-size:12px;color:#475569;">{{ gruposCorto(s) }}</div>}</td>
                     <td style="padding:10px 12px;vertical-align:top;">{{ capitanes(s) }}</td>
-                    @if (hayTerritorios()) { <td style="padding:10px 12px;vertical-align:top;font-weight:700;">{{ s.codigo_territorio ?? '' }}</td> }
+                    @if (hayTerritorios()) { <td style="padding:10px 12px;vertical-align:top;font-weight:700;">{{ s.por_zoom ? '' : (s.codigo_territorio ?? '') }}</td> }
                   </tr>
                 }
               }
@@ -383,6 +399,8 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
         [barrios]="barrios()"
         [puntosSalida]="puntosSalida()"
         [capitanesHabilitados]="capitanesHabilitados()"
+        [usaZoom]="usaZoom()"
+        [tieneEnlaceZoom]="tieneEnlaceZoom()"
         [puedeEliminar]="!!e.salida"
         [guardando]="guardando()"
         (guardar)="guardar($event)"
@@ -427,6 +445,8 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
         [barrios]="barrios()"
         [puntosSalida]="puntosSalida()"
         [capitanesHabilitados]="capitanesHabilitados()"
+        [usaZoom]="usaZoom()"
+        [tieneEnlaceZoom]="tieneEnlaceZoom()"
         (cerrar)="cerrarSemanaTipo($event)" />
     }
   `,
@@ -475,6 +495,11 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
     /* Separa "quién" de "dónde" con una línea tenue */
     .tarjeta__quien { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgb(241 245 249); }
     :host-context(.dark) .tarjeta__quien { border-top-color: rgb(51 65 85 / 0.7); }
+    /* Por Zoom: un filete azul tenue la distingue de las salidas a la calle sin gritar */
+    .tarjeta--zoom { border-color: rgb(191 219 254); background: rgb(239 246 255); }
+    .tarjeta--zoom:enabled:hover { border-color: rgb(147 197 253); }
+    :host-context(.dark) .tarjeta--zoom { border-color: rgb(30 64 175 / 0.55); background: rgb(23 37 84 / 0.35); }
+    :host-context(.dark) .tarjeta--zoom:enabled:hover { border-color: rgb(59 130 246 / 0.7); }
     .tarjeta:focus-visible { outline: 2px solid rgb(16 185 129); outline-offset: 2px; }
     :host-context(.dark) .tarjeta { background: rgb(15 23 42); border-color: rgb(30 41 59); box-shadow: none; }
     :host-context(.dark) .tarjeta:enabled:hover { border-color: rgb(16 185 129 / 0.6); }
@@ -526,10 +551,10 @@ export class HorariosPage {
   private authStore = inject(AuthStore);
   private congregacionCtx = inject(CongregacionContextService);
 
-  /** Armar o cambiar el programa exige 'territorios.editar'. */
+  /** Armar o cambiar el programa exige 'territorios.horarios_editar'. */
   puedeEditar = computed(() => {
     this.authStore.user();
-    return this.authStore.hasPermission('territorios.editar');
+    return this.authStore.hasPermission('territorios.horarios_editar');
   });
 
   readonly hora = horaLegible;
@@ -589,6 +614,9 @@ export class HorariosPage {
 
   /** La congregación de los datos que se ven (la da el backend). */
   nombreCongregacion = signal('');
+  /** La congregación usa videoconferencia: el editor ofrece «Por Zoom». */
+  usaZoom = signal(false);
+  tieneEnlaceZoom = signal(false);
   /** Administrador con «Todas las congregaciones»: el programa es por congregación. */
   sinCongregacion = computed(() => this.authStore.isAdministrador() && !this.congregacionCtx.effectiveCongregacionId());
 
@@ -624,7 +652,13 @@ export class HorariosPage {
     this.fijasListas.set(false);
     if (this.sinCongregacion()) { this.loading.set(false); return; }
     this.svc.periodo().subscribe({
-      next: (p) => { this.periodo.set(p.periodo); this.nombreCongregacion.set(p.nombre_congregacion ?? ''); this.cargar(); },
+      next: (p) => {
+        this.periodo.set(p.periodo);
+        this.nombreCongregacion.set(p.nombre_congregacion ?? '');
+        this.usaZoom.set(!!p.usa_zoom);
+        this.tieneEnlaceZoom.set(!!p.tiene_enlace_zoom);
+        this.cargar();
+      },
       error: () => this.cargar(),
     });
     this.svc.semanaTipo().subscribe({
@@ -683,6 +717,8 @@ export class HorariosPage {
       return { tipo: 'hecho', texto: `✓ Predicaron ${textoManzanas(reg.numeros)}${reg.hasta ? ' · hasta la ' + reg.hasta : ''}`, aviso: null };
     }
     if (s.sin_salida) return { tipo: 'falta', texto: 'No se salió', aviso: null };
+    // Por Zoom no se predica en el territorio: no hay manzanas que tocan ni nada que registrar.
+    if (s.por_zoom) return null;
     if (s.fecha_programada < this.hoyIso) return { tipo: 'falta', texto: 'Sin registrar lo que se predicó', aviso: null };
     const g = this.sugerencias()[String(s.id_horario)];
     if (!g || !g.manzanas.length) return null;
@@ -743,7 +779,7 @@ export class HorariosPage {
   horaCorta(h?: string | null): string { return horaLegible(h).replace(/ [ap]\. m\./, ''); }
 
   detalle(s: SalidaProgramada): string {
-    return [horaLegible(s.hora_inicio), s.lugar, this.capitanes(s) || 'Sin capitán', s.codigo_territorio].filter(Boolean).join(' · ');
+    return [horaLegible(s.hora_inicio), s.por_zoom ? 'Por Zoom' : s.lugar, this.capitanes(s) || 'Sin capitán', s.por_zoom ? null : s.codigo_territorio].filter(Boolean).join(' · ');
   }
 
   /** "Grupos 1, 3 y 5" cuando se llaman "Grupo # N"; si no, los nombres tal cual. */
@@ -890,7 +926,7 @@ export class HorariosPage {
     const fecha = dia ?? (this.esActual() ? this.hoyIso : aIso(desde));
     this.editando.set({
       salida: null,
-      form: { fecha_programada: fecha, hora_inicio: null, lugar: null, notas: null, id_territorio: null, id_sector: null, id_punto_salida: null, capitanes: [], grupos: [] },
+      form: { fecha_programada: fecha, hora_inicio: null, lugar: null, notas: null, por_zoom: false, id_territorio: null, id_sector: null, id_punto_salida: null, capitanes: [], grupos: [] },
     });
   }
 
@@ -900,7 +936,7 @@ export class HorariosPage {
       salida: s,
       form: {
         fecha_programada: s.fecha_programada, hora_inicio: s.hora_inicio ?? null, lugar: s.lugar ?? null, notas: s.notas ?? null,
-        id_territorio: s.id_territorio ?? null, id_sector: s.id_sector ?? null, id_punto_salida: s.id_punto_salida ?? null,
+        por_zoom: !!s.por_zoom, id_territorio: s.id_territorio ?? null, id_sector: s.id_sector ?? null, id_punto_salida: s.id_punto_salida ?? null,
         capitanes: s.capitanes.map(c => c.id_publicador), grupos: s.grupos.map(g => g.id_grupo),
       },
     });

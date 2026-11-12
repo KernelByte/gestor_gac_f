@@ -1,11 +1,13 @@
 import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { TimePickerComponent } from '../../../shared/components/time-picker/time-picker.component';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import { DIAS, GrupoOpcion, PersonaRef, SalidaForm } from '../services/salidas-programa.service';
 import { PuntoSalidaOpcion } from '../models/territorio.model';
+import { MarcaZoomComponent } from './marca-zoom.component';
 
 
 /**
@@ -15,7 +17,7 @@ import { PuntoSalidaOpcion } from '../models/territorio.model';
 @Component({
   standalone: true,
   selector: 'app-salida-editor',
-  imports: [CommonModule, FormsModule, ModalComponent, SelectPickerComponent, TimePickerComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ModalComponent, SelectPickerComponent, TimePickerComponent, MarcaZoomComponent],
   template: `
     <app-modal [open]="true" variant="drawer" size="md" [title]="titulo" [subtitle]="subtitulo"
                [hasFooter]="true" (openChange)="$event || cancelar.emit()">
@@ -46,13 +48,32 @@ import { PuntoSalidaOpcion } from '../models/territorio.model';
           </div>
 
           <!-- Dónde -->
-          <!-- Un solo campo: el lugar de reunión ES el punto de salida; si no es un punto marcado (Zoom, una casa), se escribe -->
+          <!-- Un solo campo: el lugar de reunión ES el punto de salida; si no es un punto marcado (una casa), se escribe -->
           <div>
-            <span class="form-label">Lugar de reunión</span>
-            @if (!otroLugar() && opcionesPunto().length) {
+            <span class="form-label" id="se-lugar-etq">Lugar de reunión</span>
+            @if (usaZoom || form.por_zoom) {
+              <div class="segmented w-full mb-2.5" role="radiogroup" aria-labelledby="se-lugar-etq">
+                <button type="button" role="radio" class="segmented-item" [attr.aria-checked]="!form.por_zoom" (click)="ponerZoom(false)">En persona</button>
+                <button type="button" role="radio" class="segmented-item" [attr.aria-checked]="!!form.por_zoom" (click)="ponerZoom(true)">
+                  <app-marca-zoom [tam]="16" />
+                  Por Zoom
+                </button>
+              </div>
+            }
+            @if (form.por_zoom) {
+              <div class="zoom-nota rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 px-3.5 py-3">
+                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Se reúnen por Zoom</p>
+                <p class="mt-0.5 text-sm text-slate-600 dark:text-slate-300">No se maneja territorio: no se le sugieren manzanas ni queda pendiente de registrar. En la app, los hermanos verán un botón para entrar.</p>
+                @if (!tieneEnlaceZoom) {
+                  <p class="mt-2 text-sm font-semibold text-amber-800 dark:text-amber-300">
+                    Falta el enlace de Zoom. <a routerLink="/configuracion" fragment="cfg-reuniones" class="btn-link">Póngalo en Configuración</a>.
+                  </p>
+                }
+              </div>
+            } @else if (!otroLugar() && opcionesPunto().length) {
               <app-select-picker colorScheme="emerald" ariaLabel="Lugar de reunión" [(ngModel)]="form.id_punto_salida"
                 (ngModelChange)="alElegirPunto($event)" [options]="opcionesPunto()" placeholder="Elija el punto de salida" />
-              <button type="button" (click)="usarOtroLugar()" class="mt-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:underline">Es otro lugar (Zoom, una casa…)</button>
+              <button type="button" (click)="usarOtroLugar()" class="mt-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:underline">{{ usaZoom ? 'Es otro lugar (una casa…)' : 'Es otro lugar (Zoom, una casa…)' }}</button>
             } @else {
               <input id="se-lugar" type="text" [(ngModel)]="form.lugar" maxlength="200" placeholder="Ej.: Zoom, Familia Sierra, Salón del Reino" class="form-control" />
               @if (opcionesPunto().length) {
@@ -147,7 +168,7 @@ import { PuntoSalidaOpcion } from '../models/territorio.model';
           </div>
 
           <!-- Dónde se predica: primero el barrio; de aquí salen las manzanas que se le sugieren a la salida -->
-          <div>
+          <div [hidden]="form.por_zoom">
             <span class="form-label">Barrio donde se predica <span class="opc">(opcional)</span></span>
             <app-select-picker colorScheme="emerald" ariaLabel="Barrio" [(ngModel)]="form.id_sector"
               [options]="opcionesBarrio()" placeholder="Cualquiera: sigue el recorrido" />
@@ -179,11 +200,12 @@ import { PuntoSalidaOpcion } from '../models/territorio.model';
   `,
   styles: [`
     .opc { font-weight: 500; color: rgb(148 163 184); }
+    .zoom-nota { animation: chip 180ms cubic-bezier(0.23, 1, 0.32, 1); }
     .lista-cap { transform-origin: top center; animation: lista 140ms cubic-bezier(0.23, 1, 0.32, 1); }
     .chip-cap { animation: chip 160ms cubic-bezier(0.23, 1, 0.32, 1); }
     @keyframes lista { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
     @keyframes chip { from { opacity: 0; transform: scale(0.92); } }
-    @media (prefers-reduced-motion: reduce) { .lista-cap, .chip-cap { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .lista-cap, .chip-cap, .zoom-nota { animation: none; } }
   `],
 })
 export class SalidaEditorComponent implements OnInit {
@@ -205,6 +227,10 @@ export class SalidaEditorComponent implements OnInit {
   opcionesPunto = computed<PickerOption[]>(() =>
     this.puntosSig().map(p => ({ value: p.id_punto, label: p.nombre, hint: `Tarjeta ${p.codigo}` })));
   opcionesBarrio = computed<PickerOption[]>(() => this.barriosSig().map(b => ({ value: b.id_sector, label: b.nombre })));
+  /** La congregación usa videoconferencia (Configuración): se ofrece «Por Zoom». */
+  @Input() usaZoom = false;
+  /** Ya hay enlace de Zoom para las salidas; si no, se avisa dónde ponerlo. */
+  @Input() tieneEnlaceZoom = true;
   @Input() puedeEliminar = false;
   @Input() guardando = false;
   @Output() guardar = new EventEmitter<SalidaForm>();
@@ -275,9 +301,23 @@ export class SalidaEditorComponent implements OnInit {
   usarOtroLugar(): void { this.form.id_punto_salida = null; this.otroLugar.set(true); }
   usarPunto(): void { this.form.lugar = null; this.otroLugar.set(false); }
 
+  /** Por Zoom no hay punto de salida ni barrio: se quitan al elegirlo (el servidor hace lo mismo). */
+  ponerZoom(zoom: boolean): void {
+    if (!!this.form.por_zoom === zoom) return;
+    this.form.por_zoom = zoom;
+    if (zoom) {
+      this.form.id_punto_salida = null;
+      this.form.id_sector = null;
+      this.form.id_territorio = null;
+      this.form.lugar = null;
+    }
+    this.otroLugar.set(false);
+  }
+
   ngOnInit(): void {
     this.form = { ...this.inicial, grupos: [...this.inicial.grupos], capitanes: [...this.inicial.capitanes] };
-    this.otroLugar.set(!this.form.id_punto_salida && !!this.form.lugar?.trim());
+    this.form.por_zoom = !!this.form.por_zoom;
+    this.otroLugar.set(!this.form.por_zoom && !this.form.id_punto_salida && !!this.form.lugar?.trim());
     this.capitanes.set([...this.capitanesIniciales]);
   }
 
@@ -318,7 +358,7 @@ export class SalidaEditorComponent implements OnInit {
       ...this.form,
       hora_inicio: this.form.hora_inicio || null,
       // Con punto de salida el lugar es su nombre (el servidor lo pone); si no, el texto escrito.
-      lugar: this.form.id_punto_salida ? null : (this.form.lugar?.trim() || null),
+      lugar: this.form.id_punto_salida || this.form.por_zoom ? null : (this.form.lugar?.trim() || null),
       notas: this.form.notas?.trim() || null,
       capitanes: this.capitanes().map(c => c.id_publicador),
     });

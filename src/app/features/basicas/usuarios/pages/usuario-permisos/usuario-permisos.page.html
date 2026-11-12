@@ -66,7 +66,7 @@
          </div>
 
          <nav class="mt-4 flex flex-col gap-0.5">
-            <button type="button" *ngFor="let cat of filteredCategorias()" class="ind-btn" [ngClass]="'zona-' + cat.tema"
+            <button type="button" *ngFor="let cat of filteredCategorias(); trackBy: trackCat" class="ind-btn" [ngClass]="'zona-' + cat.tema"
                [class.on]="seccionActiva() === cat.ancla" (click)="irA(cat)"
                [attr.aria-current]="seccionActiva() === cat.ancla ? 'true' : null">
                <span class="ic" [ngClass]="'tono-' + cat.tema" [innerHTML]="cat.icono"></span>
@@ -88,7 +88,7 @@
 
          <!-- Tira de módulos (tablet y móvil) -->
          <nav class="chips shrink-0" aria-label="Módulos">
-            <button type="button" *ngFor="let cat of filteredCategorias()" class="chip" [ngClass]="'zona-' + cat.tema"
+            <button type="button" *ngFor="let cat of filteredCategorias(); trackBy: trackCat" class="chip" [ngClass]="'zona-' + cat.tema"
                [class.on]="seccionActiva() === cat.ancla" (click)="irA(cat)">
                {{ cat.categoria }} <b>{{ getAssignedCount(cat) }}/{{ cat.contables.length }}</b>
             </button>
@@ -96,7 +96,7 @@
 
          <div #scroller class="flex-1 min-h-0 overflow-y-auto simple-scrollbar relative" (scroll)="onScroll()">
 
-            <section *ngFor="let cat of filteredCategorias()" class="seccion panel" [ngClass]="'zona-' + cat.tema" data-seccion [id]="cat.ancla"
+            <section *ngFor="let cat of filteredCategorias(); trackBy: trackCat" class="seccion panel" [ngClass]="'zona-' + cat.tema" data-seccion [id]="cat.ancla"
                data-testid="bloque-categoria" [attr.data-categoria]="cat.categoria" data-expandida="true">
 
                <div class="sec-cab" data-testid="cabecera-categoria">
@@ -117,7 +117,7 @@
 
                <div class="filas">
                   <!-- Pantallas del módulo -->
-                  <div *ngFor="let pan of cat.pantallas" class="fila" data-testid="bloque-pantalla" [attr.data-pantalla]="pan.nombre"
+                  <div *ngFor="let pan of cat.pantallas; trackBy: trackPan" class="fila" data-testid="bloque-pantalla" [attr.data-pantalla]="pan.nombre"
                      [class.con-seg]="!!pan.editar" [class.on]="nivel(pan) !== 'ninguno'"
                      [class.clicable]="!pan.editar && !!pan.ver && !estaBloqueado(pan.ver)"
                      (click)="!pan.editar && pan.ver && togglePermiso(pan.ver, pan)">
@@ -170,23 +170,23 @@
                         (click)="togglePermiso(pan.ver, pan); $event.stopPropagation()"></button>
 
                      <!-- Alcance: solo tiene sentido si puede entrar en la pantalla -->
-                     <div *ngIf="pan.alcance && pan.ver?.asignado" @revealScope class="alcance"
+                     <div *ngIf="pan.alcance && alcanceVisible(pan)" @revealScope class="alcance"
                         data-testid="panel-alcance" [attr.data-pantalla]="pan.nombre" (click)="$event.stopPropagation()">
-                        <span class="alcance-l" [id]="'alc-' + pan.alcance.codigo">Ve los datos de:</span>
+                        <span class="alcance-l" [id]="'alc-' + pan.alcance.codigo">{{ textosAlcance(pan).etiqueta }}</span>
                         <div class="segmented" role="radiogroup" [attr.aria-labelledby]="'alc-' + pan.alcance.codigo">
                            <button type="button" role="radio" class="segmented-item" data-testid="alcance-grupo"
                               [class.is-active]="!pan.alcance.asignado" [attr.aria-checked]="!pan.alcance.asignado"
-                              (click)="setAlcance(pan, false)">Solo su grupo</button>
+                              (click)="setAlcance(pan, false)">{{ textosAlcance(pan).propio }}</button>
                            <button type="button" role="radio" class="segmented-item" data-testid="alcance-congregacion"
                               [class.is-active]="pan.alcance.asignado" [attr.aria-checked]="pan.alcance.asignado"
                               [disabled]="estaBloqueado(pan.alcance)"
-                              (click)="setAlcance(pan, true)">Toda la congregación</button>
+                              (click)="setAlcance(pan, true)">{{ textosAlcance(pan).todos }}</button>
                         </div>
                      </div>
                   </div>
 
                   <!-- Permisos sueltos (módulos sin reparto por pantalla) -->
-                  <div *ngFor="let p of cat.sueltos" class="fila"
+                  <div *ngFor="let p of cat.sueltos; trackBy: trackPerm" class="fila"
                      [class.on]="p.asignado" [class.clicable]="!estaBloqueado(p)" (click)="togglePermiso(p)">
                      <div class="fila-txt">
                         <div class="fila-t">

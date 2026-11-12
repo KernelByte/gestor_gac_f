@@ -214,6 +214,25 @@
                               Pegue la invitación completa, con la contraseña incluida. En la app, los publicadores verán un botón para unirse con su nombre ya escrito.
                            </ng-template>
                         </p>
+
+                        <label for="cfg-enlace-pred" [class]="cls.etiqueta" class="block !mt-5">Enlace para las salidas a predicar <span class="font-medium text-slate-400 dark:text-slate-500">(opcional)</span></label>
+                        <input id="cfg-enlace-pred" [(ngModel)]="config.enlace_zoom_predicacion" [readonly]="!canEdit()" type="url"
+                               autocomplete="off" spellcheck="false" inputmode="url"
+                               [attr.aria-invalid]="enlacePredicacionInvalido()"
+                               aria-describedby="cfg-enlace-pred-ayuda"
+                               [class]="cls.campo"
+                               [ngClass]="enlacePredicacionInvalido() ? '!border-red-500 focus:!ring-red-500/15' : ''"
+                               placeholder="Si lo deja vacío, se usa el de las reuniones">
+                        <p id="cfg-enlace-pred-ayuda" class="text-sm leading-relaxed"
+                           [ngClass]="enlacePredicacionInvalido() ? 'text-red-600 dark:text-red-400 font-medium' : 'text-slate-500 dark:text-slate-400'"
+                           [attr.role]="enlacePredicacionInvalido() ? 'alert' : null">
+                           <ng-container *ngIf="enlacePredicacionInvalido(); else ayudaEnlacePred">
+                              El enlace debe empezar por https:// para que la app pueda abrirlo.
+                           </ng-container>
+                           <ng-template #ayudaEnlacePred>
+                              El de las consideraciones antes de predicar. Las salidas marcadas «Por Zoom» en el Programa de salidas mostrarán en la app un botón para entrar.
+                           </ng-template>
+                        </p>
                      </div>
                   </div>
                </div>

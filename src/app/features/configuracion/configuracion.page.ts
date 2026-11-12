@@ -37,6 +37,8 @@ interface Configuracion {
    correo_congregacion?: string | null;
    numero_congregacion?: string | null;
    enlace_zoom?: string | null;
+   /** Enlace de las salidas a predicar por Zoom; vacío = el de las reuniones. */
+   enlace_zoom_predicacion?: string | null;
    latitud_salon?: number | null;
    longitud_salon?: number | null;
    formato_nombre_visible?: FormatoNombre;
@@ -152,6 +154,8 @@ export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
 
    /** Viene del aviso de Inicio ("¿Cambia su horario en enero?"): abrir el formulario. */
    readonly abrirCambioHorario = inject(ActivatedRoute).snapshot.queryParamMap.has('cambio-horario');
+   /** Viene de otra pantalla a una sección concreta (p. ej. el aviso de enlace de Zoom en Programa de salidas). */
+   private readonly seccionInicial = inject(ActivatedRoute).snapshot.fragment;
    private API_URL = `${environment.apiUrl}/configuracion/`;
    private PERIODOS_URL = `${environment.apiUrl}/periodos/?limit=24`;
 
@@ -172,6 +176,7 @@ export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
       correo_congregacion:       null,
       numero_congregacion:       null,
       enlace_zoom:               null,
+      enlace_zoom_predicacion:   null,
       latitud_salon:             null,
       longitud_salon:            null,
    };
@@ -362,6 +367,7 @@ export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
             this.config = data;
             this.originalConfig = { ...data };
             this.loading.set(false);
+            if (this.seccionInicial) setTimeout(() => this.irA(this.seccionInicial!), 60);
          },
          error: (err) => {
             console.error('Error cargando configuración', err);
@@ -372,8 +378,8 @@ export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
 
    save() {
       if (!this.canEdit()) return;
-      if (this.enlaceZoomInvalido()) {
-         this.showNotification('Revise el enlace de la reunión: debe empezar por https://', 'error');
+      if (this.enlaceZoomInvalido() || this.enlacePredicacionInvalido()) {
+         this.showNotification('Revise los enlaces de videoconferencia: deben empezar por https://', 'error');
          this.irA('cfg-reuniones');
          return;
       }
@@ -390,7 +396,8 @@ export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
          ...camposHorarioCambiados(this.config, this.originalConfig),
          correo_congregacion:        this.config.correo_congregacion       || null,
          numero_congregacion:        this.config.numero_congregacion       || null,
-         enlace_zoom:                this.enlaceParaGuardar(),
+         enlace_zoom:                this.enlaceParaGuardar('enlace_zoom'),
+         enlace_zoom_predicacion:    this.enlaceParaGuardar('enlace_zoom_predicacion'),
          latitud_salon:              this.config.latitud_salon  ?? null,
          longitud_salon:             this.config.longitud_salon ?? null,
          formato_nombre_visible:     this.config.formato_nombre_visible    || 'completo',
@@ -471,6 +478,7 @@ export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
          (this.config.correo_congregacion       || '') !== (this.originalConfig.correo_congregacion       || '') ||
          (this.config.numero_congregacion       || '') !== (this.originalConfig.numero_congregacion       || '') ||
          (this.config.enlace_zoom               || '') !== (this.originalConfig.enlace_zoom               || '') ||
+         (this.config.enlace_zoom_predicacion   || '') !== (this.originalConfig.enlace_zoom_predicacion   || '') ||
          (this.config.latitud_salon  ?? null) !== (this.originalConfig.latitud_salon  ?? null) ||
          (this.config.longitud_salon ?? null) !== (this.originalConfig.longitud_salon ?? null) ||
          // Sin esto, elegir una regla de nombre no habilitaba Guardar: la
@@ -490,15 +498,25 @@ export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
       // Con la videoconferencia apagada el campo está oculto: un valor viejo
       // inválido no puede bloquear el guardado sin que se vea por qué.
       if (!this.config.usa_zoom) return false;
-      const v = this.config.enlace_zoom?.trim();
+      return this.enlaceMalo(this.config.enlace_zoom);
+   }
+
+   /** El enlace de las salidas a predicar: mismas reglas que el de las reuniones. */
+   enlacePredicacionInvalido(): boolean {
+      if (!this.config.usa_zoom) return false;
+      return this.enlaceMalo(this.config.enlace_zoom_predicacion);
+   }
+
+   private enlaceMalo(valor?: string | null): boolean {
+      const v = valor?.trim();
       if (!v) return false;              // vacío = no configurado, es válido
       return !/^https?:\/\/.+/i.test(v);
    }
 
    /** Con la videoconferencia apagada y un enlace sin https, se conserva el guardado: el servidor lo rechazaría. */
-   private enlaceParaGuardar(): string | null {
-      const v = this.config.enlace_zoom?.trim() || null;
-      if (v && !/^https?:\/\/.+/i.test(v)) return this.originalConfig?.enlace_zoom?.trim() || null;
+   private enlaceParaGuardar(campo: 'enlace_zoom' | 'enlace_zoom_predicacion'): string | null {
+      const v = this.config[campo]?.trim() || null;
+      if (v && !/^https?:\/\/.+/i.test(v)) return this.originalConfig?.[campo]?.trim() || null;
       return v;
    }
 

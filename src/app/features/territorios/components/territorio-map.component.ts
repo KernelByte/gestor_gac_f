@@ -22,6 +22,9 @@ import * as L from 'leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import { geoPolygon, geoArea, geoCircle } from '../utils/geo-math.util';
 import { crearCapaBasePropia, callesDelMapa } from '../utils/mapa-base-propio';
+import { EditorForma } from './editor-forma';
+import { IconoPuntoPickerComponent } from './icono-punto-picker.component';
+import { colorTipoPunto, iconoPunto, letraTipoPunto, svgIconoPunto } from '../utils/iconos-punto';
 
 import { GeoJSONFeatureCollection, GeoJSONFeature, GeoJSONGeometry } from '../models/territorio.model';
 import { TerritoriosService } from '../services/territorios.service';
@@ -32,7 +35,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 @Component({
   standalone: true,
   selector: 'app-territorio-map',
-  imports: [CommonModule, FormsModule, SelectPickerComponent],
+  imports: [CommonModule, FormsModule, SelectPickerComponent, IconoPuntoPickerComponent],
   template: `
     <!-- Wrapper with dynamic height -->
     <div class="relative w-full overflow-visible" [style.height]="height">
@@ -168,7 +171,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
               }
             </button>
           }
-          @if (!soloLimite) {
+          @if (!soloLimite && !(panelExterno && editandoForma())) {
           <div class="gac-float flex items-center gap-2.5 rounded-xl pl-2 pr-3.5 py-2">
             <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold tabular-nums"
                  [class]="layerMode() === 'territorio' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' : layerMode() === 'manzana' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'">
@@ -252,20 +255,39 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
           }
         </div>
 
-        <!-- ── Panel externo: terminar de ajustar una figura ── -->
-        @if (panelExterno && (editandoForma() || editMode())) {
-          <div class="absolute top-16 left-1/2 -translate-x-1/2 z-36 w-[min(94%,520px)] gac-float rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
-            <p class="flex-1 min-w-[180px] text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug">
-              {{ editandoForma() && editTipo === 'punto' ? 'Arrastre el punto al lugar correcto.' : 'Arrastre las esquinas para corregir la forma.' }}
-            </p>
-            <div class="flex gap-2">
-              @if (editandoForma()) {
-                <button (click)="terminarEdicion(false)" class="px-4 h-10 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors active:scale-[0.97]">Cancelar</button>
-                <button (click)="terminarEdicion(true)" class="btn-primary">Listo, guardar</button>
-              } @else {
-                <button (click)="map?.pm?.disableGlobalEditMode()" class="btn-primary">Listo</button>
-              }
+        <!-- ── Panel externo: editar la figura elegida (manzana o punto) ── -->
+        @if (panelExterno && editandoForma()) {
+          <div class="absolute top-16 left-1/2 -translate-x-1/2 z-36 w-[min(94%,560px)] gac-float rounded-2xl p-3 sm:p-4 space-y-3" role="region" aria-label="Editar en el mapa">
+            <div class="flex items-start gap-3">
+              <span class="min-w-9 h-9 px-1.5 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0"
+                    [class]="editTipo === 'punto' ? 'bg-rose-600' : 'bg-blue-600'">{{ editTipo === 'punto' ? 'P' : numeroElegido() }}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-base font-bold text-slate-900 dark:text-white leading-tight">{{ tituloEdicion() }}</p>
+                @if (avisoPendiente()) {
+                  <p class="mt-0.5 text-sm font-semibold text-amber-700 dark:text-amber-300" role="alert">Primero guarde o cancele estos cambios.</p>
+                } @else if (editTipo === 'punto') {
+                  <p class="mt-0.5 text-sm text-slate-600 dark:text-slate-300">Arrastre el punto al lugar correcto.</p>
+                } @else {
+                  <p class="mt-0.5 text-sm text-slate-600 dark:text-slate-300">Arrástrela para moverla, use las esquinas para cambiar la forma o el círculo de arriba para girarla.</p>
+                }
+              </div>
             </div>
+            <div class="flex items-center gap-2">
+              @if (editTipo === 'manzana') {
+                <button type="button" (click)="deshacerEdicion()" [disabled]="!puedeDeshacer()" class="btn-ghost" title="Deshacer (Ctrl+Z)">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+                  Deshacer
+                </button>
+              }
+              <span class="flex-1"></span>
+              <button type="button" (click)="cancelarEdicion()" class="btn-secondary">{{ hayCambios() ? 'Cancelar' : 'Cerrar' }}</button>
+              <button type="button" (click)="guardarEdicion()" [disabled]="!hayCambios()" class="btn-primary">Guardar</button>
+            </div>
+          </div>
+        } @else if (panelExterno && editMode()) {
+          <div class="absolute top-16 left-1/2 -translate-x-1/2 z-36 w-[min(94%,520px)] gac-float rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
+            <p class="flex-1 min-w-[180px] text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug">Arrastre las esquinas para corregir el límite.</p>
+            <button type="button" (click)="map?.pm?.disableGlobalEditMode()" class="btn-primary">Listo</button>
           </div>
         }
 
@@ -338,7 +360,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
         <!-- ── Prompt: Datos del punto ── -->
         @if (showPuntoPrompt()) {
           <div class="absolute inset-0 z-40 flex items-center justify-center">
-            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-72 shadow-2xl overflow-hidden">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-[min(92vw,22rem)] max-h-[calc(100%-2rem)] overflow-y-auto shadow-2xl">
               <div class="p-4 border-b border-slate-100 dark:border-slate-700/50 bg-rose-50/50 dark:bg-rose-900/20">
                 <h4 class="text-sm font-bold text-slate-800 dark:text-white">Nuevo punto</h4>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Describe este lugar en el mapa</p>
@@ -360,6 +382,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
                   <app-select-picker colorScheme="rose" ariaLabel="Tipo de punto" [(ngModel)]="pendingPuntoTipo"
                     [options]="opcionesTipoPunto" [clearable]="false" [searchable]="false" />
                 </div>
+                <app-icono-punto-picker [(valor)]="pendingPuntoIcono" [tipo]="pendingPuntoTipo" />
                 <div>
                   <label class="form-label">Notas (opcional)</label>
                   <input
@@ -555,7 +578,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   /** Emite { geojson: GeoJSON Polygon, numero: string } cuando se confirma una manzana dibujada */
   @Output() manzanaDrawn = new EventEmitter<{ geojson: any; numero: string; renumerarTodo?: boolean }>();
   /** Emite datos del punto cuando se confirma su creación */
-  @Output() puntoPlaced = new EventEmitter<{ geojson: any; nombre: string; tipo: string; notas: string }>();
+  @Output() puntoPlaced = new EventEmitter<{ geojson: any; nombre: string; tipo: string; notas: string; icono: string | null }>();
   /** Calles visibles (MultiLineString) con las que el padre pide las manzanas propuestas. */
   @Output() detectar = new EventEmitter<any>();
   @Output() guardarPropuestas = new EventEmitter<any[]>();
@@ -645,6 +668,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   pendingPuntoNombre = '';
   pendingPuntoTipo = 'Salida';
   pendingPuntoNotas = '';
+  pendingPuntoIcono: string | null = null;
 
   geocodeQueryStr = '';
 
@@ -652,6 +676,15 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   seleccion = signal<{ tipo: 'manzana' | 'punto'; id: number } | null>(null);
   /** Se está corrigiendo la forma de una manzana o el lugar de un punto. */
   editandoForma = signal(false);
+  /** Editor de la manzana elegida (mover, esquinas y giro a la vez). */
+  private readonly editorForma = signal<EditorForma | null>(null);
+  /** El punto elegido se arrastró y aún no se guarda. */
+  private readonly puntoArrastrado = signal(false);
+  readonly hayCambios = computed(() => (this.editorForma()?.cambios() ?? 0) > 0 || this.puntoArrastrado());
+  readonly puedeDeshacer = computed(() => (this.editorForma()?.cambios() ?? 0) > 0);
+  /** Se intentó salir con cambios sin guardar: la barra lo recuerda unos segundos. */
+  readonly avisoPendiente = signal(false);
+  private avisoPendienteTimer: ReturnType<typeof setTimeout> | null = null;
   /** Hay que confirmar el borrado de la figura seleccionada. */
   borrando = signal(false);
   /** El próximo clic en el mapa pone un punto nuevo. */
@@ -663,7 +696,9 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   private manzanaProps = new Map<number, any>();
   private puntoMarcas = new Map<number, L.Marker>();
   private anilloPunto: L.CircleMarker | null = null;
-  private formaTemporal: L.Polygon | null = null;
+  /** Forma recién guardada: queda a la vista hasta que el mapa recargue las manzanas. */
+  private formaGuardada: L.Polygon | null = null;
+  private formaGuardadaId: number | null = null;
   private puntoOriginal: L.LatLng | null = null;
 
   // ── Límite por cuadras e imán a las calles ─────────────────────────────
@@ -799,6 +834,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   // ── Layer Mode ─────────────────────────────────────────────────────────
 
   setLayerMode(mode: LayerMode): void {
+    if (this.panelExterno && this.layerMode() !== mode && this.bloqueadoPorCambios()) return;
     if (this.panelExterno && this.layerMode() !== mode) {
       if (this.eligiendoCuadras()) this.cancelarCuadras();
       this.terminarEdicion(false);
@@ -928,8 +964,8 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         this.activeToolHint.set(this.hint('limite'));
         // Tocar un lugar vacío quita la selección.
         this.map.on('click', () => {
-          if (this.drawingActive() || this.editandoForma() || this.editMode() || this.colocandoPunto()) return;
-          if (this.seleccion()) { this.seleccion.set(null); this.borrando.set(false); this.aplicarSeleccion(); }
+          if (this.drawingActive() || this.editMode() || this.colocandoPunto()) return;
+          if (this.seleccion()) this.cerrarSeleccion();
         });
       }
 
@@ -1115,6 +1151,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     this.pendingPuntoNombre = '';
     this.pendingPuntoTipo = 'Salida';
     this.pendingPuntoNotas = '';
+    this.pendingPuntoIcono = null;
     this.showPuntoPrompt.set(true);
   }
 
@@ -1129,6 +1166,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       nombre: this.pendingPuntoNombre.trim(),
       tipo: this.pendingPuntoTipo || 'Otro',
       notas: this.pendingPuntoNotas?.trim() || '',
+      icono: this.pendingPuntoIcono,
     });
     // Remove temp marker — parent will reload puntosGeojson
     if (this.pendingPuntoMarker && this.map) {
@@ -1164,6 +1202,9 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         if (this.drawingActive()) {
           e.preventDefault();
           this.undoLastVertex();
+        } else if (this.editorForma()) {
+          e.preventDefault();
+          this.deshacerEdicion();
         } else if (this.soloLimite) {
           e.preventDefault();
           this.deshacerZona();
@@ -1176,12 +1217,19 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         if (this.showPuntoPrompt()) this.cancelPunto();
         if (this.drawingActive()) this.map?.pm.disableDraw();
         if (this.panelExterno) {
-          if (this.editandoForma()) this.terminarEdicion(false);
+          if (this.editandoForma()) this.cancelarEdicion();
           else if (this.colocandoPunto() && !this.showPuntoPrompt()) this.detenerPunto();
           else if (this.seleccion() && !this.drawingActive()) { this.seleccion.set(null); this.borrando.set(false); this.aplicarSeleccion(); }
         }
       }
-      if (this.panelExterno && (e.key === 'Delete' || e.key === 'Supr') && this.seleccion() && !this.editandoForma()) {
+      if (this.panelExterno && e.key === 'Enter' && this.hayCambios()) {
+        const t = e.target as HTMLElement | null;
+        if (!(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(t.tagName)))) {
+          e.preventDefault();
+          this.guardarEdicion();
+        }
+      }
+      if (this.panelExterno && (e.key === 'Delete' || e.key === 'Supr') && this.seleccion() && !this.hayCambios()) {
         const t = e.target as HTMLElement | null;
         if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
         e.preventDefault();
@@ -1323,7 +1371,8 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     this.manzanaCapas.clear();
     this.manzanaProps.clear();
     this.prepararColoresAsignacion();
-    if (this.formaTemporal) { this.map.removeLayer(this.formaTemporal); this.formaTemporal = null; }
+    // El editor vive fuera de esta capa: sobrevive a la recarga (p. ej. al cambiar el número).
+    if (this.formaGuardada) { this.map.removeLayer(this.formaGuardada); this.formaGuardada = null; this.formaGuardadaId = null; }
     if (!this.manzanasGeojson?.features?.length) { this.sincronizarSeleccion(); return; }
 
     this.manzanasLayer = L.layerGroup().addTo(this.map);
@@ -1365,8 +1414,11 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
           // Poniendo un punto, la manzana es solo fondo: el clic sigue al mapa y ahí se coloca.
           if (this.colocandoPunto()) return;
           L.DomEvent.stopPropagation(ev);
-          if (this.drawingActive() || this.editandoForma() || this.propuestasActivas()) return;
-          this.seleccionar('manzana', Number(feature.id));
+          if (this.drawingActive() || this.propuestasActivas()) return;
+          const id = Number(feature.id);
+          const sel = this.seleccion();
+          if (sel?.tipo === 'manzana' && sel.id === id) return;
+          this.seleccionar('manzana', id);
         });
       } else if (this.enableDrawing && feature.id != null) {
         poly.on('click', (ev: L.LeafletMouseEvent) => this.abrirMenuManzana(Number(feature.id), props.numero_manzana, ev.latlng));
@@ -1414,7 +1466,13 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     const sel = this.seleccion();
     if (sel && ((sel.tipo === 'manzana' && !this.manzanaCapas.has(sel.id)) || (sel.tipo === 'punto' && !this.puntoMarcas.has(sel.id)))) {
       // Los puntos se recargan por separado: solo se descarta cuando su capa ya está dibujada.
-      if (sel.tipo === 'manzana' || this.puntosLayer) { this.seleccion.set(null); this.borrando.set(false); }
+      if (sel.tipo === 'manzana' || this.puntosLayer) { this.terminarEdicion(false); this.seleccion.set(null); this.borrando.set(false); }
+    }
+    // Los marcadores de puntos se recrean al recargar: el elegido vuelve a ser arrastrable.
+    const s = this.seleccion();
+    if (s?.tipo === 'punto' && this.editTipo === 'punto') {
+      const m = this.puntoMarcas.get(s.id);
+      if (m && !m.dragging?.enabled()) { this.puntoArrastrado.set(false); this.puntoOriginal = null; this.activarArrastrePunto(m); }
     }
     this.aplicarSeleccion();
   }
@@ -1901,8 +1959,13 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       const tipo = props.tipo || 'Otro';
       const coords = feature.geometry.coordinates; // [lng, lat]
 
-      const bgColor = tipo === 'Salida' ? '#e11d48' : tipo === 'Lugar' ? '#2563eb' : '#64748b';
-      const label = tipo === 'Salida' ? 'S' : tipo === 'Lugar' ? 'L' : 'P';
+      const bgColor = colorTipoPunto(tipo);
+      // Con icono el alfiler crece un poco para que el dibujo se lea; sin icono, la letra del tipo.
+      const icono = iconoPunto(props.icono);
+      const lado = icono ? 34 : 28;
+      const contenido = icono
+        ? svgIconoPunto(icono, 18)
+        : `<span style="font-size:11px;font-weight:900;font-family:system-ui">${letraTipoPunto(tipo)}</span>`;
 
       const icon = L.divIcon({
         html: `<div style="
@@ -1914,8 +1977,8 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
           <div style="
             background:${bgColor};
             color:white;
-            width:28px;
-            height:28px;
+            width:${lado}px;
+            height:${lado}px;
             border-radius:50% 50% 50% 0;
             transform:rotate(-45deg);
             display:flex;
@@ -1924,7 +1987,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
             border:2px solid white;
             box-shadow:0 2px 6px rgba(0,0,0,0.3);
           ">
-            <span style="transform:rotate(45deg);font-size:11px;font-weight:900;font-family:system-ui">${label}</span>
+            <span style="transform:rotate(45deg);display:flex">${contenido}</span>
           </div>
           <div style="
             background:${bgColor};
@@ -1942,8 +2005,8 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
           ">${escapeHtml(props.nombre || tipo)}</div>
         </div>`,
         className: '',
-        iconSize: [28, 48],
-        iconAnchor: [14, 48],
+        iconSize: [lado, lado + 20],
+        iconAnchor: [lado / 2, lado + 20],
       });
 
       const marker = L.marker([coords[1], coords[0]], { icon });
@@ -1951,8 +2014,11 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         this.puntoMarcas.set(Number(feature.id), marker);
         marker.on('click', (ev: L.LeafletMouseEvent) => {
           L.DomEvent.stopPropagation(ev);
-          if (this.drawingActive() || this.editandoForma() || this.colocandoPunto()) return;
-          this.seleccionar('punto', Number(feature.id));
+          if (this.drawingActive() || this.colocandoPunto()) return;
+          const id = Number(feature.id);
+          const sel = this.seleccion();
+          if (sel?.tipo === 'punto' && sel.id === id) return;
+          this.seleccionar('punto', id);
         });
       } else if (props.nombre || props.notas) {
         marker.bindPopup(`
@@ -2353,7 +2419,11 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   private aplicarSeleccion(): void {
     const sel = this.seleccion();
     this.manzanaCapas.forEach((capa, id) => {
-      if (this.formaTemporal && sel?.tipo === 'manzana' && sel.id === id) return; // la oculta el ajuste
+      // La tapa el editor (o la forma recién guardada, hasta que llegue la recarga).
+      if ((this.editorForma() && sel?.tipo === 'manzana' && sel.id === id) || this.formaGuardadaId === id) {
+        capa.setStyle({ opacity: 0, fillOpacity: 0 });
+        return;
+      }
       capa.setStyle(this.estiloManzana(this.manzanaProps.get(id), sel?.tipo === 'manzana' && sel.id === id));
     });
     if (this.anilloPunto && this.puntosLayer) { this.puntosLayer.removeLayer(this.anilloPunto); this.anilloPunto = null; }
@@ -2371,12 +2441,15 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   /** Elige una manzana o un punto (desde el mapa o desde la lista del panel). */
   seleccionar(tipo: 'manzana' | 'punto', id: number, centrar = false): void {
     if (!this.map || !this.panelExterno) return;
+    if (this.bloqueadoPorCambios()) return;
     if (this.drawingActive()) this.map.pm.disableDraw();
     this.terminarEdicion(false);
     const modo: LayerMode = tipo === 'manzana' ? 'manzana' : 'punto';
     if (this.layerMode() !== modo) this.setLayerMode(modo);
     this.borrando.set(false);
     this.seleccion.set({ tipo, id });
+    // Elegir ya es editar: la figura se puede mover, reformar o girar sin pasos extra.
+    if (tipo === 'manzana') this.editarManzana(id); else this.editarPunto(id);
     this.aplicarSeleccion();
     if (centrar) {
       if (tipo === 'manzana') {
@@ -2396,58 +2469,90 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     this.aplicarSeleccion();
   }
 
-  /** Corregir la forma de la manzana elegida: se arrastran sus esquinas. */
-  ajustarForma(): void {
+  /** Cerrar desde la interfaz: con cambios sin guardar no se suelta la figura. */
+  cerrarSeleccion(): void {
+    if (this.bloqueadoPorCambios()) return;
+    this.quitarSeleccion();
+  }
+
+  /** ¿Hay cambios sin guardar? Entonces se avisa en la barra y la acción no sigue. */
+  private bloqueadoPorCambios(): boolean {
+    if (!this.hayCambios()) return false;
+    this.avisoPendiente.set(true);
+    if (this.avisoPendienteTimer) clearTimeout(this.avisoPendienteTimer);
+    this.avisoPendienteTimer = setTimeout(() => this.avisoPendiente.set(false), 3500);
+    return true;
+  }
+
+  numeroElegido(): string {
     const sel = this.seleccion();
-    if (!this.map || !sel || sel.tipo !== 'manzana') return;
-    const original = this.manzanaCapas.get(sel.id);
+    return sel?.tipo === 'manzana' ? String(this.manzanaProps.get(sel.id)?.numero_manzana ?? '') : '';
+  }
+
+  tituloEdicion(): string {
+    if (this.editTipo === 'punto') return 'Mover el punto';
+    const n = this.numeroElegido();
+    return n ? `Manzana ${n}` : 'Manzana';
+  }
+
+  private editarManzana(id: number): void {
+    const original = this.manzanaCapas.get(id);
     const geom = (original?.toGeoJSON() as any)?.features?.[0]?.geometry;
-    if (!original || geom?.type !== 'Polygon') return;
-    this.terminarEdicion(false);
-    const temporal = L.polygon(L.GeoJSON.coordsToLatLngs(geom.coordinates, 1) as any, {
-      color: '#1d4ed8', weight: 3, fillColor: '#60a5fa', fillOpacity: 0.35,
-    });
-    (temporal as any)._capaAuxiliar = true;
-    temporal.addTo(this.map);
-    original.setStyle({ opacity: 0, fillOpacity: 0 });
-    temporal.pm.enable({ allowSelfIntersection: false, snappable: true, snapDistance: 15 });
-    this.formaTemporal = temporal;
+    if (!this.map || geom?.type !== 'Polygon') return;
+    this.editorForma.set(new EditorForma(this.map, L.GeoJSON.coordsToLatLngs(geom.coordinates, 1) as L.LatLng[][]));
     this.editTipo = 'manzana';
     this.editandoForma.set(true);
-    this.activeToolHint.set('Arrastre las esquinas de la manzana. Al terminar pulse «Listo, guardar».');
   }
 
-  /** Mover el punto elegido: se arrastra el marcador. */
-  moverPunto(): void {
-    const sel = this.seleccion();
-    const m = sel?.tipo === 'punto' ? this.puntoMarcas.get(sel.id) : null;
-    if (!this.map || !m) return;
-    this.terminarEdicion(false);
+  private editarPunto(id: number): void {
+    const m = this.puntoMarcas.get(id);
+    if (!m) return;
     m.closePopup();
-    this.puntoOriginal = m.getLatLng();
-    m.dragging?.enable();
+    this.activarArrastrePunto(m);
     this.editTipo = 'punto';
     this.editandoForma.set(true);
-    this.activeToolHint.set('Arrastre el punto al lugar correcto. Al terminar pulse «Listo, guardar».');
   }
 
-  /** Cierra el ajuste en curso: guarda la nueva forma/lugar o vuelve a como estaba. */
+  private activarArrastrePunto(m: L.Marker): void {
+    this.puntoOriginal = m.getLatLng();
+    m.dragging?.enable();
+    m.off('dragend').on('dragend', () => this.puntoArrastrado.set(!m.getLatLng().equals(this.puntoOriginal!)));
+  }
+
+  deshacerEdicion(): void {
+    this.editorForma()?.deshacer();
+  }
+
+  guardarEdicion(): void {
+    if (!this.hayCambios()) return;
+    this.terminarEdicion(true);
+    this.quitarSeleccion();
+  }
+
+  cancelarEdicion(): void {
+    this.terminarEdicion(false);
+    this.quitarSeleccion();
+  }
+
+  /** Cierra la edición en curso: guarda la figura o la deja como estaba. */
   terminarEdicion(guardar: boolean): void {
     const sel = this.seleccion();
-    if (this.editTipo === 'manzana' && this.formaTemporal) {
-      const t = this.formaTemporal;
-      t.pm.disable();
-      if (guardar && sel) {
-        // La forma queda a la vista hasta que el padre recargue las manzanas (renderManzanasLayer la quita).
-        this.manzanaForma.emit({ id: sel.id, geojson: (t.toGeoJSON() as any).geometry });
-      } else {
-        this.map?.removeLayer(t);
-        this.formaTemporal = null;
+    const editor = this.editorForma();
+    if (editor) {
+      const cambio = guardar && !!sel && editor.cambios() > 0;
+      if (cambio) {
+        this.manzanaForma.emit({ id: sel!.id, geojson: editor.geometria() });
+        // La forma nueva sigue a la vista hasta que el padre recargue (renderManzanasLayer la quita).
+        this.formaGuardada = editor.capa;
+        this.formaGuardadaId = sel!.id;
       }
+      editor.destruir(cambio);
+      this.editorForma.set(null);
     } else if (this.editTipo === 'punto' && sel) {
       const m = this.puntoMarcas.get(sel.id);
       m?.dragging?.disable();
-      if (m && guardar) {
+      m?.off('dragend');
+      if (m && guardar && this.puntoArrastrado()) {
         const ll = m.getLatLng();
         this.puntoMovido.emit({ id: sel.id, geojson: { type: 'Point', coordinates: [ll.lng, ll.lat] } });
       } else if (m && this.puntoOriginal) {
@@ -2455,18 +2560,19 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         this.anilloPunto?.setLatLng(this.puntoOriginal);
       }
     }
+    this.puntoArrastrado.set(false);
     this.puntoOriginal = null;
     this.editTipo = null;
+    this.avisoPendiente.set(false);
     if (this.editandoForma()) {
       this.editandoForma.set(false);
       this.aplicarSeleccion();
-      this.activeToolHint.set(this.layerMode() === 'manzana' ? this.hint('manzanas') : 'Toque un punto para elegirlo, o use «Poner un punto» en el panel.');
     }
   }
 
   /** Dibujar una manzana nueva: la herramienta queda lista, sin buscar nada en el mapa. */
   empezarManzana(): void {
-    if (!this.map) return;
+    if (!this.map || this.bloqueadoPorCambios()) return;
     if (this.layerMode() !== 'manzana') this.setLayerMode('manzana');
     this.quitarSeleccion();
     this.map.pm.enableDraw('Polygon');
@@ -2477,7 +2583,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
   /** El próximo clic en el mapa pone un punto (sigue armado hasta `detenerPunto`). */
   empezarPunto(): void {
-    if (!this.map) return;
+    if (!this.map || this.bloqueadoPorCambios()) return;
     if (this.layerMode() !== 'punto') this.setLayerMode('punto');
     this.quitarSeleccion();
     if (!this.mapClickHandler) {

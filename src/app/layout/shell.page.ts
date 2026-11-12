@@ -319,7 +319,7 @@ export class TimeAgoPipe implements PipeTransform {
               </div>
 
               <!-- Territorios Accordion -->
-              <div *ngIf="hasPermission('territorios.ver')" class="relative mt-1">
+              <div *ngIf="puedeVerTerritorios()" class="relative mt-1">
                 <button (click)="toggleTerritoriosMenu($event)" data-flyout-trigger
                   [attr.aria-haspopup]="collapsed() ? 'menu' : null"
                   [attr.aria-expanded]="territoriosMenuOpen()"
@@ -345,28 +345,28 @@ export class TimeAgoPipe implements PipeTransform {
                      [ngClass]="collapsed() ? 'nav-flyout fixed z-[70] w-60 p-1.5 space-y-0.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/10 dark:shadow-black/40' : 'relative mt-1 ml-4 pl-3 pr-1 space-y-0.5 reuniones-submenu border-l border-slate-200 dark:border-slate-800'"
                      [style.top.px]="collapsed() ? flyout()?.top : null" [style.left.px]="collapsed() ? flyout()?.left : null"
                      [attr.data-title]="collapsed() ? 'Territorios' : null" [attr.role]="collapsed() ? 'menu' : null">
-                  <a routerLink="/territorios" routerLinkActive="sub-active" #rlaTerr="routerLinkActive" [routerLinkActiveOptions]="{exact: true}"
+                  <a *ngIf="hasPermission('territorios.ver')" routerLink="/territorios" routerLinkActive="sub-active" #rlaTerr="routerLinkActive" [routerLinkActiveOptions]="{exact: true}"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
                      [ngClass]="rlaTerr.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
                           [ngClass]="rlaTerr.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Congregación</span>
                   </a>
-                  <a routerLink="/horarios" routerLinkActive="sub-active" #rlaHor="routerLinkActive"
+                  <a *ngIf="hasPermission('territorios.horarios_ver')" routerLink="/horarios" routerLinkActive="sub-active" #rlaHor="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
                      [ngClass]="rlaHor.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
                           [ngClass]="rlaHor.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Horarios</span>
                   </a>
-                  <a routerLink="/seguimiento-predicacion" routerLinkActive="sub-active" #rlaPred="routerLinkActive"
+                  <a *ngIf="hasPermission('territorios.predicacion_ver')" routerLink="/seguimiento-predicacion" routerLinkActive="sub-active" #rlaPred="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
                      [ngClass]="rlaPred.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
                           [ngClass]="rlaPred.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-400 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Predicación</span>
                   </a>
-                  <a routerLink="/territorios/registro" routerLinkActive="sub-active" #rlaS13="routerLinkActive"
+                  <a *ngIf="hasPermission('territorios.s13_ver')" routerLink="/territorios/registro" routerLinkActive="sub-active" #rlaS13="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-sm transition-colors duration-200 rounded-lg group"
                      [ngClass]="rlaS13.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                     <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
@@ -1266,6 +1266,7 @@ export class ShellPage implements OnInit, OnDestroy {
   puedeVerReunionesAncianos(): boolean { return puedeVerReunionesAncianos(this.store); }
   puedeVerActas(): boolean { return puedeVerActas(this.store); }
   puedeVerAgenda(): boolean { return puedeVerAgenda(this.store); }
+  puedeVerTerritorios(): boolean { return puedeVerTerritorios(this.store); }
 
   hasAnyModulo(): boolean {
     return (
@@ -1273,7 +1274,7 @@ export class ShellPage implements OnInit, OnDestroy {
       this.hasAnyReunionesPermission() ||
       this.puedeVerPublicadores() ||
       this.hasAnyInformesPermission() ||
-      puedeVerTerritorios(this.store) ||
+      this.puedeVerTerritorios() ||
       this.hasAnyExhibidoresPermission() ||
       this.hasAnyReportesPermission() ||
       this.puedeVerAdministracion()

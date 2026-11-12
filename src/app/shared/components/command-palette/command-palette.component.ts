@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { AuthStore } from '../../../core/auth/auth.store';
 import {
   puedeVerAgenda, puedeVerConfiguracion, puedeVerExhibidores, puedeVerPublicadores, puedeVerReportes,
-  puedeVerReuniones, puedeVerTerritorios,
+  puedeVerReuniones, puedeVerTarjetasTerritorio,
 } from '../../../core/auth/acceso-modulos';
 import { LucideAngularModule } from 'lucide-angular';
 
@@ -24,7 +24,7 @@ const DEFAULT_COMMANDS: CommandItem[] = [
   { key: 'home',         label: 'Ir al Dashboard',           group: 'Navegación', route: '/' },
   { key: 'agenda',       label: 'Ver Mi Agenda',             group: 'Navegación', route: '/agenda', visible: puedeVerAgenda },
   { key: 'publicadores', label: 'Ver Publicadores',          group: 'Navegación', route: '/secretario/publicadores', visible: puedeVerPublicadores },
-  { key: 'territorios',  label: 'Ver Territorios',           group: 'Navegación', route: '/territorios', visible: puedeVerTerritorios },
+  { key: 'territorios',  label: 'Ver Territorios',           group: 'Navegación', route: '/territorios', visible: puedeVerTarjetasTerritorio },
   { key: 'exhibidores',  label: 'Ver Exhibidores',           group: 'Navegación', route: '/exhibidores', visible: puedeVerExhibidores },
   { key: 'reuniones',    label: 'Ver Reuniones',             group: 'Navegación', route: '/reuniones', visible: puedeVerReuniones },
   { key: 'reportes',     label: 'Ver Reportes',              group: 'Navegación', route: '/reportes', visible: puedeVerReportes },

@@ -56,7 +56,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
 
       <div class="mt-4 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
         <app-recorrido-mapa #refMapa [idTerritorio]="territorioSeleccionado()?.id_territorio ?? null"
-          [puedeEditar]="puedeEditar()" [capitanes]="opcionesCapitan()" (cambio)="alCambiarRecorrido()">
+          [puedeEditar]="puedeEditar()" [puedeRegistrar]="puedeRegistrar()" [capitanes]="opcionesCapitan()" (cambio)="alCambiarRecorrido()">
 
           <!-- Con una tarjeta elegida: su vuelta, avisos e historial (van en el panel del mapa) -->
           <div panel>
@@ -80,7 +80,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
                   </div>
                   <button type="button" (click)="elegirTarjeta(null)" class="shrink-0 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline">Ver todo</button>
                 </div>
-                @if (p?.ciclo && !p!.ciclo!.completado && p!.total_manzanas === 0) {
+                @if (puedeEditar() && p?.ciclo && !p!.ciclo!.completado && p!.total_manzanas === 0) {
                   <button type="button" (click)="completarVuelta()" [disabled]="completandoCiclo()"
                     class="mt-3 w-full btn-secondary btn-sm">
                     Marcar vuelta completada
@@ -141,6 +141,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
                                 {{ s.manzanas_predicadas === 1 ? '1 manzana' : s.manzanas_predicadas + ' manzanas' }}@if (s.nombre_punto_salida) { · {{ s.nombre_punto_salida }} }
                               </span>
                             </span>
+                            @if (puedeTocarSalida(s)) {
                             <span class="row-actions sm:opacity-0 sm:group-hover/s:opacity-100 sm:focus-within:opacity-100 transition-opacity">
                               <button type="button" (click)="openEditSalidaModal(s)" title="Editar salida" aria-label="Editar salida"
                                 class="btn-icon-sm">
@@ -151,6 +152,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                               </button>
                             </span>
+                            }
                           </div>
                         }
                       </li>
@@ -212,11 +214,26 @@ export class SeguimientoPredicacionPage implements OnInit {
   private congregacionCtx = inject(CongregacionContextService);
   private authStore = inject(AuthStore);
 
-  /** Fijar el orden del recorrido es tarea del encargado de territorios ('territorios.editar'); marcar basta con 'ver'. */
+  /**
+   * Encargado («Registrar» + «todas las salidas»): fija el orden del recorrido, corrige, empieza vuelta y
+   * cierra ciclos. Con solo «Registrar», marca en las salidas donde es capitán (el backend lo comprueba).
+   */
   puedeEditar = computed(() => {
     this.authStore.user();
-    return this.authStore.hasPermission('territorios.editar');
+    return this.authStore.hasPermission('territorios.predicacion_registrar')
+      && this.authStore.hasPermission('territorios.predicacion_todos');
   });
+  puedeRegistrar = computed(() => {
+    this.authStore.user();
+    return this.authStore.hasPermission('territorios.predicacion_registrar');
+  });
+
+  /** Editar o borrar una salida ya registrada: el encargado, o su capitán. */
+  puedeTocarSalida(s: SalidaPredicacion): boolean {
+    if (this.puedeEditar()) return true;
+    const yo = this.authStore.user()?.id_usuario_publicador;
+    return this.puedeRegistrar() && yo != null && s.id_capitan === yo;
+  }
 
   /** Selector de arriba: cada tarjeta con su avance y su última salida (vacío = toda la congregación). */
   opcionesTarjeta = computed<PickerOption[]>(() => {

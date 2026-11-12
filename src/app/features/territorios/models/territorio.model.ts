@@ -147,6 +147,8 @@ export interface Punto {
   tipo?: string; // 'Salida' | 'Lugar' | 'Otro'
   coordenadas?: GeoJSONGeometry | null;
   notas?: string;
+  /** Clave de utils/iconos-punto.ts; null = letra del tipo. Al actualizar, '' lo quita. */
+  icono?: string | null;
 }
 
 export interface AsignacionTerritorio {

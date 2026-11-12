@@ -43,11 +43,13 @@ import {
   tipoAviso,
 } from '../models/territorio.model';
 
+import { LucideAngularModule } from '../../../shared/icons';
+import { iconoPunto } from '../utils/iconos-punto';
 @Component({
    standalone: true,
    selector: 'app-territorios-page',
    host: { class: 'tema-territorios' },
-   imports: [CommonModule, FormsModule, ModalComponent, EmptyStateComponent, AvisoComponent, TerritorioMapComponent, EditorPanelComponent, DibujoLoteDialogComponent, PageHeaderComponent, SelectPickerComponent, GuiaConfiguracionComponent, RenumerarManzanasDialogComponent],
+   imports: [CommonModule, FormsModule, ModalComponent, EmptyStateComponent, AvisoComponent, TerritorioMapComponent, EditorPanelComponent, DibujoLoteDialogComponent, PageHeaderComponent, SelectPickerComponent, GuiaConfiguracionComponent, RenumerarManzanasDialogComponent, LucideAngularModule],
    animations: [
       trigger('slideOver', [
          transition(':enter', [
@@ -96,7 +98,7 @@ import {
       }
 
       <!-- La secuencia de manzanas (T01 del 1 al N, T02 sigue…) quedó con huecos o cruces. -->
-      @if (puedeEditar() && progreso(); as pr) {
+      @if (puedeMapa() && progreso(); as pr) {
         @if (pr.manzanas_total > 0 && !pr.numeracion_en_orden) {
           <app-aviso tone="warning" class="shrink-0 block">
             <div class="flex flex-wrap items-center gap-3">
@@ -129,8 +131,8 @@ import {
       }
 
       <!-- Guía de preparación: mapa → barrios → límites → manzanas -->
-      @if (puedeEditar()) {
-        <app-guia-configuracion class="shrink-0" [progreso]="progreso()" [puedeEditar]="puedeEditar()"
+      @if (puedeMapa()) {
+        <app-guia-configuracion class="shrink-0" [progreso]="progreso()" [puedeEditar]="puedeMapa()"
           [puedeDibujarLote]="puedeDibujarLote()" (ir)="irGuia($event)" />
       }
 
@@ -371,13 +373,13 @@ import {
                        <li class="flex items-center gap-3 pl-2.5 pr-1 py-2 rounded-xl border border-slate-200 dark:border-slate-800">
                          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
                               [ngClass]="p.tipo === 'Salida' ? 'bg-rose-500' : p.tipo === 'Lugar' ? 'bg-sky-600' : 'bg-slate-400'" aria-hidden="true">
-                           {{ p.tipo === 'Salida' ? 'S' : p.tipo === 'Lugar' ? 'L' : 'P' }}
+                           @if (iconoPunto(p.icono); as ic) { <lucide-icon [img]="ic.datos" [size]="16" [strokeWidth]="2.2"></lucide-icon> } @else { {{ p.tipo === 'Salida' ? 'S' : p.tipo === 'Lugar' ? 'L' : 'P' }} }
                          </span>
                          <div class="min-w-0 flex-1">
                            <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight">{{ p.nombre }}</p>
-                           <p class="text-xs text-slate-500 dark:text-slate-400">{{ p.tipo === 'Salida' ? 'Punto de salida' : p.tipo === 'Lugar' ? 'Lugar de referencia' : 'Otro' }}</p>
+                           <p class="text-xs text-slate-500 dark:text-slate-400">{{ p.tipo === 'Salida' ? 'Punto de salida' : p.tipo === 'Lugar' ? 'Lugar de referencia' : 'Otro' }}{{ iconoPunto(p.icono) ? ' · ' + iconoPunto(p.icono)!.etiqueta : '' }}</p>
                          </div>
-                         <button *ngIf="puedeEditar()" (click)="deletePunto(p.id_punto)" [attr.aria-label]="'Borrar ' + p.nombre"
+                         <button *ngIf="puedeMapa()" (click)="deletePunto(p.id_punto)" [attr.aria-label]="'Borrar ' + p.nombre"
                            class="btn-icon-sm tone-danger">
                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                          </button>
@@ -470,12 +472,12 @@ import {
                          </div>
                          <div class="row-actions">
 <!-- Edit pencil button -->
-                         <button *ngIf="puedeEditar()" (click)="startEditManzana(m)" aria-label="Editar manzana" title="Editar manzana"
+                         <button *ngIf="puedeMapa()" (click)="startEditManzana(m)" aria-label="Editar manzana" title="Editar manzana"
                            class="btn-icon-sm">
                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                          </button>
                          <!-- Delete button -->
-                         <button *ngIf="puedeEditar()" (click)="deleteManzana(m.id_manzana)" aria-label="Borrar manzana" title="Borrar manzana"
+                         <button *ngIf="puedeMapa()" (click)="deleteManzana(m.id_manzana)" aria-label="Borrar manzana" title="Borrar manzana"
                            [disabled]="manzanaDeleting() === m.id_manzana"
                            class="btn-icon-sm tone-danger">
                            @if (manzanaDeleting() === m.id_manzana) {
@@ -485,7 +487,7 @@ import {
                            }
                          </button>
 </div>
-                         @if (!isPredicada) {
+                         @if (!isPredicada && esEncargado()) {
                            <button (click)="marcarManzanaPredicada(m.id_manzana)"
                              [disabled]="coberturaSaving() === m.id_manzana"
                              class="btn-tonal">
@@ -508,7 +510,7 @@ import {
                    Anote lo que el publicador debe saber en la puerta: casas que no se visitan, perros bravos, conjuntos cerrados u horarios.
                    Salen en la tarjeta impresa y como aviso al registrar una salida.
                  </p>
-                 @if (puedeEditar()) {
+                 @if (puedeAvisos()) {
                    <button type="button" (click)="openDireccionModal()" [disabled]="manzanasLista().length === 0"
                      class="shrink-0 btn-primary btn-sm">
                      Agregar aviso
@@ -551,7 +553,7 @@ import {
                                }
                                @if (v.notas) { <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ v.notas }}</p> }
                              </div>
-                             @if (puedeEditar()) {
+                             @if (puedeAvisos()) {
                                <div class="flex items-center gap-1 shrink-0">
                                  @if (v.no_visitar && v.por_revisar) {
                                    <button type="button" (click)="marcarRevisada(v)" class="px-2 py-1 rounded-md text-xs font-bold bg-amber-100 text-amber-800 hover:bg-amber-200">Sigue igual</button>
@@ -597,11 +599,11 @@ import {
                    @if (act.notas) {
                      <p class="text-xs text-slate-500 italic mb-3 border-l-2 border-emerald-300 dark:border-emerald-700 pl-2">{{ act.notas }}</p>
                    }
-                   <button (click)="openDevolverModal(act)" class="w-full py-2.5 text-xs font-bold bg-white dark:bg-slate-700 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/40 transition-colors flex items-center justify-center gap-2">
+                   <button *ngIf="puedeAsignar()" (click)="openDevolverModal(act)" class="w-full py-2.5 text-xs font-bold bg-white dark:bg-slate-700 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/40 transition-colors flex items-center justify-center gap-2">
                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.51"/></svg>
                      Registrar Devolución
                    </button>
-                   @if (puedeEditar()) {
+                   @if (puedeAsignar()) {
                      <!-- Corregir un error de captura: distinto de devolver, que sí deja registro -->
                      @if (confirmarEliminarAsignacion() === act.id_asignacion) {
                        <div class="mt-3 rounded-xl border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-900/20 p-3 space-y-2" role="alert">
@@ -625,12 +627,12 @@ import {
                  <div class="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-6 text-center">
                    <svg class="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Disponible para asignar</p>
-                   <button *ngIf="puedeEditar()" (click)="openAsignarModal()" class="w-full btn-primary">
+                   <button *ngIf="puedeAsignar()" (click)="openAsignarModal()" class="w-full btn-primary">
                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                      Asignar Territorio
                    </button>
                  </div>
-               } @else if (puedeEditar() && hayManzanasLibres()) {
+               } @else if (puedeAsignar() && hayManzanasLibres()) {
                  <!-- Ya hay alguna asignación parcial y quedan manzanas libres: se puede dar otra parte -->
                  <button (click)="openAsignarModal()" class="w-full py-2.5 text-sm font-bold border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors flex items-center justify-center gap-2">
                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -668,7 +670,7 @@ import {
            <!-- Footer Actions -->
            <div class="px-4 py-3 border-t border-slate-100 dark:border-slate-700/50 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm flex flex-wrap gap-2">
               <!-- «Editar mapa» es lo que se busca casi siempre: va primero y en verde. «Editar datos» es el formulario. -->
-              <button *ngIf="puedeEditar()" (click)="openMapEditor()" type="button"
+              <button *ngIf="puedeMapa()" (click)="openMapEditor()" type="button"
                 title="Dibujar o corregir el límite de la tarjeta y sus manzanas en el mapa"
                 class="btn-primary h-10 flex-1 min-w-[8rem] justify-center whitespace-nowrap">
                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
@@ -1164,14 +1166,27 @@ import {
   `]
 })
 export class TerritoriosPage implements OnInit {
+   readonly iconoPunto = iconoPunto;
    private territoriosService = inject(TerritoriosService);
    private confirmar = inject(ConfirmService);
    private authStore = inject(AuthStore);
-   /** Crear, editar o borrar del catálogo exige 'territorios.editar' (el
-    *  backend también). Registrar la predicación y devolver solo 'ver'. */
-   puedeEditar = computed(() => {
+   /** Cada tarea de la ficha tiene su permiso (el backend exige lo mismo: modules/territorio/permisos.py). */
+   private permiso = (codigo: string) => computed(() => {
       this.authStore.user();
-      return this.authStore.hasPermission('territorios.editar');
+      return this.authStore.hasPermission(codigo);
+   });
+   /** Crear tarjetas, cambiar sus datos y retirarlas. */
+   puedeEditar = this.permiso('territorios.editar');
+   /** Dibujar la forma, las manzanas y los puntos; renumerar. */
+   puedeMapa = this.permiso('territorios.mapa_editar');
+   puedeAvisos = this.permiso('territorios.avisos');
+   /** Asignar, registrar la devolución y corregir asignaciones. */
+   puedeAsignar = this.permiso('territorios.asignar');
+   /** Marcar una manzana a mano, fuera de una salida: «Registrar» + «todas las salidas». */
+   esEncargado = computed(() => {
+      this.authStore.user();
+      return this.authStore.hasPermission('territorios.predicacion_registrar')
+         && this.authStore.hasPermission('territorios.predicacion_todos');
    });
    private router = inject(Router);
    private route = inject(ActivatedRoute);
@@ -2194,10 +2209,10 @@ export class TerritoriosPage implements OnInit {
       });
    }
 
-   onActualizarPunto(e: { id: number; nombre: string; tipo: string; notas: string }): void {
+   onActualizarPunto(e: { id: number; nombre: string; tipo: string; notas: string; icono: string }): void {
       const t = this.selectedTerritorio();
       if (!t) return;
-      this.territoriosService.updatePunto(t.id_territorio, e.id, { nombre: e.nombre, tipo: e.tipo, notas: e.notas }).subscribe({
+      this.territoriosService.updatePunto(t.id_territorio, e.id, { nombre: e.nombre, tipo: e.tipo, notas: e.notas, icono: e.icono }).subscribe({
          next: () => this.loadPuntos(t.id_territorio),
          error: (err) => this.avisoEditor.set(err?.error?.detail ?? 'No se pudieron guardar los cambios del punto.'),
       });
@@ -2362,7 +2377,7 @@ export class TerritoriosPage implements OnInit {
       this.mapaEditorRef()?.mostrarRenumeracion(null);
    }
 
-   onPuntoPlaced(event: { geojson: any; nombre: string; tipo: string; notas: string }): void {
+   onPuntoPlaced(event: { geojson: any; nombre: string; tipo: string; notas: string; icono: string | null }): void {
       const t = this.selectedTerritorio();
       if (!t) return;
       this.territoriosService.createPunto(t.id_territorio, {
@@ -2371,6 +2386,7 @@ export class TerritoriosPage implements OnInit {
          tipo: event.tipo,
          coordenadas: event.geojson,
          notas: event.notas || undefined,
+         icono: event.icono || undefined,
       }).subscribe({
          next: () => this.loadPuntos(t.id_territorio),
       });

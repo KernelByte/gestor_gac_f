@@ -25,6 +25,8 @@ export interface SalidaProgramada {
   nombre_barrio?: string | null;
   /** «No se salió»: la salida pasó y no se predicó; ya no cuenta como pendiente de registrar. */
   sin_salida?: boolean;
+  /** Por Zoom: no se maneja territorio (ni manzanas que tocan ni «Por registrar»). */
+  por_zoom?: boolean;
   /** Sin barrio pero con punto de salida: el barrio de ese punto, para proponerlo. */
   id_sector_sugerido?: number | null;
   /** Lo que se predicó en esta salida (Seguimiento). */
@@ -48,6 +50,7 @@ export interface FilaSemanaTipo {
   hora_inicio?: string | null;
   lugar?: string | null;
   notas?: string | null;
+  por_zoom?: boolean;
   id_sector?: number | null;
   nombre_barrio?: string | null;
   id_punto_salida?: number | null;
@@ -63,11 +66,20 @@ export interface SalidaForm {
   hora_inicio: string | null;
   lugar: string | null;
   notas: string | null;
+  por_zoom?: boolean;
   id_territorio?: number | null;
   id_sector?: number | null;
   id_punto_salida?: number | null;
   capitanes: number[];
   grupos: number[];
+}
+
+/** Preferencias del programa: semana o mes, y si la congregación usa Zoom. */
+export interface PreferenciasPrograma {
+  periodo: Periodo;
+  nombre_congregacion?: string | null;
+  usa_zoom?: boolean;
+  tiene_enlace_zoom?: boolean;
 }
 
 export type ModoCrear = 'nuevo' | 'faltantes' | 'reemplazar';
@@ -133,8 +145,8 @@ export class SalidasProgramaService {
     return this.http.get<GrupoOpcion[]>(`${this.url}/grupos`, { params: this.params() });
   }
 
-  periodo(): Observable<{ periodo: Periodo; nombre_congregacion?: string | null }> {
-    return this.http.get<{ periodo: Periodo; nombre_congregacion?: string | null }>(`${this.url}/preferencias`, { params: this.params() });
+  periodo(): Observable<PreferenciasPrograma> {
+    return this.http.get<PreferenciasPrograma>(`${this.url}/preferencias`, { params: this.params() });
   }
 
   guardarPeriodo(periodo: Periodo): Observable<{ periodo: Periodo }> {

@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signa
 import { CommonModule } from '@angular/common';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { SalidaEditorComponent } from './salida-editor.component';
+import { MarcaZoomComponent } from './marca-zoom.component';
 import { PuntoSalidaOpcion } from '../models/territorio.model';
 import {
   DIAS, FilaSemanaTipo, GrupoOpcion, Periodo, PersonaRef, SalidaForm, SalidasProgramaService, horaLegible,
@@ -15,7 +16,7 @@ import {
 @Component({
   standalone: true,
   selector: 'app-semana-tipo',
-  imports: [CommonModule, SalidaEditorComponent, ModalComponent],
+  imports: [CommonModule, SalidaEditorComponent, ModalComponent, MarcaZoomComponent],
   template: `
     <app-modal [open]="true" size="xl" title="Salidas fijas" subtitle="Las salidas que se repiten cada semana. Con ellas se crea el programa."
                [hasFooter]="true" [dismissible]="!editando()" (openChange)="$event || cerrar.emit(false)">
@@ -50,9 +51,13 @@ import {
                   <button type="button" (click)="editar(f)" class="w-full text-left px-4 py-3 border-t border-slate-100 dark:border-slate-700/60 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors flex items-start gap-3">
                     <span class="w-20 shrink-0 text-sm font-bold text-slate-900 dark:text-white tabular-nums">{{ hora(f.hora_inicio) || 'Sin hora' }}</span>
                     <span class="min-w-0 flex-1">
-                      <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ f.lugar || 'Sin lugar' }}</span>
+                      @if (f.por_zoom) {
+                        <span class="flex items-center gap-1.5 text-sm font-semibold text-blue-700 dark:text-blue-300"><app-marca-zoom [tam]="16" /> Zoom</span>
+                      } @else {
+                        <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ f.lugar || 'Sin lugar' }}</span>
+                      }
                       <span class="block text-sm text-slate-500 dark:text-slate-400 truncate">
-                        {{ nombres(f.capitanes) || 'Capitán: se turnan' }}@if (f.grupos.length) { · {{ gruposTexto(f) }} }@if (f.nombre_barrio) { · Barrio {{ f.nombre_barrio }} }
+                        {{ nombres(f.capitanes) || 'Capitán: se turnan' }}@if (f.grupos.length) { · {{ gruposTexto(f) }} }@if (f.nombre_barrio && !f.por_zoom) { · Barrio {{ f.nombre_barrio }} }
                       </span>
                     </span>
                   </button>
@@ -89,6 +94,8 @@ import {
         [barrios]="barrios"
         [puntosSalida]="puntosSalida"
         [capitanesHabilitados]="capitanesHabilitados"
+        [usaZoom]="usaZoom"
+        [tieneEnlaceZoom]="tieneEnlaceZoom"
         [puedeEliminar]="!!e.fila"
         (guardar)="aplicar($event)"
         (eliminar)="quitar()"
@@ -107,6 +114,8 @@ export class SemanaTipoComponent implements OnInit {
   @Input() capitanesHabilitados: PersonaRef[] = [];
   @Input() barrios: Array<{ id_sector: number; nombre: string }> = [];
   @Input() puntosSalida: PuntoSalidaOpcion[] = [];
+  @Input() usaZoom = false;
+  @Input() tieneEnlaceZoom = true;
   /** true si se guardó. */
   @Output() cerrar = new EventEmitter<boolean>();
 
@@ -141,7 +150,7 @@ export class SemanaTipoComponent implements OnInit {
   nueva(dia: number): void {
     this.editando.set({
       fila: null,
-      form: { dia_semana: dia, hora_inicio: null, lugar: null, notas: null, id_sector: null, id_punto_salida: null, capitanes: [], grupos: [] },
+      form: { dia_semana: dia, hora_inicio: null, lugar: null, notas: null, por_zoom: false, id_sector: null, id_punto_salida: null, capitanes: [], grupos: [] },
     });
   }
 
@@ -150,7 +159,7 @@ export class SemanaTipoComponent implements OnInit {
       fila: f,
       form: {
         dia_semana: f.dia_semana, hora_inicio: f.hora_inicio ?? null, lugar: f.lugar ?? null, notas: f.notas ?? null,
-        id_sector: f.id_sector ?? null, id_punto_salida: f.id_punto_salida ?? null,
+        por_zoom: !!f.por_zoom, id_sector: f.id_sector ?? null, id_punto_salida: f.id_punto_salida ?? null,
         capitanes: f.capitanes.map(c => c.id_publicador), grupos: f.grupos.map(g => g.id_grupo),
       },
     });
@@ -164,8 +173,9 @@ export class SemanaTipoComponent implements OnInit {
     const fila: FilaSemanaTipo = {
       dia_semana: form.dia_semana!,
       hora_inicio: form.hora_inicio,
-      lugar: form.lugar ?? this.puntosSalida.find(p => p.id_punto === form.id_punto_salida)?.nombre ?? null,
+      lugar: form.por_zoom ? 'Zoom' : form.lugar ?? this.puntosSalida.find(p => p.id_punto === form.id_punto_salida)?.nombre ?? null,
       notas: form.notas,
+      por_zoom: !!form.por_zoom,
       id_sector: form.id_sector ?? null,
       nombre_barrio: this.barrios.find(b => b.id_sector === form.id_sector)?.nombre ?? null,
       id_punto_salida: form.id_punto_salida ?? null,
@@ -188,7 +198,7 @@ export class SemanaTipoComponent implements OnInit {
     this.error.set(null);
     const payload: SalidaForm[] = this.filas().map(f => ({
       dia_semana: f.dia_semana, hora_inicio: f.hora_inicio ?? null, lugar: f.lugar ?? null, notas: f.notas ?? null,
-      id_sector: f.id_sector ?? null, id_punto_salida: f.id_punto_salida ?? null,
+      por_zoom: !!f.por_zoom, id_sector: f.id_sector ?? null, id_punto_salida: f.id_punto_salida ?? null,
       capitanes: f.capitanes.map(c => c.id_publicador), grupos: f.grupos.map(g => g.id_grupo),
     }));
     this.svc.guardarSemanaTipo(payload).subscribe({

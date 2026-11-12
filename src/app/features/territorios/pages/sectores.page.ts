@@ -416,7 +416,7 @@ export class SectoresPage implements OnInit {
 
   puedeEditar = computed(() => {
     this.authStore.user();
-    return this.authStore.hasPermission('territorios.editar');
+    return this.authStore.hasPermission('territorios.sectores_editar');
   });
 
   readonly colores = COLORES_SECTOR;

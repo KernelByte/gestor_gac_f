@@ -58,6 +58,15 @@ export type Nivel = 'ninguno' | 'ver' | 'editar';
  * está otorgado el usuario ve toda la congregación, y cuando no, solo su propio
  * grupo de predicación. Por eso se dibuja como selector y no como interruptor.
  */
+/**
+ * Alcances que no son «de quién ve los datos»: el de Predicación dice en qué
+ * salidas registra, y solo existe con «Ver y editar» (registrar).
+ */
+const ALCANCES_DE_EDICION: Record<string, { etiqueta: string; propio: string; todos: string }> = {
+   'territorios.predicacion_todos': { etiqueta: 'Registra en:', propio: 'Solo sus salidas', todos: 'Todas las salidas' },
+};
+const ALCANCE_DE_DATOS = { etiqueta: 'Ve los datos de:', propio: 'Solo su grupo', todos: 'Toda la congregación' };
+
 interface PantallaPermisos {
    nombre: string;
    ver?: PermisoConEstado;
@@ -518,13 +527,19 @@ export class UsuarioPermisosPage implements OnInit {
          // nunca llega a consultarlo. Se normaliza al cargar para que la
          // pantalla no muestre un radio de acción que en realidad no aplica.
          const verPorPantalla = new Map<string, boolean>();
+         const editarPorPantalla = new Map<string, boolean>();
          for (const p of permisos) {
             if (p.accion === 'ver' && p.pantalla) {
                verPorPantalla.set(`${p.modulo}:${p.pantalla}`, p.asignado);
             }
+            if (p.accion === 'editar' && p.pantalla) {
+               editarPorPantalla.set(`${p.modulo}:${p.pantalla}`, p.asignado);
+            }
          }
          for (const p of permisos) {
-            if (p.accion === 'alcance' && p.pantalla && !verPorPantalla.get(`${p.modulo}:${p.pantalla}`)) {
+            const clave = `${p.modulo}:${p.pantalla}`;
+            const base = ALCANCES_DE_EDICION[p.codigo] ? editarPorPantalla : verPorPantalla;
+            if (p.accion === 'alcance' && p.pantalla && !base.get(clave)) {
                p.asignado = false;
             }
          }
@@ -557,6 +572,12 @@ export class UsuarioPermisosPage implements OnInit {
    }
 
    /** Interruptor de un permiso suelto o de una pantalla que solo tiene "Ver". */
+   // Los computed devuelven objetos nuevos en cada cambio: sin trackBy se recrea
+   // todo el DOM y el scroll vuelve arriba.
+   trackCat = (_: number, c: CategoriaPermisos) => c.categoria;
+   trackPan = (_: number, p: PantallaPermisos) => p.nombre;
+   trackPerm = (_: number, p: PermisoConEstado) => p.id_permiso;
+
    togglePermiso(permiso: PermisoConEstado, pan?: PantallaPermisos) {
       // Un permiso restringido se puede quitar, pero no dar: el backend solo
       // valida lo que se AÑADE (permiso_router.update_usuario_permisos).
@@ -608,6 +629,7 @@ export class UsuarioPermisosPage implements OnInit {
          add(off, pan.ver); add(off, pan.editar); add(off, pan.alcance);
       } else if (nivel === 'ver') {
          add(on, pan.ver); add(off, pan.editar);
+         if (pan.alcance && ALCANCES_DE_EDICION[pan.alcance.codigo]) add(off, pan.alcance);
       } else {
          add(on, pan.ver); add(on, pan.editar);
       }
@@ -619,6 +641,16 @@ export class UsuarioPermisosPage implements OnInit {
             return p;
          })
       );
+   }
+
+   /** El selector de alcance se ve con la pantalla abierta; el de edición, solo con «Ver y editar». */
+   alcanceVisible(pan: PantallaPermisos): boolean {
+      if (!pan.alcance) return false;
+      return ALCANCES_DE_EDICION[pan.alcance.codigo] ? !!pan.editar?.asignado : !!pan.ver?.asignado;
+   }
+
+   textosAlcance(pan: PantallaPermisos) {
+      return (pan.alcance && ALCANCES_DE_EDICION[pan.alcance.codigo]) || ALCANCE_DE_DATOS;
    }
 
    /** El selector de alcance: true = toda la congregación, false = solo su grupo. */

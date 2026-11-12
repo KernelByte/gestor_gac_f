@@ -4,9 +4,12 @@ import { GeoJSONFeatureCollection } from '../models/territorio.model';
 import { TerritorioMapComponent } from './territorio-map.component';
 import { RenumeracionManzana } from '../services/territorios.service';
 import { avisoNumeroRepetido, NumeracionManzanas, siguienteLibre } from '../utils/numeracion-manzanas.util';
+import { colorTipoPunto, iconoPunto, letraTipoPunto } from '../utils/iconos-punto';
+import { IconoPuntoPickerComponent } from './icono-punto-picker.component';
+import { LucideAngularModule } from '../../../shared/icons';
 
 interface ManzanaItem { id: number; numero: string; origen: string }
-interface PuntoItem { id: number; nombre: string; tipo: string; notas: string }
+interface PuntoItem { id: number; nombre: string; tipo: string; notas: string; icono: string | null }
 
 const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
 
@@ -18,7 +21,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
 @Component({
   standalone: true,
   selector: 'app-editor-panel',
-  imports: [CommonModule],
+  imports: [CommonModule, IconoPuntoPickerComponent, LucideAngularModule],
   template: `
   @if (mapa(); as m) {
   <aside class="flex flex-col min-h-0 bg-white dark:bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 transition-[width,height] duration-200"
@@ -196,14 +199,14 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
                 }
               </div>
             } @else if (!m.drawingActive()) {
-              <button (click)="renumerar.emit()" type="button" [disabled]="renumerando()" class="btn-secondary w-full">{{ renumerando() ? 'Calculando…' : 'Numerar en secuencia' }}</button>
+              <button (click)="renumerar.emit()" type="button" [disabled]="renumerando()" class="btn-ghost btn-sm w-full">{{ renumerando() ? 'Calculando…' : 'Ordenar los números de las manzanas' }}</button>
             }
             @if (hayDeIA()) {
               <p class="text-sm text-violet-800 dark:text-violet-200 rounded-lg bg-violet-50 dark:bg-violet-900/20 px-3 py-2">
                 Las manzanas con borde punteado las marcó la IA. Revíselas: al ajustar su forma quedan como revisadas.
               </p>
             }
-            <p class="text-sm text-slate-500 dark:text-slate-400">Toque una manzana, aquí o en el mapa, para corregirla o borrarla.</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Toque una manzana, aquí o en el mapa, para moverla, corregirla o borrarla.</p>
             <ul class="space-y-1.5">
               @for (z of manzanas(); track z.id) {
                 <li>
@@ -211,7 +214,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
                     <div class="rounded-xl border-2 border-blue-500 bg-blue-50/60 dark:bg-blue-900/20 p-3 space-y-3">
                       <div class="flex items-center justify-between gap-2">
                         <p class="text-base font-extrabold text-slate-900 dark:text-white">Manzana {{ z.numero }}</p>
-                        <button (click)="m.quitarSeleccion()" type="button" class="text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white px-2 h-9">Cerrar</button>
+                        <button (click)="m.cerrarSeleccion()" type="button" class="btn-ghost btn-sm">Cerrar</button>
                       </div>
                       <label class="block text-sm font-bold text-slate-700 dark:text-slate-200">Número de la manzana
                         <div class="mt-1 flex gap-2">
@@ -235,13 +238,9 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
                             <button (click)="m.borrando.set(false)" type="button" class="flex-1 btn-secondary btn-sm">No</button>
                           </div>
                         </div>
-                      } @else if (m.editandoForma()) {
-                        <p class="text-sm text-slate-600 dark:text-slate-300">Arrastre las esquinas en el mapa y pulse «Listo, guardar».</p>
                       } @else {
-                        <div class="grid grid-cols-2 gap-2">
-                          <button (click)="m.ajustarForma()" type="button" class="btn-secondary">Ajustar forma</button>
-                          <button (click)="m.borrando.set(true)" type="button" class="btn-secondary !text-red-700 dark:!text-red-300 !border-red-200 dark:!border-red-800/60">Borrar</button>
-                        </div>
+                        <p class="text-sm text-slate-600 dark:text-slate-300">Para moverla, cambiar su forma o girarla, hágalo directamente en el mapa.</p>
+                        <button (click)="m.borrando.set(true)" type="button" class="btn-ghost-danger w-full">Borrar esta manzana</button>
                       }
                     </div>
                   } @else {
@@ -285,7 +284,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
                     <div class="rounded-xl border-2 border-rose-500 bg-rose-50/60 dark:bg-rose-900/20 p-3 space-y-3">
                       <div class="flex items-center justify-between gap-2">
                         <p class="text-base font-extrabold text-slate-900 dark:text-white truncate">{{ p.nombre || 'Punto sin nombre' }}</p>
-                        <button (click)="m.quitarSeleccion()" type="button" class="text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white px-2 h-9">Cerrar</button>
+                        <button (click)="m.cerrarSeleccion()" type="button" class="btn-ghost btn-sm">Cerrar</button>
                       </div>
                       <label class="block text-sm font-bold text-slate-700 dark:text-slate-200">Nombre
                         <input type="text" [value]="pNombre()" (input)="pNombre.set($any($event.target).value)"
@@ -299,6 +298,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
                           <option value="Otro" [selected]="pTipo() === 'Otro'">Otro</option>
                         </select>
                       </label>
+                      <app-icono-punto-picker [(valor)]="pIcono" [tipo]="pTipo()" />
                       <label class="block text-sm font-bold text-slate-700 dark:text-slate-200">Notas (opcional)
                         <input type="text" [value]="pNotas()" (input)="pNotas.set($any($event.target).value)"
                                class="mt-1 w-full form-control" />
@@ -313,18 +313,16 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
                             <button (click)="m.borrando.set(false)" type="button" class="flex-1 btn-secondary btn-sm">No</button>
                           </div>
                         </div>
-                      } @else if (m.editandoForma()) {
-                        <p class="text-sm text-slate-600 dark:text-slate-300">Arrastre el punto en el mapa y pulse «Listo, guardar».</p>
                       } @else {
-                        <div class="grid grid-cols-2 gap-2">
-                          <button (click)="m.moverPunto()" type="button" class="btn-secondary">Mover en el mapa</button>
-                          <button (click)="m.borrando.set(true)" type="button" class="btn-secondary !text-red-700 dark:!text-red-300 !border-red-200 dark:!border-red-800/60">Borrar</button>
-                        </div>
+                        <p class="text-sm text-slate-600 dark:text-slate-300">Para cambiarlo de lugar, arrástrelo en el mapa.</p>
+                        <button (click)="m.borrando.set(true)" type="button" class="btn-ghost-danger w-full">Borrar este punto</button>
                       }
                     </div>
                   } @else {
                     <button (click)="m.seleccionar('punto', p.id, true)" type="button" class="w-full flex items-center gap-3 px-3 h-12 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-left transition-colors">
-                      <span class="w-8 h-8 rounded-lg bg-rose-600 text-white text-sm font-bold flex items-center justify-center shrink-0">{{ p.tipo === 'Salida' ? 'S' : p.tipo === 'Lugar' ? 'L' : 'P' }}</span>
+                      <span class="w-8 h-8 rounded-lg text-white text-sm font-bold flex items-center justify-center shrink-0" [style.background]="colorTipo(p.tipo)">
+                        @if (iconoDe(p.icono); as ic) { <lucide-icon [img]="ic.datos" [size]="16" [strokeWidth]="2.2"></lucide-icon> } @else { {{ letraTipo(p.tipo) }} }
+                      </span>
                       <span class="flex-1 min-w-0 truncate text-base font-semibold text-slate-800 dark:text-slate-100">{{ p.nombre || 'Punto sin nombre' }}</span>
                     </button>
                   }
@@ -364,7 +362,8 @@ export class EditorPanelComponent {
   readonly guardarLimite = output<void>();
   readonly renombrarManzana = output<{ id: number; numero: string }>();
   readonly borrarManzana = output<number>();
-  readonly actualizarPunto = output<{ id: number; nombre: string; tipo: string; notas: string }>();
+  /** `icono: ''` quita el icono (vuelve la letra del tipo). */
+  readonly actualizarPunto = output<{ id: number; nombre: string; tipo: string; notas: string; icono: string }>();
   readonly borrarPunto = output<number>();
   readonly renumerar = output<void>();
   readonly confirmarRenumeracion = output<void>();
@@ -377,6 +376,7 @@ export class EditorPanelComponent {
   readonly pNombre = signal('');
   readonly pTipo = signal('Salida');
   readonly pNotas = signal('');
+  readonly pIcono = signal<string | null>(null);
 
   readonly manzanas = computed<ManzanaItem[]>(() =>
     (this.manzanasGeojson()?.features ?? [])
@@ -405,6 +405,7 @@ export class EditorPanelComponent {
         nombre: String(f.properties?.nombre ?? ''),
         tipo: String(f.properties?.tipo ?? 'Otro'),
         notas: String(f.properties?.notas ?? ''),
+        icono: f.properties?.icono ?? null,
       })),
   );
 
@@ -429,10 +430,15 @@ export class EditorPanelComponent {
           this.pNombre.set(p?.nombre ?? '');
           this.pTipo.set(p?.tipo || 'Salida');
           this.pNotas.set(p?.notas ?? '');
+          this.pIcono.set(p?.icono ?? null);
         }
       });
     });
   }
+
+  readonly iconoDe = iconoPunto;
+  readonly colorTipo = colorTipoPunto;
+  readonly letraTipo = letraTipoPunto;
 
   esManzanaElegida(m: TerritorioMapComponent, id: number): boolean {
     const s = m.seleccion();
@@ -445,7 +451,7 @@ export class EditorPanelComponent {
   }
 
   puntoCambiado(p: PuntoItem): boolean {
-    return this.pNombre().trim() !== p.nombre || this.pTipo() !== p.tipo || this.pNotas().trim() !== p.notas;
+    return this.pNombre().trim() !== p.nombre || this.pTipo() !== p.tipo || this.pNotas().trim() !== p.notas || this.pIcono() !== p.icono;
   }
 
   avisoNumero(id: number): string | null {
@@ -468,7 +474,7 @@ export class EditorPanelComponent {
 
   guardarPunto(id: number): void {
     const nombre = this.pNombre().trim();
-    if (nombre) this.actualizarPunto.emit({ id, nombre, tipo: this.pTipo(), notas: this.pNotas().trim() });
+    if (nombre) this.actualizarPunto.emit({ id, nombre, tipo: this.pTipo(), notas: this.pNotas().trim(), icono: this.pIcono() ?? '' });
   }
 
   redibujar(m: TerritorioMapComponent): void {

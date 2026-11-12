@@ -298,7 +298,7 @@ export class MapaGeneralPage implements OnInit, OnDestroy {
 
   puedeEditar = computed(() => {
     this.authStore.user();
-    return this.authStore.hasPermission('territorios.editar');
+    return this.authStore.hasPermission('territorios.mapa_editar');
   });
 
   readonly camposFicha: { clave: keyof UnidadCongregacion; etiqueta: string }[] = [

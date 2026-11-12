@@ -44,7 +44,20 @@ export function puedeVerReportes(s: AuthStore): boolean {
   ]);
 }
 
+/** Cada pantalla de Territorios tiene su permiso (modules/territorio/permisos.py); el módulo aparece con cualquiera. */
+export const PERMISOS_TERRITORIOS = [
+  'territorios.ver', 'territorios.editar', 'territorios.mapa_editar', 'territorios.sectores_editar',
+  'territorios.avisos', 'territorios.asignar', 'territorios.horarios_ver', 'territorios.horarios_editar',
+  'territorios.predicacion_ver', 'territorios.predicacion_registrar', 'territorios.predicacion_todos',
+  'territorios.s13_ver',
+];
+
 export function puedeVerTerritorios(s: AuthStore): boolean {
+  return algunPermiso(s, PERMISOS_TERRITORIOS);
+}
+
+/** Tarjetas de territorio (la opción «Congregación»): de ahí salen también el mapa general y los barrios. */
+export function puedeVerTarjetasTerritorio(s: AuthStore): boolean {
   return s.hasPermission('territorios.ver');
 }
 
