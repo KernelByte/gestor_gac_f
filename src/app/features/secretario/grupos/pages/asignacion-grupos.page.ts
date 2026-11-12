@@ -2175,6 +2175,45 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
 
   // Descartar
   descartarAbierto = signal(false);
+  /** Formato que se está generando; null = ninguno. */
+  exportando = signal<'pdf' | 'png' | null>(null);
+
+  /**
+   * Descarga el tablero tal como se ve ahora (guardado o no) en PDF o imagen.
+   * Los grupos van en el orden de las columnas y los inactivos solo si se muestran.
+   */
+  async exportar(formato: 'pdf' | 'png'): Promise<void> {
+    this.cerrarMenus();
+    if (this.exportando()) return;
+    this.exportando.set(formato);
+    const contenido = {
+      ...this.contenidoActual(),
+      grupos: this.grupos().map(g => ({
+        id_grupo: g.id_grupo, nombre_grupo: g.nombre_grupo.trim(),
+        id_capitan: g.id_capitan ?? null, id_auxiliar: g.id_auxiliar ?? null, eliminado: false,
+      })),
+    };
+    try {
+      const resp = await lastValueFrom(this.http.post(
+        '/api/grupos/borrador/exportar',
+        { contenido, solo_activos: !this.showInactivePublishers() },
+        { params: { ...this.paramsCongregacion(), formato }, responseType: 'blob', observe: 'response' },
+      ));
+      const nombre = resp.headers.get('content-disposition')?.match(/filename="?([^"]+)"?/)?.[1]
+        ?? `Grupos_borrador.${formato}`;
+      const url = URL.createObjectURL(resp.body!);
+      const a = this.document.createElement('a');
+      a.href = url;
+      a.download = nombre;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      this.mostrarError(formato === 'pdf' ? 'No se pudo generar el PDF.' : 'No se pudo generar la imagen.');
+    } finally {
+      this.exportando.set(null);
+    }
+  }
+
   /** Panel con el detalle del borrador, abierto desde la pastilla de la cabecera. */
   borradorInfoAbierto = signal(false);
   isDiscarding = signal(false);
