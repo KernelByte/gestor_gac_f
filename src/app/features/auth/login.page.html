@@ -2,14 +2,12 @@
 
   <!-- ═══════════ Fondo vivo: toda la pantalla, detrás del contenido ═══════════
        Corrientes libres; el correo lanza una onda de lectura desde el campo y
-       la contraseña va alineando los aros de la cerradura (solo según su
-       largo, nunca su contenido). -->
+       cada carácter de la contraseña manda corrientes al núcleo, donde se
+       reúnen (solo según su largo, nunca su contenido). -->
   <div #visual class="acc-visual" aria-hidden="true" [attr.data-modo]="estadoCampo()">
     <div class="acc-core"></div>
     <canvas #flow class="acc-flow acc-flow-corrientes"></canvas>
     <div class="acc-scrim"></div>
-    <!-- Dial de la cerradura: corrientes ya acomodadas, sin estela -->
-    <canvas #capa class="acc-flow" style="display:none"></canvas>
   </div>
 
   <!-- ═══════════ Formulario ═══════════ -->

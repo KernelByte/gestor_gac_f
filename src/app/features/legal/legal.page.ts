@@ -4,6 +4,7 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Title } from '@angular/platform-browser';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { ThemeService } from '../../core/services/theme.service';
@@ -48,9 +49,9 @@ interface EntradaIndice { id: string; num: string; titulo: string; }
   <!-- ── Cabecera ─────────────────────────────────────────── -->
   <header class="barra">
     <div class="barra__fila envoltura">
-      <a routerLink="/login" class="marca" aria-label="Suite GAC, ir a iniciar sesión">
-        <img src="images/logo-gac-96.webp" alt="" width="28" height="28" />
-        <span>Suite GAC</span>
+      <a routerLink="/login" class="marca" aria-label="GAC, ir a iniciar sesión">
+        <img src="images/logo-gac-96.webp" alt="" width="32" height="32" />
+        <span>GAC</span>
       </a>
 
       <nav class="tab-nav segmentos segmentos--ancho" aria-label="Documentos legales">
@@ -88,7 +89,7 @@ interface EntradaIndice { id: string; num: string; titulo: string; }
             <p class="sobretitulo entra" style="--i:0"><lucide-icon name="scale" [size]="16"></lucide-icon>Documento legal</p>
             <h1 class="titular entra" style="--i:1">Política de privacidad</h1>
             <p class="entradilla entra" style="--i:2">
-              La Suite GAC es una herramienta de trabajo al servicio de su congregación. Sus datos solo pueden
+              GAC es una herramienta de trabajo al servicio de su congregación. Sus datos solo pueden
               consultarlos las personas de su congregación que están autorizadas. No se comercializan, no se usan
               con fines publicitarios y no se comparten con nadie ajeno a la congregación.
             </p>
@@ -108,7 +109,7 @@ interface EntradaIndice { id: string; num: string; titulo: string; }
                 responsable del tratamiento, tal como lo es de la tarjeta de publicador en papel.
               </p>
               <p>
-                <strong>La Suite GAC</strong> es la herramienta con la que la congregación lleva esos registros. La
+                <strong>GAC</strong> es la herramienta con la que la congregación lleva esos registros. La
                 desarrolla y mantiene un voluntario independiente (KernelByte, Candelaria, Valle del Cauca, Colombia),
                 que actúa únicamente como encargado del tratamiento, por cuenta de la congregación. Contacto: <a [href]="'mailto:' + contactoGac">{{ contactoGac }}</a>.
               </p>
@@ -230,7 +231,7 @@ interface EntradaIndice { id: string; num: string; titulo: string; }
             <p class="sobretitulo entra" style="--i:0"><lucide-icon name="scale" [size]="16"></lucide-icon>Documento legal</p>
             <h1 class="titular entra" style="--i:1">Términos de uso</h1>
             <p class="entradilla entra" style="--i:2">
-              La Suite GAC es una herramienta independiente, desarrollada por voluntarios para apoyar el trabajo de
+              GAC es una herramienta independiente, desarrollada por voluntarios para apoyar el trabajo de
               las congregaciones. <strong>No es una aplicación desarrollada por la organización de Watch Tower Bible
               and Tract Society.</strong>
             </p>
@@ -385,7 +386,7 @@ interface EntradaIndice { id: string; num: string; titulo: string; }
       </div>
       <div class="pie__base">
         <a routerLink="/login" class="btn-secondary"><lucide-icon name="arrow-left" [size]="16"></lucide-icon>Volver a iniciar sesión</a>
-        <span class="pie__firma">© {{ anio }} Suite GAC</span>
+        <span class="pie__firma">© {{ anio }} GAC</span>
       </div>
     </footer>
   </main>
@@ -469,15 +470,16 @@ interface EntradaIndice { id: string; num: string; titulo: string; }
       --l-ease: var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
     }
     :host-context(.dark) {
-      --l-lienzo: var(--color-slate-950);
-      --l-papel: var(--color-slate-900);
+      /* Mismo negro del login (#09090d) en vez del azul marino de slate-950. */
+      --l-lienzo: #09090d;
+      --l-papel: #12111a;
       --l-fuerte: var(--color-slate-50);
       --l-texto: var(--color-slate-300);
       --l-suave: var(--color-slate-400);
-      --l-linea: var(--color-slate-800);
-      --l-linea-suave: color-mix(in oklab, var(--color-slate-800) 70%, transparent);
-      --l-tinte: color-mix(in oklab, var(--accent) 14%, var(--color-slate-950));
-      --l-tinte-borde: color-mix(in oklab, var(--accent) 30%, var(--color-slate-950));
+      --l-linea: rgb(255 255 255 / 0.1);
+      --l-linea-suave: rgb(255 255 255 / 0.06);
+      --l-tinte: color-mix(in oklab, var(--accent) 14%, #09090d);
+      --l-tinte-borde: color-mix(in oklab, var(--accent) 30%, #09090d);
       /* El violeta de marca no llega a 4.5:1 sobre el fondo oscuro. */
       --l-acento-tx: color-mix(in oklab, var(--accent) 45%, white);
       --l-ok: var(--color-emerald-400);
@@ -503,9 +505,10 @@ interface EntradaIndice { id: string; num: string; titulo: string; }
       border-bottom: 1px solid var(--l-linea);
     }
     .barra__fila { display: flex; align-items: center; gap: 1rem; height: 4rem; }
+    /* Misma marca que el login: logo de 32 px y «GAC» en Urbanist 800. */
     .marca { display: inline-flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; margin-right: auto;
-             font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--l-fuerte); }
-    .marca img { width: 1.75rem; height: 1.75rem; object-fit: contain; }
+             font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; letter-spacing: 0.04em; color: var(--l-fuerte); }
+    .marca img { width: 2rem; height: 2rem; object-fit: contain; }
     .segmentos { display: none; }
     .segmentos-movil { padding-top: 1rem; }
     .segmentos-movil .tab-item { justify-content: center; }
@@ -523,7 +526,8 @@ interface EntradaIndice { id: string; num: string; titulo: string; }
     .portada__texto { max-width: 46rem; }
     .sobretitulo {
       display: inline-flex; align-items: center; gap: 0.5rem;
-      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 0.75rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
       color: var(--l-acento-tx);
     }
     .sobretitulo--ok { color: var(--l-ok); }
@@ -542,9 +546,21 @@ interface EntradaIndice { id: string; num: string; titulo: string; }
     .meta__dato { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.875rem; color: var(--l-suave); }
 
     /* Emblema: dos marcos que se dibujan una sola vez al llegar. */
-    .emblema { display: none; position: relative; width: 15rem; aspect-ratio: 1; color: var(--l-acento-tx); }
+    .emblema { display: none; position: relative; isolation: isolate; width: 15rem; aspect-ratio: 1; color: var(--l-acento-tx); }
     .emblema--ok { color: var(--l-ok); }
     @media (min-width: 1024px) { .emblema { display: grid; place-items: center; } }
+    /* Resplandor del núcleo del login, mucho más tenue: da continuidad sin distraer. */
+    .emblema::before {
+      content: ''; position: absolute; inset: -45%; z-index: -1; pointer-events: none;
+      background: radial-gradient(closest-side,
+        color-mix(in oklab, var(--accent) 22%, transparent), color-mix(in oklab, var(--accent) 8%, transparent) 45%, transparent 75%);
+      opacity: 0.55;
+    }
+    :host-context(.dark) .emblema::before { opacity: 1; }
+    .emblema--ok::before {
+      background: radial-gradient(closest-side,
+        color-mix(in oklab, var(--color-emerald-500) 22%, transparent), color-mix(in oklab, var(--color-emerald-500) 8%, transparent) 45%, transparent 75%);
+    }
     .emblema__trazo { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
     .emblema__trazo rect {
       fill: none; stroke: currentColor; stroke-width: 1.25; stroke-dasharray: 1; stroke-dashoffset: 0;
@@ -780,6 +796,7 @@ export class LegalPage implements AfterViewInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private zone = inject(NgZone);
   private injector = inject(Injector);
+  private titulo = inject(Title);
   private host: ElementRef<HTMLElement> = inject(ElementRef);
 
   private barra = viewChild<ElementRef<HTMLSpanElement>>('barra');
@@ -822,7 +839,9 @@ export class LegalPage implements AfterViewInit, OnDestroy {
   constructor() {
     // Cada documento nuevo: arriba del todo y el índice se rehace con sus <h2>.
     effect(() => {
-      this.seccion();
+      // El título de la pestaña dice en qué documento estás.
+      const doc = SECCIONES_LEGALES.find(x => x.id === this.seccion());
+      if (doc) this.titulo.setTitle(`GAC - ${doc.titulo}`);
       afterNextRender(() => {
         window.scrollTo({ top: 0 });
         this.construirIndice();

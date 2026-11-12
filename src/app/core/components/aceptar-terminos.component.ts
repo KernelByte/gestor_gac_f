@@ -22,7 +22,7 @@ import { mensajeError } from '../../shared/mensaje-error';
                title="Antes de continuar" [hasFooter]="true" testId="aceptar-terminos">
       <div class="flex flex-col gap-4 body-lg">
         <p>
-          La Suite GAC guarda datos suyos para que <strong class="font-semibold text-slate-900 dark:text-slate-100">su congregación</strong>
+          GAC guarda datos suyos para que <strong class="font-semibold text-slate-900 dark:text-slate-100">su congregación</strong>
           organice las reuniones, los informes y las asignaciones.
         </p>
         <ul class="flex flex-col gap-2 text-sm">

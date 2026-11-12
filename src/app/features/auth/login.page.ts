@@ -15,16 +15,18 @@ export type ModoCampo = 'libre' | 'atento' | 'pensando' | 'error' | 'exito';
 /** Una partícula del campo de corrientes: un trazo que sigue el flujo. */
 interface Corriente {
   x: number; y: number; edad: number; vida: number; tono: 0 | 1 | 2;
-  /** Acomodada en la cerradura: aro (−1 = libre), ranura y cuándo llegó. */
-  aro: number; ranura: number; llego: number;
+  /** Cuando la corriente es una «persona» que va al núcleo: su turno (−1 = libre). */
+  slot: number;
+  /** Ya llegó al núcleo y se quedó en él. */
+  llego: boolean;
 }
+
 
 /** Onda de lectura: frente circular que recorre las corrientes desde `x, y`. */
 interface Onda { x: number; y: number; t0: number; fuerza: number; fin: number; }
 
 /** Tecla pendiente de convertirse en onda (la lanza el bucle de dibujo). */
 interface Tecla { el: HTMLElement; }
-
 
 @Component({
   standalone: true,
@@ -39,10 +41,8 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   /** Hueco sobre el formulario donde vive el núcleo en móvil y tablet vertical. */
   @ViewChild('hueco', { static: false }) huecoRef?: ElementRef<HTMLElement>;
   @ViewChild('flow', { static: false }) flowRef?: ElementRef<HTMLCanvasElement>;
-  /** Capa limpia (sin estelas) para las corrientes ya acomodadas en la cerradura. */
-  @ViewChild('capa', { static: false }) capaRef?: ElementRef<HTMLCanvasElement>;
-  /** Con «reducir movimiento» no hay bucle: la cerradura se pinta al cambiar algo. */
-  private refrescarCerradura: (() => void) | null = null;
+  /** Con «reducir movimiento» no hay bucle: el círculo se pinta al cambiar algo. */
+  private refrescarGrupo: (() => void) | null = null;
 
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
@@ -87,6 +87,10 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   private modoTimer: ReturnType<typeof setTimeout> | null = null;
   /** Largo de la contraseña o del código: lo único que sabe el fondo. */
   private estrellasObjetivo = 0;
+  /** Al entrar: el grupo se reúne en el núcleo un instante antes de la cortina. */
+  private uniendo = false;
+  /** Qué parte del grupo ya llegó al núcleo (0 a 1): la escribe el motor del fondo. */
+  private avanceGrupo = 0;
   /** Teclas pulsadas que aún no salieron como onda. */
   private teclas: Tecla[] = [];
 
@@ -179,7 +183,7 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     if (this.modoTimer) { clearTimeout(this.modoTimer); this.modoTimer = null; }
     this.modo = m;
     this.estadoCampo.set(m);
-    this.refrescarCerradura?.();
+    this.refrescarGrupo?.();
   }
 
   /** Vuelve al reposo (o a «atento» si sigue un campo enfocado). */
@@ -196,7 +200,7 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   alEnfocar(): void {
     this.enFoco = true;
     if (this.modo === 'libre') this.ponerModo('atento');
-    this.refrescarCerradura?.();
+    this.refrescarGrupo?.();
   }
 
   alDesenfocar(): void {
@@ -204,17 +208,17 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     // focusout llega antes que el focusin del siguiente campo: se espera un tick.
     setTimeout(() => {
       if (!this.enFoco && this.modo === 'atento') this.ponerModo('libre');
-      this.refrescarCerradura?.();
+      this.refrescarGrupo?.();
     });
   }
 
-  /** El correo lanza una onda de lectura; la contraseña gira la cerradura (solo su largo). */
+  /** El correo lanza una onda de lectura; cada carácter de la contraseña manda unas corrientes al núcleo (solo su largo). */
   alEscribir(e: Event): void {
     const el = e.target as HTMLElement | null;
     if (!el || el.tagName !== 'INPUT' || (el as HTMLInputElement).type === 'checkbox') return;
     if (this.desafio()) this.estrellasObjetivo = this.codigo().length;
     // Borrar no lanza onda.
-    this.refrescarCerradura?.();
+    this.refrescarGrupo?.();
     if ((e as InputEvent).inputType?.startsWith('delete')) return;
     if (this.teclas.length < 8) this.teclas.push({ el });
   }
@@ -255,12 +259,13 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
      - Onda de lectura: cada tecla lanza un frente circular desde el
        campo; las corrientes que toca se iluminan y se apartan un poco.
        No se dibuja nada nuevo: el propio fondo «lee».
-     - Cerradura: al escribir la contraseña las propias corrientes se
-       juntan en tres aros alrededor del núcleo. Cada aro tiene una
-       muesca (un hueco que las corrientes saltan sin dibujarse) y gira
-       libre; cada carácter (o del código) lo gira un paso hacia su
-       sitio. Con 12 las muescas quedan alineadas hacia el formulario y
-       por el canal sale un haz de corrientes. Solo cuenta el largo.
+     - Hacia un mismo lugar: cada corriente es una persona. Con cada
+       carácter de la contraseña (o del código) tres corrientes dejan de
+       fluir solas y viajan despacio hacia el núcleo, donde se funden y lo
+       iluminan un poco más. Con 12 caracteres todas llegaron: el grupo
+       está completo. Desde el núcleo el acceso se completa (se abre) o se
+       anula (todas vuelven al flujo). Si se borra, las últimas se sueltan.
+       Es todo: sin figuras ni giros, para no distraer. Solo cuenta el largo.
      Rendimiento: un trazo por color y fotograma, densidad de píxel
      ≤ 1,5, pausa con la pestaña oculta, bucle fuera de Angular.
      ═══════════════════════════════════════════════════════════ */
@@ -269,17 +274,15 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     const lado = this.ladoRef?.nativeElement;
     const hueco = this.huecoRef?.nativeElement;
     const canvas = this.flowRef?.nativeElement;
-    const capa = this.capaRef?.nativeElement;
     const ctx = canvas?.getContext('2d');
-    const sx = capa?.getContext('2d');
-    if (!visual || !lado || !hueco || !canvas || !capa || !ctx || !sx) return;
+    if (!visual || !lado || !hueco || !canvas || !ctx) return;
 
     const PALETAS: Record<ModoCampo, string[]> = {
       libre:    ['rgba(167, 139, 250, 0.40)', 'rgba(196, 181, 253, 0.22)', 'rgba(251, 191, 36, 0.38)'],
       atento:   ['rgba(167, 139, 250, 0.48)', 'rgba(196, 181, 253, 0.26)', 'rgba(251, 191, 36, 0.42)'],
       pensando: ['rgba(196, 181, 253, 0.46)', 'rgba(240, 236, 255, 0.32)', 'rgba(251, 191, 36, 0.42)'],
       error:    ['rgba(251, 113, 133, 0.50)', 'rgba(255, 228, 230, 0.34)', 'rgba(251, 191, 36, 0.40)'],
-      exito:    ['rgba(196, 181, 253, 0.60)', 'rgba(255, 255, 255, 0.50)', 'rgba(110, 231, 183, 0.55)'],
+      exito:    ['rgba(196, 181, 253, 0.60)', 'rgba(255, 255, 255, 0.50)', 'rgba(221, 214, 254, 0.55)'],
     };
     // Cuánto pesa la dirección del modo frente al flujo libre, cuánto gira
     // alrededor del núcleo (0 = directo, π/2 = órbita) y a qué velocidad.
@@ -300,30 +303,16 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     let calidad = 1, muestras = 0, sumaDt = 0, bajadas = 0;
     let bordeIzq: CanvasGradient | null = null;
     let corrientes: Corriente[] = [];
-    // Reserva: corrientes que solo despiertan con la cerradura a la vista y
-    // nacen sobre los aros. Dormidas no cuestan nada.
-    let reserva: Corriente[] = [];
-    let reservaActiva = false;
     let raf = 0, t = Math.random() * 1e4, ultimo = 0;
     // Puntero (objetivo y posición suavizada), en píxeles de pantalla.
     let pxT = -1e4, pyT = -1e4, px = -1e4, py = -1e4;
 
-    const nueva = (c?: Corriente, enAro = false): Corriente => {
+    const nueva = (c?: Corriente): Corriente => {
       const r = Math.random();
-      const n = c ?? { x: 0, y: 0, edad: 0, vida: 0, tono: 0, aro: -1, ranura: 0, llego: 0 };
-      n.aro = -1;
-      if (enAro || (presencia > 0.3 && Math.random() < 0.5)) {
-        // Con la cerradura a la vista, casi la mitad renace sobre un aro:
-        // así las bandas se llenan deprisa.
-        const k = Math.floor(Math.random() * 3);
-        const th = ang[k] + MUESCA_RAD + 0.2 + Math.random() * (Math.PI * 2 - MUESCA_RAD * 2 - 0.4);
-        const rr = RADIOS[k] * radioMax + (Math.random() - 0.5) * radioMax * ANCHO[k] * 2;
-        n.x = this.nucleo.x + Math.cos(th) * rr;
-        n.y = this.nucleo.y + Math.sin(th) * rr;
-      } else {
-        n.x = ox + Math.random() * (w - ox);
-        n.y = Math.random() * h;
-      }
+      const n = c ?? { x: 0, y: 0, edad: 0, vida: 0, tono: 0, slot: -1, llego: false };
+      n.slot = -1; n.llego = false;
+      n.x = ox + Math.random() * (w - ox);
+      n.y = Math.random() * h;
       n.edad = 0;
       n.vida = 260 + Math.random() * 420;
       n.tono = r < 0.04 ? 2 : r < 0.3 ? 1 : 0;
@@ -347,30 +336,14 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
       }
       visual.style.setProperty('--nx', `${Math.round(this.nucleo.x)}px`);
       visual.style.setProperty('--ny', `${Math.round(this.nucleo.y)}px`);
-      // Cerradura: el aro exterior mide `radioMax`; las muescas apuntan al formulario.
+      // El círculo exterior de personas mide ~`radioMax`.
       if (window.innerWidth >= 1024) {
         const libre = Math.max(200, w - lado.getBoundingClientRect().right);
         radioMax = Math.max(110, Math.min(270, libre * 0.33, h * 0.33));
-        alineado = Math.PI;
       } else {
         const g = hueco.getBoundingClientRect();
         radioMax = Math.max(36, Math.min(g.height * 0.46, w * 0.4));
-        alineado = Math.PI / 2;
       }
-      ajustarCapa();
-    };
-
-    /** La capa del dial es un cuadrado alrededor del núcleo, no la pantalla
-        entera: menos píxeles que borrar, pintar y componer en cada fotograma. */
-    const ajustarCapa = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-      capaL = Math.ceil(radioMax * 2.6);
-      capaX = Math.round(this.nucleo.x - capaL / 2);
-      capaY = Math.round(this.nucleo.y - capaL / 2);
-      capa.style.cssText = `display:${capaSucia ? '' : 'none'};right:auto;bottom:auto;left:${capaX}px;top:${capaY}px;width:${capaL}px;height:${capaL}px`;
-      const px = Math.round(capaL * dpr);
-      if (capa.width !== px) { capa.width = px; capa.height = px; }
-      sx.setTransform(dpr, 0, 0, dpr, -capaX * dpr, -capaY * dpr);
     };
 
     /** `conservar`: al bajar la calidad se mantienen la imagen y las corrientes
@@ -417,10 +390,7 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
         // Arrancan a distintas edades para no nacer todas a la vez.
         for (const c of corrientes) c.edad = Math.random() * c.vida;
       }
-      reserva = Array.from({ length: Math.round(cuantas * 0.5) }, () => {
-        const c = nueva(); c.edad = c.vida + 1; return c;   // nace al despertar
-      });
-      vaciarRanuras();
+      vaciarGrupo();
       ubicarNucleo();
     };
 
@@ -438,88 +408,52 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
       (Math.sin(x * 0.0034 + t * 0.00016) + Math.cos(y * 0.0041 - t * 0.00012) +
        Math.sin((x - y) * 0.0019 + t * 0.00009) * 0.8) * 1.15 - 0.3;
 
-    /* ── Cerradura (la forman las corrientes) ── */
-    let radioMax = 120, alineado = Math.PI;
-    const RADIOS = [0.5, 0.75, 1];
-    const ANCHO = [0.03, 0.045, 0.062];           // grosor de cada banda (× radioMax)
-    const MUESCA_RAD = 0.2;                        // media muesca (~11°)
-    const OMEGA = [0.00042, -0.0003, 0.00022];   // giro libre (rad/ms): sentidos alternos
-    const ang = [0.9, 2.6, 4.4], velAng = [0, 0, 0];
-    const paso3 = [0, 0, 0], velPaso = [0, 0, 0];  // 0 libre · 1 en su sitio
-    let presencia = 0, giroComun = 0, abierta = false;
-    let modoCerr: ModoCampo = 'libre';
-    const corto = (d: number) => Math.atan2(Math.sin(d), Math.cos(d));
-    const lim = (v: number) => Math.max(0, Math.min(1, v));
-    // Ranuras del dial: puntos en el aro interior, marcas de bisel en el del
-    // medio y doble fila en el exterior. Una corriente que llega a la banda
-    // ocupa la ranura libre más cercana y desde ahí gira con el aro.
-    const RANURAS = [30, 48, 72];   // pocas: el dial se insinúa, no grita
-    const ocupado = RANURAS.map(n => new Uint8Array(n));
-    const llenos = [0, 0, 0];
-    const anguloRanura = (n: number, i: number) => n === 2 ? (i >> 1) * (Math.PI / 18) : i * (Math.PI * 2 / RANURAS[n]);
-    const radioRanura = (n: number, i: number) =>
-      RADIOS[n] * radioMax + (n === 2 ? ((i & 1) ? 1 : -1) * radioMax * ANCHO[2] * 0.55 : 0);
-    const enMuesca = (n: number, i: number) => Math.abs(corto(anguloRanura(n, i))) < MUESCA_RAD + 0.03;
-    const capacidad = RANURAS.map((m, n) => { let k = 0; for (let i = 0; i < m; i++) if (!enMuesca(n, i)) k++; return k; });
-    const liberar = (c: Corriente) => {
-      ocupado[c.aro][c.ranura] = 0; llenos[c.aro]--;
-      c.aro = -1; c.edad = 0; c.vida = 300 + Math.random() * 300;
-    };
-    const vaciarRanuras = () => {
-      for (const o of ocupado) o.fill(0);
-      llenos.fill(0);
-      for (const c of corrientes) c.aro = -1;
-    };
-    const fijas: number[] = [];      // acomodadas: x, y, aro, ranura, llegada
-    let capaSucia = false, capaX = 0, capaY = 0, capaL = 0;
+    /* ── Hacia el núcleo ── */
+    let radioMax = 120;
+    const TOTAL = 36;                  // 3 corrientes por carácter (12 caracteres)
+    const grupo: (Corriente | null)[] = new Array(TOTAL).fill(null);
+    let reclutadas = 0, dentro = 0, unionPrevia = -1;
 
-    const actualizarCerradura = (dt: number, quieto = false) => {
-      const modo = this.modo, f = dt / 16.7;
-      const id = document.activeElement?.id;
-      const total = this.desafio() ? 6 : 12, porAro = total / 3;
-      const largo = this.estrellasObjetivo;
-      const presMeta = modo === 'exito' ? 0
-        : modo === 'pensando' || largo > 0 || id === 'password' || id === 'codigo2fa' ? 1 : 0;
-      presencia = quieto ? presMeta : presencia + (presMeta - presencia) * Math.min(1, 0.05 * f);
-      if (modo === 'error' && modoCerr !== 'error') {
-        // Al fallar los aros se sueltan de golpe.
-        for (let i = 0; i < 3; i++) velAng[i] += (i % 2 ? -1 : 1) * (0.1 + Math.random() * 0.08);
+    /** Cuántas deberían ir: tres por carácter; todas al comprobar o entrar. */
+    const personasMeta = () => {
+      const modo = this.modo;
+      if (this.uniendo || modo === 'exito') return TOTAL;
+      if (modo === 'error') return 0;
+      if (modo === 'pensando') return this.estrellasObjetivo ? TOTAL : 0;
+      const total = this.desafio() ? 6 : 12;
+      return Math.min(TOTAL, Math.round(this.estrellasObjetivo * TOTAL / total));
+    };
+    const vaciarGrupo = () => { grupo.fill(null); reclutadas = 0; dentro = 0; };
+    const liberar = (i: number) => {
+      const c = grupo[i];
+      if (!c) return;
+      if (c.llego) dentro--;
+      c.slot = -1; c.llego = false; grupo[i] = null; reclutadas--;
+    };
+    /** Recluta una corriente a media distancia del núcleo: ni pegada (no se
+        notaría el viaje) ni en el otro extremo de la pantalla. */
+    const reclutar = (i: number) => {
+      let mejor: Corriente | null = null, dm = Infinity;
+      for (let k = 0; k < 10; k++) {
+        const c = corrientes[Math.floor(Math.random() * corrientes.length)];
+        if (!c || c.slot >= 0) continue;
+        const d = Math.abs(Math.hypot(c.x - this.nucleo.x, c.y - this.nucleo.y) - radioMax * (this.uniendo ? 0.9 : 1.5));
+        if (d < dm) { dm = d; mejor = c; }
       }
-      modoCerr = modo;
-      giroComun = modo === 'pensando' ? giroComun + dt * 0.0009 : 0;
+      if (mejor) { mejor.slot = i; mejor.llego = false; grupo[i] = mejor; reclutadas++; }
+    };
 
-      for (let i = 0; i < 3; i++) {
-        const meta = modo === 'error' ? 0 : modo === 'pensando' || modo === 'exito' ? 1
-          : lim((largo - i * porAro) / porAro);
-        if (quieto) { paso3[i] = meta; velPaso[i] = 0; }
-        else {
-          // Muelle con un rebote leve: cada carácter se siente como un clic.
-          velPaso[i] = (velPaso[i] + (meta - paso3[i]) * 0.16 * f) * Math.pow(0.68, f);
-          paso3[i] += velPaso[i] * f;
-        }
-        const sentido = Math.sign(OMEGA[i]);
-        if (meta === 0 && paso3[i] < 0.03) {
-          // Libre: gira solo, a su ritmo.
-          velAng[i] += (OMEGA[i] * 16.7 * (modo === 'error' ? 5 : 1) - velAng[i]) * 0.04 * f;
-        } else {
-          // En camino: le falta (1 - paso) de un cuarto de vuelta para llegar.
-          const objetivo = alineado + giroComun + sentido * (1 - paso3[i]) * 1.6;
-          if (quieto) { ang[i] = objetivo; velAng[i] = 0; }
-          else velAng[i] = (velAng[i] + corto(objetivo - ang[i]) * 0.09 * f) * Math.pow(0.7, f);
-        }
-        if (!quieto) ang[i] += velAng[i] * f;
-      }
-      abierta = modo !== 'error' && presencia > 0.5 && paso3.every(p => p > 0.97) &&
-        Math.abs(corto(ang[2] - alineado - giroComun)) < 0.05;
-      const activa = presencia > 0.05;
-      if (activa !== reservaActiva) {
-        reservaActiva = activa;
-        // Al dormirse se dan por muertas: la próxima vez nacen sobre los aros.
-        if (!activa) for (const c of reserva) c.edad = c.vida + 1;
-      }
+    const actualizarGrupo = () => {
+      const n = personasMeta();
+      for (let i = TOTAL - 1; i >= n; i--) liberar(i);          // al borrar o fallar, vuelven al flujo
+      for (let i = 0; i < n; i++) if (!grupo[i]) reclutar(i);
+      // El núcleo gana luz con cada corriente que llega.
+      this.avanceGrupo = dentro / TOTAL;
+      const union = Math.round(dentro / TOTAL * 20) / 20;
+      if (union !== unionPrevia) { unionPrevia = union; visual.style.setProperty('--union', String(union)); }
     };
     let rafQuieto = 0;
-    this.refrescarCerradura = () => {
+    this.refrescarGrupo = () => {
       if (!this.prefiereMenosMovimiento) { arrancar(); return; }
       cancelAnimationFrame(rafQuieto);
       rafQuieto = requestAnimationFrame(() => pintarQuieto());
@@ -530,6 +464,7 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     const BANDA = 30;                // grosor del frente
     let modoPrevio: ModoCampo = 'libre';
     const iluminadas: number[] = [];  // segmentos tocados por una onda: x0, y0, x1, y1, luz
+    const gente: number[] = [];       // corrientes en viaje: x, y, brillo
 
     const paso = (dt: number, desvanecer: boolean) => {
       t += dt;
@@ -544,7 +479,7 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
       // Ondas nuevas: desde el campo (borde derecho en escritorio, arriba en móvil).
       while (this.teclas.length) {
         const el = this.teclas.shift()!.el;
-        if (el.id !== 'username') continue;   // la contraseña mueve la cerradura
+        if (el.id !== 'username') continue;   // la contraseña manda corrientes al núcleo
         const r = el.getBoundingClientRect();
         const ancho = window.innerWidth >= 1024;
         if (ondas.length >= 4) ondas.shift();
@@ -560,12 +495,11 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
       for (let i = ondas.length - 1; i >= 0; i--) {
         if ((t - ondas[i].t0) * VEL_ONDA > ondas[i].fin) ondas.splice(i, 1);
       }
-      actualizarCerradura(dt);
-      const fr = dt / 16.7;
-      // Con error, al entrar o sin la cerradura a la vista, las acomodadas se sueltan.
-      const soltar = modo === 'error' || modo === 'exito' || presencia < 0.3;
-      fijas.length = 0;
+      actualizarGrupo();
       iluminadas.length = 0;
+      gente.length = 0;
+      const fr = dt / 16.7;
+      const rapido = modo === 'exito' || this.uniendo;
 
       if (desvanecer) {
         // Borra un poco del fotograma anterior: deja estelas que se apagan.
@@ -587,29 +521,27 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
       const R = Math.min(190, w * 0.3);
       // Sin puntero en la ventana (táctil o fuera): R2 = 0 y no se calcula.
       const R2 = px > -5000 ? R * R : 0;
-      const grupos = reservaActiva ? [corrientes, reserva] : [corrientes];
       for (let tono = 0; tono < 3; tono++) {
         ctx.strokeStyle = colores[tono];
         ctx.beginPath();
-        for (const grupo of grupos) for (const c of grupo) {
+        for (const c of corrientes) {
           if (c.tono !== tono) continue;
-          const deReserva = grupo === reserva;
 
-          // Acomodada: ya no fluye ni deja estela; gira con su aro.
-          if (c.aro >= 0) {
-            if (soltar) liberar(c);
-            else {
-              const g = ang[c.aro] + anguloRanura(c.aro, c.ranura), rr = radioRanura(c.aro, c.ranura);
-              const tx = cx + Math.cos(g) * rr, ty = cy + Math.sin(g) * rr;
-              c.x += (tx - c.x) * Math.min(1, 0.22 * fr);
-              c.y += (ty - c.y) * Math.min(1, 0.22 * fr);
-              fijas.push(c.x, c.y, c.aro, c.ranura, Math.min(1, (t - c.llego) / 350));
-              continue;
-            }
-          }
+          // Persona que va al núcleo: sigue el MISMO flujo que las demás y solo
+          // se inclina hacia él, así dibuja la misma estela curva. Al llegar se
+          // queda dentro (no se dibuja) y lo ilumina.
+          const viaja = c.slot >= 0;
+          if (viaja && c.llego) { c.x = cx; c.y = cy; continue; }
+
           let a = angulo(c.x, c.y);
 
-          if (peso > 0) {
+          if (viaja) {
+            const kx = cx - c.x, ky = cy - c.y;
+            const kd = Math.sqrt(kx * kx + ky * ky);
+            if (kd < 20 || !desvanecer) { c.llego = true; dentro++; c.x = cx; c.y = cy; continue; }
+            // Mismo remolino que el resto de corrientes cerca del núcleo.
+            a += hacia(a, Math.atan2(ky, kx) + (giro ? giro * 0.5 : 0.45)) * (rapido ? 0.95 : 0.85);
+          } else if (peso > 0) {
             // Se gira el ángulo hacia la dirección del modo por el camino más
             // corto (sumar vectores opuestos daba casi cero y trazos en zigzag).
             const kx = cx - c.x, ky = cy - c.y;
@@ -627,62 +559,6 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
               fuerza *= Math.max(0, 1 - kd / (this.nucleo.r * (modo === 'atento' ? 6 : 9)));
             }
             a += hacia(a, objetivo) * fuerza;
-          }
-
-          // Cerradura: las corrientes cercanas se juntan en la banda del aro
-          // más próximo y giran con él. La muesca la saltan sin dibujarse
-          // (hueco limpio que gira con el aro); a sus lados brillan más (bisagras).
-          let luzOrden = 0, velMul = 1, ocultar = false;
-          if (presencia > 0.004) {
-            const kx = c.x - cx, ky = c.y - cy;
-            const kd = Math.sqrt(kx * kx + ky * ky);
-            const th = Math.atan2(ky, kx);
-            const relHaz = abierta && kd > radioMax * 0.42 && kd < radioMax * 2.4 ? corto(th - ang[1]) : 9;
-            if (Math.abs(relHaz) < 0.3) {
-              // Canal libre: las corrientes de alrededor se suman al haz y salen
-              // disparadas por él. Apuntan a un punto más adelante del rayo: convergen.
-              const mx = cx + Math.cos(ang[1]) * (kd + 70), my = cy + Math.sin(ang[1]) * (kd + 70);
-              a += hacia(a, Math.atan2(my - c.y, mx - c.x)) * 0.9;
-              const centrado = 1 - Math.abs(relHaz) / 0.3;
-              velMul = 1.3 + 0.8 * centrado; luzOrden = 0.25 + 0.4 * centrado;
-            } else if (kd > radioMax * 0.36 && kd < radioMax * 1.16) {
-              let n = 0;
-              for (let k = 1; k < 3; k++) if (Math.abs(kd - RADIOS[k] * radioMax) < Math.abs(kd - RADIOS[n] * radioMax)) n = k;
-              const grosor = radioMax * ANCHO[n];
-              // Cada corriente tiene su carril: el aro exterior va en dos filas.
-              let off = (c.vida % 1) * 2 - 1;
-              if (n === 2) off = Math.sign(off) * (0.5 + 0.5 * Math.abs(off));
-              const desv = (kd - (RADIOS[n] * radioMax + off * grosor)) / (grosor * 2.5);
-              const listo = lim(paso3[n]);
-              const lleno = llenos[n] >= capacidad[n];
-              // Con el aro completo las demás pasan casi de largo: el dial queda nítido.
-              const s = presencia * (0.35 + 0.65 * listo) * (lleno ? 0.25 : 1);
-              const rel = corto(th - ang[n]);
-              const sentido = Math.sign(OMEGA[n]);
-              const enBanda = Math.max(0, 1 - Math.abs(desv));
-              if (!lleno && presencia > 0.5 && enBanda > 0.45 && Math.abs(rel) > MUESCA_RAD + 0.03) {
-                // Llegó a la banda: ocupa la ranura libre más cercana.
-                const i = n === 2
-                  ? ((Math.round(rel / (Math.PI / 18)) + 36) % 36) * 2 + (off > 0 ? 1 : 0)
-                  : (Math.round(rel / (Math.PI * 2 / RANURAS[n])) + RANURAS[n]) % RANURAS[n];
-                if (!enMuesca(n, i) && !ocupado[n][i]) {
-                  ocupado[n][i] = 1; llenos[n]++;
-                  c.aro = n; c.ranura = i; c.llego = t;
-                  continue;
-                }
-              }
-              if (Math.abs(rel) < MUESCA_RAD) {
-                // Muesca: la salta sin dibujarse.
-                ocultar = s > 0.3; velMul = 2.2;
-                a += hacia(a, th + sentido * Math.PI / 2) * s;
-              } else {
-                // Lejos de la banda entra casi recta; dentro gira tangente.
-                const corr = Math.max(-1.1, Math.min(1.1, desv * 0.9));
-                a += hacia(a, th + sentido * (Math.PI / 2 + corr)) * s * 0.95;
-                velMul = 1 - 0.4 * s * enBanda;
-                luzOrden = lleno ? 0 : s * enBanda * 0.2;
-              }
-            }
           }
 
           // Onda de lectura: el frente ilumina la corriente y la empuja hacia fuera.
@@ -712,22 +588,28 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
             a += hacia(a, ta) * f;
           }
 
-          const k = v * (tono === 2 ? 1.3 : 1) * (1 + luz * 1.2) * velMul;
-          const nx = c.x + Math.cos(a) * k;
-          const ny = c.y + Math.sin(a) * k;
-          const brillo = Math.max(luz, luzOrden);
-          if (ocultar) { /* salta la muesca */ }
-          else if (brillo > 0.12) iluminadas.push(c.x, c.y, nx, ny, brillo);
+          const k = v * (tono === 2 ? 1.3 : 1) * (1 + luz * 1.2);
+          const nx = c.x + Math.cos(a) * k * (viaja ? (rapido ? 3.2 : 1.9) : 1);
+          const ny = c.y + Math.sin(a) * k * (viaja ? (rapido ? 3.2 : 1.9) : 1);
+          if (viaja) {
+            // Su trazo es un poco más claro que el resto y se apaga al acercarse.
+            const d = Math.hypot(cx - nx, cy - ny);
+            gente.push(nx, ny, Math.min(1, d / (radioMax * 0.6)));
+            iluminadas.push(c.x, c.y, nx, ny, Math.max(luz, 0.5 * Math.min(1, d / (radioMax * 0.6)) + 0.12));
+            c.x = nx; c.y = ny;
+            continue;   // sin envejecer: no renace hasta llegar o soltarse
+          }
+          if (luz > 0.12) iluminadas.push(c.x, c.y, nx, ny, luz);
           else { ctx.moveTo(c.x, c.y); ctx.lineTo(nx, ny); }
           c.x = nx; c.y = ny; c.edad++;
-          if (c.edad > c.vida || nx < ox - 10 || ny < -10 || nx > w + 10 || ny > h + 10) nueva(c, deReserva);
+          if (c.edad > c.vida || nx < ox - 10 || ny < -10 || nx > w + 10 || ny > h + 10) nueva(c);
         }
         ctx.stroke();
       }
 
-      // Lo que tocó la onda o ya está en órbita: más claro (deja estela de luz).
+      // Lo que tocó la onda de lectura: más claro un instante.
       if (iluminadas.length) {
-        const claro = modo === 'error' ? '255, 205, 213' : modo === 'exito' ? '220, 252, 231' : '237, 233, 254';
+        const claro = modo === 'error' ? '255, 205, 213' : modo === 'exito' ? '245, 243, 255' : '237, 233, 254';
         for (const [min, max, alfa, grueso] of [[0.12, 0.45, 0.2, 1], [0.45, 0.85, 0.4, 1], [0.85, 9, 0.65, 1.2]]) {
           ctx.strokeStyle = `rgba(${claro}, ${alfa})`;
           ctx.lineWidth = grueso;
@@ -743,56 +625,15 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
         ctx.lineWidth = 1;
       }
 
-      // Capa limpia: el dial. Se borra entera cada fotograma (sin estelas) y
-      // se oculta cuando no hay nada, que es casi siempre.
-      if (!fijas.length) {
-        if (capaSucia) { sx.clearRect(capaX, capaY, capaL, capaL); capa.style.display = 'none'; capaSucia = false; }
-        return;
-      }
-      if (!capaSucia) { capa.style.display = ''; capaSucia = true; }
-      sx.clearRect(capaX, capaY, capaL, capaL);
-      sx.globalCompositeOperation = 'lighter';
-      sx.lineCap = 'round';
-      // Lavanda, no blanco: el dial acompaña al fondo en vez de competir con el texto.
-      const claroDial = modo === 'pensando' ? '221, 214, 254' : '196, 181, 253';
-      const grosorMedio = radioMax * ANCHO[1];
-      for (let n = 0; n < 3; n++) {
-        const listo = lim(paso3[n]);
-        const alfa = 0.28 + 0.34 * listo;
-        sx.strokeStyle = sx.fillStyle = `rgba(${claroDial}, ${alfa})`;
-        sx.lineWidth = 0.9;
-        sx.beginPath();
-        const bisagras: number[] = [], nuevas: number[] = [];
-        for (let k = 0; k < fijas.length; k += 5) {
-          if (fijas[k + 2] !== n) continue;
-          const x = fijas[k], y = fijas[k + 1], i = fijas[k + 3], lleg = fijas[k + 4];
-          const relR = corto(anguloRanura(n, i));
-          if (Math.abs(relR) < MUESCA_RAD + 0.2) { bisagras.push(x, y); continue; }
-          if (lleg < 1) nuevas.push(x, y, lleg);
-          if (n === 1) {
-            // Bisel: marca radial, más larga cada cinco.
-            const g = ang[1] + relR, L = (i % 4 === 0 ? 0.9 : 0.45) * grosorMedio;
-            const dx = Math.cos(g), dy = Math.sin(g);
-            sx.moveTo(x - dx * L, y - dy * L); sx.lineTo(x + dx * L, y + dy * L);
-          } else {
-            const r = n === 0 ? 1.2 : 1;
-            sx.moveTo(x + r, y); sx.arc(x, y, r, 0, Math.PI * 2);
-          }
-        }
-        if (n === 1) sx.stroke(); else sx.fill();
-        // Bisagras: a los lados de la muesca, más gruesas y con halo.
-        if (bisagras.length) {
-          sx.fillStyle = `rgba(${claroDial}, ${Math.min(1, alfa + 0.2)})`;
-          sx.beginPath();
-          for (let k = 0; k < bisagras.length; k += 2) { sx.moveTo(bisagras[k] + 1.8, bisagras[k + 1]); sx.arc(bisagras[k], bisagras[k + 1], 1.8, 0, Math.PI * 2); }
-          sx.fill();
-        }
-        // Recién llegadas: destello que se apaga en un tercio de segundo.
-        if (nuevas.length) {
-          sx.fillStyle = `rgba(${claroDial}, 0.18)`;
-          sx.beginPath();
-          for (let k = 0; k < nuevas.length; k += 3) { const r = 1.5 + 3 * (1 - nuevas[k + 2]); sx.moveTo(nuevas[k] + r, nuevas[k + 1]); sx.arc(nuevas[k], nuevas[k + 1], r, 0, Math.PI * 2); }
-          sx.fill();
+      // Una cabeza tenue en cada corriente que viaja. El lienzo conserva lo
+      // dibujado y lo borra un 4,5 % por fotograma: con la opacidad baja
+      // (0,09) el punto queda en un lavanda suave, sin saturarse a blanco.
+      if (gente.length) {
+        const color = modo === 'error' ? '251, 146, 160' : modo === 'exito' ? '221, 214, 254' : '196, 181, 253';
+        ctx.globalCompositeOperation = 'source-over';
+        for (let k = 0; k < gente.length; k += 3) {
+          ctx.fillStyle = `rgba(${color}, ${0.09 * gente[k + 2] * fr})`;
+          ctx.beginPath(); ctx.arc(gente[k], gente[k + 1], 1.5, 0, Math.PI * 2); ctx.fill();
         }
       }
     };
@@ -813,12 +654,12 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
       }
     };
 
-    // Móvil en reposo (nada enfocado, sin cerradura ni ondas): tras unos
+    // Móvil en reposo (nada enfocado, sin personas ni ondas): tras unos
     // segundos el fondo se queda quieto y el bucle se apaga para no gastar
     // batería. Vuelve en cuanto se toca un campo.
     let reposoDesde = 0;
     const enReposo = () => window.innerWidth < 1024 && this.modo === 'libre' &&
-      !this.estrellasObjetivo && presencia < 0.01 && !ondas.length && !this.teclas.length;
+      !this.estrellasObjetivo && !reclutadas && !ondas.length && !this.teclas.length;
 
     const bucle = (ahora: number) => {
       const dt = ultimo ? Math.min(40, ahora - ultimo) : 16.7;
@@ -841,7 +682,7 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     const pintarQuieto = () => {
       ctx.clearRect(0, 0, w, h);
       for (let i = 0; i < 140; i++) paso(16.7, false);
-      actualizarCerradura(0, true);
+      actualizarGrupo();
     };
 
     medir();
@@ -947,7 +788,7 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     this.usarRecuperacion.set(!this.usarRecuperacion());
     this.codigo.set('');
     this.estrellasObjetivo = 0;
-    this.refrescarCerradura?.();
+    this.refrescarGrupo?.();
   }
 
   cancelarDosPasos(mensaje?: string) {
@@ -962,9 +803,23 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     // Las corrientes salen hacia adelante un instante antes de cambiar de pantalla.
     const ir = () => {
       this.loading.set(false);
-      this.abrirCortina();
-      this.ponerModo('exito');
-      setTimeout(() => this.router.navigateByUrl('/'), this.prefiereMenosMovimiento ? 0 : 900);
+      this.uniendo = true;
+      this.refrescarGrupo?.();
+      // Una sola secuencia: las corrientes llegan al núcleo, él se enciende y
+      // de ese mismo punto nace la cortina. Se espera a que llegue casi todo el
+      // grupo (con un tope, para no demorar el acceso).
+      const abrir = () => {
+        this.abrirCortina();
+        this.ponerModo('exito');
+        setTimeout(() => this.router.navigateByUrl('/'), this.prefiereMenosMovimiento ? 0 : 900);
+      };
+      if (this.prefiereMenosMovimiento) { abrir(); return; }
+      const inicio = performance.now();
+      const esperar = () => {
+        if (this.avanceGrupo >= 0.85 || performance.now() - inicio > 750) setTimeout(abrir, 140);
+        else setTimeout(esperar, 40);
+      };
+      esperar();
     };
     this.auth.me().subscribe({ next: ir, error: ir });
   }

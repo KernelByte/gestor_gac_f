@@ -94,7 +94,10 @@ svg {
   background: radial-gradient(closest-side,
     rgb(167 139 250 / 0.34), rgb(124 58 237 / 0.15) 45%, transparent 75%);
   animation: acc-breathe 9s ease-in-out infinite alternate;
-  transition: filter 600ms ease;
+  /* --union (0 a 1) lo escribe el componente: el núcleo gana un poco de luz
+     cuanto más grande es el grupo que se reúne. */
+  filter: brightness(calc(1 + var(--union, 0) * 0.4));
+  transition: filter 700ms ease;
   will-change: transform, opacity;
 
   @media (max-width: 1023.98px) { width: min(90vw, 420px); }
@@ -769,7 +772,9 @@ svg {
 [data-modo='atento'] .acc-core { animation-duration: 6s; }
 [data-modo='pensando'] .acc-core { animation: acc-breathe 1.1s ease-in-out infinite alternate; filter: brightness(1.35); }
 [data-modo='error'] .acc-core { filter: hue-rotate(95deg) saturate(1.4); }
-[data-modo='exito'] .acc-core { filter: brightness(1.8); }
+/* Al entrar, el núcleo sigue la luz que ya había ganado con la contraseña y
+   la lleva al máximo: de ahí nace la cortina. */
+[data-modo='exito'] .acc-core { filter: brightness(1.9); transition: filter 380ms var(--ease); }
 
 /* ─── Entrada a la app ───────────────────────────────────────── */
 
