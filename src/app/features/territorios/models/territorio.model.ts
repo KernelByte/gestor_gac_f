@@ -119,7 +119,9 @@ export interface ViviendaDeTerritorio extends Vivienda {
 }
 
 /** Texto de una dirección para listas: "Calle 5 #12, Edif. Sol, Apto 3". */
-export function textoDireccion(v: Vivienda): string {
+export function textoDireccion(
+  v: { direccion?: string | null; numero?: string | null; edificio?: string | null; apartamento?: string | null },
+): string {
   const partes = [
     [v.direccion, v.numero ? `#${v.numero}` : ''].filter(Boolean).join(' '),
     v.edificio ? `Edif. ${v.edificio}` : '',
@@ -233,6 +235,21 @@ export interface ResumenTerritorio {
   porcentaje: number;
   ultimo_completado: string | null;
   asignado_a: string | null;
+  /** Desde cuándo la tiene asignada (la asignación abierta más antigua). */
+  asignado_desde: string | null;
+  dias_asignado: number | null;
+}
+
+/** Una dirección que coincide con la búsqueda y la tarjeta a la que pertenece. */
+export interface DireccionHallada {
+  id_territorio: number;
+  codigo: string;
+  numero_manzana: string | null;
+  direccion: string | null;
+  numero: string | null;
+  edificio: string | null;
+  apartamento: string | null;
+  tipo_aviso: string;
 }
 
 export interface RegistroS13Ciclo {

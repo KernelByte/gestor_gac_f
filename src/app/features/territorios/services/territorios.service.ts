@@ -23,6 +23,7 @@ import {
   SalidaPredicacion,
   ProgresoTerritorio,
   ResumenTerritorio,
+  DireccionHallada,
   ProgresoConfiguracion,
   RegistroS13,
   CicloTerritorio,
@@ -319,6 +320,11 @@ export class TerritoriosService {
   /** {id_territorio: cantidad} de "no visitar" que llevan más de un año sin revisarse. */
   getNoVisitarPorRevisar(): Observable<Record<string, number>> {
     return this.http.get<Record<string, number>>(`${this.baseUrl}/no-visitar/por-revisar`);
+  }
+
+  /** En qué tarjeta está una dirección. Mínimo 3 letras; el servidor devuelve hasta 30. */
+  buscarDirecciones(texto: string): Observable<DireccionHallada[]> {
+    return this.http.get<DireccionHallada[]>(`${this.baseUrl}/direcciones/buscar`, { params: { q: texto } });
   }
 
   // ── Cobertura ────────────────────────────────────────────────────────

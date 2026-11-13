@@ -75,7 +75,7 @@ interface TarjetaElegible {
           }
         </section>
 
-        <section class="order-2 lg:order-1 min-h-0 flex flex-col gap-3 overflow-y-auto simple-scrollbar pr-1" aria-label="Lista de barrios">
+        <section class="order-2 lg:order-1 min-h-0 flex flex-col gap-3 overflow-y-auto simple-scrollbar pr-1 [&>*]:shrink-0" aria-label="Lista de barrios">
 
           @if (!hayLimite() && !cargando()) {
             <app-aviso tone="warning" title="Falta el territorio de la congregación">

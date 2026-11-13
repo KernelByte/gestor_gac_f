@@ -1,3 +1,4 @@
+import type { jsPDF } from 'jspdf';
 import { estiloParaImprimir, cargarMaplibre } from './mapa-base-propio';
 
 /**
@@ -196,8 +197,8 @@ function centroPt(anillo: [number, number][]): [number, number] {
   return [cx / (3 * a), cy / (3 * a)];
 }
 
-/** Genera el PDF S-12-S de la tarjeta y lo descarga. */
-export async function descargarTarjetaS12(datos: DatosTarjetaS12): Promise<void> {
+/** Dibuja la tarjeta S-12-S en la página actual de `pdf`. */
+async function dibujarTarjeta(pdf: jsPDF, datos: DatosTarjetaS12): Promise<void> {
   const poligonos = poligonosDe(datos.limite);
   if (!poligonos.length) throw new Error('La tarjeta no tiene el límite dibujado.');
   const vista = encuadre(poligonos);
@@ -215,9 +216,6 @@ export async function descargarTarjetaS12(datos: DatosTarjetaS12): Promise<void>
     console.warn('Tarjeta S-12 sin mapa base:', e);
   }
 
-  const { default: jsPDF } = await import('jspdf');
-  const pdf = new jsPDF({ unit: 'pt', format: [ANCHO, ALTO], orientation: 'landscape' });
-  pdf.setProperties({ title: `Tarjeta del mapa del territorio ${datos.codigo}`, subject: 'S-12-S' });
   pdf.setTextColor(0, 0, 0);
 
   // ── Encabezado ──
@@ -354,5 +352,37 @@ export async function descargarTarjetaS12(datos: DatosTarjetaS12): Promise<void>
   pdf.setTextColor(120, 120, 120);
   pdf.text(`Impresa el ${new Date().toLocaleDateString('es-CO')}`, DER, 248.3, { align: 'right' });
 
+}
+
+async function nuevoPdf(titulo: string): Promise<jsPDF> {
+  const { default: JsPDF } = await import('jspdf');
+  const pdf = new JsPDF({ unit: 'pt', format: [ANCHO, ALTO], orientation: 'landscape' });
+  pdf.setProperties({ title: titulo, subject: 'S-12-S' });
+  return pdf;
+}
+
+/** Genera el PDF S-12-S de la tarjeta y lo descarga. */
+export async function descargarTarjetaS12(datos: DatosTarjetaS12): Promise<void> {
+  const pdf = await nuevoPdf(`Tarjeta del mapa del territorio ${datos.codigo}`);
+  await dibujarTarjeta(pdf, datos);
   pdf.save(`S-12_${datos.codigo}.pdf`);
+}
+
+/**
+ * Un solo PDF con una tarjeta por página, en el orden dado. Se dibujan una tras otra (cada mapa se
+ * renderiza aparte) y `alAvanzar` informa cuántas van, para mostrar el avance.
+ */
+export async function descargarTarjetasS12(
+  tarjetas: readonly DatosTarjetaS12[],
+  nombreArchivo: string,
+  alAvanzar?: (hechas: number, total: number) => void,
+): Promise<void> {
+  if (!tarjetas.length) return;
+  const pdf = await nuevoPdf('Tarjetas del mapa del territorio');
+  for (const [i, datos] of tarjetas.entries()) {
+    if (i > 0) pdf.addPage([ANCHO, ALTO], 'landscape');
+    await dibujarTarjeta(pdf, datos);
+    alAvanzar?.(i + 1, tarjetas.length);
+  }
+  pdf.save(`${nombreArchivo}.pdf`);
 }

@@ -1,10 +1,11 @@
 import { Component, signal, computed, inject, OnInit, viewChild } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { geoKinks } from '../utils/geo-math.util';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
-import { firstValueFrom, forkJoin, timeout } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, firstValueFrom, forkJoin, of, switchMap, timeout } from 'rxjs';
 import { TerritoriosService, PublicadorOpcion, RenumeracionManzana } from '../services/territorios.service';
 import { DibujoLoteDialogComponent } from '../components/dibujo-lote-dialog.component';
 import { RenumerarManzanasDialogComponent } from '../components/renumerar-manzanas-dialog.component';
@@ -16,12 +17,13 @@ import { AuthStore } from '../../../core/auth/auth.store';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
 import { EditorPanelComponent } from '../components/editor-panel.component';
 import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm.service';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { AvisoComponent } from '../../../shared/components/aviso/aviso.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
-import { descargarTarjetaS12 } from '../utils/tarjeta-s12.util';
+import { descargarTarjetaS12, descargarTarjetasS12, DatosTarjetaS12 } from '../utils/tarjeta-s12.util';
 import { avisoNumeroRepetido, NumeracionManzanas } from '../utils/numeracion-manzanas.util';
 import {
   Territorio,
@@ -35,6 +37,7 @@ import {
   OcupacionManzanas,
   Punto,
   ResumenTerritorio,
+  DireccionHallada,
   ProgresoConfiguracion,
   ViviendaDeTerritorio,
   textoDiasSinTrabajar,
@@ -45,6 +48,14 @@ import {
 
 import { LucideAngularModule } from '../../../shared/icons';
 import { iconoPunto } from '../utils/iconos-punto';
+/** Letras mínimas para buscar también entre las direcciones. */
+const MIN_BUSQUEDA_DIRECCION = 3;
+
+/** Filtros rápidos de la lista; solo uno activo a la vez. */
+type ChipTerritorio = '' | 'atrasados' | 'nunca' | 'en_curso' | 'por_revisar' | 'asignadas';
+/** Cómo se ordena la lista. */
+type OrdenTerritorio = 'codigo' | 'sin_predicar' | 'asignada' | 'avance';
+
 @Component({
    standalone: true,
    selector: 'app-territorios-page',
@@ -144,7 +155,7 @@ import { iconoPunto } from '../utils/iconos-punto';
           <input
             [(ngModel)]="searchQuery"
             type="search"
-            placeholder="Buscar por código o nombre"
+            [placeholder]="puedeAvisos() ? 'Buscar por código, nombre o dirección' : 'Buscar por código o nombre'"
             class="search-input"
           >
         </label>
@@ -154,6 +165,20 @@ import { iconoPunto } from '../utils/iconos-punto';
           <app-select-picker class="w-full sm:w-56 shrink-0" colorScheme="emerald" ariaLabel="Barrio"
             [(ngModel)]="sectorFilter" [options]="opcionesSectorFiltro()" placeholder="Todos los barrios" [searchable]="false" />
         }
+        <app-select-picker class="w-full sm:w-72 shrink-0" colorScheme="emerald" ariaLabel="Ordenar la lista"
+          [(ngModel)]="orden" [options]="opcionesOrden" [searchable]="false" />
+        <button type="button" (click)="imprimirTarjetas()"
+          [disabled]="progresoTarjetas() !== null || filteredTerritorios().length === 0"
+          title="Un solo PDF con la tarjeta S-12 de cada territorio de la lista, en el orden de ahora"
+          class="btn-secondary h-10 shrink-0 whitespace-nowrap disabled:opacity-60">
+          @if (progresoTarjetas(); as p) {
+            <span class="spinner-sm" aria-hidden="true"></span>
+            Preparando {{ p.hechas }} de {{ p.total }}…
+          } @else {
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimir {{ filteredTerritorios().length }} {{ filteredTerritorios().length === 1 ? 'tarjeta' : 'tarjetas' }}
+          }
+        </button>
         <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar por actividad">
           @for (c of chips(); track c.id) {
             <button type="button" (click)="alternarChip(c.id)"
@@ -238,6 +263,11 @@ import { iconoPunto } from '../utils/iconos-punto';
                             {{ textoUltima(r) }}
                             @if (r?.asignado_a) { <span aria-hidden="true">·</span> {{ r!.asignado_a }} }
                           </p>
+                          @if (direccionesDe(t.id_territorio); as dirs) {
+                            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300 truncate">
+                              <span class="font-semibold">Dirección:</span> {{ textoDir(dirs[0]) }}@if (dirs[0].numero_manzana) { · manzana {{ dirs[0].numero_manzana }} }@if (dirs.length > 1) { · y {{ dirs.length - 1 }} más }
+                            </p>
+                          }
                        </td>
                        <td class="px-3 py-3.5">
                           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border whitespace-nowrap" [ngClass]="getStatusColor(t.estado_territorio)">
@@ -265,8 +295,11 @@ import { iconoPunto } from '../utils/iconos-punto';
                             <span class="text-sm text-slate-400 dark:text-slate-500">Sin empezar</span>
                           }
                        </td>
-                       <td class="hidden @4xl:table-cell px-3 py-3.5 text-sm text-slate-700 dark:text-slate-300 max-w-[14rem] truncate">
-                          {{ r?.asignado_a || '—' }}
+                       <td class="hidden @4xl:table-cell px-3 py-3.5 text-sm text-slate-700 dark:text-slate-300 max-w-[14rem]">
+                          @if (r?.asignado_a) {
+                            <span class="block truncate">{{ r!.asignado_a }}</span>
+                            <span class="block text-xs" [ngClass]="asignacionLarga(r) ? 'font-semibold text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'">{{ textoAsignada(r) }}</span>
+                          } @else { — }
                        </td>
                        <td class="hidden @md:table-cell pr-4 py-3.5 text-right" aria-hidden="true">
                           <svg class="w-4 h-4 inline-block text-slate-300 dark:text-slate-600 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-[color,transform]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
@@ -1169,6 +1202,7 @@ export class TerritoriosPage implements OnInit {
    readonly iconoPunto = iconoPunto;
    private territoriosService = inject(TerritoriosService);
    private confirmar = inject(ConfirmService);
+   private toast = inject(ToastService);
    private authStore = inject(AuthStore);
    /** Cada tarea de la ficha tiene su permiso (el backend exige lo mismo: modules/territorio/permisos.py). */
    private permiso = (codigo: string) => computed(() => {
@@ -1294,7 +1328,42 @@ export class TerritoriosPage implements OnInit {
    set searchQuery(v: string) { this.searchQuerySig.set(v ?? ''); this.currentPage.set(1); }
    get estadoFilter(): string { return this.estadoFilterSig(); }
    set estadoFilter(v: string) { this.estadoFilterSig.set(v ?? ''); this.currentPage.set(1); }
-   chip = signal<'' | 'atrasados' | 'nunca' | 'en_curso' | 'por_revisar'>('');
+   chip = signal<ChipTerritorio>('');
+
+   private ordenSig = signal<OrdenTerritorio>('codigo');
+   get orden(): OrdenTerritorio { return this.ordenSig(); }
+   set orden(v: OrdenTerritorio | null) { this.ordenSig.set(v ?? 'codigo'); this.currentPage.set(1); }
+   readonly opcionesOrden: PickerOption[] = [
+      { value: 'codigo', label: 'Orden: código' },
+      { value: 'sin_predicar', label: 'Orden: más tiempo sin predicar' },
+      { value: 'asignada', label: 'Orden: más tiempo asignada' },
+      { value: 'avance', label: 'Orden: avance de la vuelta' },
+   ];
+   /** Al activar un filtro rápido la lista pasa al orden que lo hace útil: lo más urgente arriba. */
+   private readonly ordenDelChip: Partial<Record<ChipTerritorio, OrdenTerritorio>> = {
+      atrasados: 'sin_predicar',
+      asignadas: 'asignada',
+   };
+
+   /** Direcciones que coinciden con lo escrito: «Calle 10» encuentra su tarjeta aunque no sea código ni nombre. */
+   private hallazgos = signal<DireccionHallada[]>([]);
+   private hallazgosPorTerritorio = computed(() => {
+      const mapa = new Map<number, DireccionHallada[]>();
+      if (this.searchQuerySig().trim().length < MIN_BUSQUEDA_DIRECCION) return mapa;
+      for (const h of this.hallazgos()) mapa.set(h.id_territorio, [...(mapa.get(h.id_territorio) ?? []), h]);
+      return mapa;
+   });
+   direccionesDe(id: number): DireccionHallada[] | undefined {
+      return this.hallazgosPorTerritorio().get(id);
+   }
+   private readonly busquedaDirecciones = toObservable(this.searchQuerySig).pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(q => q.trim().length < MIN_BUSQUEDA_DIRECCION || !this.puedeAvisos()
+         ? of<DireccionHallada[]>([])
+         : this.territoriosService.buscarDirecciones(q.trim()).pipe(catchError(() => of<DireccionHallada[]>([])))),
+      takeUntilDestroyed(),
+   ).subscribe(r => this.hallazgos.set(r));
    resumen = signal<Map<number, ResumenTerritorio>>(new Map());
    textoDias = textoDiasSinTrabajar;
    loading = signal(true);
@@ -1311,6 +1380,8 @@ export class TerritoriosPage implements OnInit {
    renumerando = signal(false);
    saving = signal(false);
    generandoTarjeta = signal(false);
+   /** Avance al imprimir varias tarjetas en un solo PDF; null si no se está haciendo. */
+   progresoTarjetas = signal<{ hechas: number; total: number } | null>(null);
    errorTarjeta = signal<string | null>(null);
    showCreateModal = signal(false);
    showRenumerar = signal(false);
@@ -1589,6 +1660,8 @@ export class TerritoriosPage implements OnInit {
    readonly DIAS_ATRASADO = 120;
    /** Pasados estos, es urgente (6 meses). */
    readonly DIAS_CRITICO = 180;
+   /** Una tarjeta que lleva tanto asignada a la misma persona pide revisión (4 meses). */
+   readonly DIAS_ASIGNADA_LARGA = 120;
 
    resumenDe(id: number): ResumenTerritorio | undefined {
       return this.resumen().get(id);
@@ -1601,6 +1674,14 @@ export class TerritoriosPage implements OnInit {
       if (r.dias_sin_trabajar >= this.DIAS_CRITICO) return 'bg-red-500';
       if (r.dias_sin_trabajar >= this.DIAS_ATRASADO) return 'bg-amber-500';
       return 'bg-emerald-500';
+   }
+
+   asignacionLarga(r: ResumenTerritorio | undefined): boolean {
+      return r?.dias_asignado != null && r.dias_asignado >= this.DIAS_ASIGNADA_LARGA;
+   }
+
+   textoAsignada(r: ResumenTerritorio | undefined): string {
+      return r?.dias_asignado == null ? '' : `Asignada ${this.textoDias(r.dias_asignado)}`;
    }
 
    textoUltima(r: ResumenTerritorio | undefined): string {
@@ -1630,8 +1711,11 @@ export class TerritoriosPage implements OnInit {
    }
 
    /** Un filtro rápido cambia la lista: se vuelve a la primera página para no quedar en una vacía. */
-   alternarChip(id: '' | 'atrasados' | 'nunca' | 'en_curso' | 'por_revisar'): void {
-      this.chip.set(this.chip() === id ? '' : id);
+   alternarChip(id: ChipTerritorio): void {
+      const activar = this.chip() !== id;
+      this.chip.set(activar ? id : '');
+      const orden = activar ? this.ordenDelChip[id] : undefined;
+      if (orden) this.orden = orden;
       this.currentPage.set(1);
    }
 
@@ -1644,6 +1728,7 @@ export class TerritoriosPage implements OnInit {
          atrasados: filas.filter(r => r && r.dias_sin_trabajar !== null && r.dias_sin_trabajar >= this.DIAS_ATRASADO).length,
          nunca: filas.filter(r => r && r.dias_sin_trabajar === null).length,
          en_curso: filas.filter(r => r?.en_curso).length,
+         asignadas: filas.filter(r => this.asignacionLarga(r)).length,
       };
       const porRevisar = Object.keys(this.porRevisar()).length;
       const extra = porRevisar > 0
@@ -1654,11 +1739,14 @@ export class TerritoriosPage implements OnInit {
          { id: 'atrasados' as const, etiqueta: 'Más de 4 meses sin trabajar', cuenta: cuenta.atrasados, activo: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700' },
          { id: 'nunca' as const, etiqueta: 'Nunca trabajados', cuenta: cuenta.nunca, activo: 'bg-slate-200 text-slate-800 border-slate-400 dark:bg-slate-700 dark:text-slate-100 dark:border-slate-500' },
          { id: 'en_curso' as const, etiqueta: 'Vuelta en curso', cuenta: cuenta.en_curso, activo: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700' },
+         { id: 'asignadas' as const, etiqueta: 'Más de 4 meses asignadas', cuenta: cuenta.asignadas, activo: 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-900/30 dark:text-sky-300 dark:border-sky-700' },
       ];
    });
 
    filteredTerritorios = computed(() => {
       const q = this.searchQuerySig().toLowerCase();
+      const hallazgos = this.hallazgosPorTerritorio();
+      const orden = this.ordenSig();
       const estado = this.estadoFilterSig();
       const sector = this.sectorFilterSig();
       const chip = this.chip();
@@ -1666,7 +1754,8 @@ export class TerritoriosPage implements OnInit {
       const lista = this.territorios().filter(t => {
          const matchesSearch =
            (t.nombre ?? '').toLowerCase().includes(q) ||
-           t.codigo.toLowerCase().includes(q);
+           t.codigo.toLowerCase().includes(q) ||
+           hallazgos.has(t.id_territorio);
          const matchesEstado = estado
            ? t.estado_territorio === estado
            : t.estado_territorio !== 'Inactivo';
@@ -1676,16 +1765,24 @@ export class TerritoriosPage implements OnInit {
            (chip === 'atrasados' && !!r && r.dias_sin_trabajar !== null && r.dias_sin_trabajar >= this.DIAS_ATRASADO) ||
            (chip === 'nunca' && !!r && r.dias_sin_trabajar === null) ||
            (chip === 'en_curso' && !!r?.en_curso) ||
-           (chip === 'por_revisar' && (this.porRevisar()[String(t.id_territorio)] ?? 0) > 0);
+           (chip === 'por_revisar' && (this.porRevisar()[String(t.id_territorio)] ?? 0) > 0) ||
+           (chip === 'asignadas' && this.asignacionLarga(r));
          const matchesSector = !sector
            || (sector === 'sin' ? t.id_sector == null : String(t.id_sector) === sector);
          return matchesSearch && matchesEstado && matchesSector && matchesChip;
       });
-      // Por código (T2 antes que T10); con el chip de atrasados, lo más urgente primero.
-      lista.sort((a, b) => (a.codigo ?? '').localeCompare(b.codigo ?? '', 'es', { numeric: true }));
-      if (chip === 'atrasados') {
-         lista.sort((a, b) => (resumen.get(b.id_territorio)?.dias_sin_trabajar ?? 0) - (resumen.get(a.id_territorio)?.dias_sin_trabajar ?? 0));
-      }
+      // Por código natural (T2 antes que T10); los demás órdenes, lo más urgente primero y el código desempata.
+      const porCodigo = (a: Territorio, b: Territorio) => (a.codigo ?? '').localeCompare(b.codigo ?? '', 'es', { numeric: true });
+      const urgencia = (t: Territorio): number => {
+         const r = resumen.get(t.id_territorio);
+         switch (orden) {
+            case 'sin_predicar': return r ? (r.dias_sin_trabajar ?? Number.MAX_SAFE_INTEGER) : -1; // nunca trabajado = lo primero
+            case 'asignada': return r?.dias_asignado ?? -1;
+            case 'avance': return r?.en_curso ? r.porcentaje : -1;
+            default: return 0;
+         }
+      };
+      lista.sort((a, b) => (urgencia(b) - urgencia(a)) || porCodigo(a, b));
       return lista;
    });
 
@@ -2687,6 +2784,38 @@ export class TerritoriosPage implements OnInit {
          this.errorTarjeta.set('No se pudo generar el PDF de la tarjeta. Intente de nuevo.');
       } finally {
          this.generandoTarjeta.set(false);
+      }
+   }
+
+   /** Un solo PDF con las tarjetas de la lista (con sus filtros y su orden); las que no tienen límite dibujado se avisan aparte. */
+   async imprimirTarjetas(): Promise<void> {
+      if (this.progresoTarjetas()) return;
+      const lista = this.filteredTerritorios();
+      const conLimite = lista.filter(t => t.coordenada);
+      const sinLimite = lista.filter(t => !t.coordenada).map(t => t.codigo);
+      if (conLimite.length === 0) {
+         this.toast.warning('No hay tarjetas para imprimir', 'Ninguna de la lista tiene el límite dibujado.');
+         return;
+      }
+      this.progresoTarjetas.set({ hechas: 0, total: conLimite.length });
+      try {
+         // Las manzanas se piden de nuevo: así salen con los números al día aunque se acaben de renumerar.
+         const tarjetas: DatosTarjetaS12[] = await Promise.all(conLimite.map(async t => ({
+            codigo: t.codigo,
+            localidad: this.sectorDe(t)?.nombre ?? t.nombre ?? '',
+            limite: t.coordenada,
+            manzanas: await firstValueFrom(this.territoriosService.getManzanasGeoJSON(t.id_territorio)).catch(() => null),
+         })));
+         await descargarTarjetasS12(tarjetas, `S-12_tarjetas_${hoyIso()}`,
+            (hechas, total) => this.progresoTarjetas.set({ hechas, total }));
+         this.toast.success('Tarjetas listas', sinLimite.length
+            ? `${conLimite.length} en el PDF. Sin límite dibujado y no incluidas: ${sinLimite.join(', ')}.`
+            : `${conLimite.length} ${conLimite.length === 1 ? 'tarjeta' : 'tarjetas'} en un solo PDF.`);
+      } catch (err) {
+         console.error('No se pudo generar el PDF de las tarjetas:', err);
+         this.toast.error('No se pudo generar el PDF', 'Intente de nuevo.');
+      } finally {
+         this.progresoTarjetas.set(null);
       }
    }
 

@@ -8,6 +8,7 @@ import { MatrizPrecursoresComponent } from './components/matriz-precursores.comp
 import { EstadoBadgeComponent } from './components/estado-badge.component';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { ReportesService, KPIItem, PrecursoresMatriz, PrecursorFila, ObjetivoPrecursor, EstadoPrecursor } from '../../services/reportes.service';
+import { descargarCsv } from '../../../../core/utils/csv.util';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
 import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
 
@@ -853,7 +854,6 @@ export class PrecursoresPage {
   exportarCsv(): void {
     const d = this.data();
     if (!d?.precursores.length) return;
-    const sep = ';';
     const cab = [
       'Precursor(a)',
       ...d.meses.map(m => `${m.label} ${m.anio}`),
@@ -876,15 +876,6 @@ export class PrecursoresPage {
         : f.estado === 'exento' ? 'Consideración especial'
         : 'Riesgo',
     ]);
-    const csv = [cab, ...filas]
-      .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(sep))
-      .join('\r\n');
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `precursores_${d.anio_servicio - 1}-${d.anio_servicio}_${d.objetivo}-${d.objetivo_anual}h.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    descargarCsv(`precursores_${d.anio_servicio - 1}-${d.anio_servicio}_${d.objetivo}-${d.objetivo_anual}h`, [cab, ...filas]);
   }
 }
